@@ -1,18 +1,18 @@
 FROM php:8.2-apache
 
-# Install system dependencies and PHP extensions
+# Install system packages and PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    zip \
     unzip \
+    zip \
     libzip-dev \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     && docker-php-ext-install pdo pdo_mysql zip
 
-# Enable Apache rewrite module
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 # Install Composer
@@ -21,19 +21,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy Laravel files into the container
+# Copy entire Laravel app
 COPY . .
 
-# Move public folder contents to Apache web root
-RUN rm -rf /var/www/html/index.html
-RUN cp -r public/* /var/www/html/
-RUN rm -rf public
-
-# Install PHP dependencies
+# Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html \
+ && chmod -R 755 /var/www/html \
+ && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Update Apache config to serve from public/
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
 # Expose port 80
 EXPOSE 80
