@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: landscape-app
+    env: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    buildCommand: ''
+    startCommand: 'php artisan serve --host=0.0.0.0 --port=80'
