@@ -49,27 +49,32 @@ class SiteVisitController extends Controller
     }
 
    public function storeCalculation(Request $request)
-    {
-    $request->validate([
+{
+    // ✅ Validate and capture input
+    $validated = $request->validate([
         'calculation_type' => 'required|string',
         'data' => 'required|string',
         'site_visit_id' => 'required|exists:site_visits,id',
     ]);
 
-    $siteVisit = SiteVisit::findOrFail($request->site_visit_id);
-
-     // ✅ DEBUG LOG - this will write to storage/logs/laravel.log
+    // ✅ Debug log (now works because $validated exists)
     \Log::info('Saving calculation request:', $validated);
 
+    // ✅ Find associated site visit
+    $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
+
+    // ✅ Save calculation JSON safely
     $siteVisit->calculations()->create([
-        'calculation_type' => $request->calculation_type,
-        'data' => json_decode($request->data, true),
+        'calculation_type' => $validated['calculation_type'],
+        'data' => json_decode($validated['data'], true), // Convert back from hidden input
     ]);
 
-    // ✅ Redirect to the client hub instead of a broken route
-    return redirect()->route('clients.show', $siteVisit->client_id)
+    // ✅ Redirect back to Client dashboard
+    return redirect()
+        ->route('clients.show', $siteVisit->client_id)
         ->with('success', 'Calculation saved to site visit.');
-    }
+}
+
 
     public function destroy(Client $client, SiteVisit $siteVisit)
     {
