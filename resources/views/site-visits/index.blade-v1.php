@@ -26,34 +26,23 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($siteVisits as $visit)
-    <div class="bg-white p-6 rounded shadow mb-6">
-        <h2 class="text-xl font-bold mb-2">📍 Site Visit: {{ $visit->visit_date->format('F j, Y') }}</h2>
-        <p class="text-gray-700 mb-4">{{ $visit->notes ?? 'No notes provided.' }}</p>
+                    @foreach($siteVisits as $visit)
+                        <tr class="border-t">
+                            <td class="px-6 py-3">{{ $visit->visit_date->format('M d, Y') }}</td>
+                            <td class="px-6 py-3">{{ $visit->notes ?? '-' }}</td>
+                            <td class="px-6 py-3 flex gap-2">
+                                <a href="{{ route('clients.site-visits.edit', [$client, $visit]) }}"
+                                   class="text-yellow-600 hover:underline">✏️ Edit</a>
 
-        @if ($visit->calculations->count())
-            <div class="mt-4">
-                <h3 class="font-semibold text-lg mb-2">🧮 Calculations</h3>
-                <ul class="list-disc pl-5 text-gray-800 space-y-1">
-                    @foreach ($visit->calculations as $calc)
-                        <li>
-                            {{ ucfirst(str_replace('_', ' ', $calc->calculation_type)) }}
-                            <span class="text-gray-500 text-sm">({{ $calc->created_at->format('M d, Y') }})</span>
-
-                            {{-- Optional: View button --}}
-                            {{-- 
-                            <a href="#" class="text-blue-600 hover:underline text-sm ml-2">View</a>
-                            --}}
-                        </li>
+                                <form action="{{ route('clients.site-visits.destroy', [$client, $visit]) }}" method="POST"
+                                      onsubmit="return confirm('Delete this site visit?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:underline">🗑️ Delete</button>
+                                </form>
+                            </td>
+                        </tr>
                     @endforeach
-                </ul>
-            </div>
-        @else
-            <p class="text-gray-500 text-sm">No calculations saved for this visit.</p>
-        @endif
-    </div>
-@endforeach
-
                 </tbody>
             </table>
         </div>

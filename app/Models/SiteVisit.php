@@ -22,4 +22,9 @@ class SiteVisit extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function calculations()
+    {
+     return $this->hasMany(Calculation::class);
+    }
 }

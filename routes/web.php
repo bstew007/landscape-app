@@ -4,37 +4,45 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\SiteVisitController;
+use App\Http\Controllers\RetainingWallCalculatorController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application.
-|
-*/
-
-// ✅ Redirect home to clients hub (optional)
 Route::get('/', function () {
     return redirect()->route('clients.index');
 });
 
-// Dashboard route (can remove if not used)
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// ✅ Authenticated routes
 Route::middleware('auth')->group(function () {
-    // Profile management
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ✅ Client and Site Visit routes
+    // ✅ Calculators index (optional)
+    Route::get('/calculators', function () {
+        return view('calculators.index');
+    })->name('calculators.index');
+
+    // ✅ Retaining Wall Calculator
+    Route::get('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'showForm'])
+        ->name('calculators.wall.form');
+
+    Route::post('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'calculate'])
+        ->name('calculators.wall.calculate');
+
+    // ✅ Save calculation to Site Visit
+    Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
+        ->name('site-visits.storeCalculation');
+
+    // ✅ Clients & Site Visits
     Route::resource('clients', ClientController::class);
     Route::resource('clients.site-visits', SiteVisitController::class);
+
+    Route::delete('/calculations/{calculation}', [App\Http\Controllers\CalculationController::class, 'destroy'])
+    ->name('calculations.destroy');
+
 });
 
-// Authentication routes (login, register, etc.)
 require __DIR__.'/auth.php';

@@ -33,6 +33,19 @@ class ClientController extends Controller
         return redirect()->route('clients.index')->with('success', 'Client added successfully.');
     }
 
+    /**
+     * Show a single client with related actions like site visits.
+     */
+    public function show(Client $client)
+{
+    $latestVisit = $client->siteVisits()->latest()->first();
+
+    return view('clients.show', [
+        'client' => $client,
+        'siteVisit' => $latestVisit, // This line is key
+    ]);
+}
+
     public function edit(Client $client)
     {
         return view('clients.edit', compact('client'));
@@ -60,3 +73,4 @@ class ClientController extends Controller
         return redirect()->route('clients.index')->with('success', 'Client deleted successfully.');
     }
 }
+

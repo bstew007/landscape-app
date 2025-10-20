@@ -21,15 +21,13 @@ class SiteVisitController extends Controller
 
     public function store(Request $request, Client $client)
     {
-        $validated = $request->validate([
-            'visit_date' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+    $siteVisit = $client->siteVisits()->create([
+        'visit_date' => now(), // Optional
+        'notes' => $request->input('notes'),
+    ]);
 
-        $client->siteVisits()->create($validated);
-
-        return redirect()->route('clients.site-visits.index', $client)
-                         ->with('success', 'Site visit added.');
+   return redirect()->route('clients.show', $client->id)
+    ->with('success', 'Site visit created successfully.');
     }
 
     public function edit(Client $client, SiteVisit $siteVisit)
@@ -50,6 +48,26 @@ class SiteVisitController extends Controller
                          ->with('success', 'Site visit updated.');
     }
 
+   public function storeCalculation(Request $request)
+    {
+    $request->validate([
+        'calculation_type' => 'required|string',
+        'data' => 'required|string',
+        'site_visit_id' => 'required|exists:site_visits,id',
+    ]);
+
+    $siteVisit = SiteVisit::findOrFail($request->site_visit_id);
+
+    $siteVisit->calculations()->create([
+        'calculation_type' => $request->calculation_type,
+        'data' => json_decode($request->data, true),
+    ]);
+
+    // ✅ Redirect to the client hub instead of a broken route
+    return redirect()->route('clients.show', $siteVisit->client_id)
+        ->with('success', 'Calculation saved to site visit.');
+    }
+
     public function destroy(Client $client, SiteVisit $siteVisit)
     {
         $siteVisit->delete();
@@ -57,4 +75,12 @@ class SiteVisitController extends Controller
         return redirect()->route('clients.site-visits.index', $client)
                          ->with('success', 'Site visit deleted.');
     }
+
+    public function show(Client $client, SiteVisit $siteVisit)
+    {
+    $calculations = $siteVisit->calculations()->latest()->get();
+
+    return view('site-visits.show', compact('client', 'siteVisit', 'calculations'));
+    }
+
 }
