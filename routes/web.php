@@ -32,6 +32,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'calculate'])
         ->name('calculators.wall.calculate');
 
+    Route::get('/calculators/retaining-wall/{calculation}/edit', [RetainingWallCalculatorController::class, 'edit'])
+    ->name('calculators.wall.edit');
+
+
     // ✅ Save calculation to Site Visit
     Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
         ->name('site-visits.storeCalculation');
