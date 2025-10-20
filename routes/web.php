@@ -40,8 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::resource('clients.site-visits', SiteVisitController::class);
 
-    Route::delete('/calculations/{calculation}', [App\Http\Controllers\CalculationController::class, 'destroy'])
-    ->name('calculations.destroy');
+    Route::delete('/calculations/{calculation}', [\App\Http\Controllers\CalculationController::class, 'destroy'])
+    ->name('site-visits.deleteCalculation');
+
 
 });
 

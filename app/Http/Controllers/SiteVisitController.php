@@ -58,6 +58,9 @@ class SiteVisitController extends Controller
 
     $siteVisit = SiteVisit::findOrFail($request->site_visit_id);
 
+     // ✅ DEBUG LOG - this will write to storage/logs/laravel.log
+    \Log::info('Saving calculation request:', $validated);
+
     $siteVisit->calculations()->create([
         'calculation_type' => $request->calculation_type,
         'data' => json_decode($request->data, true),
