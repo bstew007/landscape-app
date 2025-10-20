@@ -10,6 +10,25 @@
         <p><strong>Notes:</strong> {{ $siteVisit->notes ?? '—' }}</p>
     </div>
 
+    {{-- ✏️ Edit and ❌ Delete Site Visit --}}
+    <div class="flex gap-4 mb-8">
+        <a href="{{ route('clients.site-visits.edit', [$client, $siteVisit]) }}"
+           class="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold">
+            ✏️ Edit Site Visit
+        </a>
+
+        <form method="POST" action="{{ route('clients.site-visits.destroy', [$client, $siteVisit]) }}"
+              onsubmit="return confirm('Are you sure you want to delete this site visit?');">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                    class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold">
+                🗑️ Delete Site Visit
+            </button>
+        </form>
+    </div>
+
+    {{-- 🧮 Calculations Section --}}
     <h2 class="text-2xl font-semibold mb-4">🧮 Calculations</h2>
 
     @if ($calculations->count())
@@ -43,17 +62,8 @@
         <p class="text-gray-600 mb-6">No calculations saved for this visit.</p>
     @endif
 
-    {{-- ❌ Delete Site Visit --}}
-    <form method="POST" action="{{ route('clients.site-visits.destroy', [$client, $siteVisit]) }}" class="mt-8">
-        @csrf
-        @method('DELETE')
-        <button type="submit"
-                class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold">
-            🗑️ Delete Site Visit
-        </button>
-    </form>
-
-    <div class="mt-6">
+    {{-- 🔙 Back to Client --}}
+    <div class="mt-8">
         <a href="{{ route('clients.show', $client) }}"
            class="inline-block px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg">
             🔙 Back to Client

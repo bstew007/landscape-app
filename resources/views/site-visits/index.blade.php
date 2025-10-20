@@ -25,35 +25,40 @@
                         <th class="px-6 py-3 text-left">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-gray-800">
                     @foreach ($siteVisits as $visit)
-    <div class="bg-white p-6 rounded shadow mb-6">
-        <h2 class="text-xl font-bold mb-2">📍 Site Visit: {{ $visit->visit_date->format('F j, Y') }}</h2>
-        <p class="text-gray-700 mb-4">{{ $visit->notes ?? 'No notes provided.' }}</p>
+                        <tr class="border-t">
+                            <td class="px-6 py-4">{{ $visit->visit_date->format('F j, Y') }}</td>
+                            <td class="px-6 py-4">{{ $visit->notes ?? 'No notes' }}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex gap-2">
+                                    {{-- View --}}
+                                    <a href="{{ route('clients.site-visits.show', [$client, $visit]) }}"
+                                       class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
+                                        View
+                                    </a>
 
-        @if ($visit->calculations->count())
-            <div class="mt-4">
-                <h3 class="font-semibold text-lg mb-2">🧮 Calculations</h3>
-                <ul class="list-disc pl-5 text-gray-800 space-y-1">
-                    @foreach ($visit->calculations as $calc)
-                        <li>
-                            {{ ucfirst(str_replace('_', ' ', $calc->calculation_type)) }}
-                            <span class="text-gray-500 text-sm">({{ $calc->created_at->format('M d, Y') }})</span>
+                                    {{-- Edit --}}
+                                    <a href="{{ route('clients.site-visits.edit', [$client, $visit]) }}"
+                                       class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                        Edit
+                                    </a>
 
-                            {{-- Optional: View button --}}
-                            {{-- 
-                            <a href="#" class="text-blue-600 hover:underline text-sm ml-2">View</a>
-                            --}}
-                        </li>
+                                    {{-- Delete --}}
+                                    <form action="{{ route('clients.site-visits.destroy', [$client, $visit]) }}"
+                                          method="POST"
+                                          onsubmit="return confirm('Are you sure you want to delete this site visit?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     @endforeach
-                </ul>
-            </div>
-        @else
-            <p class="text-gray-500 text-sm">No calculations saved for this visit.</p>
-        @endif
-    </div>
-@endforeach
-
                 </tbody>
             </table>
         </div>
@@ -62,3 +67,4 @@
     @endif
 </div>
 @endsection
+
