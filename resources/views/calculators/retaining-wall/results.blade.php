@@ -4,6 +4,36 @@
 <div class="max-w-5xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">📊 Retaining Wall Estimate Summary</h1>
 
+    <h1>Cape Fear Landscaping</h1>
+
+<hr style="margin: 10px 0;">
+
+<h3>Client Information: {{ $siteVisit->client->name }}</h3>
+<table style="margin-bottom: 20px;">
+    <tr>
+        <td><strong>Name:</strong></td>
+        <td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td>
+    </tr>
+    <tr>
+        <td><strong>Email:</strong></td>
+        <td>{{ $siteVisit->client->email ?? '—' }}</td>
+    </tr>
+    <tr>
+        <td><strong>Phone:</strong></td>
+        <td>{{ $siteVisit->client->phone ?? '—' }}</td>
+    </tr>
+    <tr>
+        <td><strong>Address:</strong></td>
+        <td>{{ $siteVisit->client->address ?? '—' }}</td>
+    </tr>
+    <tr>
+        <td><strong>Site Visit Date:</strong></td>
+        <td>{{ $siteVisit->created_at->format('F j, Y') }}</td>
+    </tr>
+</table>
+
+
+
     {{-- Final Price Summary --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <p class="text-xl font-semibold mb-2">Final Price:</p>
@@ -98,6 +128,17 @@
     </button>
 </form>
 
+    {{-- PDF Download Button (Only show if saved) --}}
+@if (isset($calculation))
+    <div class="mt-4">
+        <a href="{{ route('calculations.downloadPdf', $calculation->id) }}"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+           target="_blank">
+            🧾 Download PDF Estimate
+        </a>
+    </div>
+@endif
+
 
     {{-- Back Button --}}
     <div class="mt-6">
@@ -105,6 +146,8 @@
            class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
             🔙 Back to Client
         </a>
+
+       
     </div>
 </div>
 @endsection

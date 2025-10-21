@@ -10,6 +10,8 @@ Route::get('/', function () {
     return redirect()->route('clients.index');
 });
 
+Route::get('/calculations/{calculation}/pdf', [RetainingWallCalculatorController::class, 'downloadPdf'])->name('calculations.downloadPdf');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -19,6 +21,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ✅ View calculation result after saving
+    Route::get('/calculations/{calculation}/result', [RetainingWallCalculatorController::class, 'showResult'])
+        ->name('calculations.showResult');
 
     // ✅ Calculators index (optional)
     Route::get('/calculators', function () {

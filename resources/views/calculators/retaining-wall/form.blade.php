@@ -1,4 +1,3 @@
-
 @extends('layouts.sidebar')
 
 @section('content')
@@ -10,6 +9,7 @@
     <form method="POST" action="{{ route('calculators.wall.calculate') }}">
         @csrf
 
+        {{-- Hidden fields --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @if ($editMode && isset($calculation))
             <input type="hidden" name="calculation_id" value="{{ $calculation->id }}">
@@ -130,11 +130,14 @@
         </div>
     </form>
 
+    {{-- Back Link --}}
     <div class="mt-6">
-        <a href="{{ route('clients.show', $siteVisitId) }}"
-           class="text-gray-600 hover:text-gray-900 underline">
-            🔙 Back to Client
-        </a>
+        <a href="{{ route('clients.show', $clientId) }}"
+   class="text-gray-600 hover:text-gray-900 underline">
+   🔙 Back to Client
+</a>
+
     </div>
 </div>
 @endsection
+

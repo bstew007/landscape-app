@@ -5,28 +5,39 @@ namespace App\Http\Controllers;
 use App\Models\Calculation;
 use App\Models\SiteVisit;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class RetainingWallCalculatorController extends Controller
 {
-    public function showForm(Request $request)
-    {
-        $siteVisitId = $request->query('site_visit_id');
-        return view('calculators.retaining-wall.form', [
-            'siteVisitId' => $siteVisitId,
-            'editMode' => false,
-            'formData' => [],
-        ]);
-    }
+   public function showForm(Request $request)
+{
+    $siteVisitId = $request->query('site_visit_id');
+
+    // Load the site visit with the related client
+    $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($siteVisitId);
+
+    return view('calculators.retaining-wall.form', [
+        'siteVisitId' => $siteVisit->id,
+        //'siteVisit' => SiteVisit::with('client')->findOrFail($validated['site_visit_id']),
+        'clientId' => $siteVisit->client->id, // 👈 pass the actual client ID
+        'editMode' => false,
+        'formData' => [],
+    ]);
+}
 
     public function edit(Calculation $calculation)
-    {
-        return view('calculators.retaining-wall.form', [
-            'siteVisitId' => $calculation->site_visit_id,
-            'editMode' => true,
-            'calculation' => $calculation,
-            'formData' => $calculation->data,
-        ]);
-    }
+{
+    $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail();
+
+    return view('calculators.retaining-wall.form', [
+        'siteVisitId' => $siteVisit->id,
+        'clientId' => $siteVisit->client->id,  // ✅ Pass the client ID
+        'editMode' => true,
+        'formData' => $calculation->data,
+        'calculation' => $calculation,
+    ]);
+}
 
     public function calculate(Request $request)
     {
@@ -142,11 +153,53 @@ class RetainingWallCalculatorController extends Controller
         if (!empty($validated['calculation_id'])) {
             $calc = Calculation::find($validated['calculation_id']);
             $calc->update(['data' => $data]);
+
+             //return redirect()->route('clients.site-visits.show', [$calc->siteVisit->client_id, $calc->site_visit_id])
+                      //   ->with('success', 'Calculation updated successfully.');
+            return view('calculators.retaining-wall.results', [
+                'data' => $data,
+                'siteVisit' => SiteVisit::with('client')->findOrFail($validated['site_visit_id']), // ✅ fixed
+                'calculation' => $calc, // ✅ This is what makes the PDF button work
+            ]);
         }
 
-        return view('calculators.retaining-wall.results', [
-            'data' => $data,
-            'siteVisit' => SiteVisit::findOrFail($validated['site_visit_id']),
-        ]);
+        $calc = Calculation::create([
+    'site_visit_id' => $validated['site_visit_id'],
+    'calculation_type' => 'retaining_wall',
+    'data' => $data,
+]);
+
+return redirect()->route('calculations.showResult', $calc->id);
     }
+    // Generate PDF of the calculation
+    public function downloadPdf(Calculation $calculation)
+{
+   // $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail(); bad
+   $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id); // ✅ good
+
+
+    $data = $calculation->data;
+
+    $pdf = Pdf::loadView('calculators.retaining-wall.pdf', [
+        'data' => $data,
+        'siteVisit' => $siteVisit,
+        'calculation' => $calculation,
+    ]);
+
+    return $pdf->download('retaining_wall_estimate.pdf');
 }
+// Show calculation results -- pdf stuff
+public function showResult(Calculation $calculation)
+{
+    $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail();
+
+    return view('calculators.retaining-wall.results', [
+        'data' => $calculation->data,
+        'siteVisit' => $siteVisit,
+        'calculation' => $calculation,
+    ]);
+}
+
+
+}
+

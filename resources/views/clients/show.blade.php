@@ -1,5 +1,17 @@
+@extends('layouts.sidebar')
+@section('content')
+
+ <div class="max-w-4xl mx-auto py-10">
+    <h1 class="text-3xl font-bold mb-6">👤 Client Details</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2 mb-6">
+        <p><strong>Name:</strong> {{ $client->first_name }} {{ $client->last_name }}</p>
+        <p><strong>Email:</strong> {{ $client->email ?? '—' }}</p>
+        <p><strong>Phone:</strong> {{ $client->phone ?? '—' }}</p>
+        <p><strong>Address:</strong> {{ $client->address ?? '—' }}</p>
+    </div>   
 <div class="mt-8">
-    <h2 class="text-xl font-bold mb-4">🧮 Estimators</h2>
+    <h2 class="text-xl font-bold mb-4">🧮 Add New Calculations to Site Visit</h2>
 
     @if ($siteVisit)
         <a href="{{ route('calculators.wall.form', ['site_visit_id' => $siteVisit->id]) }}"
@@ -18,3 +30,4 @@
         </a>
     @endif
 </div>
+@endsection
