@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SiteVisit;
 use App\Models\Calculation;
+use App\Models\SiteVisit;
 use Illuminate\Http\Request;
 
 class RetainingWallCalculatorController extends Controller
@@ -11,11 +11,10 @@ class RetainingWallCalculatorController extends Controller
     public function showForm(Request $request)
     {
         $siteVisitId = $request->query('site_visit_id');
-
         return view('calculators.retaining-wall.form', [
             'siteVisitId' => $siteVisitId,
+            'editMode' => false,
             'formData' => [],
-            'editMode' => false
         ]);
     }
 
@@ -25,7 +24,7 @@ class RetainingWallCalculatorController extends Controller
             'siteVisitId' => $calculation->site_visit_id,
             'editMode' => true,
             'calculation' => $calculation,
-            'formData' => $calculation->data
+            'formData' => $calculation->data,
         ]);
     }
 
@@ -46,95 +45,83 @@ class RetainingWallCalculatorController extends Controller
             'site_visit_id' => 'required|exists:site_visits,id',
             'block_brand' => 'required|string|in:belgard,techo',
             'include_capstones' => 'nullable|boolean',
+            'calculation_id' => 'nullable|exists:calculations,id',
         ]);
 
-        // --- Dimensions ---
         $length = $validated['length'];
         $height = $validated['height'];
         $sqft = $length * $height;
 
-        // --- Blocks based on brand ---
         $blockCoverage = $validated['block_brand'] === 'belgard' ? 0.67 : 0.65;
         $blockCount = ceil($sqft / $blockCoverage);
-        $blockCost = $blockCount * 11;
+        $blockCost = $blockCount * 11.00;
 
-        // --- Capstones + adhesive ---
         $includeCaps = $validated['include_capstones'] ?? false;
         $capCount = $includeCaps ? ceil($length) : 0;
-        $capCost = $capCount * 18;
-        $adhesiveTubeCount = ceil($capCount / 20);
-        $adhesiveCost = $adhesiveTubeCount * 8;
+        $capCost = $capCount * 18.00;
 
-        // --- Pipe ---
-        $pipeLength = $length;
-        $pipeCost = $pipeLength * 2;
+        $adhesiveCoveragePerTube = 20;
+        $adhesiveTubeCount = ceil($capCount / $adhesiveCoveragePerTube);
+        $adhesiveCost = $adhesiveTubeCount * 8.00;
 
-        // --- Gravel ---
-        $gravelDepth = 1.5;
-        $gravelVolumeCF = $length * $height * $gravelDepth;
+        $pipeCost = $length * 2.00;
+
+        $gravelVolumeCF = $length * $height * 1.5;
         $gravelTons = $gravelVolumeCF / 21.6;
-        $gravelCost = ceil($gravelTons) * 45;
+        $gravelCost = ceil($gravelTons) * 45.00;
 
-        // --- Topsoil ---
-        $topsoilDepth = 0.5;
-        $topsoilVolumeCF = $length * $topsoilDepth * $gravelDepth;
+        $topsoilVolumeCF = $length * 0.5 * 1.5;
         $topsoilYards = $topsoilVolumeCF / 27;
-        $topsoilCost = ceil($topsoilYards) * 35;
+        $topsoilCost = ceil($topsoilYards) * 35.00;
 
-        // --- Underlayment ---
         $fabricArea = $length * $height * 2;
         $fabricCost = $fabricArea * 0.30;
 
-        // --- Geogrid ---
         $geogridLayers = $height >= 4 ? floor($height / 2) : 0;
         $geogridLF = $length * $geogridLayers;
         $geogridCost = $geogridLF * $height * 1.50;
 
-        // --- Materials ---
         $materials = [
             'Wall Blocks' => round($blockCost, 2),
             'Capstones' => round($capCost, 2),
-            'Adhesive for Capstones' => round($adhesiveCost, 2),
             'Drain Pipe' => round($pipeCost, 2),
             '#57 Gravel' => round($gravelCost, 2),
             'Topsoil' => round($topsoilCost, 2),
             'Underlayment Fabric' => round($fabricCost, 2),
             'Geogrid' => round($geogridCost, 2),
+            'Adhesive for Capstones' => round($adhesiveCost, 2),
         ];
+
         $material_total = array_sum($materials);
 
-        // --- Labor Breakdown ---
-        $labor = [
-            'excavation' => $length * 0.1,
-            'base_install' => $sqft * 0.15,
-            'block_laying' => $sqft * ($validated['equipment'] === 'excavator' ? 0.05 : 0.09),
-            'pipe_install' => $pipeLength * 0.02,
-            'gravel_backfill' => $sqft * 0.08,
-            'topsoil_backfill' => $sqft * 0.06,
-            'underlayment' => $fabricArea * 0.03,
-            'geogrid' => $geogridLF * 0.04,
-            'capstone' => $includeCaps ? $capCount * 0.03 : 0,
-        ];
+        $labor = [];
+        $labor['excavation'] = $length * 0.1;
+        $labor['base_install'] = $sqft * 0.15;
+        $labor['block_laying'] = $sqft * ($validated['equipment'] === 'excavator' ? 0.05 : 0.09);
+        $labor['pipe_install'] = $length * 0.02;
+        $labor['gravel_backfill'] = $sqft * 0.08;
+        $labor['topsoil_backfill'] = $sqft * 0.06;
+        $labor['underlayment'] = $fabricArea * 0.03;
+        $labor['geogrid'] = $geogridLF * 0.04;
+        $labor['capstone'] = $includeCaps ? $capCount * 0.03 : 0;
 
         $wallLabor = array_sum($labor);
-        $overhead = $wallLabor * (
-            ($validated['site_conditions'] ?? 0) / 100 +
-            ($validated['material_pickup'] ?? 0) / 100 +
-            ($validated['cleanup'] ?? 0) / 100
-        );
+
+        $siteCondPct = ($validated['site_conditions'] ?? 0) / 100;
+        $pickupPct = ($validated['material_pickup'] ?? 0) / 100;
+        $cleanupPct = ($validated['cleanup'] ?? 0) / 100;
+        $overheadHours = $wallLabor * ($siteCondPct + $pickupPct + $cleanupPct);
         $driveTime = $validated['drive_distance'] / $validated['drive_speed'];
-        $totalLaborHours = $wallLabor + $overhead + $driveTime;
+
+        $totalLaborHours = $wallLabor + $overheadHours + $driveTime;
         $laborCost = $totalLaborHours * $validated['labor_rate'];
 
-        // --- Final price ---
         $markupAmount = ($laborCost + $material_total) * ($validated['markup'] / 100);
         $finalPrice = $laborCost + $material_total + $markupAmount;
 
-        // --- Return to results ---
         $data = array_merge($validated, [
             'block_count' => $blockCount,
             'cap_count' => $capCount,
-            'adhesive_tubes' => $adhesiveTubeCount,
             'gravel_tons' => ceil($gravelTons),
             'topsoil_yards' => ceil($topsoilYards),
             'fabric_area' => round($fabricArea, 2),
@@ -142,14 +129,20 @@ class RetainingWallCalculatorController extends Controller
             'geogrid_lf' => $geogridLF,
             'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
             'labor_hours' => round($wallLabor, 2),
-            'overhead_hours' => round($overhead + $driveTime, 2),
+            'overhead_hours' => round($overheadHours + $driveTime, 2),
             'total_hours' => round($totalLaborHours, 2),
             'labor_cost' => round($laborCost, 2),
             'material_total' => round($material_total, 2),
             'markup_amount' => round($markupAmount, 2),
             'final_price' => round($finalPrice, 2),
             'materials' => $materials,
+            'adhesive_tubes' => $adhesiveTubeCount,
         ]);
+
+        if (!empty($validated['calculation_id'])) {
+            $calc = Calculation::find($validated['calculation_id']);
+            $calc->update(['data' => $data]);
+        }
 
         return view('calculators.retaining-wall.results', [
             'data' => $data,
