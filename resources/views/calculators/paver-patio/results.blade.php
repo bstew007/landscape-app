@@ -2,45 +2,15 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">📊 Retaining Wall Estimate Summary</h1>
+    <h1 class="text-3xl font-bold mb-6">📊 Paver Patio Estimate Summary</h1>
 
-    <h1>Cape Fear Landscaping</h1>
-
-<hr style="margin: 10px 0;">
-
-<h3>Client Information: {{ $siteVisit->client->name }}</h3>
-<table style="margin-bottom: 20px;">
-    <tr>
-        <td><strong>Name:</strong></td>
-        <td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td>
-    </tr>
-    <tr>
-        <td><strong>Email:</strong></td>
-        <td>{{ $siteVisit->client->email ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Phone:</strong></td>
-        <td>{{ $siteVisit->client->phone ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Address:</strong></td>
-        <td>{{ $siteVisit->client->address ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Site Visit Date:</strong></td>
-        <td>{{ $siteVisit->created_at->format('F j, Y') }}</td>
-    </tr>
-</table>
-
-
-
-    {{-- Final Price Summary --}}
+    {{-- Final Price --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <p class="text-xl font-semibold mb-2">Final Price:</p>
         <p class="text-3xl font-bold text-green-700">${{ number_format($data['final_price'], 2) }}</p>
     </div>
 
-    {{-- Materials Breakdown --}}
+    {{-- Materials --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">🧱 Materials</h2>
         <ul class="space-y-2">
@@ -57,20 +27,13 @@
         </div>
     </div>
 
-    {{-- Quantities (Optional) --}}
+    {{-- Quantities --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">📐 Quantities</h2>
         <ul class="grid grid-cols-2 gap-y-2 text-gray-700">
-            <li>Wall Area: <strong>{{ number_format($data['length'] * $data['height'], 2) }} sqft</strong></li>
-            <li>Block Count: <strong>{{ $data['block_count'] }}</strong></li>
-            <li>Capstones: <strong>{{ $data['cap_count'] }}</strong></li>
-            <li>Gravel: <strong>{{ $data['gravel_tons'] }} tons</strong></li>
-            <li>Topsoil: <strong>{{ $data['topsoil_yards'] }} cu yd</strong></li>
-            <li>Drain Pipe: <strong>{{ $data['length'] }} ft</strong></li>
-            <li>Underlayment: <strong>{{ $data['fabric_area'] }} sqft</strong></li>
-            <li>Geogrid Layers: <strong>{{ $data['geogrid_layers'] }}</strong> ({{ $data['geogrid_lf'] }} lf)</strong></li>
-            <li>Adhesive Tubes: <strong>{{ $data['adhesive_tubes'] }}</strong></li>
-
+            <li>Area: <strong>{{ number_format($data['area_sqft'], 2) }} sqft</strong></li>
+            <li>Paver Count: <strong>{{ $data['paver_count'] }}</strong></li>
+            <li>Base Material: <strong>{{ $data['base_tons'] }} tons (#78 gravel)</strong></li>
         </ul>
     </div>
 
@@ -86,7 +49,7 @@
             @endforeach
         </ul>
         <div class="flex justify-between mt-4">
-            <span class="font-semibold">Wall Labor:</span>
+            <span class="font-semibold">Base Labor:</span>
             <span>{{ number_format($data['labor_hours'], 2) }} hrs</span>
         </div>
         <div class="flex justify-between">
@@ -107,38 +70,31 @@
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">💰 Markup</h2>
         <div class="flex justify-between">
-            <span>Markup Applied:</span>
-            <span>{{ $data['markup'] }}%</span>
-        </div>
-        <div class="flex justify-between font-bold mt-2">
-            <span>Markup Amount:</span>
+            <span>Markup (20%):</span>
             <span>${{ number_format($data['markup_amount'], 2) }}</span>
         </div>
     </div>
-    {{-- Save to Site Visit --}}
-<form method="POST" action="{{ route('site-visits.storeCalculation') }}">
-    @csrf
-    <input type="hidden" name="calculation_type" value="retaining_wall">
-    <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
-    <input type="hidden" name="data" value="{{ json_encode($data) }}">
 
-    <button type="submit"
-            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
-        💾 Save Calculation to Site Visit
-    </button>
-</form>
+    {{-- Save Calculation --}}
+    <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
+        @csrf
+        <input type="hidden" name="calculation_type" value="paver_patio">
+        <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
+        <input type="hidden" name="data" value="{{ json_encode($data) }}">
 
-    {{-- PDF Download Button (Only show if saved) --}}
-@if (isset($calculation))
-    <div class="mt-4">
-        <a href="{{ route('calculations.downloadPdf', $calculation->id) }}"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-           target="_blank">
-            🧾 Download PDF Estimate
+        <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
+            💾 Save Calculation to Site Visit
+        </button>
+    </form>
+
+    {{-- PDF Button (if saved already) --}}
+    @isset($calculation)
+        <a href="{{ route('calculations.patio.downloadPdf', $calculation->id) }}"
+           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mb-4 ml-4">
+            📄 Download PDF
         </a>
-    </div>
-@endif
-
+    @endisset
 
     {{-- Back Button --}}
     <div class="mt-6">
@@ -146,8 +102,6 @@
            class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
             🔙 Back to Client
         </a>
-
-       
     </div>
 </div>
 @endsection

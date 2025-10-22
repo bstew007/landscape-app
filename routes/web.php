@@ -5,10 +5,13 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\SiteVisitController;
 use App\Http\Controllers\RetainingWallCalculatorController;
+use App\Http\Controllers\PaverPatioCalculatorController;
 
 Route::get('/', function () {
     return redirect()->route('clients.index');
 });
+
+Route::get('/calculations/{calculation}/pdf', [RetainingWallCalculatorController::class, 'downloadPdf'])->name('calculations.downloadPdf');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -19,6 +22,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ✅ View calculation result after saving
+    Route::get('/calculations/{calculation}/result', [RetainingWallCalculatorController::class, 'showResult'])
+        ->name('calculations.showResult');
 
     // ✅ Calculators index (optional)
     Route::get('/calculators', function () {
@@ -34,6 +41,22 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/calculators/retaining-wall/{calculation}/edit', [RetainingWallCalculatorController::class, 'edit'])
     ->name('calculators.wall.edit');
+
+    // Paver Patio Calculator
+Route::get('/calculators/paver-patio', [PaverPatioCalculatorController::class, 'showForm'])
+    ->name('calculators.patio.form');
+
+Route::post('/calculators/paver-patio', [PaverPatioCalculatorController::class, 'calculate'])
+    ->name('calculators.patio.calculate');
+
+Route::get('/calculators/paver-patio/{calculation}/edit', [PaverPatioCalculatorController::class, 'edit'])
+    ->name('calculators.patio.edit');
+
+Route::get('/calculations/{calculation}/paver-patio/result', [PaverPatioCalculatorController::class, 'showResult'])
+    ->name('calculations.patio.showResult');
+
+Route::get('/calculations/{calculation}/paver-patio/pdf', [PaverPatioCalculatorController::class, 'downloadPdf'])
+    ->name('calculations.patio.downloadPdf');
 
 
     // ✅ Save calculation to Site Visit

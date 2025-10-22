@@ -4,6 +4,7 @@
 <div class="max-w-4xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">🗓️ Site Visit Details</h1>
 
+    {{-- Site Visit Info --}}
     <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2 mb-6">
         <p><strong>Client:</strong> {{ $client->first_name }} {{ $client->last_name }}</p>
         <p><strong>Visit Date:</strong> {{ $siteVisit->visit_date->format('F j, Y') }}</p>
@@ -40,17 +41,34 @@
                         <p class="text-sm text-gray-500">Created: {{ $calc->created_at->format('M d, Y H:i') }}</p>
                     </div>
                     <div class="flex gap-2">
-                        {{-- 🔍 View or Edit --}}
+                        {{-- 🔍 View/Edit --}}
                         @if ($calc->calculation_type === 'retaining_wall')
-                            <a href="{{ route('calculators.wall.form', ['site_visit_id' => $siteVisit->id]) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Edit</a>
+                            <a href="{{ route('calculators.wall.edit', $calc->id) }}"
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                Edit
+                            </a>
+                            <a href="{{ route('calculations.downloadPdf', $calc->id) }}"
+                               class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
+                                PDF
+                            </a>
+                        @elseif ($calc->calculation_type === 'paver_patio')
+                            <a href="{{ route('calculators.patio.edit', $calc->id) }}"
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                Edit
+                            </a>
+                            <a href="{{ route('calculations.patio.downloadPdf', $calc->id) }}"
+                               class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
+                                PDF
+                            </a>
                         @endif
 
-                        {{-- ❌ Delete Calculation --}}
+                        {{-- ❌ Delete --}}
                         <form method="POST" action="{{ route('site-visits.deleteCalculation', $calc->id) }}">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
+                            <button type="submit"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+                                    onclick="return confirm('Are you sure you want to delete this calculation?')">
                                 Delete
                             </button>
                         </form>
