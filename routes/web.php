@@ -6,6 +6,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\SiteVisitController;
 use App\Http\Controllers\RetainingWallCalculatorController;
 use App\Http\Controllers\PaverPatioCalculatorController;
+use App\Http\Controllers\LandscapeEnhancementController;
 
 Route::get('/', function () {
     return redirect()->route('clients.index');
@@ -31,6 +32,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/calculators', function () {
         return view('calculators.index');
     })->name('calculators.index');
+
+    Route::get('/calculators/select-site-visit', function (\Illuminate\Http\Request $request) {
+    $siteVisits = \App\Models\SiteVisit::with('client')->latest()->get();
+
+    // Target URL after selecting site visit (e.g. calculators.wall.form)
+    $redirectTo = $request->query('redirect_to', '');
+
+    return view('calculators.select-site-visit', compact('siteVisits', 'redirectTo'));
+})->name('calculators.selectSiteVisit');
+
 
     // ✅ Retaining Wall Calculator
     Route::get('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'showForm'])
@@ -58,6 +69,12 @@ Route::get('/calculations/{calculation}/paver-patio/result', [PaverPatioCalculat
 Route::get('/calculations/{calculation}/paver-patio/pdf', [PaverPatioCalculatorController::class, 'downloadPdf'])
     ->name('calculations.patio.downloadPdf');
 
+    // ✅ Landscape Enhancements Calculator
+Route::get('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'create'])
+    ->name('calculators.enhancements.form');
+
+Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])
+    ->name('calculators.enhancements.calculate');
 
     // ✅ Save calculation to Site Visit
     Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
