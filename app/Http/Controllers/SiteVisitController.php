@@ -61,32 +61,43 @@ class SiteVisitController extends Controller
             ->with('success', 'Site visit updated.');
     }
 
-    public function storeCalculation(Request $request)
-    {
-        // ✅ Validate and capture input
-        $validated = $request->validate([
-            'calculation_type' => 'required|string',
-            'data' => 'required|string',
-            'site_visit_id' => 'required|exists:site_visits,id',
-        ]);
+   public function storeCalculation(Request $request)
+{
+    // ✅ Validate and capture input
+    $validated = $request->validate([
+        'calculation_type' => 'required|string',
+        'data' => 'required|string',
+        'site_visit_id' => 'required|exists:site_visits,id',
+    ]);
 
-        // ✅ Log for debugging
-        \Log::info('Saving calculation request:', $validated);
+    // ✅ Decode JSON data once
+    $calculationData = json_decode($validated['data'], true);
 
-        // ✅ Find associated site visit
-        $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
+    // ✅ Find associated site visit
+    $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
 
-        // ✅ Save calculation JSON safely
-        $siteVisit->calculations()->create([
-            'calculation_type' => $validated['calculation_type'],
-            'data' => json_decode($validated['data'], true), // Convert from hidden input
-        ]);
+    // ✅ Check if a calculation of this type already exists for this site visit
+    $existing = $siteVisit->calculations()
+        ->where('calculation_type', $validated['calculation_type'])
+        ->first();
 
-        // ✅ Redirect back to Client dashboard
+    if ($existing) {
         return redirect()
             ->route('clients.show', $siteVisit->client_id)
-            ->with('success', 'Calculation saved to site visit.');
+            ->with('warning', 'A calculation of this type already exists for this site visit.');
     }
+
+    // ✅ Create new calculation if not already exists
+    $siteVisit->calculations()->create([
+        'calculation_type' => $validated['calculation_type'],
+        'data' => $calculationData,
+    ]);
+
+    return redirect()
+        ->route('clients.show', $siteVisit->client_id)
+        ->with('success', 'Calculation saved to site visit.');
+}
+
 
     public function destroy(Client $client, SiteVisit $siteVisit)
     {

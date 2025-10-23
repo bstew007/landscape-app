@@ -106,6 +106,9 @@
             </tr>
         </table>
     </div>
+@if($data['include_geogrid'])
+    <p>Geogrid was included in this estimate.</p>
+@endif
 
     {{-- Materials --}}
     <div class="section">

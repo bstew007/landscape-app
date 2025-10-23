@@ -6,6 +6,8 @@ use App\Models\Calculation;
 use App\Models\SiteVisit;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ProductionRate;
+
 
 class PaverPatioCalculatorController extends Controller
 {
@@ -90,13 +92,17 @@ class PaverPatioCalculatorController extends Controller
         $material_total = array_sum($materials);
 
         // ✅ Labor per sqft with override support
-        $labor = [];
-        $labor['excavation']         = $area * ($validated['rate_excavation'] ?? 0.03);
-        $labor['base_compaction']    = $area * ($validated['rate_base_compaction'] ?? 0.04);
-        $labor['laying_pavers']      = $area * ($validated['rate_laying_pavers'] ?? 0.06);
-        $labor['cutting_borders']    = $area * ($validated['rate_cutting_borders'] ?? 0.015);
-        $labor['install_edging']     = $area * ($validated['rate_install_edging'] ?? 0.007);
-        $labor['cleanup']            = $area * ($validated['rate_cleanup'] ?? 0.005);
+       $rates = ProductionRate::where('calculator', 'paver_patio')
+    ->pluck('rate', 'task');
+
+$labor = [];
+$labor['excavation']         = $area * ($rates['excavation'] ?? 0.03);
+$labor['base_compaction']    = $area * ($rates['base_compaction'] ?? 0.04);
+$labor['laying_pavers']      = $area * ($rates['laying_pavers'] ?? 0.06);
+$labor['cutting_borders']    = $area * ($rates['cutting_borders'] ?? 0.015);
+$labor['install_edging']     = $area * ($rates['install_edging'] ?? 0.007);
+$labor['cleanup']            = $area * ($rates['cleanup'] ?? 0.005);
+
 
         $baseLabor = array_sum($labor);
 

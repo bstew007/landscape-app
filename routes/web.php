@@ -7,6 +7,7 @@ use App\Http\Controllers\SiteVisitController;
 use App\Http\Controllers\RetainingWallCalculatorController;
 use App\Http\Controllers\PaverPatioCalculatorController;
 use App\Http\Controllers\LandscapeEnhancementController;
+use App\Http\Controllers\ProductionRateController;
 
 Route::get('/', function () {
     return redirect()->route('clients.index');
@@ -28,6 +29,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // ✅ Production Rates (Admin UI)
+    Route::resource('production-rates', ProductionRateController::class)->except(['show']);
+
     // ✅ Calculations
     Route::get('/calculations/{calculation}/result', [RetainingWallCalculatorController::class, 'showResult'])
         ->name('calculations.showResult');
@@ -35,45 +39,38 @@ Route::middleware('auth')->group(function () {
     Route::delete('/calculations/{calculation}', [\App\Http\Controllers\CalculationController::class, 'destroy'])
         ->name('site-visits.deleteCalculation');
 
-    // ✅ Calculators Index (optional)
+    // ✅ Calculators Index
     Route::get('/calculators', function () {
         return view('calculators.index');
     })->name('calculators.index');
 
-    // ✅ Site Visit Selector (FIXED)
+    // ✅ Site Visit Selector
     Route::get('/calculators/select-site-visit', [SiteVisitController::class, 'select'])
         ->name('calculators.selectSiteVisit');
 
     // ✅ Retaining Wall Calculator
     Route::get('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'showForm'])
         ->name('calculators.wall.form');
-
     Route::post('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'calculate'])
         ->name('calculators.wall.calculate');
-
     Route::get('/calculators/retaining-wall/{calculation}/edit', [RetainingWallCalculatorController::class, 'edit'])
         ->name('calculators.wall.edit');
 
     // ✅ Paver Patio Calculator
     Route::get('/calculators/paver-patio', [PaverPatioCalculatorController::class, 'showForm'])
         ->name('calculators.patio.form');
-
     Route::post('/calculators/paver-patio', [PaverPatioCalculatorController::class, 'calculate'])
         ->name('calculators.patio.calculate');
-
     Route::get('/calculators/paver-patio/{calculation}/edit', [PaverPatioCalculatorController::class, 'edit'])
         ->name('calculators.patio.edit');
-
     Route::get('/calculations/{calculation}/paver-patio/result', [PaverPatioCalculatorController::class, 'showResult'])
         ->name('calculations.patio.showResult');
-
     Route::get('/calculations/{calculation}/paver-patio/pdf', [PaverPatioCalculatorController::class, 'downloadPdf'])
         ->name('calculations.patio.downloadPdf');
 
     // ✅ Landscape Enhancements Calculator
     Route::get('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'create'])
         ->name('calculators.enhancements.form');
-
     Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])
         ->name('calculators.enhancements.calculate');
 
@@ -87,4 +84,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-

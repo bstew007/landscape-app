@@ -1,6 +1,20 @@
 @extends('layouts.sidebar')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        <ul class="list-disc pl-5">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+
+
 <div class="max-w-3xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">
         {{ $editMode ? '✏️ Edit Retaining Wall Calculation' : '🧱 Retaining Wall Calculator' }}
@@ -44,6 +58,15 @@
                 <span class="ml-2">Include Capstones</span>
             </label>
         </div>
+
+        <div class="mb-4">
+    <label class="inline-flex items-center">
+        <input type="checkbox" name="include_geogrid" class="form-checkbox"
+            {{ old('include_geogrid', $formData['include_geogrid'] ?? false) ? 'checked' : '' }}>
+        <span class="ml-2">Include Geogrid</span>
+    </label>
+</div>
+
 
         <div class="mb-4">
             <label class="block font-semibold">Equipment</label>
