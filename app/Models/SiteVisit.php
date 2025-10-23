@@ -12,6 +12,7 @@ class SiteVisit extends Model
     protected $fillable = [
         'visit_date',
         'notes',
+        'client_id', // ← Add this
     ];
 
     protected $casts = [

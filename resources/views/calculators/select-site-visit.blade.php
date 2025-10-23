@@ -18,8 +18,13 @@
                 </label>
                 <select name="site_visit_id" id="site_visit_id" required class="block w-full border rounded px-3 py-2">
                     @foreach ($siteVisits as $visit)
+                        @php
+                            $client = optional($visit->client);
+                            $clientName = trim($client->first_name . ' ' . $client->last_name) ?: 'No Client';
+                            $formattedDate = $visit->visit_date->format('M d, Y');
+                        @endphp
                         <option value="{{ $visit->id }}">
-                            {{ $visit->client->name }} — {{ \Carbon\Carbon::parse($visit->visit_date)->format('M d, Y') }}
+                            [ID: {{ $visit->client_id }}] {{ $clientName }} — {{ $formattedDate }}
                         </option>
                     @endforeach
                 </select>
@@ -52,7 +57,6 @@
                 return;
             }
 
-            // Append ?site_visit_id=... to the redirect URL
             const fullUrl = redirectUrl.includes('?')
                 ? `${redirectUrl}&site_visit_id=${siteVisitId}`
                 : `${redirectUrl}?site_visit_id=${siteVisitId}`;
@@ -61,3 +65,4 @@
         });
     </script>
 @endsection
+
