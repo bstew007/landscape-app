@@ -28,11 +28,7 @@
     </div>
 </form>
 
-
-
-
-
-<div class="max-w-4xl mx-auto py-10">
+<div class="max-w-6xl mx-auto py-10">
     <h1 class="text-2xl font-bold mb-6">🛠️ Manage Production Rates</h1>
 
     {{-- Success message --}}
@@ -45,7 +41,7 @@
     {{-- Add New Rate --}}
     <div class="mb-6 p-4 border rounded bg-gray-50">
         <h2 class="font-semibold mb-2">➕ Add New Rate</h2>
-        <form method="POST" action="{{ route('production-rates.store') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <form method="POST" action="{{ route('production-rates.store') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             @csrf
             <div>
                 <label class="block text-sm">Task</label>
@@ -63,7 +59,11 @@
                 <label class="block text-sm">Calculator</label>
                 <input type="text" name="calculator" class="form-input w-full">
             </div>
-            <div class="col-span-4 text-right mt-4">
+            <div>
+                <label class="block text-sm">Note</label>
+                <input type="text" name="note" class="form-input w-full">
+            </div>
+            <div class="col-span-5 text-right mt-4">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                     Save New Rate
                 </button>
@@ -73,55 +73,60 @@
 
     {{-- Existing Rates Table --}}
     <h2 class="text-xl font-semibold mb-2">📋 Existing Rates</h2>
-    <table class="min-w-full bg-white border border-gray-200 rounded">
-        <thead class="bg-gray-100">
-            <tr class="text-left text-sm text-gray-600">
-                <th class="py-2 px-3">Task</th>
-                <th class="py-2 px-3">Unit</th>
-                <th class="py-2 px-3">Rate</th>
-                <th class="py-2 px-3">Calculator</th>
-                <th class="py-2 px-3">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($productionRates as $rate)
-    <tr class="border-t text-sm">
-        <form method="POST" action="{{ route('production-rates.update', $rate) }}">
-            @csrf
-            @method('PUT')
 
-            <td class="px-3 py-2">
-                <input type="text" name="task" value="{{ $rate->task }}" class="form-input w-full">
-            </td>
-            <td class="px-3 py-2">
-                <input type="text" name="unit" value="{{ $rate->unit }}" class="form-input w-full">
-            </td>
-            <td class="px-3 py-2">
-                <input type="number" step="0.0001" name="rate" value="{{ $rate->rate }}" class="form-input w-full">
-            </td>
-            <td class="px-3 py-2">
-                <input type="text" name="calculator" value="{{ $rate->calculator }}" class="form-input w-full">
-            </td>
-            <td class="px-3 py-2 flex space-x-2">
-                <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
-                    💾 Save
-                </button>
-        </form>
-
-        {{-- Delete form goes here separately --}}
-        <form method="POST" action="{{ route('production-rates.destroy', $rate) }}">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                    onclick="return confirm('Are you sure?')">
-                🗑️
-            </button>
-        </form>
-    </td>
-</tr>
-@endforeach
-
-        </tbody>
-    </table>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-200 rounded text-sm">
+            <thead class="bg-gray-100 text-left text-sm text-gray-600">
+                <tr>
+                    <th class="py-2 px-3 w-1/4">Task</th>
+                    <th class="py-2 px-3 w-20">Unit</th>
+                    <th class="py-2 px-3 w-24">Rate</th>
+                    <th class="py-2 px-3 w-32">Calculator</th>
+                    <th class="py-2 px-3 w-1/3">Note</th>
+                    <th class="py-2 px-3 w-24">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($productionRates as $rate)
+                    <tr class="border-t">
+                        <form method="POST" action="{{ route('production-rates.update', $rate) }}">
+                            @csrf
+                            @method('PUT')
+                            <td class="px-3 py-2">
+                                <input type="text" name="task" value="{{ $rate->task }}" class="form-input w-full text-xs px-2 py-1 truncate">
+                            </td>
+                            <td class="px-3 py-2">
+                                <input type="text" name="unit" value="{{ $rate->unit }}" class="form-input w-full text-xs px-2 py-1">
+                            </td>
+                            <td class="px-3 py-2">
+                                <input type="number" step="0.0001" name="rate" value="{{ $rate->rate }}" class="form-input w-full text-xs px-2 py-1">
+                            </td>
+                            <td class="px-3 py-2">
+                                <input type="text" name="calculator" value="{{ $rate->calculator }}" class="form-input w-full text-xs px-2 py-1">
+                            </td>
+                            <td class="px-3 py-2">
+                                <input type="text" name="note" value="{{ $rate->note }}" class="form-input w-full text-xs px-2 py-1 whitespace-normal break-words">
+                            </td>
+                            <td class="px-3 py-2 flex space-x-2">
+                                <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                                    💾 Save
+                                </button>
+                        </form>
+                        {{-- Delete form --}}
+                        <form method="POST" action="{{ route('production-rates.destroy', $rate) }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                                    onclick="return confirm('Are you sure?')">
+                                🗑️
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection
+

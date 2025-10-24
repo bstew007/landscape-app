@@ -5,7 +5,7 @@
     <title>Retaining Wall Estimate</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: DejaVu Sans, sans-serif;
             font-size: 13px;
             line-height: 1.5;
             padding: 30px;
@@ -134,6 +134,41 @@
             </tbody>
         </table>
     </div>
+@if (($data['block_system'] ?? 'standard') === 'allan_block')
+    <h3 style="margin-top: 20px; font-weight: bold;">🧱 Allan Block Components</h3>
+
+    <table width="100%" cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; margin-top: 10px;">
+        <thead style="background: #f3f3f3;">
+            <tr>
+                <th align="left">Component</th>
+                <th align="right">Quantity</th>
+                <th align="right">Labor Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Straight Wall Area</td>
+                <td align="right">{{ number_format($data['ab_straight_sqft'] ?? 0, 2) }} sqft</td>
+                <td align="right">{{ number_format($data['labor_by_task']['ab_straight_wall'] ?? 0, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Curved Wall Area</td>
+                <td align="right">{{ number_format($data['ab_curved_sqft'] ?? 0, 2) }} sqft</td>
+                <td align="right">{{ number_format($data['labor_by_task']['ab_curved_wall'] ?? 0, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Stairs</td>
+                <td align="right">{{ $data['ab_step_count'] ?? 0 }} steps</td>
+                <td align="right">{{ number_format($data['labor_by_task']['ab_stairs'] ?? 0, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Columns</td>
+                <td align="right">{{ $data['ab_column_count'] ?? 0 }} columns</td>
+                <td align="right">{{ number_format($data['labor_by_task']['ab_columns'] ?? 0, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+@endif
 
     {{-- Labor --}}
     <div class="section">

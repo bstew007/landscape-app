@@ -40,6 +40,7 @@ class ProductionRateController extends Controller
             'unit' => 'required|string|max:50',
             'rate' => 'required|numeric|min:0',
             'calculator' => 'nullable|string|max:255',
+             'note' => 'nullable|string|max:255', // ← Add this line
         ]);
 
         ProductionRate::create($validated);
@@ -55,6 +56,7 @@ class ProductionRateController extends Controller
             'unit' => 'required|string|max:50',
             'rate' => 'required|numeric|min:0',
             'calculator' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:255', // ← Add this line
         ]);
 
         $productionRate->update($validated);

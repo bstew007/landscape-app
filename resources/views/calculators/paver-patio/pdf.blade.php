@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Paver Patio Estimate</title>
     <style>
-        body { font-family: sans-serif; font-size: 14px; margin: 20px; }
+        body { font-family: DejaVu Sans,sans-serif; font-size: 14px; margin: 20px; }
         h1, h2, h3 { margin: 0 0 8px 0; }
         .section { margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }

@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use App\Models\ProductionRate;
 
 
+
 class ProductionRateSeeder extends Seeder
 {
     public function run()

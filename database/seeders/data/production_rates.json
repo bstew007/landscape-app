@@ -94,5 +94,42 @@
         "unit": "sqft",
         "rate": 0.005,
         "calculator": "paver_patio"
-    }
+    },
+    
+  {
+    "task": "allan_block_laying_straight_wall",
+    "unit": "sqft",
+    "rate": 0.2,
+    "calculator": "retaining_wall",
+    "note": "Standard straight Allan Block wall installation"
+  },
+  {
+    "task": "allan_block_laying_curved_wall",
+    "unit": "sqft",
+    "rate": 0.3,
+    "calculator": "retaining_wall",
+    "note": "Curved or tiered Allan Block wall installation"
+  },
+  {
+    "task": "allan_block_stairs",
+    "unit": "step",
+    "rate": 0.5,
+    "calculator": "retaining_wall",
+    "note": "Labor for Allan Block stair steps"
+  },
+  {
+    "task": "allan_block_columns",
+    "unit": "column",
+    "rate": 1.5,
+    "calculator": "retaining_wall",
+    "note": "Labor for Allan Block columns"
+  },
+  {
+    "task": "allan_block_capstone",
+    "unit": "lf",
+    "rate": 0.15,
+    "calculator": "retaining_wall",
+    "note": "Capstone install using Allan Block"
+  }
 ]
+

@@ -5,34 +5,31 @@
     <h1 class="text-3xl font-bold mb-6">📊 Retaining Wall Estimate Summary</h1>
 
     <h1>Cape Fear Landscaping</h1>
+    <hr style="margin: 10px 0;">
 
-<hr style="margin: 10px 0;">
-
-<h3>Client Information: {{ $siteVisit->client->name }}</h3>
-<table style="margin-bottom: 20px;">
-    <tr>
-        <td><strong>Name:</strong></td>
-        <td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td>
-    </tr>
-    <tr>
-        <td><strong>Email:</strong></td>
-        <td>{{ $siteVisit->client->email ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Phone:</strong></td>
-        <td>{{ $siteVisit->client->phone ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Address:</strong></td>
-        <td>{{ $siteVisit->client->address ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Site Visit Date:</strong></td>
-        <td>{{ $siteVisit->created_at->format('F j, Y') }}</td>
-    </tr>
-</table>
-
-
+    <h3>Client Information: {{ $siteVisit->client->name }}</h3>
+    <table style="margin-bottom: 20px;">
+        <tr>
+            <td><strong>Name:</strong></td>
+            <td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Email:</strong></td>
+            <td>{{ $siteVisit->client->email ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Phone:</strong></td>
+            <td>{{ $siteVisit->client->phone ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Address:</strong></td>
+            <td>{{ $siteVisit->client->address ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Site Visit Date:</strong></td>
+            <td>{{ $siteVisit->created_at->format('F j, Y') }}</td>
+        </tr>
+    </table>
 
     {{-- Final Price Summary --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
@@ -57,7 +54,7 @@
         </div>
     </div>
 
-    {{-- Quantities (Optional) --}}
+    {{-- Quantities --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">📐 Quantities</h2>
         <ul class="grid grid-cols-2 gap-y-2 text-gray-700">
@@ -68,9 +65,8 @@
             <li>Topsoil: <strong>{{ $data['topsoil_yards'] }} cu yd</strong></li>
             <li>Drain Pipe: <strong>{{ $data['length'] }} ft</strong></li>
             <li>Underlayment: <strong>{{ $data['fabric_area'] }} sqft</strong></li>
-            <li>Geogrid Layers: <strong>{{ $data['geogrid_layers'] }}</strong> ({{ $data['geogrid_lf'] }} lf)</strong></li>
+            <li>Geogrid Layers: <strong>{{ $data['geogrid_layers'] }}</strong> ({{ $data['geogrid_lf'] }} lf)</li>
             <li>Adhesive Tubes: <strong>{{ $data['adhesive_tubes'] }}</strong></li>
-
         </ul>
     </div>
 
@@ -103,6 +99,46 @@
         </div>
     </div>
 
+    {{-- Allan Block Components --}}
+    @if (($data['block_system'] ?? 'standard') === 'allan_block')
+        <div class="mt-8 border-t pt-6">
+            <h2 class="text-xl font-bold mb-4">🧱 Allan Block Components</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto border border-gray-300 rounded shadow-sm text-sm">
+                    <thead class="bg-gray-100 text-left">
+                        <tr>
+                            <th class="px-4 py-2 border-b">Component</th>
+                            <th class="px-4 py-2 border-b text-right">Quantity</th>
+                            <th class="px-4 py-2 border-b text-right">Labor Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-4 py-2 border-b">Straight Wall Area</td>
+                            <td class="px-4 py-2 border-b text-right">{{ number_format($data['ab_straight_sqft'] ?? 0, 2) }} sqft</td>
+                            <td class="px-4 py-2 border-b text-right">{{ number_format($data['labor_by_task']['ab_straight_wall'] ?? 0, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border-b">Curved Wall Area</td>
+                            <td class="px-4 py-2 border-b text-right">{{ number_format($data['ab_curved_sqft'] ?? 0, 2) }} sqft</td>
+                            <td class="px-4 py-2 border-b text-right">{{ number_format($data['labor_by_task']['ab_curved_wall'] ?? 0, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border-b">Stairs</td>
+                            <td class="px-4 py-2 border-b text-right">{{ $data['ab_step_count'] ?? 0 }} steps</td>
+                            <td class="px-4 py-2 border-b text-right">{{ number_format($data['labor_by_task']['ab_stairs'] ?? 0, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2">Columns</td>
+                            <td class="px-4 py-2 text-right">{{ $data['ab_column_count'] ?? 0 }} columns</td>
+                            <td class="px-4 py-2 text-right">{{ number_format($data['labor_by_task']['ab_columns'] ?? 0, 2) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     {{-- Markup --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">💰 Markup</h2>
@@ -115,30 +151,30 @@
             <span>${{ number_format($data['markup_amount'], 2) }}</span>
         </div>
     </div>
-    {{-- Save to Site Visit --}}
-<form method="POST" action="{{ route('site-visits.storeCalculation') }}">
-    @csrf
-    <input type="hidden" name="calculation_type" value="retaining_wall">
-    <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
-    <input type="hidden" name="data" value="{{ json_encode($data) }}">
 
-    <button type="submit"
-            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
-        💾 Save Calculation to Site Visit
-    </button>
-</form>
+    {{-- Save to Site Visit --}}
+    <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
+        @csrf
+        <input type="hidden" name="calculation_type" value="retaining_wall">
+        <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
+        <input type="hidden" name="data" value="{{ json_encode($data) }}">
+
+        <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
+            💾 Save Calculation to Site Visit
+        </button>
+    </form>
 
     {{-- PDF Download Button (Only show if saved) --}}
-@if (isset($calculation))
-    <div class="mt-4">
-        <a href="{{ route('calculations.downloadPdf', $calculation->id) }}"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-           target="_blank">
-            🧾 Download PDF Estimate
-        </a>
-    </div>
-@endif
-
+    @if (isset($calculation))
+        <div class="mt-4">
+            <a href="{{ route('calculations.downloadPdf', $calculation->id) }}"
+               class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+               target="_blank">
+                🧾 Download PDF Estimate
+            </a>
+        </div>
+    @endif
 
     {{-- Back Button --}}
     <div class="mt-6">
@@ -146,9 +182,8 @@
            class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
             🔙 Back to Client
         </a>
-
-       
     </div>
 </div>
 @endsection
+
 
