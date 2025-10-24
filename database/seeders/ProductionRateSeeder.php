@@ -2,32 +2,34 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use App\Models\ProductionRate;
 
-
-
-class ProductionRateSeeder extends Seeder
+class ProductionRatesSeeder extends Seeder
 {
     public function run()
     {
-        $file = database_path('seeders/data/production_rates.json');
+        $json = File::get(database_path('seeders/production_rates_seed.json'));
+        $data = json_decode($json, true);
 
-        if (!file_exists($file)) {
-            $this->command->error("Missing data file: $file");
+        if (!isset($data[2]['data'])) {
+            $this->command->error('Invalid JSON format.');
             return;
         }
 
-        $data = json_decode(file_get_contents($file), true);
-
-        foreach ($data as $rate) {
+        foreach ($data[2]['data'] as $item) {
             ProductionRate::updateOrCreate(
-                ['task' => $rate['task'], 'calculator' => $rate['calculator']],
-                $rate
+                ['task' => $item['task'], 'calculator' => $item['calculator']],
+                [
+                    'unit' => $item['unit'],
+                    'rate' => $item['rate'],
+                    'note' => $item['note'] ?? null,
+                ]
             );
         }
 
-        $this->command->info('Production rates seeded successfully.');
+        $this->command->info('✅ Production rates seeded successfully!');
     }
 }
