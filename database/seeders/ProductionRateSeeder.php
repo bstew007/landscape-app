@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use App\Models\ProductionRate;
 
-class ProductionRatesSeeder extends Seeder
+class ProductionRateSeeder extends Seeder
 {
     public function run()
     {
