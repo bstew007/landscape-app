@@ -2,134 +2,162 @@
     {
         "task": "excavation",
         "unit": "lf",
-        "rate": 0.1,
+        "rate": "0.1000",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "base_install",
         "unit": "sqft",
-        "rate": 0.01,
+        "rate": "0.0100",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "block_laying_excavator",
         "unit": "sqft",
-        "rate": 0.05,
+        "rate": "0.0500",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "block_laying_manual",
         "unit": "sqft",
-        "rate": 0.09,
+        "rate": "0.0900",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "pipe_install",
         "unit": "lf",
-        "rate": 0.02,
+        "rate": "0.0200",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "gravel_backfill",
-        "unit": "sqft",
-        "rate": 0.08,
+        "unit": "cf",
+        "rate": "0.0100",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "topsoil_backfill",
-        "unit": "sqft",
-        "rate": 0.06,
+        "unit": "cf",
+        "rate": "0.0080",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "underlayment",
         "unit": "sqft",
-        "rate": 0.015,
+        "rate": "0.0150",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "geogrid",
         "unit": "lf",
-        "rate": 0.04,
+        "rate": "0.0400",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "capstone",
         "unit": "ea",
-        "rate": 0.03,
+        "rate": "0.0300",
+        "note": "",
         "calculator": "retaining_wall"
     },
     {
         "task": "excavation",
         "unit": "sqft",
-        "rate": 0.03,
+        "rate": "0.0300",
+        "note": "",
         "calculator": "paver_patio"
     },
     {
         "task": "base_compaction",
         "unit": "sqft",
-        "rate": 0.04,
+        "rate": "0.0400",
+        "note": "",
         "calculator": "paver_patio"
     },
     {
         "task": "laying_pavers",
         "unit": "sqft",
-        "rate": 0.06,
+        "rate": "0.0600",
+        "note": "",
         "calculator": "paver_patio"
     },
     {
         "task": "cutting_borders",
         "unit": "sqft",
-        "rate": 0.015,
+        "rate": "0.0150",
+        "note": "",
         "calculator": "paver_patio"
     },
     {
         "task": "install_edging",
         "unit": "sqft",
-        "rate": 0.007,
+        "rate": "0.0070",
+        "note": "",
         "calculator": "paver_patio"
     },
     {
         "task": "cleanup",
         "unit": "sqft",
-        "rate": 0.005,
+        "rate": "0.0050",
+        "note": "",
         "calculator": "paver_patio"
     },
-    
-  {
-    "task": "allan_block_laying_straight_wall",
-    "unit": "sqft",
-    "rate": 0.2,
-    "calculator": "retaining_wall",
-    "note": "Standard straight Allan Block wall installation"
-  },
-  {
-    "task": "allan_block_laying_curved_wall",
-    "unit": "sqft",
-    "rate": 0.3,
-    "calculator": "retaining_wall",
-    "note": "Curved or tiered Allan Block wall installation"
-  },
-  {
-    "task": "allan_block_stairs",
-    "unit": "step",
-    "rate": 0.5,
-    "calculator": "retaining_wall",
-    "note": "Labor for Allan Block stair steps"
-  },
-  {
-    "task": "allan_block_columns",
-    "unit": "column",
-    "rate": 1.5,
-    "calculator": "retaining_wall",
-    "note": "Labor for Allan Block columns"
-  },
-  {
-    "task": "allan_block_capstone",
-    "unit": "lf",
-    "rate": 0.15,
-    "calculator": "retaining_wall",
-    "note": "Capstone install using Allan Block"
-  }
+    {
+        "task": "allan_block_laying_straight_wall",
+        "unit": "sqft",
+        "rate": "0.2000",
+        "note": "Standard straight Allan Block wall installation",
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "allan_block_laying_curved_wall",
+        "unit": "sqft",
+        "rate": "0.3000",
+        "note": "Curved or tiered Allan Block wall installation",
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "allan_block_stairs",
+        "unit": "step",
+        "rate": "0.5000",
+        "note": "Labor for Allan Block stair steps",
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "allan_block_columns",
+        "unit": "column",
+        "rate": "1.5000",
+        "note": "Labor for Allan Block columns",
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "allan_block_capstone",
+        "unit": "lf",
+        "rate": "0.1500",
+        "note": "Capstone install using Allan Block",
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "excavation_excavator",
+        "unit": "ft",
+        "rate": "0.0500",
+        "note": null,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "excavation_manual",
+        "unit": "ft",
+        "rate": "0.1200",
+        "note": null,
+        "calculator": "retaining_wall"
+    }
 ]
-

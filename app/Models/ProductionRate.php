@@ -11,6 +11,7 @@ class ProductionRate extends Model
         'unit',
         'rate',
         'calculator',
+        'note'
     ];
 }
 
