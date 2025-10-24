@@ -14,11 +14,17 @@ class ProductionRateSeeder extends Seeder
         $data = json_decode($json, true);
 
         if (!is_array($data)) {
-            $this->command->error('Invalid JSON format.');
+            $this->command->error('❌ Invalid JSON format.');
             return;
         }
 
-        foreach ($data as $item) {
+        foreach ($data as $index => $item) {
+            // Skip entries missing required keys
+            if (!isset($item['task'], $item['calculator'], $item['unit'], $item['rate'])) {
+                $this->command->warn("⚠️ Skipping invalid item at index $index: " . json_encode($item));
+                continue;
+            }
+
             ProductionRate::updateOrCreate(
                 ['task' => $item['task'], 'calculator' => $item['calculator']],
                 [
