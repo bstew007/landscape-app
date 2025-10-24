@@ -1,0 +1,98 @@
+[
+    {
+        "task": "excavation",
+        "unit": "lf",
+        "rate": 0.1,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "base_install",
+        "unit": "sqft",
+        "rate": 0.01,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "block_laying_excavator",
+        "unit": "sqft",
+        "rate": 0.05,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "block_laying_manual",
+        "unit": "sqft",
+        "rate": 0.09,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "pipe_install",
+        "unit": "lf",
+        "rate": 0.02,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "gravel_backfill",
+        "unit": "sqft",
+        "rate": 0.08,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "topsoil_backfill",
+        "unit": "sqft",
+        "rate": 0.06,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "underlayment",
+        "unit": "sqft",
+        "rate": 0.015,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "geogrid",
+        "unit": "lf",
+        "rate": 0.04,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "capstone",
+        "unit": "ea",
+        "rate": 0.03,
+        "calculator": "retaining_wall"
+    },
+    {
+        "task": "excavation",
+        "unit": "sqft",
+        "rate": 0.03,
+        "calculator": "paver_patio"
+    },
+    {
+        "task": "base_compaction",
+        "unit": "sqft",
+        "rate": 0.04,
+        "calculator": "paver_patio"
+    },
+    {
+        "task": "laying_pavers",
+        "unit": "sqft",
+        "rate": 0.06,
+        "calculator": "paver_patio"
+    },
+    {
+        "task": "cutting_borders",
+        "unit": "sqft",
+        "rate": 0.015,
+        "calculator": "paver_patio"
+    },
+    {
+        "task": "install_edging",
+        "unit": "sqft",
+        "rate": 0.007,
+        "calculator": "paver_patio"
+    },
+    {
+        "task": "cleanup",
+        "unit": "sqft",
+        "rate": 0.005,
+        "calculator": "paver_patio"
+    }
+]

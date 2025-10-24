@@ -11,27 +11,22 @@ class ProductionRateSeeder extends Seeder
 {
     public function run()
     {
-        $rates = [
-            ['task' => 'excavation', 'unit' => 'lf', 'rate' => 0.1],
-            ['task' => 'base_install', 'unit' => 'sqft', 'rate' => 0.125],
-            ['task' => 'block_laying_excavator', 'unit' => 'sqft', 'rate' => 0.05],
-            ['task' => 'block_laying_manual', 'unit' => 'sqft', 'rate' => 0.09],
-            ['task' => 'pipe_install', 'unit' => 'lf', 'rate' => 0.02],
-            ['task' => 'gravel_backfill', 'unit' => 'sqft', 'rate' => 0.075],
-            ['task' => 'topsoil_backfill', 'unit' => 'sqft', 'rate' => 0.06],
-            ['task' => 'underlayment', 'unit' => 'sqft', 'rate' => 0.025],
-            ['task' => 'geogrid', 'unit' => 'sqft', 'rate' => 0.045],
-            ['task' => 'capstone', 'unit' => 'unit', 'rate' => 0.03],
-        ];
+        $file = database_path('seeders/data/production_rates.json');
 
-        foreach ($rates as $rate) {
+        if (!file_exists($file)) {
+            $this->command->error("Missing data file: $file");
+            return;
+        }
+
+        $data = json_decode(file_get_contents($file), true);
+
+        foreach ($data as $rate) {
             ProductionRate::updateOrCreate(
-                ['task' => $rate['task'], 'calculator' => 'retaining_wall'],
-                [
-                    'unit' => $rate['unit'],
-                    'rate' => $rate['rate'],
-                ]
+                ['task' => $rate['task'], 'calculator' => $rate['calculator']],
+                $rate
             );
         }
+
+        $this->command->info('Production rates seeded successfully.');
     }
 }
