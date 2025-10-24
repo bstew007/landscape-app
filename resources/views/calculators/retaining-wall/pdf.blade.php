@@ -172,32 +172,41 @@
 
     {{-- Labor --}}
     <div class="section">
-        <h3>Labor Summary</h3>
-        <table>
-            <thead>
+    <h3>Labor Summary</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($data['labor_by_task'] as $task => $hours)
                 <tr>
-                    <th>Task</th>
-                    <th>Hours</th>
+                    <td>{{ ucwords(str_replace('_', ' ', $task)) }}</td>
+                    <td>{{ number_format($hours, 2) }}</td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach($data['labor_by_task'] as $task => $hours)
-                    <tr>
-                        <td>{{ ucwords(str_replace('_', ' ', $task)) }}</td>
-                        <td>{{ number_format($hours, 2) }}</td>
-                    </tr>
-                @endforeach
-                <tr>
-                    <td><strong>Total Labor Hours</strong></td>
-                    <td><strong>{{ number_format($data['total_hours'], 2) }}</strong></td>
-                </tr>
-                <tr>
-                    <td><strong>Total Labor Cost</strong></td>
-                    <td><strong>${{ number_format($data['labor_cost'], 2) }}</strong></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+            @endforeach
+        <tr>
+            <td>Overhead (Site Conditions, Pickup, Cleanup)</td>
+            <td>{{ number_format($data['overhead_hours'] ?? 0, 2) }} hrs</td>
+        </tr>
+        <tr>
+            <td>Drive Time</td>
+            <td>{{ number_format($data['drive_time'] ?? 0, 2) }} hrs</td>
+        </tr>
+        <tr style="border-top: 2px solid #000;">
+            <td><strong>Total Labor Hours</strong></td>
+            <td><strong>{{ number_format($data['total_hours'] ?? 0, 2) }} hrs</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Total Labor Cost</strong></td>
+            <td><strong>${{ number_format($data['labor_cost'] ?? 0, 2) }}</strong></td>
+        </tr>
+
+        </tbody>
+    </table>
+</div>
 
     {{-- Totals --}}
     <div class="section">
@@ -229,6 +238,17 @@
             </tbody>
         </table>
     </div>
+
+
+
+
+    @if (!empty($data['job_notes']))
+    <div style="margin-top: 30px;">
+        <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">📌 Job Notes</h3>
+        <p style="font-size: 13px; line-height: 1.5;">{{ $data['job_notes'] }}</p>
+    </div>
+@endif
+
 
 </body>
 </html>

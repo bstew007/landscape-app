@@ -37,6 +37,7 @@
             <input type="number" step="0.1" name="height" class="form-input w-full" value="{{ old('height', $formData['height'] ?? '') }}" required>
         </div>
 
+
         <div class="mb-4">
             <label class="block font-semibold">Block System</label>
             <select name="block_system" id="block_system" class="form-select w-full" required>
@@ -54,19 +55,46 @@
                 <option value="allan_block" {{ old('block_brand', $formData['block_brand'] ?? '') === 'allan_block' ? 'selected' : '' }}>Allan Block</option>
             </select>
         </div>
+           <div class="mb-4">
+             <label class="inline-flex items-center">
+                 <input type="checkbox" name="use_capstones" value="1" {{ old('use_capstones', $formData['use_capstones'] ?? false) ? 'checked' : '' }}>
+             <span class="ml-2">Include Capstones</span>
+                    </label>
+            </div>
+
 
         <div id="allanBlockFields" class="{{ old('block_system', $formData['block_system'] ?? '') === 'allan_block' ? '' : 'hidden' }}">
-            <h3 class="text-md font-semibold mt-6">Allan Block Details</h3>
-            <div class="grid md:grid-cols-2 gap-4">
-                <div><label>Straight Wall Length (ft)</label><input type="number" name="ab_straight_length" value="{{ old('ab_straight_length', $formData['ab_straight_length'] ?? '') }}" class="form-input w-full"></div>
-                <div><label>Straight Wall Height (ft)</label><input type="number" name="ab_straight_height" value="{{ old('ab_straight_height', $formData['ab_straight_height'] ?? '') }}" class="form-input w-full"></div>
-                <div><label>Curved Wall Length (ft)</label><input type="number" name="ab_curved_length" value="{{ old('ab_curved_length', $formData['ab_curved_length'] ?? '') }}" class="form-input w-full"></div>
-                <div><label>Curved Wall Height (ft)</label><input type="number" name="ab_curved_height" value="{{ old('ab_curved_height', $formData['ab_curved_height'] ?? '') }}" class="form-input w-full"></div>
-                <div><label>Step Count</label><input type="number" name="ab_step_count" value="{{ old('ab_step_count', $formData['ab_step_count'] ?? '') }}" class="form-input w-full"></div>
-                <div><label>Column Count</label><input type="number" name="ab_column_count" value="{{ old('ab_column_count', $formData['ab_column_count'] ?? '') }}" class="form-input w-full"></div>
-            </div>
+    <h3 class="text-md font-semibold mt-6">Allan Block Details</h3>
+    <div class="grid md:grid-cols-2 gap-4">
+        <div>
+            <label>Straight Wall Length (ft)</label>
+            <input type="number" name="ab_straight_length" value="{{ old('ab_straight_length', $formData['ab_straight_length'] ?? '') }}" class="form-input w-full">
         </div>
+        <div>
+            <label>Straight Wall Height (ft)</label>
+            <input type="number" name="ab_straight_height" value="{{ old('ab_straight_height', $formData['ab_straight_height'] ?? '') }}" class="form-input w-full">
+        </div>
+        <div>
+            <label>Curved Wall Length (ft)</label>
+            <input type="number" name="ab_curved_length" value="{{ old('ab_curved_length', $formData['ab_curved_length'] ?? '') }}" class="form-input w-full">
+        </div>
+        <div>
+            <label>Curved Wall Height (ft)</label>
+            <input type="number" name="ab_curved_height" value="{{ old('ab_curved_height', $formData['ab_curved_height'] ?? '') }}" class="form-input w-full">
+        </div>
+        <div>
+            <label>Step Count</label>
+            <input type="number" name="ab_step_count" value="{{ old('ab_step_count', $formData['ab_step_count'] ?? '') }}" class="form-input w-full">
+        </div>
+        <div>
+            <label>Column Count</label>
+            <input type="number" name="ab_column_count" value="{{ old('ab_column_count', $formData['ab_column_count'] ?? '') }}" class="form-input w-full">
+        </div>
+    </div>
+</div>
 
+
+        {{-- Equipment Selection --}}
         <div class="mb-4 mt-4">
             <label class="block font-semibold">Equipment</label>
             <select name="equipment" class="form-select w-full" required>
@@ -87,6 +115,80 @@
             <div><label>Cleanup Overhead (%)</label><input type="number" step="1" name="cleanup" class="form-input w-full" value="{{ old('cleanup', $formData['cleanup'] ?? '') }}"></div>
             <div><label>Markup (%)</label><input type="number" step="0.1" name="markup" class="form-input w-full" value="{{ old('markup', $formData['markup'] ?? '') }}" required></div>
         </div>
+
+        <div x-data="{ showOverrides: false }" class="mt-6 border-t pt-4">
+    <label class="inline-flex items-center cursor-pointer mb-3">
+        <input type="checkbox" x-model="showOverrides" class="form-checkbox mr-2">
+        <span class="font-semibold">Override Material Prices</span>
+    </label>
+
+    <div x-show="showOverrides" class="space-y-4 mt-4">
+        <div>
+            <label class="block font-semibold">Wall Block ($/block)</label>
+            <input type="number" step="0.01" name="override_block_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_block_cost', $formData['override_block_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">Capstone ($/cap)</label>
+            <input type="number" step="0.01" name="override_capstone_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_capstone_cost', $formData['override_capstone_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">Drain Pipe ($/ft)</label>
+            <input type="number" step="0.01" name="override_pipe_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_pipe_cost', $formData['override_pipe_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">#57 Gravel ($/ton)</label>
+            <input type="number" step="0.01" name="override_gravel_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_gravel_cost', $formData['override_gravel_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">Topsoil ($/yd³)</label>
+            <input type="number" step="0.01" name="override_topsoil_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_topsoil_cost', $formData['override_topsoil_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">Underlayment Fabric ($/ft²)</label>
+            <input type="number" step="0.01" name="override_fabric_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_fabric_cost', $formData['override_fabric_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">Geogrid ($/ft²)</label>
+            <input type="number" step="0.01" name="override_geogrid_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_geogrid_cost', $formData['override_geogrid_cost'] ?? '') }}">
+        </div>
+
+        <div>
+            <label class="block font-semibold">Adhesive ($/tube)</label>
+            <input type="number" step="0.01" name="override_adhesive_cost"
+                   class="form-input w-full"
+                   value="{{ old('override_adhesive_cost', $formData['override_adhesive_cost'] ?? '') }}">
+        </div>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="block font-semibold" for="job_notes">Job Notes (optional)</label>
+    <textarea name="job_notes" id="job_notes" rows="4"
+              class="form-textarea w-full"
+              placeholder="Add any special site conditions, client instructions, exclusions, etc.">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+</div>
+
+
 
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
             {{ $editMode ? '🔄 Recalculate' : '🧮 Calculate Wall Estimate' }}

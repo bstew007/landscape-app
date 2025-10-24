@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use App\Models\ProductionRate;
 
@@ -11,15 +10,15 @@ class ProductionRateSeeder extends Seeder
 {
     public function run()
     {
-        $json = File::get(database_path('data/production_rates.json'));
+        $json = File::get(database_path('seeders/data/production_rates.json'));
         $data = json_decode($json, true);
 
-        if (!isset($data[2]['data'])) {
+        if (!is_array($data)) {
             $this->command->error('Invalid JSON format.');
             return;
         }
 
-        foreach ($data[2]['data'] as $item) {
+        foreach ($data as $item) {
             ProductionRate::updateOrCreate(
                 ['task' => $item['task'], 'calculator' => $item['calculator']],
                 [
