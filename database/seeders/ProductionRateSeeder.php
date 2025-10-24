@@ -11,7 +11,7 @@ class ProductionRateSeeder extends Seeder
 {
     public function run()
     {
-        $json = File::get(database_path('seeders/data/production_rates.json'));
+        $json = File::get(database_path('data/production_rates.json'));
         $data = json_decode($json, true);
 
         if (!isset($data[2]['data'])) {
