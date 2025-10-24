@@ -1,163 +1,38 @@
 [
-    {
-        "task": "excavation",
-        "unit": "lf",
-        "rate": "0.1000",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "base_install",
-        "unit": "sqft",
-        "rate": "0.0100",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "block_laying_excavator",
-        "unit": "sqft",
-        "rate": "0.0500",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "block_laying_manual",
-        "unit": "sqft",
-        "rate": "0.0900",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "pipe_install",
-        "unit": "lf",
-        "rate": "0.0200",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "gravel_backfill",
-        "unit": "cf",
-        "rate": "0.0100",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "topsoil_backfill",
-        "unit": "cf",
-        "rate": "0.0080",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "underlayment",
-        "unit": "sqft",
-        "rate": "0.0150",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "geogrid",
-        "unit": "lf",
-        "rate": "0.0400",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "capstone",
-        "unit": "ea",
-        "rate": "0.0300",
-        "note": "",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "excavation",
-        "unit": "sqft",
-        "rate": "0.0300",
-        "note": "",
-        "calculator": "paver_patio"
-    },
-    {
-        "task": "base_compaction",
-        "unit": "sqft",
-        "rate": "0.0400",
-        "note": "",
-        "calculator": "paver_patio"
-    },
-    {
-        "task": "laying_pavers",
-        "unit": "sqft",
-        "rate": "0.0600",
-        "note": "",
-        "calculator": "paver_patio"
-    },
-    {
-        "task": "cutting_borders",
-        "unit": "sqft",
-        "rate": "0.0150",
-        "note": "",
-        "calculator": "paver_patio"
-    },
-    {
-        "task": "install_edging",
-        "unit": "sqft",
-        "rate": "0.0070",
-        "note": "",
-        "calculator": "paver_patio"
-    },
-    {
-        "task": "cleanup",
-        "unit": "sqft",
-        "rate": "0.0050",
-        "note": "",
-        "calculator": "paver_patio"
-    },
-    {
-        "task": "allan_block_laying_straight_wall",
-        "unit": "sqft",
-        "rate": "0.2000",
-        "note": "Standard straight Allan Block wall installation",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "allan_block_laying_curved_wall",
-        "unit": "sqft",
-        "rate": "0.3000",
-        "note": "Curved or tiered Allan Block wall installation",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "allan_block_stairs",
-        "unit": "step",
-        "rate": "0.5000",
-        "note": "Labor for Allan Block stair steps",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "allan_block_columns",
-        "unit": "column",
-        "rate": "1.5000",
-        "note": "Labor for Allan Block columns",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "allan_block_capstone",
-        "unit": "lf",
-        "rate": "0.1500",
-        "note": "Capstone install using Allan Block",
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "excavation_excavator",
-        "unit": "ft",
-        "rate": "0.0500",
-        "note": null,
-        "calculator": "retaining_wall"
-    },
-    {
-        "task": "excavation_manual",
-        "unit": "ft",
-        "rate": "0.1200",
-        "note": null,
-        "calculator": "retaining_wall"
-    }
+{"type":"header","version":"5.2.2","comment":"Export to JSON plugin for PHPMyAdmin"},
+{"type":"database","name":"landscape-app"},
+{"type":"table","name":"production_rates","database":"landscape-app","data":
+[
+{"id":"1","task":"excavation","unit":"lf","rate":"0.1000","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"2","task":"base_install","unit":"sqft","rate":"0.0100","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"3","task":"block_laying_excavator","unit":"sqft","rate":"0.0500","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"4","task":"block_laying_manual","unit":"sqft","rate":"0.0900","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"5","task":"pipe_install","unit":"lf","rate":"0.0200","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"6","task":"gravel_backfill","unit":"cf","rate":"0.0100","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"7","task":"topsoil_backfill","unit":"cf","rate":"0.0080","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"8","task":"underlayment","unit":"sqft","rate":"0.0020","note":null,"calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 16:43:00"},
+{"id":"9","task":"geogrid","unit":"lf","rate":"0.0400","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"10","task":"capstone","unit":"ea","rate":"0.0300","note":"","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"11","task":"excavation","unit":"sqft","rate":"0.0300","note":"","calculator":"paver_patio","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"12","task":"base_compaction","unit":"sqft","rate":"0.0400","note":"","calculator":"paver_patio","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"13","task":"laying_pavers","unit":"sqft","rate":"0.0600","note":"","calculator":"paver_patio","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"14","task":"cutting_borders","unit":"sqft","rate":"0.0150","note":"","calculator":"paver_patio","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"15","task":"install_edging","unit":"sqft","rate":"0.0070","note":"","calculator":"paver_patio","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"16","task":"cleanup","unit":"sqft","rate":"0.0050","note":"","calculator":"paver_patio","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"17","task":"allan_block_laying_straight_wall","unit":"sqft","rate":"0.2000","note":"Standard straight Allan Block wall installation","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"18","task":"allan_block_laying_curved_wall","unit":"sqft","rate":"0.2000","note":"Curved or tiered Allan Block wall installation","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 16:18:17"},
+{"id":"19","task":"allan_block_stairs","unit":"step","rate":"1.0000","note":"Labor for Allan Block stair steps","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 16:18:23"},
+{"id":"20","task":"allan_block_columns","unit":"column","rate":"1.5000","note":"Labor for Allan Block columns","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"21","task":"allan_block_capstone","unit":"lf","rate":"0.1500","note":"Capstone install using Allan Block","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"22","task":"excavation_excavator","unit":"ft","rate":"0.0500","note":null,"calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"23","task":"excavation_manual","unit":"ft","rate":"0.1200","note":null,"calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
+{"id":"24","task":"post_install_manual","unit":"ea","rate":"0.1500","note":"vinyl or wood","calculator":"fence","created_at":"2025-10-24 18:19:42","updated_at":"2025-10-24 18:25:37"},
+{"id":"25","task":"post_install_auger","unit":"ea","rate":"0.1000","note":"vinyl or wood","calculator":"fence","created_at":"2025-10-24 18:20:13","updated_at":"2025-10-24 18:25:31"},
+{"id":"26","task":"panel_install","unit":"lf","rate":"0.0500","note":"vinyl","calculator":"fence","created_at":"2025-10-24 18:21:01","updated_at":"2025-10-24 18:25:19"},
+{"id":"27","task":"rail_install","unit":"lf","rate":"0.0500","note":"wood","calculator":"fence","created_at":"2025-10-24 18:25:09","updated_at":"2025-10-24 18:25:09"},
+{"id":"28","task":"picket_install","unit":"lf","rate":"0.0700","note":"wood","calculator":"fence","created_at":"2025-10-24 18:26:08","updated_at":"2025-10-24 18:26:08"},
+{"id":"29","task":"gate_install","unit":"ea","rate":"0.7500","note":"vinyl and wood","calculator":"fence","created_at":"2025-10-24 18:26:35","updated_at":"2025-10-24 18:26:35"},
+{"id":"30","task":"concrete_mix","unit":"ea","rate":"0.0800","note":"vinyl & wood","calculator":"fence","created_at":"2025-10-24 18:27:57","updated_at":"2025-10-24 18:27:57"}
+]
+}
 ]
