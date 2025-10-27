@@ -30,6 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+     Route::get('/fence-calculator', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
+    Route::post('/fence-calculator', [FenceCalculatorController::class, 'calculate'])->name('fence.calculate');
+
     // ✅ Production Rates (Admin UI)
     Route::resource('production-rates', ProductionRateController::class)->except(['show']);
 
