@@ -6,17 +6,31 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {{-- Retaining Wall --}}
-        <a href="{{ route('calculators.wall.form') }}"
+        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}"
            class="bg-white p-6 rounded-lg shadow hover:bg-blue-50 transition">
             <h2 class="text-xl font-semibold text-blue-700">Retaining Wall</h2>
             <p class="text-gray-600 mt-2">Estimate materials, labor, and pricing for retaining walls.</p>
         </a>
 
+        {{-- Paver Patio --}}
+        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}"
+           class="bg-white p-6 rounded-lg shadow hover:bg-blue-50 transition">
+            <h2 class="text-xl font-semibold text-blue-700">Paver Patio</h2>
+            <p class="text-gray-600 mt-2">Estimate materials, labor, and pricing for paver patios.</p>
+        </a>
+
         {{-- Landscape Enhancements --}}
-        <a href="{{ route('calculators.enhancements.form') }}"
+        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.enhancements.form')]) }}"
            class="bg-white p-6 rounded-lg shadow hover:bg-green-50 transition">
             <h2 class="text-xl font-semibold text-green-700">Landscape Enhancements</h2>
             <p class="text-gray-600 mt-2">Estimate pruning, mulching, and more with labor and materials.</p>
+        </a>
+
+         {{-- Fence Construction --}}
+        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('fence.form')]) }}"
+           class="bg-white p-6 rounded-lg shadow hover:bg-green-50 transition">
+            <h2 class="text-xl font-semibold text-green-700">Fence Construction</h2>
+            <p class="text-gray-600 mt-2">Estimate installing wood or vinyl fencing with labor and materials.</p>
         </a>
     </div>
 

@@ -46,6 +46,7 @@
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧱 Retaining Wall</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧮 Paver Patio</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.enhancements.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Enhancements</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
             </div>
         </nav>
     </aside>
@@ -75,6 +76,9 @@
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧱 Retaining Wall</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧮 Paver Patio</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.enhancements.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Enhancements</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
+                
+    </a>
             </div>
         </nav>
     </aside>

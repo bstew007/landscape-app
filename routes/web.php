@@ -8,6 +8,7 @@ use App\Http\Controllers\RetainingWallCalculatorController;
 use App\Http\Controllers\PaverPatioCalculatorController;
 use App\Http\Controllers\LandscapeEnhancementController;
 use App\Http\Controllers\ProductionRateController;
+use App\Http\Controllers\FenceCalculatorController;
 
 Route::get('/', function () {
     return redirect()->route('clients.index');
@@ -47,6 +48,13 @@ Route::middleware('auth')->group(function () {
     // ✅ Site Visit Selector
     Route::get('/calculators/select-site-visit', [SiteVisitController::class, 'select'])
         ->name('calculators.selectSiteVisit');
+
+     // Fence Calculator
+     Route::prefix('calculators/fence')->group(function () {
+    Route::get('/form', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
+    Route::post('/calculate', [FenceCalculatorController::class, 'calculate'])->name('calculators.fence.calculate');
+    Route::get('/result', [FenceCalculatorController::class, 'showResult'])->name('fence.result');
+    });   
 
     // ✅ Retaining Wall Calculator
     Route::get('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'showForm'])
