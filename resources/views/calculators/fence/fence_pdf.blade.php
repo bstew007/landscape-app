@@ -1,92 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Fence Estimate</title>
+    <meta charset="utf-8">
+    <title>Fence Estimate PDF</title>
     <style>
-        body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 13px;
-            line-height: 1.5;
-            padding: 30px;
-            color: #333;
-        }
-        h1, h2, h3, h4 { margin-bottom: 5px; }
-        .section { margin-top: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
-        th { background-color: #f5f5f5; }
-        .totals-table td, .totals-table th { border: 1px solid #ccc; padding: 8px 10px; }
-        .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .info-table td { padding: 2px 5px; vertical-align: top; }
-        .logo { text-align: center; margin-bottom: 20px; }
-        .logo img { height: 80px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 14px; line-height: 1.5; }
+        h1, h2 { margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #333; padding: 6px; text-align: left; }
+        th { background-color: #eee; }
+        .summary { font-weight: bold; }
+        .section { margin-bottom: 30px; }
     </style>
 </head>
 <body>
-    <div class="logo">
-        <img src="{{ public_path('images/logo.png') }}" alt="Company Logo">
-    </div>
-    <div class="header">
-        <h1>Fence Estimate</h1>
-        <p><strong>Estimate Date:</strong> {{ $siteVisit->created_at->format('F j, Y') }}</p>
+
+    <h1>📊 Fence Estimate Summary</h1>
+    <p><strong>Company:</strong> Cape Fear Landscaping</p>
+
+    <div class="section">
+        <h2>Client Information</h2>
+        <p><strong>Name:</strong> {{ $siteVisit->client->full_name }}</p>
+        <p><strong>Address:</strong> {{ $siteVisit->client->address ?? '—' }}</p>
+        <p><strong>Site Visit Date:</strong> {{ $siteVisit->created_at->format('F j, Y') }}</p>
     </div>
 
     <div class="section">
-        <h3>Client Information</h3>
-        <table class="info-table">
-            <tr><td><strong>Name:</strong></td><td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td></tr>
-            <tr><td><strong>Address:</strong></td><td>{{ $siteVisit->client->address ?? '—' }}</td></tr>
-            <tr><td><strong>Phone:</strong></td><td>{{ $siteVisit->client->phone ?? '—' }}</td></tr>
-            <tr><td><strong>Email:</strong></td><td>{{ $siteVisit->client->email ?? '—' }}</td></tr>
-            <tr><td><strong>Site Visit ID:</strong></td><td>{{ $siteVisit->id }}</td></tr>
-        </table>
+        <h2>Final Price</h2>
+        <p style="font-size: 18px;"><strong>Total:</strong> ${{ number_format($data['final_price'], 2) }}</p>
     </div>
 
     <div class="section">
-        <h3>Materials</h3>
+        <h2>Materials Summary</h2>
         <table>
-            <thead><tr><th>Item</th><th>Cost</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Qty</th>
+                    <th>Unit Cost</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
             <tbody>
-                @foreach($data['materials'] as $item => $cost)
-                    <tr><td>{{ $item }}</td><td>${{ number_format($cost, 2) }}</td></tr>
+                @foreach($data['materials'] as $label => $item)
+                    @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
+                        <tr>
+                            <td>{{ $label }}</td>
+                            <td style="text-align: right;">{{ $item['qty'] }}</td>
+                            <td style="text-align: right;">${{ number_format($item['unit_cost'], 2) }}</td>
+                            <td style="text-align: right;">${{ number_format($item['total'], 2) }}</td>
+                        </tr>
+                    @endif
                 @endforeach
-                <tr><td><strong>Total Material Cost</strong></td><td><strong>${{ number_format($data['material_total'], 2) }}</strong></td></tr>
             </tbody>
         </table>
+        <p class="summary">Total Material Cost: ${{ number_format($data['material_total'], 2) }}</p>
     </div>
 
-    <div class="section">
-        <h3>Labor Summary</h3>
-        <table>
-            <thead><tr><th>Description</th><th>Hours</th></tr></thead>
-            <tbody>
-                <tr><td>Labor</td><td>{{ number_format($data['labor_hours'], 2) }} hrs</td></tr>
-                <tr><td>Overhead</td><td>{{ number_format($data['overhead_hours'], 2) }} hrs</td></tr>
-                <tr><td><strong>Total Labor Hours</strong></td><td><strong>{{ number_format($data['total_hours'], 2) }} hrs</strong></td></tr>
-                <tr><td><strong>Total Labor Cost</strong></td><td><strong>${{ number_format($data['labor_cost'], 2) }}</strong></td></tr>
-            </tbody>
-        </table>
-    </div>
+   <div class="section">
+    <h2>👷 Labor Breakdown</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th style="text-align: right;">Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($labor_breakdown as $task => $hours)
+                <tr>
+                    <td>{{ ucwords(str_replace('_', ' ', $task)) }}</td>
+                    <td style="text-align: right;">{{ number_format($hours, 2) }}</td>
+                </tr>
+            @endforeach
+            <tr>
+                <td><strong>Overhead + Travel</strong></td>
+                <td style="text-align: right;">{{ number_format($data['overhead_hours'], 2) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Total Labor Hours</strong></td>
+                <td style="text-align: right;">{{ number_format($data['total_hours'], 2) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Labor Cost</strong></td>
+                <td style="text-align: right;">${{ number_format($data['labor_cost'], 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 
     <div class="section">
-        <h3>Project Totals</h3>
-        <table class="totals-table">
-            <thead><tr><th>Description</th><th>Amount</th></tr></thead>
-            <tbody>
-                <tr><td>Materials Total</td><td>${{ number_format($data['material_total'], 2) }}</td></tr>
-                <tr><td>Labor Cost</td><td>${{ number_format($data['labor_cost'], 2) }}</td></tr>
-                <tr><td>Markup</td><td>${{ number_format($data['markup_amount'], 2) }}</td></tr>
-                <tr><td><strong>Final Price</strong></td><td><strong>${{ number_format($data['final_price'], 2) }}</strong></td></tr>
-            </tbody>
-        </table>
-    </div>
+        {{-- 💰 Pricing Breakdown --}}
+<h2 class="text-2xl font-semibold mb-4 mt-10">💰 Pricing Breakdown</h2>
+<table class="w-full text-sm border border-gray-300">
+    <tbody>
+        <tr>
+            <td class="p-2 border-b font-medium">Labor Cost</td>
+            <td class="p-2 border-b text-right">${{ number_format($data['labor_cost'], 2) }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 border-b font-medium">Material Cost</td>
+            <td class="p-2 border-b text-right">${{ number_format($data['material_total'], 2) }}</td>
+        </tr>
+        <tr class="font-semibold">
+            <td class="p-2 border-b">Total Cost (Before Margin)</td>
+            <td class="p-2 border-b text-right">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 border-b">Target Margin</td>
+            <td class="p-2 border-b text-right">{{ $data['markup'] }}%</td>
+        </tr>
+        <tr>
+            <td class="p-2 border-b">Markup (Dollar Amount)</td>
+            <td class="p-2 border-b text-right">${{ number_format($data['markup_amount'], 2) }}</td>
+        </tr>
+        <tr class="font-bold text-lg">
+            <td class="p-2 border-t">Final Price (With Margin)</td>
+            <td class="p-2 border-t text-right">${{ number_format($data['final_price'], 2) }}</td>
+        </tr>
+    </tbody>
+</table>
+
 
     @if (!empty($data['job_notes']))
-    <div style="margin-top: 30px;">
-        <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">📌 Job Notes</h3>
-        <p style="font-size: 13px; line-height: 1.5;">{{ $data['job_notes'] }}</p>
+    <div class="section">
+        <h2>Job Notes</h2>
+        <p>{{ $data['job_notes'] }}</p>
     </div>
     @endif
+
 </body>
 </html>

@@ -47,7 +47,7 @@
                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
-                            <a href="{{ route('calculations.downloadPdf', $calc->id) }}"
+                            <a href="{{ route('calculations.fence.downloadPdf', $calc->id) }}"
                                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
                                 PDF
                             </a>
@@ -60,7 +60,16 @@
                                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
                                 PDF
                             </a>
-                        @endif
+                        @elseif ($calc->calculation_type === 'fence')
+                             <a href="{{ route('calculators.fence.edit', $calc->id) }}"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                Edit
+                            </a>
+                            <a href="{{ route('calculations.fence.downloadPdf', $calc->id) }}"
+                               class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
+                                PDF
+                            </a>
+                        @endif  
 
                         {{-- ❌ Delete --}}
                         <form method="POST" action="{{ route('site-visits.deleteCalculation', $calc->id) }}">

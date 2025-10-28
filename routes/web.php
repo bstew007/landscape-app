@@ -32,7 +32,11 @@ Route::middleware('auth')->group(function () {
 
      Route::get('/fence-calculator', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
     Route::post('/fence-calculator', [FenceCalculatorController::class, 'calculate'])->name('fence.calculate');
+    // Edit route
+    Route::get('/calculators/fence/{id}/edit', [\App\Http\Controllers\FenceCalculatorController::class, 'edit'])->name('calculators.fence.edit');
 
+    // PDF download
+    Route::get('/calculations/fence/{id}/pdf', [\App\Http\Controllers\FenceCalculatorController::class, 'downloadPdf'])->name('calculations.fence.downloadPdf');
     // ✅ Production Rates (Admin UI)
     Route::resource('production-rates', ProductionRateController::class)->except(['show']);
 

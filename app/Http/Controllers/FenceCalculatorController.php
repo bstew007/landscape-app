@@ -1,11 +1,13 @@
 <?php
 
 namespace App\Http\Controllers;
-
+    
 use Illuminate\Http\Request;
 use App\Models\Calculation;
 use App\Models\SiteVisit;
 use App\Services\FenceLaborEstimatorService;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+
 
 class FenceCalculatorController extends Controller
 {
@@ -14,6 +16,46 @@ class FenceCalculatorController extends Controller
         $siteVisitId = $request->query('site_visit_id');
         return view('calculators.fence.fence_form', compact('siteVisitId'));
     }
+
+
+
+public function downloadPdf($id)
+{
+    $calculation = Calculation::findOrFail($id);
+    $data = $calculation->data;
+    $siteVisit = $calculation->siteVisit;
+
+    $labor_breakdown = $data['labor_breakdown'] ?? [];
+
+    $pdf = PDF::loadView('calculators.fence.fence_pdf', [
+        'data' => $data,
+        'siteVisit' => $siteVisit,
+        'labor_breakdown' => $labor_breakdown,
+    ]);
+
+    return $pdf->download('fence-estimate-' . $calculation->id . '.pdf');
+}
+
+
+   public function edit($id)
+{
+    $calculation = Calculation::findOrFail($id);
+    $data = $calculation->data;
+
+    // Flash all scalar data to the session so old() can use it in the Blade
+    foreach ($data as $key => $value) {
+        if (is_scalar($value)) {
+            session()->flash('_old_input.' . $key, $value);
+        }
+    }
+
+    return view('calculators.fence.fence_form', [
+        'siteVisitId' => $calculation->site_visit_id,
+        'existingCalculation' => $calculation,
+    ]);
+}
+
+
 
     public function calculate(Request $request)
     {
@@ -142,15 +184,15 @@ class FenceCalculatorController extends Controller
         // 🧱 Vinyl Fence Calculation
         // ------------------------------
         if ($fenceType === 'vinyl') {
-            $panel_length = 6;
+            $panel_length = $height == 4 ? 8 : 6;
             $corner_posts = $validated['vinyl_corner_posts'] ?? 0;
             $end_posts = $validated['vinyl_end_posts'] ?? 0;
             $gate_count = $gate_4ft + $gate_5ft;
             $panel_count = ceil($adjusted_length / $panel_length);
 
             // ✅ Correct line post calculation
-            $line_posts = max(0, $panel_count - 1 - $corner_posts - $end_posts - ($gate_count * 2));
-            $post_total = $line_posts + $corner_posts + $end_posts + ($gate_count * 2);
+           $line_posts = max(0, ($panel_count + 1) - $corner_posts - $end_posts - ($gate_count * 1));
+            $post_total = $line_posts + $corner_posts + $end_posts + ($gate_count * 1);
             $concrete_bags = $post_total * 2;
 
             $height_suffix = $height == 6 ? '_6' : '_4';
@@ -186,7 +228,7 @@ class FenceCalculatorController extends Controller
                 "End Posts ({$height}')"    => ['qty' => $end_posts, 'unit_cost' => $end_post_cost, 'total' => $end_posts * $end_post_cost],
                 "Corner Posts ({$height}')" => ['qty' => $corner_posts, 'unit_cost' => $corner_post_cost, 'total' => $corner_posts * $corner_post_cost],
                 "Gates ({$height}')"        => ['qty' => $gate_count, 'unit_cost' => $gate_cost, 'total' => $gate_count * $gate_cost],
-                "Metal Inserts"             => ['qty' => $post_total, 'unit_cost' => $insert_cost, 'total' => $post_total * $insert_cost],
+               "Metal Inserts" => ['qty' => $gate_count, 'unit_cost' => $insert_cost, 'total' => $gate_count * $insert_cost],
                 "Concrete Bags"             => ['qty' => $concrete_bags, 'unit_cost' => 8.50, 'total' => $concrete_bags * 8.50],
             ];
         }
@@ -199,7 +241,7 @@ class FenceCalculatorController extends Controller
         $laborInput = [
     'fence_type' => $fenceType,
     'dig_method' => $validated['dig_method'],
-    'total_posts' => $fenceType === 'wood' ? $total_posts : $post_total,
+    'total_posts' => $fenceType === 'wood' ? ($post_count + $gate_posts) : $post_total,
     'post_total' => $post_total ?? 0,
     'adjusted_length' => $adjusted_length,
     'length' => $length,
@@ -263,30 +305,43 @@ $labor_cost = $total_hours * $labor_rate;
         // 💰 Markup & Final Price
         // ------------------------------
         $markup = $validated['markup'] ?? 20;
+        $margin_decimal = $markup / 100;
         $pre_markup = $labor_cost + $material_total;
-        $markup_amount = $pre_markup * ($markup / 100);
-        $final_price = $pre_markup + $markup_amount;
+        $final_price = $margin_decimal >= 1 ? $pre_markup : $pre_markup / (1 - $margin_decimal);
+        $markup_amount = $final_price - $pre_markup;
+
 
         $siteVisit = SiteVisit::find($validated['site_visit_id']);
 
-        $data = [
-            'fence_type' => $fenceType,
-            'height' => $height,
-            'total_length' => $length,
-            'adjusted_length' => $adjusted_length,
-            'gate_4ft' => $gate_4ft,
-            'gate_5ft' => $gate_5ft,
-            'material_total' => $material_total,
-            'labor_hours' => $base_hours,
-            'overhead_hours' => $overhead_hours + $travel_time,
-            'total_hours' => $total_hours,
-            'labor_cost' => $labor_cost,
-            'markup' => $markup,
-            'markup_amount' => $markup_amount,
-            'final_price' => $final_price,
-            'materials' => $materials,
-            'job_notes' => $request->input('job_notes'),
-        ];
+       $data = [
+    'fence_type' => $fenceType,
+    'height' => $height,
+    'length' => $length,
+    'adjusted_length' => $adjusted_length,
+    'gate_4ft' => $gate_4ft,
+    'gate_5ft' => $gate_5ft,
+    'dig_method' => $validated['dig_method'],
+    'labor_rate' => $validated['labor_rate'] ?? 45,
+    'crew_size' => $validated['crew_size'] ?? 2,
+    'drive_distance' => $validated['drive_distance'] ?? 10,
+    'drive_speed' => $validated['drive_speed'] ?? 30,
+    'site_conditions' => $validated['site_conditions'] ?? 0,
+    'material_pickup' => $validated['material_pickup'] ?? 0,
+    'cleanup' => $validated['cleanup'] ?? 0,
+    'markup' => $markup,
+    'markup_amount' => $markup_amount,
+    'final_price' => $final_price,
+    'material_total' => $material_total,
+    'labor_hours' => $base_hours,
+    'overhead_hours' => $overhead_hours + $travel_time,
+    'total_hours' => $total_hours,
+    'labor_cost' => $labor_cost,
+    'materials' => $materials,
+    'job_notes' => $request->input('job_notes'),
+       // ✅ Add this:
+    'labor_breakdown' => $labor_breakdown,
+];
+
 
         $calc = Calculation::create([
             'site_visit_id' => $validated['site_visit_id'],
@@ -295,10 +350,15 @@ $labor_cost = $total_hours * $labor_rate;
         ]);
 
         return view('calculators.fence.fence_results', [
-            'data' => $data,
-            'calculation' => $calc,
-            'siteVisit' => $siteVisit,
-        ]);
+    'data' => $data,
+    'calculation' => $calc,
+    'siteVisit' => $siteVisit,
+    'labor_breakdown' => $labor_breakdown, // ✅ add this
+]);
+
+
+
     }
+
 }
 

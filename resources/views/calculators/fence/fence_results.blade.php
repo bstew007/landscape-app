@@ -68,6 +68,29 @@
         </ul>
     </div>
 
+    @if (!empty($labor_breakdown))
+    <div class="mt-6">
+        <h2 class="text-xl font-bold mb-2">🛠️ Labor Breakdown</h2>
+        <table class="table-auto w-full text-sm border border-gray-300">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="px-4 py-2 text-left border-b">Task</th>
+                    <th class="px-4 py-2 text-left border-b">Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($labor_breakdown as $task => $hours)
+                    <tr>
+                        <td class="px-4 py-2 border-b">{{ ucwords(str_replace('_', ' ', $task)) }}</td>
+                        <td class="px-4 py-2 border-b">{{ number_format($hours, 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
+
+
     {{-- Markup Section --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">💰 Pricing Breakdown</h2>
