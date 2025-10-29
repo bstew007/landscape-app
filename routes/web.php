@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-     Route::get('/fence-calculator', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
+    // Route::get('/fence-calculator', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
     Route::post('/fence-calculator', [FenceCalculatorController::class, 'calculate'])->name('fence.calculate');
     // Edit route
     Route::get('/calculators/fence/{id}/edit', [\App\Http\Controllers\FenceCalculatorController::class, 'edit'])->name('calculators.fence.edit');
