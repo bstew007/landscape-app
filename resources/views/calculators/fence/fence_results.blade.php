@@ -4,15 +4,21 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <h1 class="text-3xl font-bold mb-6">📊 Fence Estimate Summary</h1>
 
-    <h1>Cape Fear Landscaping</h1>
     <hr class="my-4">
 
-    <h3>Client Information: {{ $siteVisit->client->name }}</h3>
+<div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
+    <hr class="my-4">
+
+    <h2 class="text-2xl font-semibold mb-4">👤 Client Information: {{ $siteVisit->client->name }}</h2>
     <table class="mb-6">
-        <tr><td><strong>Name:</strong></td><td>{{ $siteVisit->client->full_name }}</td></tr>
+        <tr><td><strong>Name:</strong></td><td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td></tr>
+        <tr><td><strong>Email:</strong></td><td>{{ $siteVisit->client->email ?? '—' }}</td></tr>
+        <tr><td><strong>Phone:</strong></td><td>{{ $siteVisit->client->phone ?? '—' }}</td></tr>
         <tr><td><strong>Address:</strong></td><td>{{ $siteVisit->client->address ?? '—' }}</td></tr>
         <tr><td><strong>Site Visit Date:</strong></td><td>{{ $siteVisit->created_at->format('F j, Y') }}</td></tr>
     </table>
+</div>
+
 
     {{-- Final Price Summary --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
@@ -20,8 +26,8 @@
         <p class="text-3xl font-bold text-green-700">${{ number_format($data['final_price'], 2) }}</p>
     </div>
 
-   <h2 class="text-xl font-bold mt-6 mb-2">Materials Summary</h2>
-
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+  <h2 class="text-2xl font-semibold mb-4">🧱 Materials Summary</h2>
 <table class="w-full border-collapse text-sm mb-6">
     <thead>
         <tr class="bg-gray-100 text-left border-b">
@@ -33,27 +39,21 @@
     </thead>
     <tbody>
     @foreach($data['materials'] as $label => $item)
-        @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
-            <tr class="border-b">
-                <td class="p-2">{{ $label }}</td>
-                <td class="p-2 text-right">{{ $item['qty'] }}</td>
-                <td class="p-2 text-right">${{ number_format($item['unit_cost'], 2) }}</td>
-                <td class="p-2 text-right font-semibold">${{ number_format($item['total'], 2) }}</td>
-            </tr>
-        @else
-            {{-- fallback for legacy data or bad structure --}}
-            <tr class="border-b bg-red-50 text-red-600">
-                <td class="p-2">{{ $label }}</td>
-                <td colspan="3" class="p-2 text-right font-semibold">⚠️ Invalid material structure</td>
-            </tr>
-        @endif
-    @endforeach
+    @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
+        <tr>
+            <td>{{ $label }}</td>
+            <td style="text-align: right;">{{ $item['qty'] }}</td>
+            <td style="text-align: right;">${{ number_format($item['unit_cost'], 2) }}</td>
+            <td style="text-align: right;">${{ number_format($item['total'], 2) }}</td>
+        </tr>
+    @endif
+@endforeach
+        <tr class="font-bold bg-gray-100">
+                    <td colspan="3" class="px-4 py-2 text-right">Total Material Cost:</td>
+                    <td class="px-4 py-2 text-right">${{ number_format($data['material_total'], 2) }}</td>
+                </tr>
 </tbody>
 </table>
-
-<div class="flex justify-between font-bold text-lg">
-    <span>Total Material Cost:</span>
-    <span>${{ number_format($data['material_total'], 2) }}</span>
 </div>
 
 
@@ -91,34 +91,46 @@
 @endif
 
 
-    {{-- Markup Section --}}
-    <div class="bg-white p-6 rounded-lg shadow mb-8">
-        <h2 class="text-2xl font-semibold mb-4">💰 Pricing Breakdown</h2>
-        <div class="flex justify-between">
-            <span>Labor Cost:</span>
-            <span>${{ number_format($data['labor_cost'], 2) }}</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Material Cost:</span>
-            <span>${{ number_format($data['material_total'], 2) }}</span>
-        </div>
-        <div class="flex justify-between border-t pt-2 mt-2 font-semibold">
-            <span>Total Cost (Before Margin):</span>
-            <span>${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
-        </div>
-        <div class="flex justify-between mt-2">
-            <span>Target Margin:</span>
-            <span>{{ $data['markup'] }}%</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Markup (Dollar Amount):</span>
-            <span>${{ number_format($data['markup_amount'], 2) }}</span>
-        </div>
-        <div class="flex justify-between font-bold text-lg mt-2 border-t pt-2">
-            <span>Final Price (With Margin):</span>
-            <span>${{ number_format($data['final_price'], 2) }}</span>
-        </div>
+     <div class="section">
+        <h2>Pricing Breakdown</h2>
+        <table>
+            <tbody>
+                <tr>
+                    <td><strong>Labor Cost</strong></td>
+                    <td style="text-align: right;">${{ number_format($data['labor_cost'], 2) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Material Cost</strong></td>
+                    <td style="text-align: right;">${{ number_format($data['material_total'], 2) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Cost (Before Margin)</strong></td>
+                    <td style="text-align: right;">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Target Margin</strong></td>
+                    <td style="text-align: right;">{{ $data['markup'] }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>Markup (Dollar Amount)</strong></td>
+                    <td style="text-align: right;">${{ number_format($data['markup_amount'], 2) }}</td>
+                </tr>
+                <tr style="font-weight: bold;">
+                    <td><strong>Final Price (With Margin)</strong></td>
+                    <td style="text-align: right;">${{ number_format($data['final_price'], 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+
+    {{-- Job Notes --}}
+    @if (!empty($data['job_notes']))
+    <div class="bg-yellow-50 p-4 rounded shadow mb-6 border border-yellow-300">
+        <h2 class="text-xl font-semibold mb-2">📌 Job Notes</h2>
+        <p class="text-gray-800 whitespace-pre-line">{{ $data['job_notes'] }}</p>
+    </div>
+    @endif
 
     {{-- Job Notes --}}
     @if (!empty($data['job_notes']))
@@ -140,6 +152,26 @@
             💾 Save Calculation to Site Visit
         </button>
     </form>
+
+    {{-- PDF Download Button --}}
+@if (isset($calculation))
+    <div class="mt-4">
+        <a href="{{ route('calculations.fence.downloadPdf', $calculation->id) }}"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+           target="_blank">
+            🧾 Download PDF Estimate
+        </a>
+    </div>
+@endif
+
+
+    {{-- Back Button --}}
+    <div class="mt-6">
+        <a href="{{ route('clients.show', $siteVisit->client_id) }}"
+           class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
+            🔙 Back to Client
+        </a>
+    </div>
 </div>
 
 @endsection

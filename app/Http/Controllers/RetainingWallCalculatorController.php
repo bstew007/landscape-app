@@ -147,17 +147,52 @@ class RetainingWallCalculatorController extends Controller
     // --------------------------------------------
     // 📦 Material Summary
     // --------------------------------------------
-    $materials = [
-        'Wall Blocks' => round($blockCost, 2),
-        'Capstones' => round($capCost, 2),
-        'Drain Pipe' => round($pipeCost, 2),
-        '#57 Gravel' => round($gravelCost, 2),
-        'Topsoil' => round($topsoilCost, 2),
-        'Underlayment Fabric' => round($fabricCost, 2),
-        'Geogrid' => round($geogridCost, 2),
-        'Adhesive for Capstones' => round($adhesiveCost, 2),
-    ];
-    $material_total = array_sum($materials);
+   $materials = [
+    'Wall Blocks' => [
+        'qty' => $blockCount,
+        'unit_cost' => $blockUnitCost,
+        'total' => round($blockCost, 2),
+    ],
+    'Capstones' => [
+        'qty' => $capCount,
+        'unit_cost' => $capUnitCost,
+        'total' => round($capCost, 2),
+    ],
+    'Drain Pipe' => [
+        'qty' => $length,
+        'unit_cost' => $pipeUnitCost,
+        'total' => round($pipeCost, 2),
+    ],
+    '#57 Gravel' => [
+        'qty' => ceil($gravelTons),
+        'unit_cost' => $gravelUnitCost,
+        'total' => round($gravelCost, 2),
+    ],
+    'Topsoil' => [
+        'qty' => ceil($topsoilYards),
+        'unit_cost' => $topsoilUnitCost,
+        'total' => round($topsoilCost, 2),
+    ],
+    'Underlayment Fabric' => [
+        'qty' => round($fabricArea, 2),
+        'unit_cost' => $fabricUnitCost,
+        'total' => round($fabricCost, 2),
+    ],
+    'Geogrid' => [
+        'qty' => $geogridLF * $height,
+        'unit_cost' => $geogridUnitCost,
+        'total' => round($geogridCost, 2),
+    ],
+    'Adhesive for Capstones' => [
+        'qty' => $adhesiveTubeCount,
+        'unit_cost' => $adhesiveUnitCost,
+        'total' => round($adhesiveCost, 2),
+    ],
+];
+
+
+    $material_total = array_sum(array_column($materials, 'total'));
+
 
     // --------------------------------------------
     // 🧠 Labor Calculations

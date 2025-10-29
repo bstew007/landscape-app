@@ -11,11 +11,19 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class FenceCalculatorController extends Controller
 {
-    public function showForm(Request $request)
-    {
-        $siteVisitId = $request->query('site_visit_id');
-        return view('calculators.fence.fence_form', compact('siteVisitId'));
-    }
+public function showForm(Request $request)
+{
+    $siteVisitId = $request->query('site_visit_id'); // ✅ You need this
+    $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId); // ✅ This line is missing
+
+    return view('calculators.fence.fence_form', [
+        'siteVisitId' => $siteVisit->id,
+        'clientId' => $siteVisit->client->id,
+        'editMode' => false,
+        'formData' => [],
+    ]);
+}
+
 
 
 
@@ -42,7 +50,7 @@ public function downloadPdf($id)
     $calculation = Calculation::findOrFail($id);
     $data = $calculation->data;
 
-    // Flash all scalar data to the session so old() can use it in the Blade
+    // Flash scalar data for old() fallback
     foreach ($data as $key => $value) {
         if (is_scalar($value)) {
             session()->flash('_old_input.' . $key, $value);
@@ -52,6 +60,8 @@ public function downloadPdf($id)
     return view('calculators.fence.fence_form', [
         'siteVisitId' => $calculation->site_visit_id,
         'existingCalculation' => $calculation,
+        'formData' => $data,
+        'editMode' => true,
     ]);
 }
 
@@ -191,7 +201,7 @@ public function downloadPdf($id)
             $panel_count = ceil($adjusted_length / $panel_length);
 
             // ✅ Correct line post calculation
-           $line_posts = max(0, ($panel_count + 1) - $corner_posts - $end_posts - ($gate_count * 1));
+           $line_posts = max(0, ($panel_count + 2) - $corner_posts - $end_posts);
             $post_total = $line_posts + $corner_posts + $end_posts + ($gate_count * 1);
             $concrete_bags = $post_total * 2;
 
