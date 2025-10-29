@@ -26,13 +26,13 @@
 {"id":"21","task":"allan_block_capstone","unit":"lf","rate":"0.1500","note":"Capstone install using Allan Block","calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
 {"id":"22","task":"excavation_excavator","unit":"ft","rate":"0.0500","note":null,"calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
 {"id":"23","task":"excavation_manual","unit":"ft","rate":"0.1200","note":null,"calculator":"retaining_wall","created_at":"2025-10-24 12:29:57","updated_at":"2025-10-24 12:29:57"},
-{"id":"24","task":"post_install_manual","unit":"ea","rate":"0.1500","note":"vinyl or wood","calculator":"fence","created_at":"2025-10-24 18:19:42","updated_at":"2025-10-24 18:25:37"},
-{"id":"25","task":"post_install_auger","unit":"ea","rate":"0.1000","note":"vinyl or wood","calculator":"fence","created_at":"2025-10-24 18:20:13","updated_at":"2025-10-24 18:25:31"},
-{"id":"26","task":"panel_install","unit":"lf","rate":"0.0500","note":"vinyl","calculator":"fence","created_at":"2025-10-24 18:21:01","updated_at":"2025-10-24 18:25:19"},
-{"id":"27","task":"rail_install","unit":"lf","rate":"0.0500","note":"wood","calculator":"fence","created_at":"2025-10-24 18:25:09","updated_at":"2025-10-24 18:25:09"},
-{"id":"28","task":"picket_install","unit":"lf","rate":"0.0700","note":"wood","calculator":"fence","created_at":"2025-10-24 18:26:08","updated_at":"2025-10-24 18:26:08"},
-{"id":"29","task":"gate_install","unit":"ea","rate":"0.7500","note":"vinyl and wood","calculator":"fence","created_at":"2025-10-24 18:26:35","updated_at":"2025-10-24 18:26:35"},
-{"id":"30","task":"concrete_mix","unit":"ea","rate":"0.0800","note":"vinyl & wood","calculator":"fence","created_at":"2025-10-24 18:27:57","updated_at":"2025-10-24 18:27:57"}
+{"id":"24","task":"post_install_manual","unit":"ea","rate":"0.2200","note":"Labor to hand dig hole, set post, level, tamp, and secure (no concrete). Around 4–6 posts per hour depending on soil.","calculator":"fence","created_at":"2025-10-24 18:19:42","updated_at":"2025-10-28 14:55:48"},
+{"id":"25","task":"post_install_auger","unit":"ea","rate":"0.1200","note":"Auger-assisted drilling — 8–10 posts per hour with cleanup.","calculator":"fence","created_at":"2025-10-24 18:20:13","updated_at":"2025-10-28 14:55:01"},
+{"id":"26","task":"panel_install","unit":"lf","rate":"0.2500","note":"Vinyl pre-assembled panels — faster than individual pickets.","calculator":"fence","created_at":"2025-10-24 18:21:01","updated_at":"2025-10-28 16:57:55"},
+{"id":"27","task":"rail_install","unit":"lf","rate":"0.1500","note":"For 2x4 rails on wood fence — measured in linear feet, includes fastening.","calculator":"fence","created_at":"2025-10-24 18:25:09","updated_at":"2025-10-28 17:00:17"},
+{"id":"28","task":"picket_install","unit":"lf","rate":"0.2500","note":"Nail\/screw pickets to rails, typical 1–1.25 hours per 8' section (0.08 LF rate).","calculator":"fence","created_at":"2025-10-24 18:26:08","updated_at":"2025-10-28 17:00:37"},
+{"id":"29","task":"gate_install","unit":"ea","rate":"1.5000","note":"Hanging gate and installing hardware, latch, and alignment.","calculator":"fence","created_at":"2025-10-24 18:26:35","updated_at":"2025-10-28 16:58:16"},
+{"id":"30","task":"concrete_mix","unit":"ea","rate":"0.4000","note":"Per post — accounts for bag mixing, pouring, and finishing time.","calculator":"fence","created_at":"2025-10-24 18:27:57","updated_at":"2025-10-28 17:01:09"}
 ]
 }
 ]
