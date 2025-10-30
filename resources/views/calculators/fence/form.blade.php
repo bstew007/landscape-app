@@ -10,7 +10,8 @@
         {{ $editMode ? '✏️ Edit Fence Estimate' : '🪵 Fence Calculator' }}
     </h1>
 
-    <form method="POST" action="{{ route('fence.calculate') }}">
+    <form method="POST" action="{{ route('calculators.fence.calculate') }}">
+
         @csrf
 
         {{-- When editing, include hidden calculation ID --}}

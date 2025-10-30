@@ -61,22 +61,31 @@ class SiteVisitController extends Controller
             ->with('success', 'Site visit updated.');
     }
 
-   public function storeCalculation(Request $request)
+public function storeCalculation(Request $request)
 {
-    // ✅ Validate and capture input
     $validated = $request->validate([
         'calculation_type' => 'required|string',
         'data' => 'required|string',
         'site_visit_id' => 'required|exists:site_visits,id',
+        'calculation_id' => 'nullable|exists:calculations,id',
     ]);
 
-    // ✅ Decode JSON data once
-    $calculationData = json_decode($validated['data'], true);
+    $calculationData = json_decode($validated['data'], true);// Already a JSON string, validated as string
 
-    // ✅ Find associated site visit
+
     $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
 
-    // ✅ Check if a calculation of this type already exists for this site visit
+    if (!empty($validated['calculation_id'])) {
+        // ✅ Update existing calculation
+        $calc = Calculation::findOrFail($validated['calculation_id']);
+        $calc->update(['data' => $calculationData]);
+
+        return redirect()
+            ->route('clients.show', $siteVisit->client_id)
+            ->with('success', 'Calculation updated successfully.');
+    }
+
+    // ✅ Check if a new calculation of this type already exists
     $existing = $siteVisit->calculations()
         ->where('calculation_type', $validated['calculation_type'])
         ->first();
@@ -87,16 +96,17 @@ class SiteVisitController extends Controller
             ->with('warning', 'A calculation of this type already exists for this site visit.');
     }
 
-    // ✅ Create new calculation if not already exists
     $siteVisit->calculations()->create([
-        'calculation_type' => $validated['calculation_type'],
-        'data' => $calculationData,
-    ]);
+    'calculation_type' => $validated['calculation_type'],
+    'data' => json_encode($calculationData), // <-- This is essential
+]);
 
     return redirect()
         ->route('clients.show', $siteVisit->client_id)
         ->with('success', 'Calculation saved to site visit.');
 }
+
+
 
 
     public function destroy(Client $client, SiteVisit $siteVisit)

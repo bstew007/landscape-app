@@ -1,6 +1,8 @@
 @extends('layouts.sidebar')
 
 @section('content')
+
+
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <h1 class="text-3xl font-bold mb-6">📊 Fence Estimate Summary</h1>
 
@@ -9,7 +11,7 @@
 <div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
     <hr class="my-4">
 
-    <h2 class="text-2xl font-semibold mb-4">👤 Client Information: {{ $siteVisit->client->name }}</h2>
+    <h2 class="text-2xl font-semibold mb-4">👤 Client Information:  {{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</h2>
     <table class="mb-6">
         <tr><td><strong>Name:</strong></td><td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td></tr>
         <tr><td><strong>Email:</strong></td><td>{{ $siteVisit->client->email ?? '—' }}</td></tr>
@@ -124,23 +126,27 @@
     </div>
     @endif
 
-    {{-- Save to Site Visit --}}
-    <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
-        @csrf
-        <input type="hidden" name="calculation_type" value="fence">
-        <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
-        {{-- Keep the data available for saving to Site Visit --}}
-<input type="hidden" name="data" value="{{ htmlentities(json_encode($data)) }}">
+   {{-- Save to Site Visit --}}
+<form method="POST" action="{{ route('site-visits.storeCalculation') }}">
+    @csrf
+    <input type="hidden" name="calculation_type" value="fence">
+    <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
 
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
-            💾 Save Calculation to Site Visit
-        </button>
-    </form>
+   @php
+    $encodedData = json_encode($data);
+@endphp
+
+<input type="hidden" name="data" value="{{ htmlentities($encodedData) }}">
+    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
+        💾 Save Calculation to Site Visit
+    </button>
+</form>
+
 
     {{-- PDF Download Button --}}
 @if (isset($calculation))
     <div class="mt-4">
-        <a href="{{ route('calculations.fence.downloadPdf', $calculation->id) }}"
+        <a href="{{ route('calculators.fence.downloadPdf', $calculation->id) }}"
            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
            target="_blank">
             🧾 Download PDF Estimate

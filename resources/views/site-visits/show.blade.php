@@ -47,7 +47,7 @@
                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
-                            <a href="{{ route('calculations.fence.downloadPdf', $calc->id) }}"
+                            <a href="{{ route('calculations.wall.downloadPdf', $calc->id) }}"
                                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
                                 PDF
                             </a>
@@ -65,7 +65,7 @@
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
-                            <a href="{{ route('calculations.fence.downloadPdf', $calc->id) }}"
+                            <a href="{{ route('calculators.fence.downloadPdf', $calc->id) }}"
                                class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
                                 PDF
                             </a>

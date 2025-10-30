@@ -9,93 +9,89 @@ use App\Http\Controllers\PaverPatioCalculatorController;
 use App\Http\Controllers\LandscapeEnhancementController;
 use App\Http\Controllers\ProductionRateController;
 use App\Http\Controllers\FenceCalculatorController;
+use App\Http\Controllers\CalculationController;
 
-Route::get('/', function () {
-    return redirect()->route('clients.index');
-});
+Route::get('/', fn () => redirect()->route('clients.index'));
 
-Route::get('/select-site-visit', [SiteVisitController::class, 'select'])->name('site-visit.select');
-
-Route::get('/calculations/{calculation}/pdf', [RetainingWallCalculatorController::class, 'downloadPdf'])
-    ->name('calculations.downloadPdf');
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', fn () => view('dashboard'))
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+     // ✅ Calculator Index Route
+    Route::get('/calculators', function () {
+        return view('calculators.index');
+    })->name('calculators.index');
 
     // ✅ Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Route::get('/fence-calculator', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
-    Route::post('/fence-calculator', [FenceCalculatorController::class, 'calculate'])->name('fence.calculate');
-    // Edit route
-    Route::get('/calculators/fence/{id}/edit', [\App\Http\Controllers\FenceCalculatorController::class, 'edit'])->name('calculators.fence.edit');
-
-    // PDF download
-    Route::get('/calculations/fence/{id}/pdf', [\App\Http\Controllers\FenceCalculatorController::class, 'downloadPdf'])->name('calculations.fence.downloadPdf');
-    // ✅ Production Rates (Admin UI)
+    // ✅ Production Rates (Admin)
     Route::resource('production-rates', ProductionRateController::class)->except(['show']);
 
-    // ✅ Calculations
-    Route::get('/calculations/{calculation}/result', [RetainingWallCalculatorController::class, 'showResult'])
-        ->name('calculations.showResult');
-
-    Route::delete('/calculations/{calculation}', [\App\Http\Controllers\CalculationController::class, 'destroy'])
-        ->name('site-visits.deleteCalculation');
-
-    // ✅ Calculators Index
-    Route::get('/calculators', function () {
-        return view('calculators.index');
-    })->name('calculators.index');
-
-    // ✅ Site Visit Selector
-    Route::get('/calculators/select-site-visit', [SiteVisitController::class, 'select'])
-        ->name('calculators.selectSiteVisit');
-
-     // Fence Calculator
-     Route::prefix('calculators/fence')->group(function () {
-    Route::get('/form', [FenceCalculatorController::class, 'showForm'])->name('fence.form');
-    Route::post('/calculate', [FenceCalculatorController::class, 'calculate'])->name('calculators.fence.calculate');
-    Route::get('/result', [FenceCalculatorController::class, 'showResult'])->name('fence.result');
-    });   
-
-    // ✅ Retaining Wall Calculator
-    Route::get('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'showForm'])
-        ->name('calculators.wall.form');
-    Route::post('/calculators/retaining-wall', [RetainingWallCalculatorController::class, 'calculate'])
-        ->name('calculators.wall.calculate');
-    Route::get('/calculators/retaining-wall/{calculation}/edit', [RetainingWallCalculatorController::class, 'edit'])
-        ->name('calculators.wall.edit');
-
-    // ✅ Paver Patio Calculator
-    Route::get('/calculators/paver-patio', [PaverPatioCalculatorController::class, 'showForm'])
-        ->name('calculators.patio.form');
-    Route::post('/calculators/paver-patio', [PaverPatioCalculatorController::class, 'calculate'])
-        ->name('calculators.patio.calculate');
-    Route::get('/calculators/paver-patio/{calculation}/edit', [PaverPatioCalculatorController::class, 'edit'])
-        ->name('calculators.patio.edit');
-    Route::get('/calculations/{calculation}/paver-patio/result', [PaverPatioCalculatorController::class, 'showResult'])
-        ->name('calculations.patio.showResult');
-    Route::get('/calculations/{calculation}/paver-patio/pdf', [PaverPatioCalculatorController::class, 'downloadPdf'])
-        ->name('calculations.patio.downloadPdf');
-
-    // ✅ Landscape Enhancements Calculator
-    Route::get('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'create'])
-        ->name('calculators.enhancements.form');
-    Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])
-        ->name('calculators.enhancements.calculate');
-
-    // ✅ Save calculation to Site Visit
+    // ✅ Save calculation to site visit
     Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
         ->name('site-visits.storeCalculation');
 
+    // ✅ Site Visit Selector (before calculator)
+    Route::get('/select-site-visit', [SiteVisitController::class, 'select'])->name('site-visit.select');
+    Route::get('/calculators/select-site-visit', [SiteVisitController::class, 'select'])->name('calculators.selectSiteVisit');
+
+    // ✅ Calculations - Shared Routes
+    Route::delete('/calculations/{calculation}', [CalculationController::class, 'destroy'])
+        ->name('site-visits.deleteCalculation');
+
+    // ================================
+// ✅ Fence Calculator Routes
+// ================================
+Route::prefix('calculators/fence')->group(function () {
+    Route::get('/form', [FenceCalculatorController::class, 'showForm'])->name('calculators.fence.form');
+    Route::post('/calculate', [FenceCalculatorController::class, 'calculate'])->name('calculators.fence.calculate');
+
+    Route::get('/results/{calculation}', [FenceCalculatorController::class, 'showResult'])
+        ->name('calculators.fence.showResult');
+
+    Route::get('/{calculation}/edit', [FenceCalculatorController::class, 'edit'])
+        ->name('calculators.fence.edit');
+
+    Route::get('/{calculation}/pdf', [FenceCalculatorController::class, 'downloadPdf'])
+        ->name('calculators.fence.downloadPdf');
+});
+
+
+    // ================================
+    // ✅ Paver Patio Calculator Routes
+    // ================================
+    Route::prefix('calculators/paver-patio')->group(function () {
+        Route::get('/', [PaverPatioCalculatorController::class, 'showForm'])->name('calculators.patio.form');
+        Route::post('/', [PaverPatioCalculatorController::class, 'calculate'])->name('calculators.patio.calculate');
+        Route::get('/results/{calculation}', [PaverPatioCalculatorController::class, 'showResult'])->name('calculations.patio.showResult');
+        Route::get('/{calculation}/edit', [PaverPatioCalculatorController::class, 'edit'])->name('calculators.patio.edit');
+        Route::get('/{calculation}/pdf', [PaverPatioCalculatorController::class, 'downloadPdf'])->name('calculations.patio.downloadPdf');
+    });
+
+    // ================================
+    // ✅ Retaining Wall Calculator Routes
+    // ================================
+    Route::prefix('calculators/retaining-wall')->group(function () {
+        Route::get('/', [RetainingWallCalculatorController::class, 'showForm'])->name('calculators.wall.form');
+        Route::post('/', [RetainingWallCalculatorController::class, 'calculate'])->name('calculators.wall.calculate');
+        Route::get('/results/{calculation}', [RetainingWallCalculatorController::class, 'showResult'])->name('calculations.wall.showResult');
+        Route::get('/{calculation}/edit', [RetainingWallCalculatorController::class, 'edit'])->name('calculators.wall.edit');
+        Route::get('/{calculation}/pdf', [RetainingWallCalculatorController::class, 'downloadPdf'])->name('calculations.wall.downloadPdf');
+    });
+
+    // ================================
+    // ✅ Landscape Enhancements
+    // ================================
+    Route::get('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'create'])->name('calculators.enhancements.form');
+    Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])->name('calculators.enhancements.calculate');
+
+    // ================================
     // ✅ Clients & Site Visits
+    // ================================
     Route::resource('clients', ClientController::class);
     Route::resource('clients.site-visits', SiteVisitController::class);
 });
-
-require __DIR__.'/auth.php';
