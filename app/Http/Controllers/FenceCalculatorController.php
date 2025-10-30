@@ -348,8 +348,7 @@ $labor_cost = $total_hours * $labor_rate;
     'labor_cost' => $labor_cost,
     'materials' => $materials,
     'job_notes' => $request->input('job_notes'),
-       // ✅ Add this:
-    'labor_breakdown' => $labor_breakdown,
+    'labor_by_task' => $labor_breakdown, // ✅ Add this
 ];
 
 

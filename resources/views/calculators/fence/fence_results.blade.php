@@ -26,111 +26,95 @@
         <p class="text-3xl font-bold text-green-700">${{ number_format($data['final_price'], 2) }}</p>
     </div>
 
+     {{-- Materials Summary --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
-  <h2 class="text-2xl font-semibold mb-4">🧱 Materials Summary</h2>
-<table class="w-full border-collapse text-sm mb-6">
-    <thead>
-        <tr class="bg-gray-100 text-left border-b">
-            <th class="p-2">Material</th>
-            <th class="p-2 text-right">Qty</th>
-            <th class="p-2 text-right">Unit Cost</th>
-            <th class="p-2 text-right">Total</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach($data['materials'] as $label => $item)
-    @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
-        <tr>
-            <td>{{ $label }}</td>
-            <td style="text-align: right;">{{ $item['qty'] }}</td>
-            <td style="text-align: right;">${{ number_format($item['unit_cost'], 2) }}</td>
-            <td style="text-align: right;">${{ number_format($item['total'], 2) }}</td>
-        </tr>
-    @endif
-@endforeach
-        <tr class="font-bold bg-gray-100">
-                    <td colspan="3" class="px-4 py-2 text-right">Total Material Cost:</td>
-                    <td class="px-4 py-2 text-right">${{ number_format($data['material_total'], 2) }}</td>
-                </tr>
-</tbody>
-</table>
+  @include('calculators.partials.materials_table', [
+    'materials' => $data['materials'],
+    'material_total' => $data['material_total']
+])
+
+
+{{-- Quantities --}}
+<div class="bg-white p-6 rounded-lg shadow mb-8">
+    <h2 class="text-2xl font-semibold mb-4">📐 Quantities</h2>
+    <ul class="grid grid-cols-2 gap-y-2 text-gray-700">
+        <li>Total Fence Length: <strong>{{ number_format($data['length'], 2) }} ft</strong></li>
+        <li>Adjusted Length (minus gates): <strong>{{ number_format($data['adjusted_length'], 2) }} ft</strong></li>
+        @if ($data['fence_type'] === 'wood')
+            <li>Total Pickets: <strong>{{ number_format($data['materials']['Pickets']['qty']) }}</strong></li>
+            <li>Total Rails: <strong>{{ number_format($data['materials']['2x4 Rails']['qty']) }}</strong></li>
+            <li>Posts: <strong>{{ number_format($data['materials']['4x4 Posts']['qty']) }}</strong></li>
+            <li>Gate Posts: <strong>{{ number_format($data['materials']['4x6 Gate Posts']['qty']) }}</strong></li>
+        @elseif ($data['fence_type'] === 'vinyl')
+            <li>Vinyl Panels: <strong>{{ number_format($data['materials']["Vinyl Panels ({$data['height']}')"]['qty']) }}</strong></li>
+            <li>Line Posts: <strong>{{ number_format($data['materials']["Line Posts ({$data['height']}')"]['qty']) }}</strong></li>
+            <li>End Posts: <strong>{{ number_format($data['materials']["End Posts ({$data['height']}')"]['qty']) }}</strong></li>
+            <li>Corner Posts: <strong>{{ number_format($data['materials']["Corner Posts ({$data['height']}')"]['qty']) }}</strong></li>
+        @endif
+        <li>Gates: <strong>{{ $data['gate_4ft'] + $data['gate_5ft'] }}</strong></li>
+        <li>Concrete Bags: <strong>{{ number_format($data['materials']['Concrete Bags']['qty']) }}</strong></li>
+    </ul>
 </div>
 
 
-    {{-- Labor Breakdown --}}
-    <div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
+   {{-- Labor Breakdown --}}
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">👷 Labor Breakdown</h2>
         <ul class="space-y-2">
-            <li class="flex justify-between"><span>Base Labor Hours:</span><span>{{ number_format($data['labor_hours'], 2) }} hrs</span></li>
-            <li class="flex justify-between"><span>Overhead + Drive Time:</span><span>{{ number_format($data['overhead_hours'], 2) }} hrs</span></li>
-            <li class="flex justify-between font-bold text-lg"><span>Total Labor Hours:</span><span>{{ number_format($data['total_hours'], 2) }} hrs</span></li>
-            <li class="flex justify-between font-bold text-lg"><span>Labor Cost:</span><span>${{ number_format($data['labor_cost'], 2) }}</span></li>
+            @foreach ($data['labor_by_task'] as $task => $hours)
+                <li class="flex justify-between border-b pb-1 capitalize">
+                    <span>{{ str_replace('_', ' ', $task) }}</span>
+                    <span>{{ number_format($hours, 2) }} hrs</span>
+                </li>
+            @endforeach
         </ul>
-    </div>
-
-    @if (!empty($labor_breakdown))
-    <div class="mt-6">
-        <h2 class="text-xl font-bold mb-2">🛠️ Labor Breakdown</h2>
-        <table class="table-auto w-full text-sm border border-gray-300">
-            <thead>
-                <tr class="bg-gray-100">
-                    <th class="px-4 py-2 text-left border-b">Task</th>
-                    <th class="px-4 py-2 text-left border-b">Hours</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($labor_breakdown as $task => $hours)
-                    <tr>
-                        <td class="px-4 py-2 border-b">{{ ucwords(str_replace('_', ' ', $task)) }}</td>
-                        <td class="px-4 py-2 border-b">{{ number_format($hours, 2) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-@endif
-
-
-     <div class="section">
-        <h2>Pricing Breakdown</h2>
-        <table>
-            <tbody>
-                <tr>
-                    <td><strong>Labor Cost</strong></td>
-                    <td style="text-align: right;">${{ number_format($data['labor_cost'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Material Cost</strong></td>
-                    <td style="text-align: right;">${{ number_format($data['material_total'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Total Cost (Before Margin)</strong></td>
-                    <td style="text-align: right;">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Target Margin</strong></td>
-                    <td style="text-align: right;">{{ $data['markup'] }}%</td>
-                </tr>
-                <tr>
-                    <td><strong>Markup (Dollar Amount)</strong></td>
-                    <td style="text-align: right;">${{ number_format($data['markup_amount'], 2) }}</td>
-                </tr>
-                <tr style="font-weight: bold;">
-                    <td><strong>Final Price (With Margin)</strong></td>
-                    <td style="text-align: right;">${{ number_format($data['final_price'], 2) }}</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="flex justify-between mt-4">
+            <span class="font-semibold">Base Labor:</span>
+            <span>{{ number_format($data['labor_hours'], 2) }} hrs</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="font-semibold">Overhead + Drive Time:</span>
+            <span>{{ number_format($data['overhead_hours'], 2) }} hrs</span>
+        </div>
+        <div class="flex justify-between font-bold text-lg">
+            <span>Total Labor Hours:</span>
+            <span>{{ number_format($data['total_hours'], 2) }} hrs</span>
+        </div>
+        <div class="flex justify-between font-bold text-lg mt-2">
+            <span>Labor Cost:</span>
+            <span>${{ number_format($data['labor_cost'], 2) }}</span>
+        </div>
     </div>
 
 
-    {{-- Job Notes --}}
-    @if (!empty($data['job_notes']))
-    <div class="bg-yellow-50 p-4 rounded shadow mb-6 border border-yellow-300">
-        <h2 class="text-xl font-semibold mb-2">📌 Job Notes</h2>
-        <p class="text-gray-800 whitespace-pre-line">{{ $data['job_notes'] }}</p>
+     {{-- 💰 Pricing Breakdown --}}
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+        <h2 class="text-2xl font-semibold mb-4">💰 Pricing Breakdown</h2>
+        <div class="flex justify-between">
+            <span>Labor Cost:</span>
+            <span>${{ number_format($data['labor_cost'], 2) }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Material Cost:</span>
+            <span>${{ number_format($data['material_total'], 2) }}</span>
+        </div>
+        <div class="flex justify-between border-t pt-2 mt-2 font-semibold">
+            <span>Total Cost (Before Margin):</span>
+            <span>${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
+        </div>
+        <div class="flex justify-between mt-2">
+            <span>Target Margin:</span>
+            <span>{{ $data['markup'] }}%</span>
+        </div>
+        <div class="flex justify-between">
+            <span>Markup (Dollar Amount):</span>
+            <span>${{ number_format($data['markup_amount'], 2) }}</span>
+        </div>
+        <div class="flex justify-between font-bold text-lg mt-2 border-t pt-2">
+            <span>Final Price (With Margin):</span>
+            <span>${{ number_format($data['final_price'], 2) }}</span>
+        </div>
     </div>
-    @endif
 
     {{-- Job Notes --}}
     @if (!empty($data['job_notes']))

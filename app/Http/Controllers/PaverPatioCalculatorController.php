@@ -93,11 +93,25 @@ class PaverPatioCalculatorController extends Controller
     $baseCost = $baseTons * $baseUnitCost;
 
     $materials = [
-        'Pavers' => round($paverCost, 2),
-        '#78 Base Gravel' => round($baseCost, 2),
-        'Edge Restraints' => round($edgeCost, 2),
-    ];
-    $material_total = array_sum($materials);
+    'Pavers' => [
+        'qty' => $paverCount,
+        'unit_cost' => $paverUnitCost,
+        'total' => $paverCount * $paverUnitCost
+    ],
+    '#78 Base Gravel' => [
+        'qty' => $baseTons . ' tons',
+        'unit_cost' => $baseUnitCost,
+        'total' => $baseTons * $baseUnitCost
+    ],
+    'Edge Restraints' => [
+        'qty' => round($edgeLF, 2) . ' lf',
+        'unit_cost' => $edgeUnitCost,
+        'total' => $edgeLF * $edgeUnitCost
+    ]
+];
+
+
+   $material_total = array_sum(array_column($materials, 'total'));
 
     // --------------------------------------------
     // 👷 Labor Calculations (DB + Override)

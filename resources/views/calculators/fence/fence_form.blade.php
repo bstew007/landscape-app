@@ -116,8 +116,8 @@
         </button>
     </form>
 </div>
+@endsection
 
-{{-- Conditional Display Logic --}}
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -161,4 +161,3 @@
 </script>
 @endpush
 
-@endsection

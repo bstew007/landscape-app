@@ -24,35 +24,11 @@
     </div>
 
    {{-- Materials Summary --}}
-<div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
-     <h2 class="text-2xl font-semibold mb-4">🧱 Materials Summary</h2>
-    <table class="min-w-full table-auto border border-gray-300 rounded shadow-sm text-sm">
-        <thead class="bg-gray-100 text-left">
-            <tr>
-                <th class="px-4 py-2 border-b">Material</th>
-                <th class="px-4 py-2 border-b text-right">Qty</th>
-                <th class="px-4 py-2 border-b text-right">Unit Cost</th>
-                <th class="px-4 py-2 border-b text-right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($data['materials'] as $label => $item)
-                @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
-                    <tr>
-                        <td class="px-4 py-2 border-b">{{ $label }}</td>
-                        <td class="px-4 py-2 border-b text-right">{{ $item['qty'] }}</td>
-                        <td class="px-4 py-2 border-b text-right">${{ number_format($item['unit_cost'], 2) }}</td>
-                        <td class="px-4 py-2 border-b text-right">${{ number_format($item['total'], 2) }}</td>
-                    </tr>
-                @endif
-            @endforeach
-            <tr class="font-bold bg-gray-100">
-                <td colspan="3" class="px-4 py-2 text-right">Total Material Cost:</td>
-                <td class="px-4 py-2 text-right">${{ number_format($data['material_total'], 2) }}</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
+@include('calculators.partials.materials_table', [
+    'materials' => $data['materials'],
+    'material_total' => $data['material_total']
+])
+
 
 
     {{-- Quantities --}}
