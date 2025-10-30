@@ -352,20 +352,22 @@ $labor_cost = $total_hours * $labor_rate;
 ];
 
 
-        $calc = Calculation::create([
-            'site_visit_id' => $validated['site_visit_id'],
-            'calculation_type' => 'fence',
-            'data' => $data,
-        ]);
+      //  $calc = Calculation::create([
+      //      'site_visit_id' => $validated['site_visit_id'],
+       //     'calculation_type' => 'fence',
+        //    'data' => $data,
+      //  ]);
+
+     //   return view('calculators.fence.fence_results', [
+   // 'data' => $data,
+   // 'calculation' => $calc,
+   // 'siteVisit' => $siteVisit,
+   // 'labor_breakdown' => $labor_breakdown, // ✅ add this
 
         return view('calculators.fence.fence_results', [
-    'data' => $data,
-    'calculation' => $calc,
-    'siteVisit' => $siteVisit,
-    'labor_breakdown' => $labor_breakdown, // ✅ add this
-]);
-
-
+        'data' => $data,
+        'siteVisit' => $siteVisit,
+        ]);
 
     }
 
