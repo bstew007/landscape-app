@@ -95,3 +95,4 @@ Route::prefix('calculators/fence')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::resource('clients.site-visits', SiteVisitController::class);
 });
+require __DIR__.'/auth.php';
