@@ -57,8 +57,12 @@ public function downloadPdf($id)
         }
     }
 
-    return view('calculators.fence.results', [
-        'siteVisitId' => $calculation->site_visit_id,
+      // ✅ Load the related site visit and client
+    $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
+
+    return view('calculators.fence.form', [
+        'siteVisitId' => $siteVisit->id,
+        'clientId' => $siteVisit->client->id,
         'existingCalculation' => $calculation,
         'formData' => $data,
         'editMode' => true,

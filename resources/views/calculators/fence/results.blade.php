@@ -1,17 +1,13 @@
 @extends('layouts.sidebar')
 
 @section('content')
-
-
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+<div class="max-w-5xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">📊 Fence Estimate Summary</h1>
 
+    <div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
     <hr class="my-4">
 
-<div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
-    <hr class="my-4">
-
-    <h2 class="text-2xl font-semibold mb-4">👤 Client Information:  {{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</h2>
+    <h2 class="text-2xl font-semibold mb-4">👤 Client Information: {{ $siteVisit->client->name }}</h2>
     <table class="mb-6">
         <tr><td><strong>Name:</strong></td><td>{{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</td></tr>
         <tr><td><strong>Email:</strong></td><td>{{ $siteVisit->client->email ?? '—' }}</td></tr>
