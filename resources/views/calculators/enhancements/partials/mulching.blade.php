@@ -1,74 +1,89 @@
-<div x-data="{ showMulch: true }" class="border p-4 rounded mb-6">
-    <h2 @click="showMulch = !showMulch" class="text-lg font-bold cursor-pointer">
-        🌾 Mulching
-    </h2>
+<div x-data="{ open: false }" class="mb-6 border border-gray-300 rounded-md p-4 bg-white shadow-sm">
+    <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-bold">🍂 Mulching</h2>
+        <button type="button"
+                class="text-sm text-blue-600 hover:underline"
+                @click="open = !open">
+            <span x-show="!open">Show</span>
+            <span x-show="open">Hide</span>
+        </button>
+    </div>
 
-    <div x-show="showMulch" class="space-y-4 mt-4">
-
-        {{-- Area and Depth --}}
-        <div class="grid grid-cols-3 gap-4">
-
-            {{-- Square Footage --}}
-            <div>
-                <label for="mulching_sqft" class="block text-sm font-medium text-gray-700">Square Footage</label>
-                <input type="number" name="mulching[sqft]" id="mulching_sqft" step="1"
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50" />
+    <div x-show="open" x-transition>
+        <div class="mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Square Footage</label>
+                <input type="number" name="mulching[sqft]" class="form-input w-full" min="0">
             </div>
 
-            {{-- Mulch Depth --}}
-            <div>
-                <label for="mulching_depth" class="block text-sm font-medium text-gray-700">Mulch Depth (inches)</label>
-                <select name="mulching[depth_in_inches]" id="mulching_depth"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50">
-                    @for ($i = 1; $i <= 6; $i++)
-                        <option value="{{ $i }}">{{ $i }}"</option>
-                    @endfor
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Depth (in inches)</label>
+                <input type="number" name="mulching[depth_in_inches]" class="form-input w-full" step="0.5" min="0">
+            </div>
+
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Mulch Type</label>
+                <select name="mulching[mulch_type]" class="form-select w-full">
+                    <option>Triple Shredded Hardwood</option>
+                    <option>Forest Brown</option>
+                    <option>Red</option>
+                    <option>Pine Fines</option>
+                    <option>Big Nuggets</option>
+                    <option>Mini Nuggets</option>
                 </select>
             </div>
 
-            {{-- Mulch Type --}}
-            <div>
-                <label for="mulching_type" class="block text-sm font-medium text-gray-700">Mulch Type</label>
-                <select name="mulching[mulch_type]" id="mulching_type"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50">
-                    <option value="Triple Shredded Hardwood">Triple Shredded Hardwood</option>
-                    <option value="Forest Brown">Forest Brown</option>
-                    <option value="Red">Red</option>
-                    <option value="Pine Fines">Pine Fines</option>
-                    <option value="Big Nuggets">Big Nuggets</option>
-                    <option value="Mini Nuggets">Mini Nuggets</option>
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Delivery Method</label>
+                <select name="mulching[delivery_method]" class="form-select w-full">
+                    <option value="wheelbarrow">Wheelbarrow</option>
+                    <option value="tractor">Tractor / Loader</option>
                 </select>
+            </div>
+
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Install Type</label>
+                <select name="mulching[install_type]" class="form-select w-full">
+                    <option value="standard">Standard</option>
+                    <option value="heavy">Heavy</option>
+                    <option value="refresh">Refresh / Topdress</option>
+                </select>
+            </div>
+
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Override Material Cost (optional)</label>
+                <input type="number" name="mulching[override_material_cost_per_cy]" class="form-input w-full" step="0.01">
             </div>
         </div>
 
-        {{-- Labor and Method --}}
-        <div class="grid grid-cols-3 gap-4">
+        <!-- Bed Edging Options -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Include Bed Edging?</label>
+                <input type="checkbox" name="mulching[include_bed_edging]" value="1" class="form-checkbox">
+            </div>
 
-            {{-- Delivery Method --}}
-            <div>
-                <label for="mulching_delivery" class="block text-sm font-medium text-gray-700">Delivery Method</label>
-                <select name="mulching[delivery_method]" id="mulching_delivery"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50">
-                    <option value="wheelbarrow_dump">Wheelbarrow + Dump</option>
-                    <option value="wheelbarrow_hand">Wheelbarrow + Hand Spread</option>
-                    <option value="tractor_rake">Tractor + Rake Out</option>
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Edging Method</label>
+                <select name="mulching[bed_edging_method]" class="form-select w-full">
+                    <option value="manual">Manual</option>
+                    <option value="mechanical">Mechanical</option>
                 </select>
             </div>
 
-            {{-- Labor Rate --}}
-            <div>
-                <label for="mulching_labor_rate" class="block text-sm font-medium text-gray-700">Labor Rate ($/hr)</label>
-                <input type="number" name="mulching[labor_rate]" id="mulching_labor_rate" step="0.01" value="45"
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50" />
-            </div>
-
-            {{-- Crew Size --}}
-            <div>
-                <label for="mulching_crew_size" class="block text-sm font-medium text-gray-700">Crew Size</label>
-                <input type="number" name="mulching[crew_size]" id="mulching_crew_size" step="1" value="2"
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50" />
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Edging Length (Linear Feet)</label>
+                <input type="number" name="mulching[bed_edging_length_lf]" class="form-input w-full" step="1">
             </div>
         </div>
 
+        <!-- Final Cleanup -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block font-semibold mb-1">Include Final Cleanup?</label>
+                <input type="checkbox" name="mulching[include_final_cleanup]" value="1" class="form-checkbox">
+            </div>
+        </div>
     </div>
 </div>
+

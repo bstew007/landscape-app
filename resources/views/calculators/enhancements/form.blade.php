@@ -10,14 +10,32 @@
             {{-- Pruning Section --}}
             @include('calculators.enhancements.partials.pruning')
 
+             {{-- Weeding Section --}}
+            @include('calculators.enhancements.partials.weeding')
+
             {{-- Mulching Section --}}
             @include('calculators.enhancements.partials.mulching')
 
+            {{-- Pine Needle Section --}}
+            @include('calculators.enhancements.partials.pine-needles')
+
             {{-- More sections coming soon --}}
 
-            <div class="mt-6">
-                <button type="submit" class="btn btn-primary">Calculate</button>
-            </div>
+               {{-- Bottom Action Buttons --}}
+<div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-6">
+    <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
+        {{ $editMode ? '🔄 Recalculate' : '🧮 Calculate Enhancement Estimate' }}
+    </button>
+
+    <a href="{{ route('clients.show', $siteVisitId) }}"
+       class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
+        🔙 Back to Site Visit
+    </a>
+</div>
         </form>
     </div>
+
+ 
+
 @endsection
