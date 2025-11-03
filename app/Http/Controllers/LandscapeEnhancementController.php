@@ -18,7 +18,8 @@ class LandscapeEnhancementController extends Controller
     public function create(Request $request)
 {
     $siteVisitId = $request->input('site_visit_id');
-    
+
+    $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($siteVisitId);
     $calculation = \App\Models\Calculation::where('site_visit_id', $siteVisitId)
         ->where('calculation_type', 'enhancements')
         ->first();
@@ -55,6 +56,18 @@ class LandscapeEnhancementController extends Controller
         $weeding = (new WeedingCalculatorService)->calculate($weedingInput);
         $pine_needles = (new PineNeedleCalculatorService)->calculate($pineNeedleInput);
 
+        // Total up labor and material
+        $totalLabor = 
+            ($pruning['labor_cost'] ?? 0) +
+            ($mulching['labor_cost'] ?? 0) +
+            ($weeding['labor_cost'] ?? 0) +
+            ($pine_needles['labor_cost'] ?? 0);
+
+        $totalMaterial = 
+            ($mulching['material_cost'] ?? 0) +
+            ($pine_needles['material_cost'] ?? 0);  
+        $finalPrice = $totalLabor + $totalMaterial;
+
         // If Save button was clicked, persist to DB
         if ($request->has('save')) {
             $payload = [
@@ -88,13 +101,86 @@ class LandscapeEnhancementController extends Controller
             }
         }
 
+        $materials = [];
+
+        // Include mulching material
+        if (!empty($mulching['material_cost'])) {
+        $materials['Mulch'] = [
+        'description' => $mulching['mulch_type'] ?? 'Mulch',
+        'qty' => $mulching['cubic_yards'] ?? 0,
+        'unit' => 'cubic yards',
+        'unit_cost' => $mulching['cost_per_cy'] ?? 0,
+        'total' => $mulching['material_cost'] ?? 0,
+        ];
+}
+
+        // Include pine needles
+        if (!empty($pine_needles['material_cost'])) {
+            $materials['Pine Needles'] = [
+                'description' => 'Pine Needles',
+                'qty' => $pine_needles['bales'] ?? 0,
+                'unit' => 'bales',
+                'unit_cost' => $pine_needles['cost_per_bale'] ?? 0,
+                'total' => $pine_needles['material_cost'] ?? 0,
+            ];
+}
+
+        $material_total = array_sum(array_column($materials, 'total'));
+
+        $laborByTask = [];
+
+            foreach (['pruning', 'mulching', 'weeding', 'pine_needles'] as $section) {
+                foreach ($$section['tasks'] as $task) {
+                    $label = $task['task'];
+                    $hours = $task['hours'] ?? 0;
+
+                    if (!isset($laborByTask[$label])) {
+                        $laborByTask[$label] = 0;
+                    }
+
+                    $laborByTask[$label] += $hours;
+                }
+            }
+
+                    $baseLaborHours = array_sum($laborByTask);
+                    $overheadPercent = $request->input('overhead_percent', 15);
+                    $overheadHours = round($baseLaborHours * ($overheadPercent / 100), 2);
+                    $totalHours = round($baseLaborHours + $overheadHours, 2);
+
+                    // Get combined labor cost
+                    $laborCost = 
+                        ($pruning['labor_cost'] ?? 0) +
+                        ($mulching['labor_cost'] ?? 0) +
+                        ($weeding['labor_cost'] ?? 0) +
+                        ($pine_needles['labor_cost'] ?? 0);
+
+
+                    $data = [
+                    'pruning' => $pruning,
+                    'mulching' => $mulching,
+                    'weeding' => $weeding,
+                    'pine_needles' => $pine_needles,
+                    'labor_cost' => $totalLabor,
+                    'material_cost' => $totalMaterial,
+                    'final_price' => $finalPrice,
+                    'materials' => $materials,
+                    'material_total' => $material_total,
+                    'labor_by_task' => $laborByTask,
+                    'labor_hours' => $baseLaborHours,
+                    'overhead_hours' => $overheadHours,
+                    'total_hours' => $totalHours, 
+                    'overhead_percent' => $overheadPercent,
+                    'job_notes' => 'nullable|string|max:2000',
+             
+                ];
         return view('calculators.enhancements.result', compact(
             'siteVisit',
-            'siteVisitId',
-            'pruning',
-            'mulching',
-            'weeding',
-            'pine_needles'
+           // 'siteVisitId',
+           // 'pruning',
+           // 'mulching',
+           // 'weeding',
+           // 'pine_needles',
+            'data'
         ));
     }
 

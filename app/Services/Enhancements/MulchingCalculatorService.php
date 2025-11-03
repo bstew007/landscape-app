@@ -118,6 +118,15 @@ class MulchingCalculatorService implements EnhancementCalculatorInterface
             'total_cost' => round($materialCost + $totalLaborCost, 2),
             'cost_per_cy' => $costPerCY,
             'tasks' => $tasks,
+
+            // ✅ ADD THIS BLOCK for materials summary:
+            'materials' => [
+            'label' => $mulchType,
+            'qty' => $cubicYards,
+            'unit' => 'cubic yards',
+            'unit_cost' => $costPerCY,
+            'total_cost' => $materialCost,
+    ],
         ];
     }
 }

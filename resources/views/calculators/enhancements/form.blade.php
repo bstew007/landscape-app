@@ -22,6 +22,13 @@
 
             {{-- More sections coming soon --}}
 
+            {{-- Overhead Inputs --}}
+            
+        <div class="mb-6">
+            @include('calculators.partials.overhead_inputs')
+        </div>
+
+
                {{-- Bottom Action Buttons --}}
 <div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-6">
     <button type="submit"
