@@ -4,9 +4,10 @@
     <div class="max-w-4xl mx-auto py-6">
         <h1 class="text-2xl font-bold mb-4">Landscape Enhancements Calculator</h1>
 
-        <form method="POST" action="{{ url('/calculators/landscape-enhancements') }}">
-            @csrf
+        <form method="POST" action="{{ route('calculators.enhancements.calculate') }}">
 
+            @csrf
+                 <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
             {{-- Pruning Section --}}
             @include('calculators.enhancements.partials.pruning')
 

@@ -18,7 +18,7 @@ class LandscapeEnhancementController extends Controller
     public function create(Request $request)
 {
     $siteVisitId = $request->input('site_visit_id');
-
+    
     $calculation = \App\Models\Calculation::where('site_visit_id', $siteVisitId)
         ->where('calculation_type', 'enhancements')
         ->first();
@@ -27,6 +27,7 @@ class LandscapeEnhancementController extends Controller
     $editMode = $calculation !== null;
 
     return view('calculators.enhancements.form', compact(
+        'siteVisit',
         'siteVisitId',
         'formData',
         'calculation',
@@ -40,6 +41,7 @@ class LandscapeEnhancementController extends Controller
     public function calculate(Request $request)
     {
         $siteVisitId = $request->input('site_visit_id');
+        $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($siteVisitId);
 
         // Input sections
         $pruningInput = $request->input('pruning', []);
@@ -51,7 +53,7 @@ class LandscapeEnhancementController extends Controller
         $pruning = (new PruningCalculatorService)->calculate($pruningInput);
         $mulching = (new MulchingCalculatorService)->calculate($mulchingInput);
         $weeding = (new WeedingCalculatorService)->calculate($weedingInput);
-        $pineNeedles = (new PineNeedleCalculatorService)->calculate($pineNeedleInput);
+        $pine_needles = (new PineNeedleCalculatorService)->calculate($pineNeedleInput);
 
         // If Save button was clicked, persist to DB
         if ($request->has('save')) {
@@ -87,11 +89,12 @@ class LandscapeEnhancementController extends Controller
         }
 
         return view('calculators.enhancements.result', compact(
+            'siteVisit',
             'siteVisitId',
             'pruning',
             'mulching',
             'weeding',
-            'pineNeedles'
+            'pine_needles'
         ));
     }
 
@@ -113,7 +116,7 @@ class LandscapeEnhancementController extends Controller
             'pruning',
             'mulching',
             'weeding',
-            'pineNeedles'
+            'pine_needles'
         ));
 
         return $pdf->download('enhancements-estimate.pdf');
