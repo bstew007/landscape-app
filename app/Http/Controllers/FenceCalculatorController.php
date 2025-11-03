@@ -69,8 +69,6 @@ public function downloadPdf($id)
     ]);
 }
 
-
-
    public function calculate(Request $request)
 {
     $validated = $request->validate([

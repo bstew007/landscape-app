@@ -89,6 +89,8 @@ Route::prefix('calculators/fence')->group(function () {
     Route::get('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'create'])->name('calculators.enhancements.form');
     Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])->name('calculators.enhancements.calculate');
     Route::get('/calculators/landscape-enhancements/pdf/{id}', [LandscapeEnhancementController::class, 'downloadPdf'])->name('calculators.enhancements.downloadPdf');
+    Route::get('/calculators/landscape-enhancements/{id}/edit', [LandscapeEnhancementController::class, 'edit'])->name('calculators.enhancements.edit');
+
 
     // ================================
     // ✅ Clients & Site Visits

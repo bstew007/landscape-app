@@ -8,6 +8,10 @@
 
             @csrf
                  <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
+
+               @if($editMode && isset($existingCalculation))
+                <input type="hidden" name="calculation_id" value="{{ $existingCalculation->id }}">
+            @endif   
             {{-- Pruning Section --}}
             @include('calculators.enhancements.partials.pruning')
 
@@ -23,7 +27,7 @@
             {{-- More sections coming soon --}}
 
             {{-- Overhead Inputs --}}
-            
+
         <div class="mb-6">
             @include('calculators.partials.overhead_inputs')
         </div>
