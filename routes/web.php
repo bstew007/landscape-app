@@ -75,7 +75,7 @@ Route::prefix('calculators/fence')->group(function () {
     // ================================
     // ✅ Retaining Wall Calculator Routes
     // ================================
-    Route::prefix('calculators/retaining-wall')->group(function () {
+        Route::prefix('calculators/retaining-wall')->group(function () {
         Route::get('/', [RetainingWallCalculatorController::class, 'showForm'])->name('calculators.wall.form');
         Route::post('/', [RetainingWallCalculatorController::class, 'calculate'])->name('calculators.wall.calculate');
         Route::get('/results/{calculation}', [RetainingWallCalculatorController::class, 'showResult'])->name('calculations.wall.showResult');
@@ -90,6 +90,8 @@ Route::prefix('calculators/fence')->group(function () {
     Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])->name('calculators.enhancements.calculate');
     Route::get('/calculators/landscape-enhancements/pdf/{id}', [LandscapeEnhancementController::class, 'downloadPdf'])->name('calculators.enhancements.downloadPdf');
     Route::get('/calculators/landscape-enhancements/{id}/edit', [LandscapeEnhancementController::class, 'edit'])->name('calculators.enhancements.edit');
+    Route::get('/calculators/landscape-enhancements/{id}/result', [LandscapeEnhancementController::class, 'showResult'])->name('calculators.enhancements.result');
+
 
 
     // ================================

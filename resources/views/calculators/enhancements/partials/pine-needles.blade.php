@@ -1,8 +1,8 @@
 <div 
     x-data="{
-        open: false,
-        pineSqft: 0,
-        depthInches: 2,
+        open: true,
+        pineSqft: {{ old('pine_needles.sqft', $formData['pine_needles']['sqft'] ?? 0) }},
+        depthInches: {{ old('pine_needles.depth_in_inches', $formData['pine_needles']['depth_in_inches'] ?? 2) }},
         get estimatedBales() {
             const sqftPerBaleAt2Inches = 45;
             return (this.pineSqft / sqftPerBaleAt2Inches) * (this.depthInches / 2);
@@ -32,6 +32,7 @@
                 <input type="number"
                        name="pine_needles[sqft]"
                        x-model.number="pineSqft"
+                       value="{{ old('pine_needles.sqft', $formData['pine_needles']['sqft'] ?? '') }}"
                        class="form-input w-full"
                        min="0"
                        step="1"
@@ -42,9 +43,11 @@
                 <input type="number"
                        name="pine_needles[depth_in_inches]"
                        x-model.number="depthInches"
+                       value="{{ old('pine_needles.depth_in_inches', $formData['pine_needles']['depth_in_inches'] ?? 2) }}"
                        class="form-input w-full"
                        step="0.1"
-                       value="2">
+                       min="0"
+                       placeholder="e.g. 2">
             </div>
             <div class="flex items-end">
                 <button type="button"
@@ -79,18 +82,22 @@
                            class="form-input w-full"
                            min="0"
                            step="1"
-                           placeholder="Bales">
+                           placeholder="Bales"
+                           value="{{ old('pine_needles.' . $key . '.bales', $formData['pine_needles'][$key]['bales'] ?? '') }}">
                 </div>
             @endforeach
         </div>
-        <div class="border p-3 rounded bg-gray-50">
-    <label class="block font-semibold mb-1">Override Material Cost per Bale (optional)</label>
-    <input type="number"
-           name="pine_needles[cost_per_bale]"
-           class="form-input w-full"
-           step="0.01"
-           placeholder="e.g. 6.00">
-</div>
 
+        {{-- Material Cost Override --}}
+        <div class="mt-4 border p-3 rounded bg-gray-50">
+            <label class="block font-semibold mb-1">Override Material Cost per Bale (optional)</label>
+            <input type="number"
+                   name="pine_needles[cost_per_bale]"
+                   class="form-input w-full"
+                   step="0.01"
+                   placeholder="e.g. 6.00"
+                   value="{{ old('pine_needles.cost_per_bale', $formData['pine_needles']['cost_per_bale'] ?? '') }}">
+        </div>
     </div>
 </div>
+

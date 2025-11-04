@@ -15,16 +15,17 @@ class LandscapeEnhancementController extends Controller
     /**
      * Show the form for new or edit mode
      */
-    public function create(Request $request)
+public function create(Request $request)
 {
     $siteVisitId = $request->input('site_visit_id');
 
     $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($siteVisitId);
+
     $calculation = \App\Models\Calculation::where('site_visit_id', $siteVisitId)
         ->where('calculation_type', 'enhancements')
         ->first();
 
-    $formData = $calculation ? json_decode($calculation->data, true) : [];
+    $formData = $calculation->data ?? []; // ✅ Laravel handles JSON decoding
     $editMode = $calculation !== null;
 
     return view('calculators.enhancements.form', compact(
@@ -32,25 +33,32 @@ class LandscapeEnhancementController extends Controller
         'siteVisitId',
         'formData',
         'calculation',
-       'editMode',
+        'editMode',
     ));
 }
+
 
 public function edit($id)
 {
     $calculation = Calculation::findOrFail($id);
-    $data = json_decode($calculation->data, true); // ← decode stored JSON
+    $data = $calculation->data ?? [];
 
-    // Flash scalar data for old() fallback
-    if (is_array($data)) {
-    foreach ($data as $key => $value) {
-        if (is_scalar($value)) {
-            session()->flash('_old_input.' . $key, $value);
+    // ✅ Recursively flash all form data to old() session
+    $flatten = function (array $array, string $prefix = '') use (&$flatten) {
+        $result = [];
+        foreach ($array as $key => $value) {
+            $newKey = $prefix === '' ? $key : "{$prefix}.{$key}";
+            if (is_array($value)) {
+                $result += $flatten($value, $newKey);
+            } else {
+                $result[$newKey] = $value;
+            }
         }
-    }
-}
+        return $result;
+    };
 
-    // Load related site visit and client
+    session()->flash('_old_input', $flatten($data));
+
     $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
 
     return view('calculators.enhancements.form', [
@@ -62,36 +70,47 @@ public function edit($id)
         'editMode' => true,
     ]);
 }
-
-
     /**
      * Run calculations and return results
      */
    public function calculate(Request $request)
 {
-    $siteVisitId = $request->input('site_visit_id');
+    // --------------------------------------------
+    // ✅ Step 1: Validate Basic Inputs
+    // --------------------------------------------
+    $validated = $request->validate([
+        'site_visit_id' => 'required|exists:site_visits,id',
+        'calculation_id' => 'nullable|exists:calculations,id',
+        'labor_rate' => 'required|numeric|min:1',
+        'overhead_percent' => 'nullable|numeric|min:0',
+        'job_notes' => 'nullable|string|max:2000',
+    ]);
+
+    $siteVisitId = $validated['site_visit_id'];
+    $laborRate = (float) $validated['labor_rate'];
+    $overheadPercent = (float) ($validated['overhead_percent'] ?? 15);
+
     $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($siteVisitId);
 
-    // ✅ STEP 1: Pull inputs
-    $laborRate = (float) $request->input('labor_rate', 65);
+    // --------------------------------------------
+    // ✅ Step 2: Input Sections
+    // --------------------------------------------
     $pruningInput = $request->input('pruning', []);
     $mulchingInput = $request->input('mulching', []);
     $weedingInput = $request->input('weeding', []);
     $pineNeedleInput = $request->input('pine_needles', []);
 
-    // ✅ STEP 2: Run calculators with correct data
+    // --------------------------------------------
+    // ✅ Step 3: Run Calculators
+    // --------------------------------------------
     $pruning = (new PruningCalculatorService)->calculate($pruningInput, $laborRate);
     $mulching = (new MulchingCalculatorService)->calculate($mulchingInput, $laborRate);
     $weeding = (new WeedingCalculatorService)->calculate($weedingInput, $laborRate);
     $pine_needles = (new PineNeedleCalculatorService)->calculate($pineNeedleInput, $laborRate);
 
-    // Run calculators
-   // $pruning = (new PruningCalculatorService)->calculate($pruningInput);
-   // $mulching = (new MulchingCalculatorService)->calculate($mulchingInput);
-  //  $weeding = (new WeedingCalculatorService)->calculate($weedingInput);
-  //  $pine_needles = (new PineNeedleCalculatorService)->calculate($pineNeedleInput);
-
-    // Total up labor and material
+    // --------------------------------------------
+    // ✅ Step 4: Totals
+    // --------------------------------------------
     $totalLabor = 
         ($pruning['labor_cost'] ?? 0) +
         ($mulching['labor_cost'] ?? 0) +
@@ -100,11 +119,13 @@ public function edit($id)
 
     $totalMaterial = 
         ($mulching['material_cost'] ?? 0) +
-        ($pine_needles['material_cost'] ?? 0);  
+        ($pine_needles['material_cost'] ?? 0);
 
     $finalPrice = $totalLabor + $totalMaterial;
 
-    // Build materials summary
+    // --------------------------------------------
+    // ✅ Step 5: Materials Summary
+    // --------------------------------------------
     $materials = [];
 
     if (!empty($mulching['material_cost'])) {
@@ -129,8 +150,11 @@ public function edit($id)
 
     $material_total = array_sum(array_column($materials, 'total'));
 
-    // Build labor task breakdown
+    // --------------------------------------------
+    // ✅ Step 6: Labor by Task (flattened)
+    // --------------------------------------------
     $laborByTask = [];
+
     foreach (['pruning', 'mulching', 'weeding', 'pine_needles'] as $section) {
         foreach ($$section['tasks'] as $task) {
             $label = $task['task'];
@@ -145,47 +169,53 @@ public function edit($id)
     }
 
     $baseLaborHours = array_sum($laborByTask);
-    $overheadPercent = $request->input('overhead_percent', 15);
     $overheadHours = round($baseLaborHours * ($overheadPercent / 100), 2);
     $totalHours = round($baseLaborHours + $overheadHours, 2);
 
-    // Final structured output
-    $data = [
+    // --------------------------------------------
+    // ✅ Step 7: Final Structured Data (for saving)
+    // --------------------------------------------
+    $data = array_merge($validated, [
         'pruning' => $pruning,
         'mulching' => $mulching,
         'weeding' => $weeding,
         'pine_needles' => $pine_needles,
-        'labor_cost' => $totalLabor,
-        'material_cost' => $totalMaterial,
-        'final_price' => $finalPrice,
-        'materials' => $materials,
-        'material_total' => $material_total,
-        'labor_by_task' => $laborByTask,
-        'labor_hours' => $baseLaborHours,
+
+        'labor_by_task' => array_map(fn($h) => round($h, 2), $laborByTask),
+        'labor_hours' => round($baseLaborHours, 2),
         'overhead_hours' => $overheadHours,
         'total_hours' => $totalHours,
-        'overhead_percent' => $overheadPercent,
-        'job_notes' => $request->input('job_notes', null),
-    ];
+        'labor_cost' => round($totalLabor, 2),
 
-    // 💾 Save or update the calculation if requested
-   if ($request->has('save')) {
-    $calculation = $request->filled('calculation_id')
-        ? Calculation::find($request->input('calculation_id'))
-        : Calculation::firstOrNew([
-            'site_visit_id' => $siteVisitId,
+        'material_total' => $material_total,
+        'materials' => $materials,
+        'final_price' => round($finalPrice, 2),
+    ]);
+
+    // --------------------------------------------
+    // ✅ Step 8: Save to DB
+    // --------------------------------------------
+    $calc = !empty($validated['calculation_id'])
+        ? tap(Calculation::find($validated['calculation_id']))->update(['data' => $data])
+        : Calculation::create([
+            'site_visit_id' => $validated['site_visit_id'],
             'calculation_type' => 'enhancements',
+            'data' => $data,
         ]);
 
-    $calculation->site_visit_id = $siteVisitId;
-    $calculation->calculation_type = 'enhancements';
-    $calculation->data = $data; // Save array directly (Eloquent will cast to JSON if needed)
-    $calculation->save();
+    // --------------------------------------------
+    // ✅ Step 9: Show result view
+    // --------------------------------------------
+  return redirect()->route('calculators.enhancements.result', $calc->id);
 }
 
+public function showResult($id)
+{
+    $calculation = Calculation::findOrFail($id);
+    $data = $calculation->data; // JSON column automatically casts to array if in $casts
+    $siteVisit = \App\Models\SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
 
-    // ⏎ Return result view
-    return view('calculators.enhancements.result', compact('siteVisit', 'data'));
+    return view('calculators.enhancements.result', compact('siteVisit', 'data', 'calculation'));
 }
 
 
