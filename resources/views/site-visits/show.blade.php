@@ -70,12 +70,12 @@
                                 PDF
                             </a>
 
-                            @elseif ($calc->calculation_type === 'enhancements')
-                            <a href="{{ route('calculators.enhancements.edit', $calc->id) }}"
+                            @elseif ($calc->calculation_type === 'pruning')
+                            <a href="{{ route('calculators.pruning.edit', $calc->id) }}"
                             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
-                            <a href="{{ route('calculators.enhancements.downloadPdf', $calc->id) }}"
+                            <a href="{{ route('calculators.pruning.downloadPdf', $calc->id) }}"
                             class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
                                 PDF
                             </a>

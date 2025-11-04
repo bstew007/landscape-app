@@ -276,6 +276,8 @@ public function downloadPdf($id)
 
     return redirect()->route('calculators.fence.showResult', $calc->id);
 }
+
+
 public function showResult(Calculation $calculation)
 {
     $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id);

@@ -45,7 +45,7 @@
                 <a href="{{ route('calculators.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">📊 Calculator Dashboard</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧱 Retaining Wall</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧮 Paver Patio</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.enhancements.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Enhancements</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Pruning</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
             </div>
         </nav>
@@ -75,7 +75,7 @@
                 <a href="{{ route('calculators.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">📊 Calculator Dashboard</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧱 Retaining Wall</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧮 Paver Patio</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.enhancements.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Enhancements</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Pruning</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
                 
     </a>

@@ -1,7 +1,7 @@
 <div 
     x-data="{ 
         open: true, 
-        palm: {{ old('pruning.has_palm', !empty($formData['pruning']['palm_prune_short']) ? 'true' : 'false') }} 
+        palm: {{ old('pruning.has_palm') ?? (!empty($formData['pruning']['palm_prune_short']) ? 'true' : 'false') }} 
     }" 
     class="mb-6 border border-gray-300 rounded-md p-4 bg-white shadow-sm"
 >
@@ -18,40 +18,43 @@
     <div x-show="open" x-transition>
         {{-- 🌳 Shrub / Perennial / Tree Pruning --}}
         <div class="mb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-            @foreach([
-                'shearing' => 'Shearing Shrubs',
-                'hand_pruning' => 'Hand Pruning Shrubs',
-                'ladder_pruning' => 'Ladder Pruning',
-                'tree_pruning' => 'Tree Pruning',
-                'deadheading' => 'Deadheading Perennials (Sq Ft)',
-                'cut_back_grasses' => 'Cut Back Grasses',
-                'cut_back_annuals' => 'Cut Back Annuals',
-                'hedge_shearing' => 'Shearing Hedges (Face Area Sq Ft)',
-            ] as $key => $label)
-                @php
-                    $inputKey = in_array($key, ['deadheading', 'hedge_shearing']) 
-                        ? 'sqft' 
-                        : (in_array($key, ['cut_back_annuals']) ? 'plants' : 'count');
-                @endphp
-                <div class="border p-3 rounded bg-gray-50">
-                    <label class="block font-semibold mb-1">{{ $label }}</label>
-                    <input type="number"
-                           name="pruning[{{ $key }}][{{ $inputKey }}]"
-                           class="form-input w-full mb-2"
-                           min="0"
-                           placeholder="Qty"
-                           value="{{ old('pruning.' . $key . '.' . $inputKey, $formData['pruning'][$key][$inputKey] ?? '') }}">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" 
-                               name="pruning[{{ $key }}][overgrown]" 
-                               value="1" 
-                               class="form-checkbox"
-                               {{ old('pruning.' . $key . '.overgrown', $formData['pruning'][$key]['overgrown'] ?? false) ? 'checked' : '' }}>
-                        <span class="ml-2 text-sm">Overgrown?</span>
-                    </label>
-                </div>
-            @endforeach
+    @foreach([
+        'shearing' => 'Shearing Shrubs',
+        'hand_pruning' => 'Hand Pruning Shrubs',
+        'ladder_pruning' => 'Ladder Pruning',
+        'tree_pruning' => 'Tree Pruning',
+        'deadheading' => 'Deadheading Perennials (Sq Ft)',
+        'cut_back_grasses' => 'Cut Back Grasses',
+        'cut_back_annuals' => 'Cut Back Annuals',
+        'hedge_shearing' => 'Shearing Hedges (Face Area Sq Ft)',
+    ] as $key => $label)
+        @php
+            $inputKey = in_array($key, ['deadheading', 'hedge_shearing']) 
+                ? 'sqft' 
+                : (in_array($key, ['cut_back_annuals']) ? 'plants' : 'count');
+        @endphp
+
+        <div class="border p-3 rounded bg-gray-50">
+            <label class="block font-semibold mb-1">{{ $label }}</label>
+
+            <input type="number"
+                   name="pruning[{{ $key }}][{{ $inputKey }}]"
+                   class="form-input w-full mb-2"
+                   min="0"
+                   placeholder="Qty"
+                   value="{{ (old('pruning.' . $key . '.' . $inputKey)) ?? ($formData['pruning'][$key][$inputKey] ?? '') }}">
+
+            <label class="inline-flex items-center">
+                <input type="checkbox"
+                       name="pruning[{{ $key }}][overgrown]"
+                       value="1"
+                       class="form-checkbox"
+                       {{ (old('pruning.' . $key . '.overgrown') ?? ($formData['pruning'][$key]['overgrown'] ?? false)) ? 'checked' : '' }}>
+                <span class="ml-2 text-sm">Overgrown?</span>
+            </label>
         </div>
+    @endforeach
+</div>
 
         {{-- 🌴 Palm Pruning Toggle --}}
         <div class="mb-4">
@@ -59,7 +62,7 @@
                 <input type="checkbox" 
                        x-model="palm" 
                        class="form-checkbox h-5 w-5 text-green-600"
-                       {{ old('pruning.has_palm', !empty($formData['pruning']['palm_prune_short'])) ? 'checked' : '' }}>
+                       {{ (old('pruning.has_palm') ?? !empty($formData['pruning']['palm_prune_short'])) ? 'checked' : '' }}>
                 <span class="ml-2 text-sm font-semibold text-gray-800">Include Palm Pruning?</span>
             </label>
         </div>
@@ -83,7 +86,7 @@
                                min="0"
                                step="1"
                                placeholder="Palms"
-                               value="{{ old('pruning.' . $key . '.palms', $formData['pruning'][$key]['palms'] ?? '') }}">
+                               value="{{ old('pruning.' . $key . '.palms') ?? ($formData['pruning'][$key]['palms'] ?? '') }}">
                     </div>
                 @endforeach
             </div>
@@ -93,8 +96,8 @@
         <div class="mt-6">
             <label class="block font-semibold mb-2">Include Cleanup?</label>
             <select name="pruning[cleanup][method]" class="form-select w-full">
-                <option value="auto" {{ old('pruning.cleanup.method', $formData['pruning']['cleanup']['method'] ?? '') === 'auto' ? 'selected' : '' }}>Auto (% of pruning time)</option>
-                <option value="manual" {{ old('pruning.cleanup.method', $formData['pruning']['cleanup']['method'] ?? '') === 'manual' ? 'selected' : '' }}>Manual Hours</option>
+                <option value="auto" {{ (old('pruning.cleanup.method') ?? ($formData['pruning']['cleanup']['method'] ?? '')) === 'auto' ? 'selected' : '' }}>Auto (% of pruning time)</option>
+                <option value="manual" {{ (old('pruning.cleanup.method') ?? ($formData['pruning']['cleanup']['method'] ?? '')) === 'manual' ? 'selected' : '' }}>Manual Hours</option>
             </select>
         </div>
 
@@ -106,7 +109,7 @@
                        class="form-input w-full" 
                        step="1" 
                        placeholder="e.g. 15"
-                       value="{{ old('pruning.cleanup.percent_additional_time', $formData['pruning']['cleanup']['percent_additional_time'] ?? '') }}">
+                       value="{{ old('pruning.cleanup.percent_additional_time') ?? ($formData['pruning']['cleanup']['percent_additional_time'] ?? '') }}">
             </div>
             <div>
                 <label class="block font-semibold">Cleanup Manual Hours (if Manual)</label>
@@ -115,8 +118,9 @@
                        class="form-input w-full" 
                        step="0.1" 
                        placeholder="e.g. 2.5"
-                       value="{{ old('pruning.cleanup.manual_hours', $formData['pruning']['cleanup']['manual_hours'] ?? '') }}">
+                       value="{{ old('pruning.cleanup.manual_hours') ?? ($formData['pruning']['cleanup']['manual_hours'] ?? '') }}">
             </div>
         </div>
     </div>
 </div>
+

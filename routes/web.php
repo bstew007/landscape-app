@@ -6,10 +6,10 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\SiteVisitController;
 use App\Http\Controllers\RetainingWallCalculatorController;
 use App\Http\Controllers\PaverPatioCalculatorController;
-use App\Http\Controllers\LandscapeEnhancementController;
 use App\Http\Controllers\ProductionRateController;
 use App\Http\Controllers\FenceCalculatorController;
 use App\Http\Controllers\CalculationController;
+use App\Http\Controllers\PruningCalculatorController;
 
 Route::get('/', fn () => redirect()->route('clients.index'));
 
@@ -53,8 +53,7 @@ Route::prefix('calculators/fence')->group(function () {
     Route::get('/results/{calculation}', [FenceCalculatorController::class, 'showResult'])
         ->name('calculators.fence.showResult');
 
-    Route::get('/{calculation}/edit', [FenceCalculatorController::class, 'edit'])
-        ->name('calculators.fence.edit');
+    Route::get('/{calculation}/edit', [FenceCalculatorController::class, 'edit'])->name('calculators.fence.edit');
 
     Route::get('/{calculation}/pdf', [FenceCalculatorController::class, 'downloadPdf'])
         ->name('calculators.fence.downloadPdf');
@@ -84,14 +83,23 @@ Route::prefix('calculators/fence')->group(function () {
     });
 
     // ================================
-    // ✅ Landscape Enhancements
+    // ✅ Pruning
     // ================================
-    Route::get('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'create'])->name('calculators.enhancements.form');
-    Route::post('/calculators/landscape-enhancements', [LandscapeEnhancementController::class, 'calculate'])->name('calculators.enhancements.calculate');
-    Route::get('/calculators/landscape-enhancements/pdf/{id}', [LandscapeEnhancementController::class, 'downloadPdf'])->name('calculators.enhancements.downloadPdf');
-    Route::get('/calculators/landscape-enhancements/{id}/edit', [LandscapeEnhancementController::class, 'edit'])->name('calculators.enhancements.edit');
-    Route::get('/calculators/landscape-enhancements/{id}/result', [LandscapeEnhancementController::class, 'showResult'])->name('calculators.enhancements.result');
 
+// ================================
+// ✅ Pruning
+// ================================
+
+Route::prefix('calculators/pruning')->name('calculators.pruning.')->group(function () {
+    Route::get('/', [PruningCalculatorController::class, 'showForm'])->name('form');
+    Route::post('/calculate', [PruningCalculatorController::class, 'calculate'])->name('calculate');
+    Route::get('/{calculation}/edit', [PruningCalculatorController::class, 'edit'])->name('edit');
+    Route::get('/results/{calculation}', [PruningCalculatorController::class, 'showResult'])->name('showResult');
+});
+
+// ✅ This must be OUTSIDE the group
+Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorController::class, 'downloadPdf'])
+    ->name('calculators.pruning.downloadPdf');
 
 
     // ================================

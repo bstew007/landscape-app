@@ -29,9 +29,9 @@
             ➕ Fence Calculator
         </a>
 
-        <a href="{{ route('calculators.enhancements.form', ['site_visit_id' => $siteVisit->id]) }}"
+        <a href="{{ route('calculators.pruning.form', ['site_visit_id' => $siteVisit->id]) }}"
            class="inline-block px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow">
-            ➕ Enhancements Calculator
+            ➕ Pruning Calculator
         </a>
 
 
