@@ -48,6 +48,7 @@
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Pruning</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.weeding.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧤 Weeding</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Mulching</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pine_needles.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Pine Needles</a>
                 
             </div>
         </nav>
@@ -80,7 +81,8 @@
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Pruning</a>
                 <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.weeding.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧤 Weeding</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Weeding</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Mulching</a>
+                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pine_needles.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Pine Needles</a>
                 
                 
     </a>

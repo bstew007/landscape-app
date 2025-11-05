@@ -12,6 +12,7 @@ use App\Http\Controllers\CalculationController;
 use App\Http\Controllers\PruningCalculatorController;
 use App\Http\Controllers\WeedingCalculatorController;
 use App\Http\Controllers\MulchingCalculatorController;
+use App\Http\Controllers\PineNeedleCalculatorController;
 
 
 Route::get('/', fn () => redirect()->route('clients.index'));
@@ -110,6 +111,22 @@ Route::prefix('calculators/fence')->group(function () {
 
     Route::get('/calculators/mulching/pdf/{calculation}', [MulchingCalculatorController::class, 'downloadPdf'])
     ->name('calculators.mulching.downloadPdf');
+
+
+// ================================
+    // ✅ Pine Needles
+    // ================================
+    Route::prefix('calculators/pine_needles')->name('calculators.pine_needles.')->group(function () {
+    Route::get('/', [PineNeedleCalculatorController::class, 'showForm'])->name('form');
+    Route::post('/calculate', [PineNeedleCalculatorController::class, 'calculate'])->name('calculate');
+    Route::get('/{calculation}/edit', [PineNeedleCalculatorController::class, 'edit'])->name('edit');
+    Route::get('/results/{calculation}', [PineNeedleCalculatorController::class, 'showResult'])->name('showResult');
+});
+
+    Route::get('/calculators/pine_needles/pdf/{calculation}', [PineNeedleCalculatorController::class, 'downloadPdf'])
+    ->name('calculators.pine_needles.downloadPdf');
+
+
 
 // ================================
 // ✅ Pruning

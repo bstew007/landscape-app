@@ -14,32 +14,51 @@
     <h2 class="text-xl font-bold mb-4">🧮 Add New Calculations to Site Visit</h2>
 
     @if ($siteVisit)
-        <a href="{{ route('calculators.wall.form', ['site_visit_id' => $siteVisit->id]) }}"
-           class="inline-block px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow">
-            ➕ Retaining Wall Calculator
-        </a>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            <a href="{{ route('calculators.wall.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Retaining Wall Calculator
+            </a>
 
-        <a href="{{ route('calculators.patio.form', ['site_visit_id' => $siteVisit->id]) }}"
-           class="inline-block px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow">
-            ➕ Paver Calculator
-        </a>
+            <a href="{{ route('calculators.patio.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Paver Calculator
+            </a>
 
-         <a href="{{ route('calculators.fence.form', ['site_visit_id' => $siteVisit->id]) }}"
-           class="inline-block px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow">
-            ➕ Fence Calculator
-        </a>
+            <a href="{{ route('calculators.fence.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Fence Calculator
+            </a>
 
-        <a href="{{ route('calculators.pruning.form', ['site_visit_id' => $siteVisit->id]) }}"
-           class="inline-block px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow">
-            ➕ Pruning Calculator
-        </a>
+            <a href="{{ route('calculators.pruning.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Pruning Calculator
+            </a>
 
+            <a href="{{ route('calculators.weeding.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Weeding Calculator
+            </a>
 
-        <p class="text-sm text-gray-500 mt-2">
+            <a href="{{ route('calculators.mulching.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Mulching Calculator
+            </a>
+
+            
+            <a href="{{ route('calculators.pine_needles.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Pine Needle Calculator
+            </a>
+        </div>
+
+        <p class="text-sm text-gray-500">
             Last site visit: {{ optional($siteVisit->visit_date)->format('F j, Y') ?? 'N/A' }}
         </p>
     @else
-        <p class="text-gray-700 mb-4">No site visit found for this client. You’ll need to create one to access estimators.</p>
+        <p class="text-gray-700 mb-4">
+            No site visit found for this client. You’ll need to create one to access estimators.
+        </p>
 
         <a href="{{ route('clients.site-visits.create', $client) }}"
            class="inline-block px-6 py-3 bg-green-600 text-white hover:bg-green-700 rounded shadow">
@@ -47,4 +66,4 @@
         </a>
     @endif
 </div>
-@endsection
+ @endsection

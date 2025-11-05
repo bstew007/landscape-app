@@ -8,14 +8,14 @@ use App\Models\SiteVisit;
 use App\Services\LaborCostCalculatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class MulchingCalculatorController extends Controller
+class PineNeedleCalculatorController extends Controller
 {
     public function showForm(Request $request)
     {
         $siteVisitId = $request->query('site_visit_id');
         $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
 
-        return view('calculators.mulching.form', [
+        return view('calculators.pine_needles.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
             'clientId' => $siteVisit->client->id,
@@ -26,7 +26,7 @@ class MulchingCalculatorController extends Controller
 
     public function edit(Calculation $calculation)
     {
-        return view('calculators.mulching.form', [
+        return view('calculators.pine_needles.form', [
             'editMode' => true,
             'formData' => $calculation->data,
             'calculation' => $calculation,
@@ -64,7 +64,7 @@ class MulchingCalculatorController extends Controller
     $mulchYards = 0;
 
     if ($areaSqft > 0 && $depthInches > 0) {
-        $mulchYards = round(($areaSqft * ($depthInches / 12)) / 27, 2);
+        $mulchYards = round($areaSqft  / 37.5, 2);
     }
 
     // ✅ Materials
@@ -83,7 +83,7 @@ class MulchingCalculatorController extends Controller
     $laborRate = (float) $validated['labor_rate'];
 
     // Load production rates from DB
-    $dbRates = ProductionRate::where('calculator', 'mulching')->pluck('rate', 'task');
+    $dbRates = ProductionRate::where('calculator', 'pine_needles')->pluck('rate', 'task');
 
     $results = [];
     $totalHours = 0;
@@ -128,19 +128,19 @@ class MulchingCalculatorController extends Controller
         ? tap(Calculation::find($validated['calculation_id']))->update(['data' => $data])
         : Calculation::create([
             'site_visit_id' => $validated['site_visit_id'],
-            'calculation_type' => 'mulching',
+            'calculation_type' => 'pine_needles',
             'data' => $data,
         ]);
 
     // ✅ Redirect to results
-    return redirect()->route('calculators.mulching.showResult', $calc->id);
+    return redirect()->route('calculators.pine_needles.showResult', $calc->id);
 }
 
     public function showResult(Calculation $calculation)
     {
         $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail();
 
-        return view('calculators.mulching.result', [
+        return view('calculators.pine_needles.result', [
             'data' => $calculation->data,
             'siteVisit' => $siteVisit,
             'calculation' => $calculation,
@@ -151,12 +151,12 @@ class MulchingCalculatorController extends Controller
     {
         $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
 
-        $pdf = Pdf::loadView('calculators.mulching.pdf', [
+        $pdf = Pdf::loadView('calculators.pine_needles.pdf', [
             'data' => $calculation->data,
             'siteVisit' => $siteVisit,
             'calculation' => $calculation,
         ]);
 
-        return $pdf->download('mulching_estimate.pdf');
+        return $pdf->download('pine_needles_estimate.pdf');
     }
 }
