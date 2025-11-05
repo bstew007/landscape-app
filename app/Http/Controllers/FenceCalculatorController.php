@@ -263,6 +263,8 @@ public function downloadPdf($id)
         'materials' => $materials,
         'job_notes' => $request->input('job_notes'),
         'labor_by_task' => $labor_breakdown,
+        'vinyl_corner_posts' => $validated['vinyl_corner_posts'] ?? 0,
+        'vinyl_end_posts' => $validated['vinyl_end_posts'] ?? 0,
     ];
 
     // ✅ Save or update calculation
