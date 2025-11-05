@@ -17,9 +17,9 @@
         {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
-        {{-- Mulch Area & Depth --}}
+        {{-- Pine Needle Area & Depth --}}
 <div class="mb-6">
-    <h2 class="text-xl font-semibold mb-2">Mulch Coverage</h2>
+    <h2 class="text-xl font-semibold mb-2">Pine Needle Coverage</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {{-- Square Footage --}}
@@ -52,15 +52,14 @@
     🧮 <strong>Estimated Mulch Needed:</strong> <span id="mulchYards"></span> cubic yards
 </div>
 
-{{-- Mulch Type Dropdown --}}
+{{-- Straw Type Dropdown --}}
 <div class="mb-6">
     <label class="block font-semibold mb-1">Mulch Type</label>
     <select name="mulch_type" class="form-select w-full">
         <option value="" disabled {{ !isset($formData['mulch_type']) ? 'selected' : '' }}>Select a mulch type</option>
         @php
             $types = [
-                'Forest Brown', 'Black', 'Red', 'Triple Shredded Hardwood',
-                'Playground', 'Pine Fines', 'Mini Nuggets', 'Big Nuggets'
+                'Pine Needles', 'Wheat Straw'
             ];
             $selectedType = old('mulch_type', $formData['mulch_type'] ?? '');
         @endphp
