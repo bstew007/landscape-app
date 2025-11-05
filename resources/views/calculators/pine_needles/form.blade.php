@@ -49,7 +49,7 @@
 </div>
 
 <div id="mulchEstimate" class="mb-6 bg-green-50 border border-green-200 rounded p-4 text-green-800 font-semibold hidden">
-    🧮 <strong>Estimated Mulch Needed:</strong> <span id="mulchYards"></span> cubic yards
+    🧮 <strong>Estimated Straw Needed:</strong> <span id="mulchYards"></span> bales
 </div>
 
 {{-- Straw Type Dropdown --}}
