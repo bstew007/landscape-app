@@ -56,7 +56,7 @@ class PineNeedleCalculatorController extends Controller
     ]);
 
     // ✅ Define mulch unit cost (default or dynamic)
-    $unitCost = 35; // You can make this dynamic later, e.g., $validated['unit_cost'] ?? 35;
+    $unitCost = 7; // You can make this dynamic later, e.g., $validated['unit_cost'] ?? 35;
 
     // ✅ Calculate mulch volume in cubic yards
     $areaSqft = (float) $request->input('area_sqft', 0);
