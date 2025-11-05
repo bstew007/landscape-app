@@ -17,9 +17,9 @@
         {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
-        {{-- Pine Needle Area & Depth --}}
+        {{-- Straw Area & Depth --}}
 <div class="mb-6">
-    <h2 class="text-xl font-semibold mb-2">Pine Needle Coverage</h2>
+    <h2 class="text-xl font-semibold mb-2">Straw Coverage</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {{-- Square Footage --}}
@@ -36,7 +36,7 @@
 
         {{-- Depth (in inches) --}}
         <div>
-            <label class="block font-semibold mb-1">Desired Mulch Depth (inches)</label>
+            <label class="block font-semibold mb-1">Desired Straw Depth (inches)</label>
             <input type="number"
                    name="depth_inches"
                    step="any"
@@ -54,9 +54,9 @@
 
 {{-- Straw Type Dropdown --}}
 <div class="mb-6">
-    <label class="block font-semibold mb-1">Mulch Type</label>
+    <label class="block font-semibold mb-1">Straw Type</label>
     <select name="mulch_type" class="form-select w-full">
-        <option value="" disabled {{ !isset($formData['mulch_type']) ? 'selected' : '' }}>Select a mulch type</option>
+        <option value="" disabled {{ !isset($formData['mulch_type']) ? 'selected' : '' }}>Select a straw type</option>
         @php
             $types = [
                 'Pine Needles', 'Wheat Straw'
