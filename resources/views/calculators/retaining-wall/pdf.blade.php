@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Retaining Wall Estimate</title>
+    <title>Retaining Wall Data</title>
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -59,7 +59,7 @@
     </div>
 
     <div class="header">
-        <h1>Retaining Wall Estimate</h1>
+        <h1>Retaining Wall Data</h1>
         <p><strong>Site Visit Date:</strong> {{ $siteVisit->created_at->format('F j, Y') }}</p>
     </div>
 

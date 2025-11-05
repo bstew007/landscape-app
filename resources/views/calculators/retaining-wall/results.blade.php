@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <h1 class="text-3xl font-bold mb-6">📊 Retaining Wall Estimate Summary</h1>
+    <h1 class="text-3xl font-bold mb-6">📊 Retaining Wall Data</h1>
     
     <div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
     <hr class="my-4">
@@ -174,7 +174,7 @@
     {{-- PDF Download Button --}}
     @if (isset($calculation))
         <div class="mt-4">
-            <a href="{{ route('calculations.downloadPdf', $calculation->id) }}"
+            <a href="{{ route('calculations.wall.downloadPdf', $calculation->id) }}"
                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
                target="_blank">
                 🧾 Download PDF Estimate

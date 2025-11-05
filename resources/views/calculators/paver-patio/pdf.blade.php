@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Paver Patio Estimate</title>
+    <title>Paver Patio Data</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 13px; margin: 20px; }
         h1, h2, h3 { margin-bottom: 10px; }
@@ -17,7 +17,7 @@
 <body>
 
     {{-- Header --}}
-    <h1>Paver Patio Estimate</h1>
+    <h1>Paver Patio Data</h1>
 
     <div class="section">
         <h3>Client: {{ $siteVisit->client->first_name }} {{ $siteVisit->client->last_name }}</h3>

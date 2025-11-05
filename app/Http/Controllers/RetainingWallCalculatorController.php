@@ -286,7 +286,7 @@ $markupAmount = $finalPrice - $costBeforeMargin;
             'data' => $data,
         ]);
 
-    return redirect()->route('calculations.showResult', $calc->id);
+    return redirect()->route('calculations.wall.showResult', $calc->id);
 }
 
 

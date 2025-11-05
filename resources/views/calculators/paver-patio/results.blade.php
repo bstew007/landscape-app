@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">📊 Paver Patio Estimate Summary</h1>
+    <h1 class="text-3xl font-bold mb-6">📊 Paver Patio Data Summary</h1>
 
     <div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
     <hr class="my-4">

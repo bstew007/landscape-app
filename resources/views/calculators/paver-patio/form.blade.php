@@ -7,7 +7,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Paver Patio Estimate' : '🧱 Paver Patio Calculator' }}
+        {{ $editMode ? '✏️ Edit Paver Patio Data' : '🧱 Paver Patio Calculator' }}
     </h1>
 
     <form method="POST" action="{{ route('calculators.patio.calculate') }}">
@@ -100,7 +100,7 @@
         {{-- Submit --}}
         <button type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
-            {{ $editMode ? '🔄 Recalculate' : '🧮 Calculate Patio Estimate' }}
+            {{ $editMode ? '🔄 Recalculate' : '🧮 Calculate Patio Data' }}
         </button>
 
         <div class="mt-6">
