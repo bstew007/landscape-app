@@ -79,6 +79,27 @@
                             class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
                                 PDF
                             </a>
+
+                             @elseif ($calc->calculation_type === 'weeding')
+                            <a href="{{ route('calculators.weeding.edit', $calc->id) }}"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                Edit
+                            </a>
+                            <a href="{{ route('calculators.weeding.downloadPdf', $calc->id) }}"
+                            class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
+                                PDF
+                            </a>
+
+                            @elseif ($calc->calculation_type === 'mulching')
+                            <a href="{{ route('calculators.mulching.edit', $calc->id) }}"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                Edit
+                            </a>
+                            <a href="{{ route('calculators.mulching.downloadPdf', $calc->id) }}"
+                            class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded text-sm">
+                                PDF
+                            </a>
+
                         @endif  
 
                         {{-- ❌ Delete --}}

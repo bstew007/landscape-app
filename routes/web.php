@@ -10,6 +10,9 @@ use App\Http\Controllers\ProductionRateController;
 use App\Http\Controllers\FenceCalculatorController;
 use App\Http\Controllers\CalculationController;
 use App\Http\Controllers\PruningCalculatorController;
+use App\Http\Controllers\WeedingCalculatorController;
+use App\Http\Controllers\MulchingCalculatorController;
+
 
 Route::get('/', fn () => redirect()->route('clients.index'));
 
@@ -83,14 +86,36 @@ Route::prefix('calculators/fence')->group(function () {
     });
 
     // ================================
-    // ✅ Pruning
+    // ✅ Weeding
     // ================================
+    Route::prefix('calculators/weeding')->name('calculators.weeding.')->group(function () {
+    Route::get('/', [WeedingCalculatorController::class, 'showForm'])->name('form');
+    Route::post('/calculate', [WeedingCalculatorController::class, 'calculate'])->name('calculate');
+    Route::get('/{calculation}/edit', [WeedingCalculatorController::class, 'edit'])->name('edit');
+    Route::get('/results/{calculation}', [WeedingCalculatorController::class, 'showResult'])->name('showResult');
+});
+
+    Route::get('/calculators/weeding/pdf/{calculation}', [WeedingCalculatorController::class, 'downloadPdf'])
+    ->name('calculators.weeding.downloadPdf');
+
+ // ================================
+    // ✅ Mulching
+    // ================================
+    Route::prefix('calculators/mulching')->name('calculators.mulching.')->group(function () {
+    Route::get('/', [MulchingCalculatorController::class, 'showForm'])->name('form');
+    Route::post('/calculate', [MulchingCalculatorController::class, 'calculate'])->name('calculate');
+    Route::get('/{calculation}/edit', [MulchingCalculatorController::class, 'edit'])->name('edit');
+    Route::get('/results/{calculation}', [MulchingCalculatorController::class, 'showResult'])->name('showResult');
+});
+
+    Route::get('/calculators/mulching/pdf/{calculation}', [MulchingCalculatorController::class, 'downloadPdf'])
+    ->name('calculators.mulching.downloadPdf');
 
 // ================================
 // ✅ Pruning
 // ================================
 
-Route::prefix('calculators/pruning')->name('calculators.pruning.')->group(function () {
+    Route::prefix('calculators/pruning')->name('calculators.pruning.')->group(function () {
     Route::get('/', [PruningCalculatorController::class, 'showForm'])->name('form');
     Route::post('/calculate', [PruningCalculatorController::class, 'calculate'])->name('calculate');
     Route::get('/{calculation}/edit', [PruningCalculatorController::class, 'edit'])->name('edit');

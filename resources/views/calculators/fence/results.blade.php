@@ -54,7 +54,6 @@
     </ul>
 </div>
 
-
    {{-- Labor Breakdown --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <h2 class="text-2xl font-semibold mb-4">👷 Labor Breakdown</h2>
@@ -83,7 +82,6 @@
             <span>${{ number_format($data['labor_cost'], 2) }}</span>
         </div>
     </div>
-
 
      {{-- 💰 Pricing Breakdown --}}
     <div class="bg-white p-6 rounded-lg shadow mb-8">

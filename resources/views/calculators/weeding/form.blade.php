@@ -3,10 +3,10 @@
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Pruning Data' : '🌿 Pruning Calculator' }}
+        {{ $editMode ? '✏️ Edit Weeding Data' : '🌿 Weeding Calculator' }}
     </h1>
 
-    <form method="POST" action="{{ route('calculators.pruning.calculate') }}">
+    <form method="POST" action="{{ route('calculators.weeding.calculate') }}">
         @csrf
 
         {{-- Edit Mode: Calculation ID --}}
@@ -17,17 +17,9 @@
         {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
-        {{-- Toggle for Advanced Tasks --}}
-        <div class="mb-4">
-            <label class="inline-flex items-center">
-                <input type="checkbox" id="toggleAdvancedTasks" class="form-checkbox h-5 w-5 text-blue-600">
-                <span class="ml-2 text-sm font-medium">Show Palm Pruning & Overgrown Tasks</span>
-            </label>
-        </div>
-
         {{-- Task Inputs from DB --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Pruning Tasks</h2>
+            <h2 class="text-xl font-semibold mb-2">Weeding Tasks</h2>
 
             @php
                 $savedTasks = $formData['tasks'] ?? [];
@@ -38,7 +30,7 @@
                     $savedQuantities[$key] = $taskRow['qty'] ?? null;
                 }
 
-                $rates = \App\Models\ProductionRate::where('calculator', 'pruning')
+                $rates = \App\Models\ProductionRate::where('calculator', 'weeding')
                     ->orderBy('task')
                     ->get();
             @endphp
@@ -75,7 +67,7 @@
         {{-- Submit --}}
         <button type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-            {{ $editMode ? '🔄 Recalculate Pruning' : '🧮 Calculate Pruning Estimate' }}
+            {{ $editMode ? '🔄 Recalculate Weeding' : '🧮 Calculate Weeding Data' }}
         </button>
 
         <div class="mt-6">
