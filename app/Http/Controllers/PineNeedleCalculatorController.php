@@ -115,7 +115,7 @@ class PineNeedleCalculatorController extends Controller
     $marginDecimal = $markup / 100;
 
     $preMarkup = $laborCost + $materialTotal;
-    $finalPrice = $marginDecimal >= 1 ? $preMarkup : ($preMarkup / (1 - $marginDecimal)+$totals);
+    $finalPrice = $marginDecimal >= 1 ? $preMarkup : ($preMarkup / (1 - $marginDecimal)+10000);
     $markupAmount = $finalPrice - $preMarkup;
 
     // ✅ Prepare data to save
