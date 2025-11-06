@@ -71,7 +71,7 @@ public function downloadPdf($id)
 
    public function calculate(Request $request)
 {
-    $validated = $request->validate([
+     $validated = $request->validate([
         'fence_type' => 'required|in:wood,vinyl',
         'length' => 'required|numeric|min:1',
         'height' => 'required|in:4,6',
@@ -199,45 +199,36 @@ public function downloadPdf($id)
             "Concrete Bags" => ['qty' => $concrete_bags, 'unit_cost' => 8.50, 'total' => $concrete_bags * 8.50],
         ];
     }
+     $material_total = array_sum(array_column($materials, 'total'));
+     // Normalize post counts for labor input
+    $post_total = $fenceType === 'wood'
+    ? ($post_count + $gate_posts)
+    : ($line_posts + $corner_posts + $end_posts + $gate_4ft + $gate_5ft);
 
-    // 💰 Labor Calculation
+    $crew_size = $validated['crew_size'] ?? 2;
+
+
+    // Labor estimate via custom service
     $laborService = new FenceLaborEstimatorService();
     $laborInput = [
-        'fence_type' => $fenceType,
-        'dig_method' => $validated['dig_method'],
-        'total_posts' => $fenceType === 'wood' ? $post_count + $gate_posts : $post_total,
-        'post_total' => $post_total ?? 0,
-        'adjusted_length' => $adjusted_length,
-        'length' => $length,
-        'gate_count' => $gate_4ft + $gate_5ft,
-    ];
+    'fence_type' => $fenceType,
+    'dig_method' => $validated['dig_method'],
+    'total_posts' => $post_total,
+    'adjusted_length' => $adjusted_length,
+    'length' => $length,
+    'gate_count' => $gate_4ft + $gate_5ft,
+];
 
     $laborData = $laborService->estimate($laborInput);
     $base_hours = $laborData['base_hours'];
     $labor_breakdown = $laborData['breakdown'];
 
-    $drive_distance = $validated['drive_distance'] ?? 10;
-    $drive_speed = $validated['drive_speed'] ?? 30;
-    $travel_time = ($drive_distance / $drive_speed) * 2;
+    // ✅ Use shared LaborCostCalculatorService
+    $calculator = new \App\Services\LaborCostCalculatorService();
+    $totals = $calculator->calculate($base_hours, $validated['labor_rate'] ?? 45, $validated);
 
-    $site_conditions = ($validated['site_conditions'] ?? 0) / 100;
-    $material_pickup = ($validated['material_pickup'] ?? 0) / 100;
-    $cleanup = ($validated['cleanup'] ?? 0) / 100;
-
-    $overhead_hours = $base_hours * ($site_conditions + $material_pickup + $cleanup);
-    $total_hours = $base_hours + $overhead_hours + $travel_time;
-
-    $labor_rate = $validated['labor_rate'] ?? 45;
-    $labor_cost = $total_hours * $labor_rate;
-
-    $material_total = array_sum(array_column($materials, 'total'));
-    $markup = $validated['markup'] ?? 20;
-    $margin_decimal = $markup / 100;
-    $pre_markup = $labor_cost + $material_total;
-    $final_price = $margin_decimal >= 1 ? $pre_markup : $pre_markup / (1 - $margin_decimal);
-    $markup_amount = $final_price - $pre_markup;
-
-    $data = [
+    // Final data array
+    $data = array_merge($validated, [
         'fence_type' => $fenceType,
         'height' => $height,
         'length' => $length,
@@ -245,29 +236,18 @@ public function downloadPdf($id)
         'gate_4ft' => $gate_4ft,
         'gate_5ft' => $gate_5ft,
         'dig_method' => $validated['dig_method'],
-        'labor_rate' => $labor_rate,
         'crew_size' => $validated['crew_size'] ?? 2,
-        'drive_distance' => $drive_distance,
-        'drive_speed' => $drive_speed,
-        'site_conditions' => $validated['site_conditions'] ?? 0,
-        'material_pickup' => $validated['material_pickup'] ?? 0,
-        'cleanup' => $validated['cleanup'] ?? 0,
-        'markup' => $markup,
-        'markup_amount' => $markup_amount,
-        'final_price' => $final_price,
-        'material_total' => $material_total,
-        'labor_hours' => $base_hours,
-        'overhead_hours' => $overhead_hours + $travel_time,
-        'total_hours' => $total_hours,
-        'labor_cost' => $labor_cost,
         'materials' => $materials,
+        'material_total' => round($material_total, 2),
+        'labor_by_task' => array_map(fn($h) => round($h, 2), $labor_breakdown),
         'job_notes' => $request->input('job_notes'),
-        'labor_by_task' => $labor_breakdown,
         'vinyl_corner_posts' => $validated['vinyl_corner_posts'] ?? 0,
         'vinyl_end_posts' => $validated['vinyl_end_posts'] ?? 0,
-    ];
+        'base_hours' => round($base_hours, 2), // add this line
 
-    // ✅ Save or update calculation
+    ], $totals);
+
+    // Save or update
     $calc = !empty($validated['calculation_id'])
         ? tap(Calculation::findOrFail($validated['calculation_id']))->update(['data' => $data])
         : Calculation::create([

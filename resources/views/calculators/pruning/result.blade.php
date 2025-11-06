@@ -47,6 +47,10 @@
             <span>{{ number_format($data['labor_hours'], 2) }} hrs</span>
         </div>
         <div class="flex justify-between">
+    <span class="font-semibold">Job Site Visits:</span>
+    <span>{{ $data['visits'] ?? 'N/A' }}</span>
+</div>
+        <div class="flex justify-between">
             <span class="font-semibold">Overhead:</span>
             <span>{{ number_format($data['overhead_hours'], 2) }} hrs</span>
         </div>
