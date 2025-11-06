@@ -55,8 +55,8 @@ class PineNeedleCalculatorController extends Controller
         'mulch_type' => 'nullable|string|max:255',
     ]);
 
-    // ✅ Define mulch unit cost (default or dynamic)
-    $unitCost = 7; // You can make this dynamic later, e.g., $validated['unit_cost'] ?? 35;
+    // ✅ Define mulch unit cost
+    $unitCost = 7;
 
     // ✅ Calculate mulch volume in cubic yards
     $areaSqft = (float) $request->input('area_sqft', 0);
@@ -64,12 +64,12 @@ class PineNeedleCalculatorController extends Controller
     $mulchYards = 0;
 
     if ($areaSqft > 0 && $depthInches > 0) {
-        $mulchYards = round($areaSqft  / 37.5, 2);
+        $mulchYards = round($areaSqft / 37.5, 2);
     }
 
     // ✅ Materials
     $materials = [
-        $validated['mulch_type'] ?? 'Mulch' => [
+        $validated['mulch_type'] ?? 'Pine Needles' => [
             'qty' => $mulchYards,
             'unit_cost' => $unitCost,
             'total' => round($mulchYards * $unitCost, 2),
@@ -81,8 +81,6 @@ class PineNeedleCalculatorController extends Controller
     // ✅ Labor Calculations
     $inputTasks = $request->input('tasks', []);
     $laborRate = (float) $validated['labor_rate'];
-
-    // Load production rates from DB
     $dbRates = ProductionRate::where('calculator', 'pine_needles')->pluck('rate', 'task');
 
     $results = [];
@@ -111,18 +109,14 @@ class PineNeedleCalculatorController extends Controller
     $calculator = new LaborCostCalculatorService();
     $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
 
-    // ✅ Combine labor + materials for full total
+    // ✅ Combine labor + materials + markup
     $laborCost = $totals['labor_cost'] ?? 0;
     $markup = $validated['markup'] ?? 0;
     $marginDecimal = $markup / 100;
 
-    // Pre-markup subtotal (labor + materials)
     $preMarkup = $laborCost + $materialTotal;
-
-    // Final price calculation
     $finalPrice = $marginDecimal >= 1 ? $preMarkup : $preMarkup / (1 - $marginDecimal);
     $markupAmount = $finalPrice - $preMarkup;
-
 
     // ✅ Prepare data to save
     $data = array_merge($validated, [
@@ -151,6 +145,7 @@ class PineNeedleCalculatorController extends Controller
     // ✅ Redirect to results
     return redirect()->route('calculators.pine_needles.showResult', $calc->id);
 }
+
 
     public function showResult(Calculation $calculation)
     {
