@@ -165,7 +165,7 @@
         const depth = parseFloat(depthInput.value);
 
         if (!isNaN(area) && area > 0 && !isNaN(depth) && depth > 0) {
-           const mulchYards = Math.ceil((area * (depth / 12)) / 27);
+           const mulchYards = Math.ceil((area /50) / 27);
             outputValue.textContent = mulchYards;
             outputDiv.classList.remove('hidden');
         } else {

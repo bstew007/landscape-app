@@ -64,7 +64,7 @@ class PineNeedleCalculatorController extends Controller
     $mulchYards = 0;
 
     if ($areaSqft > 0 && $depthInches > 0) {
-        $mulchYards = round($areaSqft / 50, 2);
+        $mulchYards = Math.ceil($areaSqft / 50, 2);
     }
 
     // ✅ Materials
