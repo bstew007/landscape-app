@@ -63,7 +63,7 @@ class PineNeedleCalculatorController extends Controller
     //$depthInches = (float) $request->input('depth_inches', 0);
     $mulchYards = 0;
 
-    if ($areaSqft > 0 &&) {
+    if ($areaSqft > 0) {
         $mulchYards = Math.ceil($areaSqft / 50, 2);
     }
 
