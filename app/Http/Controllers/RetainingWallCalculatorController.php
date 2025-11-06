@@ -7,6 +7,8 @@ use App\Models\SiteVisit;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ProductionRate;
+use App\Services\LaborCostCalculatorService;
+
 
 class RetainingWallCalculatorController extends Controller
 {
@@ -36,15 +38,13 @@ class RetainingWallCalculatorController extends Controller
         ]);
     }
 
-    public function calculate(Request $request)
+ public function calculate(Request $request)
 {
-    // ✅ Normalize booleans from checkbox inputs
     $request->merge([
         'use_capstones' => $request->has('use_capstones'),
         'include_geogrid' => $request->has('include_geogrid'),
     ]);
 
-    // ✅ Validate inputs
     $validated = $request->validate([
         'job_notes' => 'nullable|string|max:1000',
         'length' => 'required|numeric|min:1',
@@ -72,50 +72,33 @@ class RetainingWallCalculatorController extends Controller
         'ab_column_count' => 'nullable|integer|min:0',
         'override_block_cost' => 'nullable|numeric|min:0',
         'override_capstone_cost' => 'nullable|numeric|min:0',
-        // Add these new optional override fields
         'override_pipe_cost' => 'nullable|numeric|min:0',
         'override_gravel_cost' => 'nullable|numeric|min:0',
         'override_topsoil_cost' => 'nullable|numeric|min:0',
         'override_fabric_cost' => 'nullable|numeric|min:0',
         'override_geogrid_cost' => 'nullable|numeric|min:0',
-        'override_adhesive_cost' => 'nullable|numeric|min:0',   
+        'override_adhesive_cost' => 'nullable|numeric|min:0',
     ]);
 
-    // --------------------------------------------
-    // 🔢 Geometry & Inputs
-    // --------------------------------------------
     $length = $validated['length'];
     $height = $validated['height'];
     $sqft = $length * $height;
-    $blockSystem = $validated['block_system'];
 
-    // --------------------------------------------
-    // 🧱 Block Calculations
-    // --------------------------------------------
     $blockCoverage = $validated['block_brand'] === 'belgard' ? 0.67 : 0.65;
     $blockCount = ceil($sqft / $blockCoverage);
     $blockUnitCost = $validated['override_block_cost'] ?? 11.00;
     $blockCost = $blockCount * $blockUnitCost;
 
-    // --------------------------------------------
-    // 🧱 Capstone Calculations (optional)
-    // --------------------------------------------
     $includeCaps = $validated['use_capstones'] ?? false;
     $capCount = $includeCaps ? ceil($length) : 0;
     $capUnitCost = $validated['override_capstone_cost'] ?? 18.00;
     $capCost = $capCount * $capUnitCost;
     $adhesiveTubeCount = ceil($capCount / 20);
- 
-      // --------------------------------------------
-    // 🧵 Geogrid (optional)
-    // --------------------------------------------
+
     $includeGeogrid = $validated['include_geogrid'] ?? false;
     $geogridLayers = $includeGeogrid && $height >= 4 ? floor($height / 2) : 0;
     $geogridLF = $length * $geogridLayers;
 
-    // --------------------------------------------
-    // Materials Costs
-    // --------------------------------------------
     $pipeUnitCost = $validated['override_pipe_cost'] ?? 2.00;
     $gravelUnitCost = $validated['override_gravel_cost'] ?? 85.00;
     $topsoilUnitCost = $validated['override_topsoil_cost'] ?? 5.00;
@@ -124,7 +107,6 @@ class RetainingWallCalculatorController extends Controller
     $adhesiveUnitCost = $validated['override_adhesive_cost'] ?? 8.00;
 
     $pipeCost = $length * $pipeUnitCost;
-
     $gravelVolumeCF = $length * ($height - 0.5) * 1.5;
     $gravelTons = $gravelVolumeCF / 21.6;
     $gravelCost = ceil($gravelTons) * $gravelUnitCost;
@@ -135,68 +117,54 @@ class RetainingWallCalculatorController extends Controller
 
     $fabricArea = $length * $height * 2;
     $fabricCost = $fabricArea * $fabricUnitCost;
-
     $geogridCost = $geogridLF * $height * $geogridUnitCost;
-
     $adhesiveCost = $adhesiveTubeCount * $adhesiveUnitCost;
 
-
-  
-   
-
-    // --------------------------------------------
-    // 📦 Material Summary
-    // --------------------------------------------
-   $materials = [
-    'Wall Blocks' => [
-        'qty' => $blockCount,
-        'unit_cost' => $blockUnitCost,
-        'total' => round($blockCost, 2),
-    ],
-    'Capstones' => [
-        'qty' => $capCount,
-        'unit_cost' => $capUnitCost,
-        'total' => round($capCost, 2),
-    ],
-    'Drain Pipe' => [
-        'qty' => $length,
-        'unit_cost' => $pipeUnitCost,
-        'total' => round($pipeCost, 2),
-    ],
-    '#57 Gravel' => [
-        'qty' => ceil($gravelTons),
-        'unit_cost' => $gravelUnitCost,
-        'total' => round($gravelCost, 2),
-    ],
-    'Topsoil' => [
-        'qty' => ceil($topsoilYards),
-        'unit_cost' => $topsoilUnitCost,
-        'total' => round($topsoilCost, 2),
-    ],
-    'Underlayment Fabric' => [
-        'qty' => round($fabricArea, 2),
-        'unit_cost' => $fabricUnitCost,
-        'total' => round($fabricCost, 2),
-    ],
-    'Geogrid' => [
-        'qty' => $geogridLF * $height,
-        'unit_cost' => $geogridUnitCost,
-        'total' => round($geogridCost, 2),
-    ],
-    'Adhesive for Capstones' => [
-        'qty' => $adhesiveTubeCount,
-        'unit_cost' => $adhesiveUnitCost,
-        'total' => round($adhesiveCost, 2),
-    ],
-];
-
+    $materials = [
+        'Wall Blocks' => [
+            'qty' => $blockCount,
+            'unit_cost' => $blockUnitCost,
+            'total' => round($blockCost, 2),
+        ],
+        'Capstones' => [
+            'qty' => $capCount,
+            'unit_cost' => $capUnitCost,
+            'total' => round($capCost, 2),
+        ],
+        'Drain Pipe' => [
+            'qty' => $length,
+            'unit_cost' => $pipeUnitCost,
+            'total' => round($pipeCost, 2),
+        ],
+        '#57 Gravel' => [
+            'qty' => ceil($gravelTons),
+            'unit_cost' => $gravelUnitCost,
+            'total' => round($gravelCost, 2),
+        ],
+        'Topsoil' => [
+            'qty' => ceil($topsoilYards),
+            'unit_cost' => $topsoilUnitCost,
+            'total' => round($topsoilCost, 2),
+        ],
+        'Underlayment Fabric' => [
+            'qty' => round($fabricArea, 2),
+            'unit_cost' => $fabricUnitCost,
+            'total' => round($fabricCost, 2),
+        ],
+        'Geogrid' => [
+            'qty' => $geogridLF * $height,
+            'unit_cost' => $geogridUnitCost,
+            'total' => round($geogridCost, 2),
+        ],
+        'Adhesive for Capstones' => [
+            'qty' => $adhesiveTubeCount,
+            'unit_cost' => $adhesiveUnitCost,
+            'total' => round($adhesiveCost, 2),
+        ],
+    ];
 
     $material_total = array_sum(array_column($materials, 'total'));
 
-
-    // --------------------------------------------
-    // 🧠 Labor Calculations
-    // --------------------------------------------
     $rates = ProductionRate::where('calculator', 'retaining_wall')->pluck('rate', 'task');
     $equipmentFactor = $validated['equipment'] === 'excavator' ? '_excavator' : '_manual';
 
@@ -211,73 +179,43 @@ class RetainingWallCalculatorController extends Controller
         'capstone' => $includeCaps ? $capCount * ($rates['capstone'] ?? 0.03) : 0,
     ];
 
-    // --------------------------------------------
-    // 🧱 Allan Block Specific Labor
-    // --------------------------------------------
-    if ($blockSystem === 'allan_block') {
-        $ab_straight_sqft = ($validated['ab_straight_length'] ?? 0) * ($validated['ab_straight_height'] ?? 0);
-        $ab_curved_sqft = ($validated['ab_curved_length'] ?? 0) * ($validated['ab_curved_height'] ?? 0);
-        $step_count = $validated['ab_step_count'] ?? 0;
-        $column_count = $validated['ab_column_count'] ?? 0;
-
-        $labor['ab_straight_wall'] = $ab_straight_sqft * ($rates['allan_block_laying_straight_wall'] ?? 0.2);
-        $labor['ab_curved_wall'] = $ab_curved_sqft * ($rates['allan_block_laying_curved_wall'] ?? 0.25);
-        $labor['ab_stairs'] = $step_count * ($rates['allan_block_stairs'] ?? 0.75);
-        $labor['ab_columns'] = $column_count * ($rates['allan_block_column'] ?? 1.2);
+    if ($validated['block_system'] === 'allan_block') {
+        $labor['ab_straight_wall'] = ($validated['ab_straight_length'] ?? 0) * ($validated['ab_straight_height'] ?? 0) * ($rates['allan_block_laying_straight_wall'] ?? 0.2);
+        $labor['ab_curved_wall'] = ($validated['ab_curved_length'] ?? 0) * ($validated['ab_curved_height'] ?? 0) * ($rates['allan_block_laying_curved_wall'] ?? 0.25);
+        $labor['ab_stairs'] = ($validated['ab_step_count'] ?? 0) * ($rates['allan_block_stairs'] ?? 0.75);
+        $labor['ab_columns'] = ($validated['ab_column_count'] ?? 0) * ($rates['allan_block_column'] ?? 1.2);
     } else {
         $labor['block_laying'] = $sqft * ($rates['block_laying'] ?? 0.08);
     }
 
-    // --------------------------------------------
-    // 💰 Labor Costs
-    // --------------------------------------------
     $wallLabor = array_sum($labor);
-    $siteCondPct = ($validated['site_conditions'] ?? 0) / 100;
-    $pickupPct = ($validated['material_pickup'] ?? 0) / 100;
-    $cleanupPct = ($validated['cleanup'] ?? 0) / 100;
 
-    $overheadHours = $wallLabor * ($siteCondPct + $pickupPct + $cleanupPct);
-    $driveTime = $validated['drive_distance'] / $validated['drive_speed'];
+    // ✅ Use shared calculator
+    $calculator = new \App\Services\LaborCostCalculatorService();
+    $totals = $calculator->calculate($wallLabor, $validated['labor_rate'], $validated);
 
-    $totalLaborHours = $wallLabor + $overheadHours + $driveTime;
-    $laborCost = $totalLaborHours * $validated['labor_rate'];
-
-    // --------------------------------------------
-    // 📈 Final Pricing
-    // --------------------------------------------
-$costBeforeMargin = $laborCost + $material_total;
-$finalPrice = $costBeforeMargin / (1 - ($validated['markup'] / 100));
-$markupAmount = $finalPrice - $costBeforeMargin;
-
-    // --------------------------------------------
-    // 💾 Save or Update Calculation
-    // --------------------------------------------
     $data = array_merge($validated, [
-        'block_count' => $blockCount,
-        'cap_count' => $capCount,
-        'block_unit_cost' => $blockUnitCost,
-        'capstone_unit_cost' => $capUnitCost,
-        'gravel_tons' => ceil($gravelTons),
-        'topsoil_yards' => ceil($topsoilYards),
-        'fabric_area' => round($fabricArea, 2),
-        'geogrid_layers' => $geogridLayers,
-        'geogrid_lf' => $geogridLF,
-        'adhesive_tubes' => $adhesiveTubeCount,
-        'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
-        'labor_hours' => round($wallLabor, 2),
-        'overhead_hours' => round($overheadHours, 2),
-        'drive_time' => round($driveTime, 2),
-        'total_hours' => round($totalLaborHours, 2),
-        'labor_cost' => round($laborCost, 2),
-        'material_total' => round($material_total, 2),
-        'markup_amount' => round($markupAmount, 2),
-        'final_price' => round($finalPrice, 2),
-        'materials' => $materials,
-        'ab_straight_sqft' => round($ab_straight_sqft ?? 0, 2),
-        'ab_curved_sqft' => round($ab_curved_sqft ?? 0, 2),
-        'job_notes' => $validated['job_notes'] ?? null,
-    ]);
-    
+    'block_count' => $blockCount,
+    'cap_count' => $capCount,
+    'block_unit_cost' => $blockUnitCost,
+    'capstone_unit_cost' => $capUnitCost,
+    'gravel_tons' => ceil($gravelTons),
+    'topsoil_yards' => ceil($topsoilYards),
+    'fabric_area' => round($fabricArea, 2),
+    'geogrid_layers' => $geogridLayers,
+    'geogrid_lf' => $geogridLF,
+    'adhesive_tubes' => $adhesiveTubeCount,
+
+    'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
+    'labor_hours' => round($wallLabor, 2), // ✅ Add this line
+    'material_total' => round($material_total, 2),
+    'materials' => $materials,
+
+    'ab_straight_sqft' => round(($validated['ab_straight_length'] ?? 0) * ($validated['ab_straight_height'] ?? 0), 2),
+    'ab_curved_sqft' => round(($validated['ab_curved_length'] ?? 0) * ($validated['ab_curved_height'] ?? 0), 2),
+    'job_notes' => $validated['job_notes'] ?? null,
+], $totals);
+
     $calc = !empty($validated['calculation_id'])
         ? tap(Calculation::find($validated['calculation_id']))->update(['data' => $data])
         : Calculation::create([
@@ -288,6 +226,7 @@ $markupAmount = $finalPrice - $costBeforeMargin;
 
     return redirect()->route('calculations.wall.showResult', $calc->id);
 }
+
 
 
     public function showResult(Calculation $calculation)

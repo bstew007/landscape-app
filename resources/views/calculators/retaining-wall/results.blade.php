@@ -54,18 +54,22 @@
             @foreach ($data['labor_by_task'] as $task => $hours)
                 <li class="flex justify-between border-b pb-1 capitalize">
                     <span>{{ str_replace('_', ' ', $task) }}</span>
-                    <span>{{ $hours }} hrs</span>
+                    <span>{{ number_format($hours, 2) }} hrs</span>
                 </li>
             @endforeach
         </ul>
         <div class="flex justify-between mt-4">
-            <span class="font-semibold">Wall Labor:</span>
+            <span class="font-semibold">Base Labor:</span>
             <span>{{ number_format($data['labor_hours'], 2) }} hrs</span>
         </div>
-        <div class="flex justify-between">
-            <span class="font-semibold">Overhead + Drive Time:</span>
+       <div class="flex justify-between">
+            <span class="font-semibold">Overhead:</span>
             <span>{{ number_format($data['overhead_hours'], 2) }} hrs</span>
         </div>
+         <div class="flex justify-between">
+        <span class="font-semibold">Drive Time:</span>
+        <span>{{ number_format($data['drive_time_hours'], 2) }} hrs</span>
+    </div>
         <div class="flex justify-between font-bold text-lg">
             <span>Total Labor Hours:</span>
             <span>{{ number_format($data['total_hours'], 2) }} hrs</span>

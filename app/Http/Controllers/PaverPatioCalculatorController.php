@@ -7,6 +7,7 @@ use App\Models\SiteVisit;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ProductionRate;
+use App\Services\LaborCostCalculatorService;
 
 
 class PaverPatioCalculatorController extends Controller
@@ -58,7 +59,6 @@ class PaverPatioCalculatorController extends Controller
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
 
-
         // Material cost overrides
         'override_paver_cost' => 'nullable|numeric|min:0',
         'override_base_cost' => 'nullable|numeric|min:0',
@@ -88,66 +88,55 @@ class PaverPatioCalculatorController extends Controller
         : $concreteEdgeCostPer20ft;
 
     $edgeLF = $area / 20;
-    $edgeCost = $edgeLF * $edgeUnitCost;
-
-    $paverCost = $paverCount * $paverUnitCost;
-    $baseCost = $baseTons * $baseUnitCost;
 
     $materials = [
-    'Pavers' => [
-        'qty' => $paverCount,
-        'unit_cost' => $paverUnitCost,
-        'total' => $paverCount * $paverUnitCost
-    ],
-    '#78 Base Gravel' => [
-        'qty' => $baseTons . ' tons',
-        'unit_cost' => $baseUnitCost,
-        'total' => $baseTons * $baseUnitCost
-    ],
-    'Edge Restraints' => [
-        'qty' => round($edgeLF, 2) . ' lf',
-        'unit_cost' => $edgeUnitCost,
-        'total' => $edgeLF * $edgeUnitCost
-    ]
-];
+        'Pavers' => [
+            'qty' => $paverCount,
+            'unit_cost' => $paverUnitCost,
+            'total' => $paverCount * $paverUnitCost
+        ],
+        '#78 Base Gravel' => [
+            'qty' => $baseTons,
+            'unit_cost' => $baseUnitCost,
+            'total' => $baseTons * $baseUnitCost
+        ],
+        'Edge Restraints' => [
+            'qty' => round($edgeLF, 2),
+            'unit_cost' => $edgeUnitCost,
+            'total' => $edgeLF * $edgeUnitCost
+        ]
+    ];
 
-
-   $material_total = array_sum(array_column($materials, 'total'));
+    $material_total = array_sum(array_column($materials, 'total'));
 
     // --------------------------------------------
-    // 👷 Labor Calculations (DB + Override)
+    // 👷 Labor Calculations (from DB)
     // --------------------------------------------
     $dbRates = ProductionRate::where('calculator', 'paver_patio')->pluck('rate', 'task');
 
     $labor = [
-        'excavation' => $area * ($request->input('rate_excavation') ?? $dbRates['excavation'] ?? 0.03),
-        'base_compaction' => $area * ($request->input('rate_base_compaction') ?? $dbRates['base_compaction'] ?? 0.04),
-        'laying_pavers' => $area * ($request->input('rate_laying_pavers') ?? $dbRates['laying_pavers'] ?? 0.06),
-        'cutting_borders' => $area * ($request->input('rate_cutting_borders') ?? $dbRates['cutting_borders'] ?? 0.015),
-        'install_edging' => $area * ($request->input('rate_install_edging') ?? $dbRates['install_edging'] ?? 0.007),
-        'cleanup' => $area * ($request->input('rate_cleanup') ?? $dbRates['cleanup'] ?? 0.005),
+        'excavation' => $area * ($dbRates['excavation'] ?? 0.03),
+        'base_compaction' => $area * ($dbRates['base_compaction'] ?? 0.04),
+        'laying_pavers' => $area * ($dbRates['laying_pavers'] ?? 0.06),
+        'cutting_borders' => $area * ($dbRates['cutting_borders'] ?? 0.015),
+        'install_edging' => $area * ($dbRates['install_edging'] ?? 0.007),
+        'cleanup' => $area * ($dbRates['cleanup'] ?? 0.005),
     ];
 
-    $baseLabor = array_sum($labor);
+    $baseLaborHours = array_sum($labor);
 
     // --------------------------------------------
-    // 🧾 Overhead + Final Costs
+    // 🧮 Use the Shared LaborCostCalculatorService
     // --------------------------------------------
-    $siteCondPct = ($validated['site_conditions'] ?? 0) / 100;
-    $pickupPct = ($validated['material_pickup'] ?? 0) / 100;
-    $cleanupPct = ($validated['cleanup'] ?? 0) / 100;
-
-    $overheadHours = $baseLabor * ($siteCondPct + $pickupPct + $cleanupPct);
-    $driveTime = $validated['drive_distance'] / $validated['drive_speed'];
-
-    $totalLaborHours = $baseLabor + $overheadHours + $driveTime;
-    $laborCost = $totalLaborHours * $validated['labor_rate'];
-
-    $markupAmount = ($laborCost + $material_total) * ($validated['markup'] / 100);
-    $finalPrice = $laborCost + $material_total + $markupAmount;
+    $calculator = new LaborCostCalculatorService();
+    $totals = $calculator->calculate(
+        baseHours: $baseLaborHours,
+        laborRate: (float) $validated['labor_rate'],
+        inputs: $request->all()
+    );
 
     // --------------------------------------------
-    // 💾 Save Data
+    // 💾 Prepare and Save
     // --------------------------------------------
     $data = array_merge($validated, [
         'area_sqft' => round($area, 2),
@@ -157,21 +146,12 @@ class PaverPatioCalculatorController extends Controller
         'base_unit_cost' => $baseUnitCost,
         'edge_unit_cost' => $edgeUnitCost,
         'edge_lf' => round($edgeLF, 2),
-
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
-        'labor_hours' => round($baseLabor, 2),
-        'overhead_hours' => round($overheadHours + $driveTime, 2),
-        'total_hours' => round($totalLaborHours, 2),
-        'labor_cost' => round($laborCost, 2),
-
-        'material_total' => round($material_total, 2),
-        'markup_amount' => round($markupAmount, 2),
-        'final_price' => round($finalPrice, 2),
-
+        'labor_hours' => round($baseLaborHours, 2),
         'materials' => $materials,
-    ]);
+        'material_total' => round($material_total, 2),
+    ], $totals);
 
-    // Save or update calculation
     $calc = !empty($validated['calculation_id'])
         ? tap(Calculation::find($validated['calculation_id']))->update(['data' => $data])
         : Calculation::create([
