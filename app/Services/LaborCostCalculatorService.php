@@ -9,12 +9,13 @@ class LaborCostCalculatorService
         $overheadPercent = (float) ($inputs['overhead_percent'] ?? 0);
         $materialPickupPercent = (float) ($inputs['material_pickup'] ?? 0);
         $cleanupPercent = (float) ($inputs['cleanup'] ?? 0);
+        $crewSize = (int) ($inputs['crew_size'] ?? 1);
 
         $driveDistance = (float) ($inputs['drive_distance'] ?? 0);
         $driveSpeed = (float) ($inputs['drive_speed'] ?? 30); // Default safe fallback
         $markup = (float) ($inputs['markup'] ?? 0);
 
-        $driveTime = $driveSpeed > 0 ? $driveDistance / $driveSpeed : 0;
+        $driveTime = (($driveDistance * 2) / $driveSpeed) * $crewSize;
         $overheadHours = $baseHours * ($overheadPercent + $materialPickupPercent + $cleanupPercent) / 100;
         $totalHours = $baseHours + $overheadHours + $driveTime;
 
@@ -24,7 +25,8 @@ class LaborCostCalculatorService
         $markupAmount = $finalPrice - $laborCost;
 
         return [
-            'overhead_hours' => round($overheadHours + $driveTime, 2),
+            'overhead_hours' => round($overheadHours, 2),
+            'drive_time_hours' => round($driveTime, 2),
             'total_hours' => round($totalHours, 2),
             'labor_cost' => round($laborCost, 2),
             'markup' => $markup,
