@@ -55,8 +55,8 @@ class MulchingCalculatorController extends Controller
         'mulch_type' => 'nullable|string|max:255',
     ]);
 
-    // ✅ Define mulch unit cost (default or dynamic)
-    $unitCost = 35; // You can make this dynamic later, e.g., $validated['unit_cost'] ?? 35;
+    // ✅ Mulch unit cost
+    $unitCost = 35;
 
     // ✅ Calculate mulch volume in cubic yards
     $areaSqft = (float) $request->input('area_sqft', 0);
@@ -81,8 +81,6 @@ class MulchingCalculatorController extends Controller
     // ✅ Labor Calculations
     $inputTasks = $request->input('tasks', []);
     $laborRate = (float) $validated['labor_rate'];
-
-    // Load production rates from DB
     $dbRates = ProductionRate::where('calculator', 'mulching')->pluck('rate', 'task');
 
     $results = [];
@@ -111,17 +109,33 @@ class MulchingCalculatorController extends Controller
     $calculator = new LaborCostCalculatorService();
     $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
 
-    // ✅ Prepare data to save
-    $data = array_merge($validated, [
-        'tasks' => $results,
-        'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
-        'area_sqft' => $areaSqft,
-        'depth_inches' => $depthInches,
-        'mulch_yards' => $mulchYards,
-        'labor_hours' => round($totalHours, 2),
-        'materials' => $materials,
-        'material_total' => $materialTotal,
-    ], $totals);
+    // ✅ Combine labor + materials + markup
+    $laborCost = $totals['labor_cost'] ?? 0;
+    $markup = $validated['markup'] ?? 0;
+    $marginDecimal = $markup / 100;
+
+    $preMarkup = $laborCost + $materialTotal;
+    $finalPrice = $marginDecimal >= 1 ? $preMarkup : $preMarkup / (1 - $marginDecimal);
+    $markupAmount = $finalPrice - $preMarkup;
+
+    // ✅ Build data (your totals take precedence)
+    $data = array_merge(
+        $validated,
+        $totals, // first, so your custom totals overwrite theirs
+        [
+            'tasks' => $results,
+            'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
+            'area_sqft' => $areaSqft,
+            'depth_inches' => $depthInches,
+            'mulch_yards' => $mulchYards,
+            'labor_hours' => round($totalHours, 2),
+            'materials' => $materials,
+            'material_total' => $materialTotal,
+            'labor_cost' => $laborCost,
+            'markup_amount' => $markupAmount,
+            'final_price' => $finalPrice,
+        ]
+    );
 
     // ✅ Save or update calculation
     $calc = !empty($validated['calculation_id'])
@@ -135,6 +149,7 @@ class MulchingCalculatorController extends Controller
     // ✅ Redirect to results
     return redirect()->route('calculators.mulching.showResult', $calc->id);
 }
+
 
     public function showResult(Calculation $calculation)
     {
