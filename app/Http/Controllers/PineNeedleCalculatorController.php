@@ -115,11 +115,11 @@ class PineNeedleCalculatorController extends Controller
     $marginDecimal = $markup / 100;
 
     $preMarkup = $laborCost + $materialTotal;
-    $finalPrice = $marginDecimal >= 1 ? $preMarkup : ($preMarkup / (1 - $marginDecimal)+10000);
+    $finalPrice = $marginDecimal >= 1 ? $preMarkup : $preMarkup / (1 - $marginDecimal);
     $markupAmount = $finalPrice - $preMarkup;
 
     // ✅ Prepare data to save
-    $data = array_merge($validated, [
+    $data = array_merge($validated, $totals,[
         'tasks' => $results,
         'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
         'area_sqft' => $areaSqft,
@@ -131,7 +131,7 @@ class PineNeedleCalculatorController extends Controller
         'labor_cost' => $laborCost,
         'markup_amount' => $markupAmount,
         'final_price' => $finalPrice,
-    ], $totals);
+    ]);
 
     // ✅ Save or update calculation
     $calc = !empty($validated['calculation_id'])
