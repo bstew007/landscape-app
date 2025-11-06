@@ -111,6 +111,19 @@ class PineNeedleCalculatorController extends Controller
     $calculator = new LaborCostCalculatorService();
     $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
 
+    // ✅ Combine labor + materials for full total
+    $laborCost = $totals['labor_cost'] ?? 0;
+    $markup = $validated['markup'] ?? 0;
+    $marginDecimal = $markup / 100;
+
+    // Pre-markup subtotal (labor + materials)
+    $preMarkup = $laborCost + $materialTotal;
+
+    // Final price calculation
+    $finalPrice = $marginDecimal >= 1 ? $preMarkup : $preMarkup / (1 - $marginDecimal);
+    $markupAmount = $finalPrice - $preMarkup;
+
+
     // ✅ Prepare data to save
     $data = array_merge($validated, [
         'tasks' => $results,
@@ -121,6 +134,9 @@ class PineNeedleCalculatorController extends Controller
         'labor_hours' => round($totalHours, 2),
         'materials' => $materials,
         'material_total' => $materialTotal,
+        'labor_cost' => $laborCost,
+        'markup_amount' => $markupAmount,
+        'final_price' => $finalPrice,
     ], $totals);
 
     // ✅ Save or update calculation
