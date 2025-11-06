@@ -51,7 +51,7 @@ class PineNeedleCalculatorController extends Controller
         'tasks' => 'required|array',
         'tasks.*.qty' => 'nullable|numeric|min:0',
         'area_sqft' => 'nullable|numeric|min:0',
-        'depth_inches' => 'nullable|numeric|min:0',
+        //'depth_inches' => 'nullable|numeric|min:0',
         'mulch_type' => 'nullable|string|max:255',
     ]);
 
@@ -60,10 +60,10 @@ class PineNeedleCalculatorController extends Controller
 
     // ✅ Calculate mulch volume in cubic yards
     $areaSqft = (float) $request->input('area_sqft', 0);
-    $depthInches = (float) $request->input('depth_inches', 0);
+    //$depthInches = (float) $request->input('depth_inches', 0);
     $mulchYards = 0;
 
-    if ($areaSqft > 0 && $depthInches > 0) {
+    if ($areaSqft > 0 &&) {
         $mulchYards = Math.ceil($areaSqft / 50, 2);
     }
 
@@ -123,7 +123,7 @@ class PineNeedleCalculatorController extends Controller
         'tasks' => $results,
         'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
         'area_sqft' => $areaSqft,
-        'depth_inches' => $depthInches,
+        //'depth_inches' => $depthInches,
         'mulch_yards' => $mulchYards,
         'labor_hours' => round($totalHours, 2),
         'materials' => $materials,

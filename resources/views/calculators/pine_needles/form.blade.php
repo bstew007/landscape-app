@@ -17,7 +17,7 @@
         {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
-        {{-- Straw Area & Depth --}}
+        {{-- Straw Area --}}
 <div class="mb-6">
     <h2 class="text-xl font-semibold mb-2">Straw Coverage</h2>
 
@@ -34,18 +34,6 @@
                    value="{{ old('area_sqft', $formData['area_sqft'] ?? '') }}">
         </div>
 
-        {{-- Depth (in inches) --}}
-        <div>
-            <label class="block font-semibold mb-1">Desired Straw Depth (inches)</label>
-            <input type="number"
-                   name="depth_inches"
-                   step="any"
-                   min="0"
-                   class="form-input w-full"
-                   placeholder="e.g. 2"
-                   value="{{ old('depth_inches', $formData['depth_inches'] ?? '') }}">
-        </div>
-    </div>
 </div>
 
 <div id="mulchEstimate" class="mb-6 bg-green-50 border border-green-200 rounded p-4 text-green-800 font-semibold hidden">
@@ -157,15 +145,13 @@
 <script>
     function calculateMulchYards() {
         const areaInput = document.querySelector('input[name="area_sqft"]');
-        const depthInput = document.querySelector('input[name="depth_inches"]');
         const outputDiv = document.getElementById('mulchEstimate');
         const outputValue = document.getElementById('mulchYards');
 
         const area = parseFloat(areaInput.value);
-        const depth = parseFloat(depthInput.value);
 
-        if (!isNaN(area) && area > 0 && !isNaN(depth) && depth > 0) {
-           const mulchYards = Math.ceil((area /50) / 27);
+        if (!isNaN(area) && area > 0) {
+           const mulchYards = Math.ceil(area /50);
             outputValue.textContent = mulchYards;
             outputDiv.classList.remove('hidden');
         } else {
@@ -175,10 +161,8 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const areaInput = document.querySelector('input[name="area_sqft"]');
-        const depthInput = document.querySelector('input[name="depth_inches"]');
 
         areaInput.addEventListener('input', calculateMulchYards);
-        depthInput.addEventListener('input', calculateMulchYards);
 
         // Recalculate on load if values are already present
         calculateMulchYards();
