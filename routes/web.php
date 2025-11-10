@@ -7,6 +7,7 @@ use App\Http\Controllers\SiteVisitController;
 use App\Http\Controllers\RetainingWallCalculatorController;
 use App\Http\Controllers\PaverPatioCalculatorController;
 use App\Http\Controllers\ProductionRateController;
+use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FenceCalculatorController;
 use App\Http\Controllers\CalculationController;
 use App\Http\Controllers\PruningCalculatorController;
@@ -179,6 +180,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // ✅ Clients & Site Visits
     // ================================
     Route::resource('clients', ClientController::class);
+    Route::resource('clients.properties', PropertyController::class)->except(['show']);
     Route::resource('clients.site-visits', SiteVisitController::class);
     Route::post('clients/{client}/site-visits/{site_visit}/photos', [SiteVisitController::class, 'storePhoto'])->name('clients.site-visits.photos.store');
     Route::delete('clients/{client}/site-visits/{site_visit}/photos/{photo}', [SiteVisitController::class, 'destroyPhoto'])->name('clients.site-visits.photos.destroy');

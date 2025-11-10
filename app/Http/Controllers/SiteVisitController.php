@@ -13,20 +13,41 @@ class SiteVisitController extends Controller
 {
     public function index(Client $client)
     {
-        $siteVisits = $client->siteVisits()->latest()->get();
+        $siteVisits = $client->siteVisits()->with('property')->latest()->get();
+
         return view('site-visits.index', compact('client', 'siteVisits'));
     }
 
     public function create(Client $client)
     {
-        return view('site-visits.create', compact('client'));
+        $properties = $client->properties()->orderBy('name')->get();
+        $preferredPropertyId = request()->input('property_id');
+
+        if (! $preferredPropertyId && $client->primaryProperty) {
+            $preferredPropertyId = $client->primaryProperty->id;
+        }
+
+        return view('site-visits.create', [
+            'client' => $client,
+            'properties' => $properties,
+            'preferredPropertyId' => $preferredPropertyId,
+        ]);
     }
 
     public function store(Request $request, Client $client)
     {
-        $siteVisit = $client->siteVisits()->create([
-            'visit_date' => now(), // Optional
-            'notes' => $request->input('notes'),
+        $validated = $request->validate([
+            'visit_date' => 'required|date',
+            'notes' => 'nullable|string',
+            'property_id' => 'required|exists:properties,id',
+        ]);
+
+        $property = $client->properties()->findOrFail($validated['property_id']);
+
+        $client->siteVisits()->create([
+            'visit_date' => $validated['visit_date'],
+            'notes' => $validated['notes'] ?? null,
+            'property_id' => $property->id,
         ]);
 
         return redirect()
@@ -36,7 +57,14 @@ class SiteVisitController extends Controller
 
     public function edit(Client $client, SiteVisit $siteVisit)
     {
-        return view('site-visits.edit', compact('client', 'siteVisit'));
+        $properties = $client->properties()->orderBy('name')->get();
+
+        return view('site-visits.edit', [
+            'client' => $client,
+            'siteVisit' => $siteVisit,
+            'properties' => $properties,
+            'preferredPropertyId' => $siteVisit->property_id,
+        ]);
     }
 
     /**
@@ -44,8 +72,10 @@ class SiteVisitController extends Controller
      */
     public function select(Request $request)
     {
-        $redirectTo = $request->get('redirect_to', ''); // ✅ fixed variable
-        $siteVisits = SiteVisit::with('client')->orderBy('visit_date', 'desc')->get();
+        $redirectTo = $request->get('redirect_to', ''); // �o. fixed variable
+        $siteVisits = SiteVisit::with(['client', 'property'])
+            ->orderBy('visit_date', 'desc')
+            ->get();
 
         return view('calculators.select-site-visit', compact('siteVisits', 'redirectTo'));
     }
@@ -55,59 +85,66 @@ class SiteVisitController extends Controller
         $validated = $request->validate([
             'visit_date' => 'required|date',
             'notes' => 'nullable|string',
+            'property_id' => 'required|exists:properties,id',
         ]);
 
-        $siteVisit->update($validated);
+        $property = $client->properties()->findOrFail($validated['property_id']);
+
+        $siteVisit->update([
+            'visit_date' => $validated['visit_date'],
+            'notes' => $validated['notes'] ?? null,
+            'property_id' => $property->id,
+        ]);
 
         return redirect()
             ->route('clients.site-visits.index', $client)
             ->with('success', 'Site visit updated.');
     }
 
-public function storeCalculation(Request $request)
-{
-    $validated = $request->validate([
-        'calculation_type' => 'required|string',
-        'data' => 'required|string',
-        'site_visit_id' => 'required|exists:site_visits,id',
-        'calculation_id' => 'nullable|exists:calculations,id',
-    ]);
+    public function storeCalculation(Request $request)
+    {
+        $validated = $request->validate([
+            'calculation_type' => 'required|string',
+            'data' => 'required|string',
+            'site_visit_id' => 'required|exists:site_visits,id',
+            'calculation_id' => 'nullable|exists:calculations,id',
+        ]);
 
-    $calculationData = json_decode($validated['data'], true);// Already a JSON string, validated as string
+        $calculationData = json_decode($validated['data'], true);// Already a JSON string, validated as string
 
 
-    $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
+        $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
 
-    if (!empty($validated['calculation_id'])) {
-        // ✅ Update existing calculation
-        $calc = Calculation::findOrFail($validated['calculation_id']);
-        $calc->update(['data' => $calculationData]);
+        if (!empty($validated['calculation_id'])) {
+            // �o. Update existing calculation
+            $calc = Calculation::findOrFail($validated['calculation_id']);
+            $calc->update(['data' => $calculationData]);
+
+            return redirect()
+                ->route('clients.show', $siteVisit->client_id)
+                ->with('success', 'Calculation updated successfully.');
+        }
+
+        // �o. Check if a new calculation of this type already exists
+        $existing = $siteVisit->calculations()
+            ->where('calculation_type', $validated['calculation_type'])
+            ->first();
+
+        if ($existing) {
+            return redirect()
+                ->route('clients.show', $siteVisit->client_id)
+                ->with('warning', 'A calculation of this type already exists for this site visit.');
+        }
+
+        $siteVisit->calculations()->create([
+            'calculation_type' => $validated['calculation_type'],
+            'data' => json_encode($calculationData), // <-- This is essential
+        ]);
 
         return redirect()
             ->route('clients.show', $siteVisit->client_id)
-            ->with('success', 'Calculation updated successfully.');
+            ->with('success', 'Calculation saved to site visit.');
     }
-
-    // ✅ Check if a new calculation of this type already exists
-    $existing = $siteVisit->calculations()
-        ->where('calculation_type', $validated['calculation_type'])
-        ->first();
-
-    if ($existing) {
-        return redirect()
-            ->route('clients.show', $siteVisit->client_id)
-            ->with('warning', 'A calculation of this type already exists for this site visit.');
-    }
-
-    $siteVisit->calculations()->create([
-    'calculation_type' => $validated['calculation_type'],
-    'data' => json_encode($calculationData), // <-- This is essential
-]);
-
-    return redirect()
-        ->route('clients.show', $siteVisit->client_id)
-        ->with('success', 'Calculation saved to site visit.');
-}
 
 
 
@@ -123,7 +160,7 @@ public function storeCalculation(Request $request)
 
     public function show(Client $client, SiteVisit $siteVisit)
     {
-        $siteVisit->load('photos');
+        $siteVisit->load(['photos', 'property']);
         $calculations = $siteVisit->calculations()->latest()->get();
 
         return view('site-visits.show', compact('client', 'siteVisit', 'calculations'));

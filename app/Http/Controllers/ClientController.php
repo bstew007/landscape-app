@@ -51,14 +51,23 @@ class ClientController extends Controller
      * Show a single client with related actions like site visits.
      */
     public function show(Client $client)
-{
-    $latestVisit = $client->siteVisits()->latest()->first();
+    {
+        $properties = $client->properties()
+            ->withCount('siteVisits')
+            ->orderByDesc('is_primary')
+            ->orderBy('name')
+            ->get();
 
-    return view('clients.show', [
-        'client' => $client,
-        'siteVisit' => $latestVisit, // This line is key
-    ]);
-}
+        $latestVisit = $client->siteVisits()->with('property')->latest()->first();
+        $recentVisits = $client->siteVisits()->with('property')->latest()->limit(5)->get();
+
+        return view('clients.show', [
+            'client' => $client,
+            'siteVisit' => $latestVisit, // This line is key
+            'properties' => $properties,
+            'recentVisits' => $recentVisits,
+        ]);
+    }
 
     public function edit(Client $client)
     {

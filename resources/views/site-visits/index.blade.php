@@ -20,6 +20,7 @@
             <table class="min-w-full text-lg">
                 <thead class="bg-gray-100 text-gray-700 uppercase">
                     <tr>
+                        <th class="px-6 py-3 text-left">Property</th>
                         <th class="px-6 py-3 text-left">Date</th>
                         <th class="px-6 py-3 text-left">Notes</th>
                         <th class="px-6 py-3 text-left">Actions</th>
@@ -28,6 +29,17 @@
                 <tbody class="text-gray-800">
                     @foreach ($siteVisits as $visit)
                         <tr class="border-t">
+                            <td class="px-6 py-4">
+                                <p class="font-semibold">
+                                    {{ optional($visit->property)->name ?? 'Unassigned' }}
+                                    @if(optional($visit->property)->is_primary)
+                                        <span class="ml-1 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">Primary</span>
+                                    @endif
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    {{ optional($visit->property)->display_address ?? 'No address on file' }}
+                                </p>
+                            </td>
                             <td class="px-6 py-4">{{ $visit->visit_date->format('F j, Y') }}</td>
                             <td class="px-6 py-4">{{ $visit->notes ?? 'No notes' }}</td>
                             <td class="px-6 py-4">
@@ -67,4 +79,3 @@
     @endif
 </div>
 @endsection
-

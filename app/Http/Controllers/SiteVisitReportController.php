@@ -10,7 +10,12 @@ class SiteVisitReportController extends Controller
 {
     public function show(SiteVisit $siteVisit)
     {
-        $siteVisit->load(['client', 'photos', 'calculations' => fn ($query) => $query->latest()]);
+        $siteVisit->load([
+            'client',
+            'property',
+            'photos',
+            'calculations' => fn ($query) => $query->latest(),
+        ]);
 
         $calculationsByType = $siteVisit->calculations->groupBy('calculation_type');
         [$summaryRows, $summaryTotals] = $this->buildSummary($calculationsByType);
@@ -25,7 +30,12 @@ class SiteVisitReportController extends Controller
 
     public function downloadPdf(SiteVisit $siteVisit)
     {
-        $siteVisit->load(['client', 'photos', 'calculations' => fn ($query) => $query->latest()]);
+        $siteVisit->load([
+            'client',
+            'property',
+            'photos',
+            'calculations' => fn ($query) => $query->latest(),
+        ]);
 
         $calculationsByType = $siteVisit->calculations->groupBy('calculation_type');
         [$summaryRows, $summaryTotals] = $this->buildSummary($calculationsByType);

@@ -12,21 +12,27 @@ class SiteVisit extends Model
     protected $fillable = [
         'visit_date',
         'notes',
-        'client_id', // ← Add this
+        'client_id', // �+? Add this
+        'property_id',
     ];
 
     protected $casts = [
-    'visit_date' => 'date',
-    ];  
+        'visit_date' => 'date',
+    ];
 
     public function client()
     {
         return $this->belongsTo(Client::class);
     }
 
+    public function property()
+    {
+        return $this->belongsTo(Property::class);
+    }
+
     public function calculations()
     {
-     return $this->hasMany(Calculation::class);
+        return $this->hasMany(Calculation::class);
     }
 
     public function photos()

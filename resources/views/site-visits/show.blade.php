@@ -23,8 +23,20 @@
     {{-- Site Visit Info --}}
     <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2 mb-6">
         <p><strong>Client:</strong> {{ $client->first_name }} {{ $client->last_name }}</p>
+        <p><strong>Property:</strong> {{ optional($siteVisit->property)->name ?? 'Unassigned' }}</p>
+        @if($siteVisit->property)
+            <p><strong>Location:</strong> {{ $siteVisit->property->display_address ?? 'No address on file' }}</p>
+            <p><strong>Property Contact:</strong> {{ $siteVisit->property->contact_name ?? '??"' }}
+                @if($siteVisit->property->contact_phone)
+                    ??" {{ $siteVisit->property->contact_phone }}
+                @endif
+                @if($siteVisit->property->contact_email)
+                    ({{ $siteVisit->property->contact_email }})
+                @endif
+            </p>
+        @endif
         <p><strong>Visit Date:</strong> {{ $siteVisit->visit_date->format('F j, Y') }}</p>
-        <p><strong>Notes:</strong> {{ $siteVisit->notes ?? '—' }}</p>
+        <p><strong>Notes:</strong> {{ $siteVisit->notes ?? '??"' }}</p>
     </div>
 
     {{-- ✏️ Edit and ❌ Delete Site Visit --}}

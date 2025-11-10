@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="max-w-xl mx-auto bg-white shadow-md rounded px-6 py-8">
-        <h1 class="text-2xl font-bold mb-6">🔍 Select a Site Visit</h1>
+        <h1 class="text-2xl font-bold mb-6">dY"? Select a Site Visit</h1>
 
         @if(session('error'))
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -20,11 +20,18 @@
                     @foreach ($siteVisits as $visit)
                         @php
                             $client = optional($visit->client);
-                            $clientName = trim($client->first_name . ' ' . $client->last_name) ?: 'No Client';
-                            $formattedDate = $visit->visit_date->format('M d, Y');
+                            $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')) ?: 'No Client';
+                            $formattedDate = optional($visit->visit_date)->format('M d, Y') ?? 'No Date';
+                            $property = optional($visit->property);
+                            $propertyLabel = $property->name ?: 'No Property';
+                            $propertyLocation = trim(($property->city ?? '') . ', ' . ($property->state ?? ''));
                         @endphp
                         <option value="{{ $visit->id }}">
-                            [ID: {{ $visit->client_id }}] {{ $clientName }} — {{ $formattedDate }}
+                            [Client {{ $visit->client_id }}] {{ $clientName }} �?" {{ $propertyLabel }}
+                            @if($propertyLocation && $propertyLocation !== ',')
+                                ({{ $propertyLocation }})
+                            @endif
+                            �?" {{ $formattedDate }}
                         </option>
                     @endforeach
                 </select>
@@ -37,7 +44,7 @@
             <div class="mt-6">
                 <button type="submit"
                         class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700">
-                    ➡️ Continue to Calculator
+                    �z��,? Continue to Calculator
                 </button>
             </div>
         </form>
@@ -65,4 +72,3 @@
         });
     </script>
 @endsection
-

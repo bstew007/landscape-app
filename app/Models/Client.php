@@ -23,6 +23,16 @@ class Client extends Model
         return $this->hasMany(SiteVisit::class);
     }
 
+    public function properties()
+    {
+        return $this->hasMany(Property::class);
+    }
+
+    public function primaryProperty()
+    {
+        return $this->hasOne(Property::class)->where('is_primary', true);
+    }
+
     public function getNameAttribute(): string
     {
         $contact = trim("{$this->first_name} {$this->last_name}");
