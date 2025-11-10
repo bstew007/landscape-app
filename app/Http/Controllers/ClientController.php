@@ -23,6 +23,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
+            'company_name' => 'nullable|string|max:255',
             'email'      => 'nullable|email',
             'phone'      => 'nullable|string|max:20',
             'address'    => 'nullable|string',
@@ -56,6 +57,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
+            'company_name' => 'nullable|string|max:255',
             'email'      => 'nullable|email',
             'phone'      => 'nullable|string|max:20',
             'address'    => 'nullable|string',
@@ -73,4 +75,3 @@ class ClientController extends Controller
         return redirect()->route('clients.index')->with('success', 'Client deleted successfully.');
     }
 }
-

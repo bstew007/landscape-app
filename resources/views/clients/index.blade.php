@@ -25,6 +25,7 @@
                 <thead class="bg-gray-50 text-gray-700 text-left text-sm uppercase tracking-wider">
                     <tr>
                         <th class="px-6 py-4">Name</th>
+                        <th class="px-6 py-4">Company</th>
                         <th class="px-6 py-4">Email</th>
                         <th class="px-6 py-4">Phone</th>
                         <th class="px-6 py-4">Actions</th>
@@ -35,6 +36,9 @@
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 {{ $client->first_name }} {{ $client->last_name }}
+                            </td>
+                            <td class="px-6 py-4">
+                                {{ $client->company_name ?? '—' }}
                             </td>
                             <td class="px-6 py-4">{{ $client->email }}</td>
                             <td class="px-6 py-4">{{ $client->phone }}</td>

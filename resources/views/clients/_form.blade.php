@@ -19,6 +19,13 @@
     </div>
 
     <div>
+        <label for="company_name" class="block text-lg font-medium text-gray-700">Company Name (optional)</label>
+        <input type="text" name="company_name" id="company_name"
+               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
+               value="{{ old('company_name', $client->company_name ?? '') }}">
+    </div>
+
+    <div>
         <label for="email" class="block text-lg font-medium text-gray-700">Email</label>
         <input type="email" name="email" id="email"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
@@ -50,4 +57,3 @@
         </a>
     </div>
 </form>
-

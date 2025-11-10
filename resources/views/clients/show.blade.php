@@ -6,6 +6,7 @@
 
     <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2 mb-6">
         <p><strong>Name:</strong> {{ $client->first_name }} {{ $client->last_name }}</p>
+        <p><strong>Company:</strong> {{ $client->company_name ?? '—' }}</p>
         <p><strong>Email:</strong> {{ $client->email ?? '—' }}</p>
         <p><strong>Phone:</strong> {{ $client->phone ?? '—' }}</p>
         <p><strong>Address:</strong> {{ $client->address ?? '—' }}</p>
