@@ -35,7 +35,7 @@
                 <option value="">Select property</option>
                 @foreach ($clients as $client)
                     @foreach ($client->properties as $property)
-                        <option value="{{ $property->id }}" @selected(old('property_id', $estimate->property_id ?? '') == $property->id)>
+                        <option value="{{ $property->id }}" data-client-id="{{ $client->id }}" @selected(old('property_id', $estimate->property_id ?? '') == $property->id)>
                             {{ $client->name }} – {{ $property->name }}
                         </option>
                     @endforeach
@@ -44,10 +44,14 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700">Site Visit (optional)</label>
-            <select name="site_visit_id" class="form-select w-full mt-1">
+            <select
+                name="site_visit_id"
+                class="form-select w-full mt-1"
+                data-line-items-url="{{ route('site-visits.estimate-line-items', ['site_visit' => '__SITE_VISIT__']) }}"
+            >
                 <option value="">Link visit</option>
                 @foreach ($siteVisits as $visit)
-                    <option value="{{ $visit->id }}" @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
+                    <option value="{{ $visit->id }}" data-client-id="{{ $visit->client_id }}" @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
                         {{ optional($visit->client)->name }} – {{ optional($visit->visit_date)->format('M j, Y') }}
                     </option>
                 @endforeach
@@ -61,7 +65,7 @@
         <div>
             <label class="block text-sm font-medium text-gray-700">Total</label>
             <input type="number" step="0.01" name="total" class="form-input w-full mt-1"
-                   value="{{ old('total', $estimate->total ?? '') }}">
+                   value="{{ old('total', $estimate->total ?? '') }}" readonly>
         </div>
     </div>
 
@@ -153,6 +157,74 @@
             const tableBody = document.querySelector('#line-items-table tbody');
             const lineItemsInput = document.getElementById('line_items_input');
             const form = document.getElementById('estimateForm') || document.querySelector('form');
+            const totalField = document.querySelector('input[name="total"]');
+            const clientSelect = document.querySelector('select[name="client_id"]');
+            const propertySelect = document.querySelector('select[name="property_id"]');
+            const siteVisitSelect = document.querySelector('select[name="site_visit_id"]');
+            const lineItemsEndpointTemplate = siteVisitSelect && siteVisitSelect.dataset
+                ? siteVisitSelect.dataset.lineItemsUrl || null
+                : null;
+
+            if (!tableBody || !lineItemsInput || !form) {
+                return;
+            }
+
+            const propertyOptions = propertySelect
+                ? Array.from(propertySelect.options).map(option => ({
+                    value: option.value,
+                    text: option.textContent,
+                    clientId: option.dataset.clientId || '',
+                }))
+                : [];
+
+            const siteVisitOptions = siteVisitSelect
+                ? Array.from(siteVisitSelect.options).map(option => ({
+                    value: option.value,
+                    text: option.textContent,
+                    clientId: option.dataset.clientId || '',
+                }))
+                : [];
+
+            function rebuildSelect(select, options, clientId, selectedValue) {
+                const fragment = document.createDocumentFragment();
+                options.forEach(option => {
+                    const matches = !option.value || !clientId || option.clientId === clientId || option.value === selectedValue;
+                    if (!matches) {
+                        return;
+                    }
+                    const opt = document.createElement('option');
+                    opt.value = option.value;
+                    opt.textContent = option.text;
+                    if (option.clientId) {
+                        opt.dataset.clientId = option.clientId;
+                    }
+                    if (selectedValue && option.value === selectedValue) {
+                        opt.selected = true;
+                    }
+                    fragment.appendChild(opt);
+                });
+                select.innerHTML = '';
+                select.appendChild(fragment);
+            }
+
+            function filterClientRelatedSelects() {
+                if (!clientSelect) {
+                    return;
+                }
+                const clientId = clientSelect.value;
+
+                if (propertySelect) {
+                    const currentProperty = propertySelect.value;
+                    const propertyValid = propertyOptions.some(opt => opt.value === currentProperty && opt.clientId === clientId);
+                    rebuildSelect(propertySelect, propertyOptions, clientId, propertyValid ? currentProperty : '');
+                }
+
+                if (siteVisitSelect) {
+                    const currentVisit = siteVisitSelect.value;
+                    const visitValid = siteVisitOptions.some(opt => opt.value === currentVisit && opt.clientId === clientId);
+                    rebuildSelect(siteVisitSelect, siteVisitOptions, clientId, visitValid ? currentVisit : '');
+                }
+            }
 
             function recalcRow(row) {
                 const qty = parseFloat(row.querySelector('.line-qty').value) || 0;
@@ -164,6 +236,20 @@
                 const total = price * qty || 0;
                 priceField.value = price.toFixed(2);
                 row.querySelector('.line-total').textContent = total.toFixed(2);
+                updateEstimateTotal();
+            }
+
+            function updateEstimateTotal() {
+                if (!totalField) {
+                    return;
+                }
+                const sum = Array.from(tableBody.querySelectorAll('.line-item-row')).reduce((carry, row) => {
+                    const qty = parseFloat(row.querySelector('.line-qty').value) || 0;
+                    const price = parseFloat(row.querySelector('.line-price').value) || 0;
+                    return carry + (qty * price);
+                }, 0);
+
+                totalField.value = sum > 0 ? sum.toFixed(2) : '';
             }
 
             function serializeLineItems() {
@@ -183,10 +269,10 @@
                 lineItemsInput.value = JSON.stringify(payload);
             }
 
-            function addRow() {
+            function addRow(prefill = null) {
                 const row = document.createElement('tr');
                 row.classList.add('line-item-row');
-                row.innerHTML = `
+                row.innerHTML = 
                     <td class="px-2 py-1">
                         <input type="text" class="line-label form-input w-full" value="">
                     </td>
@@ -206,31 +292,119 @@
                         <span class="line-total text-gray-700 font-semibold">0.00</span>
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <button type="button" class="remove-line text-red-600 hover:text-red-900">×</button>
+                        <button type="button" class="remove-line text-red-600 hover:text-red-900">A-</button>
                     </td>
-                `;
+                ;
                 tableBody.appendChild(row);
                 attachRowListeners(row);
+
+                if (prefill) {
+                    row.querySelector('.line-label').value = prefill.label ?? '';
+                    const qtyValue = Number(prefill.qty ?? 1) || 1;
+                    const baseCost = Number(prefill.cost ?? prefill.rate ?? prefill.price ?? prefill.total ?? 0) || 0;
+                    row.querySelector('.line-qty').value = qtyValue;
+                    row.querySelector('.line-cost').value = baseCost.toFixed(2);
+                    row.querySelector('.line-margin').value = prefill.margin ?? 0;
+                }
+
                 recalcRow(row);
+            }
+
+            function replaceLineItems(items) {
+                tableBody.innerHTML = '';
+                if (!Array.isArray(items) || items.length === 0) {
+                    addRow();
+                    updateEstimateTotal();
+                    return;
+                }
+                items.forEach(item => addRow(item));
+                updateEstimateTotal();
             }
 
             function attachRowListeners(row) {
                 ['line-qty', 'line-cost', 'line-margin'].forEach(selector => {
-                    row.querySelector(`.${selector}`).addEventListener('input', () => recalcRow(row));
+                    row.querySelector(.).addEventListener('input', () => recalcRow(row));
                 });
                 row.querySelector('.remove-line').addEventListener('click', () => {
                     row.remove();
+                    updateEstimateTotal();
                 });
+            }
+
+            async function hydrateFromSiteVisit(siteVisitId) {
+                if (!lineItemsEndpointTemplate || !siteVisitId) {
+                    return;
+                }
+
+                const endpoint = lineItemsEndpointTemplate.replace('__SITE_VISIT__', siteVisitId);
+
+                try {
+                    const response = await fetch(endpoint, { headers: { 'Accept': 'application/json' } });
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const payload = await response.json();
+
+                    if (clientSelect) {
+                        if (payload.client_id) {
+                            const newClientId = String(payload.client_id);
+                            if (clientSelect.value !== newClientId) {
+                                clientSelect.value = newClientId;
+                                clientSelect.dispatchEvent(new Event('change'));
+                            } else {
+                                filterClientRelatedSelects();
+                            }
+                        } else {
+                            filterClientRelatedSelects();
+                        }
+                    }
+
+                    if (propertySelect && payload.property_id) {
+                        if (!propertySelect.querySelector(option[value=""])) {
+                            filterClientRelatedSelects();
+                        }
+                        propertySelect.value = String(payload.property_id);
+                    }
+
+                    if (Array.isArray(payload.line_items)) {
+                        replaceLineItems(payload.line_items);
+                    }
+                } catch (error) {
+                    console.error('Unable to load site visit data', error);
+                }
             }
 
             tableBody.querySelectorAll('.line-item-row').forEach(row => attachRowListeners(row));
 
-            document.getElementById('add-line-item').addEventListener('click', () => addRow());
+            const addLineItemButton = document.getElementById('add-line-item');
+            if (addLineItemButton) {
+                addLineItemButton.addEventListener('click', () => addRow());
+            }
 
             form.addEventListener('submit', () => {
                 tableBody.querySelectorAll('.line-item-row').forEach(row => recalcRow(row));
                 serializeLineItems();
             });
+
+            if (clientSelect) {
+                clientSelect.addEventListener('change', () => {
+                    filterClientRelatedSelects();
+                });
+                filterClientRelatedSelects();
+            }
+
+            if (siteVisitSelect && lineItemsEndpointTemplate) {
+                siteVisitSelect.addEventListener('change', () => {
+                    const siteVisitId = siteVisitSelect.value;
+                    if (siteVisitId) {
+                        hydrateFromSiteVisit(siteVisitId);
+                    }
+                });
+            }
+
+            updateEstimateTotal();
         });
     </script>
 @endpush
+

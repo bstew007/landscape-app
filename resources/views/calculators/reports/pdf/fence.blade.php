@@ -24,6 +24,6 @@
     <h3>Pricing</h3>
     <p>Labor Cost: ${{ number_format($data['labor_cost'], 2) }}</p>
     <p>Materials: ${{ number_format($data['material_total'], 2) }}</p>
-    <p>Markup: {{ $data['markup'] }}% ( ${{ number_format($data['markup_amount'], 2) }} )</p>
+    <p>Total Cost: ${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</p>
     <p><strong>Final Price:</strong> ${{ number_format($data['final_price'], 2) }}</p>
 </div>

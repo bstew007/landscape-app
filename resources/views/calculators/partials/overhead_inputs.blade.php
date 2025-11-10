@@ -28,10 +28,6 @@
         <label>Cleanup Overhead (%)</label>
         <input type="number" step="1" name="cleanup" class="form-input w-full" value="{{ old('cleanup', $formData['cleanup'] ?? 5) }}">
     </div>
-    <div>
-        <label>Markup (%)</label>
-        <input type="number" step="0.1" name="markup" class="form-input w-full" value="{{ old('markup', $formData['markup'] ?? 15) }}" required>
-    </div>
 </div>
 
 {{-- Job Notes --}}

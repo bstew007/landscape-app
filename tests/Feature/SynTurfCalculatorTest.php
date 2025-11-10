@@ -52,7 +52,6 @@ class SynTurfCalculatorTest extends TestCase
             'site_conditions' => 5,
             'material_pickup' => 2,
             'cleanup' => 1,
-            'markup' => 20,
             'site_visit_id' => $siteVisit->id,
             'area_sqft' => 2500,
             'edging_linear_ft' => 300,

@@ -44,7 +44,6 @@ class MulchingCalculatorController extends Controller
         'site_conditions' => 'nullable|numeric|min:0',
         'material_pickup' => 'nullable|numeric|min:0',
         'cleanup' => 'nullable|numeric|min:0',
-        'markup' => 'nullable|numeric|min:0',
         'site_visit_id' => 'required|exists:site_visits,id',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
@@ -113,16 +112,7 @@ class MulchingCalculatorController extends Controller
         array_merge($request->all(), ['material_total' => $materialTotal])
     );
 
-    // ✅ Combine labor + materials + markup
-    $laborCost = $totals['labor_cost'] ?? 0;
-    $markup = $validated['markup'] ?? 0;
-    $marginDecimal = $markup / 100;
-
-    $preMarkup = $laborCost + $materialTotal;
-    $finalPrice = $marginDecimal >= 1 ? $preMarkup : $preMarkup / (1 - $marginDecimal);
-    $markupAmount = $finalPrice - $preMarkup;
-
-    // ✅ Build data (your totals take precedence)
+    // ✅ Build data (service totals already include labor + materials)
     $data = array_merge(
         $validated,
         $totals, // first, so your custom totals overwrite theirs
@@ -135,9 +125,6 @@ class MulchingCalculatorController extends Controller
             'labor_hours' => round($totalHours, 2),
             'materials' => $materials,
             'material_total' => $materialTotal,
-            'labor_cost' => $laborCost,
-            'markup_amount' => $markupAmount,
-            'final_price' => $finalPrice,
         ]
     );
 

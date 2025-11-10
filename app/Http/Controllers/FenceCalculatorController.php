@@ -89,7 +89,6 @@ public function downloadPdf($id)
         'site_conditions' => 'nullable|numeric|min:0',
         'material_pickup' => 'nullable|numeric|min:0',
         'cleanup' => 'nullable|numeric|min:0',
-        'markup' => 'nullable|numeric|min:0',
         'dig_method' => 'required|in:hand,auger',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',

@@ -34,7 +34,7 @@
 </div>
 
 {{-- VINYL MATERIALS (6') --}}
-<div class="override-group vinyl-material">
+<div class="override-group vinyl-material" data-vinyl-height="6">
     <h3 class="font-bold text-gray-700 mt-6">🧱 Vinyl Materials (6')</h3>
 
     <div>
@@ -64,7 +64,7 @@
 </div>
 
 {{-- VINYL MATERIALS (4') --}}
-<div class="override-group vinyl-material">
+<div class="override-group vinyl-material" data-vinyl-height="4">
     <h3 class="font-bold text-gray-700 mt-6">🧱 Vinyl Materials (4')</h3>
 
     <div>
@@ -94,7 +94,7 @@
 </div>
 
 {{-- METAL INSERTS --}}
-<div class="override-group vinyl-material">
+<div class="override-group vinyl-material" data-vinyl-height="all">
     <h3 class="font-bold text-gray-700 mt-6">🪛 Metal Inserts</h3>
 
     <div>

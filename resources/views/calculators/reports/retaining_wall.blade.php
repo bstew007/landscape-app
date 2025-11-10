@@ -24,7 +24,8 @@
             <p>Labor Hours: {{ number_format($data['labor_hours'], 2) }}</p>
             <p>Total Hours: {{ number_format($data['total_hours'], 2) }}</p>
             <p>Labor Cost: ${{ number_format($data['labor_cost'], 2) }}</p>
-            <p>Markup: {{ $data['markup'] }}% ( ${{ number_format($data['markup_amount'], 2) }} )</p>
+            <p>Materials: ${{ number_format($data['material_total'], 2) }}</p>
+            <p>Total Cost: ${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</p>
         </div>
     </div>
 

@@ -130,6 +130,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const fenceTypeSelect = document.getElementById('fence_type');
+        const heightSelect = document.getElementById('height');
         const overridesCheckbox = document.getElementById('showOverrides');
 
         function toggleSections() {
@@ -140,30 +141,51 @@
 
         function toggleFenceSpecificOverrides() {
             const type = fenceTypeSelect.value;
-            document.querySelectorAll('.override-group').forEach(group => group.style.display = 'none');
+            const currentHeight = heightSelect ? heightSelect.value : '';
+            const overridesEnabled = overridesCheckbox && overridesCheckbox.checked;
+            const groups = document.querySelectorAll('#overrides-section .override-group');
 
-            if (type === 'wood') {
-                document.querySelectorAll('.wood-material').forEach(el => el.style.display = 'block');
-            } else if (type === 'vinyl') {
-                document.querySelectorAll('.vinyl-material').forEach(el => el.style.display = 'block');
-            }
+            groups.forEach(group => {
+                let show = overridesEnabled;
+
+                if (group.classList.contains('wood-material')) {
+                    show = show && type === 'wood';
+                } else if (group.classList.contains('vinyl-material')) {
+                    const targetHeight = group.dataset.vinylHeight || 'all';
+                    if (type !== 'vinyl') {
+                        show = false;
+                    } else if (targetHeight !== 'all' && currentHeight && targetHeight !== currentHeight) {
+                        show = false;
+                    }
+                } else {
+                    show = show && Boolean(type);
+                }
+
+                group.style.display = show ? 'block' : 'none';
+            });
         }
 
         function handleOverrideVisibility() {
-            if (overridesCheckbox.checked) {
-                toggleFenceSpecificOverrides();
-            }
+            toggleFenceSpecificOverrides();
         }
 
         toggleSections();
         handleOverrideVisibility();
 
-        fenceTypeSelect.addEventListener('change', function () {
-            toggleSections();
-            handleOverrideVisibility();
-        });
+        if (fenceTypeSelect) {
+            fenceTypeSelect.addEventListener('change', function () {
+                toggleSections();
+                handleOverrideVisibility();
+            });
+        }
 
-        overridesCheckbox.addEventListener('change', handleOverrideVisibility);
+        if (overridesCheckbox) {
+            overridesCheckbox.addEventListener('change', handleOverrideVisibility);
+        }
+
+        if (heightSelect) {
+            heightSelect.addEventListener('change', handleOverrideVisibility);
+        }
     });
 </script>
 @endpush

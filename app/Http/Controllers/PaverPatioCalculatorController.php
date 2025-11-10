@@ -51,7 +51,6 @@ class PaverPatioCalculatorController extends Controller
         'drive_distance' => 'required|numeric|min:0',
         'drive_speed' => 'required|numeric|min:1',
         'labor_rate' => 'required|numeric|min:1',
-        'markup' => 'required|numeric|min:0',
         'site_conditions' => 'nullable|numeric|min:0',
         'material_pickup' => 'nullable|numeric|min:0',
         'cleanup' => 'nullable|numeric|min:0',

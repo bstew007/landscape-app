@@ -32,7 +32,7 @@
         <div class="bg-gray-50 p-4 rounded">
             <h4 class="font-semibold mb-2">Pricing</h4>
             <p>Materials: ${{ number_format($data['material_total'], 2) }}</p>
-            <p>Markup: {{ $data['markup'] }}% ( ${{ number_format($data['markup_amount'], 2) }} )</p>
+            <p>Total Cost: ${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</p>
             <p class="font-bold">Final Price: ${{ number_format($data['final_price'], 2) }}</p>
         </div>
     </div>

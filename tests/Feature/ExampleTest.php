@@ -3,5 +3,5 @@
 it('redirects visitors hitting the root to the client hub', function () {
     $response = $this->get('/');
 
-    $response->assertRedirect('/clients');
+    $response->assertRedirect('/client-hub');
 });

@@ -200,6 +200,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::resource('todos', TodoController::class)->except(['show']);
     Route::patch('todos/{todo}/status', [TodoController::class, 'updateStatus'])->name('todos.updateStatus');
 
+    Route::get('site-visits/{site_visit}/estimate-line-items', [EstimateController::class, 'siteVisitLineItems'])->name('site-visits.estimate-line-items');
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
     Route::resource('estimates', EstimateController::class);

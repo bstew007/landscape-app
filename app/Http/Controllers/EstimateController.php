@@ -8,6 +8,7 @@ use App\Models\Property;
 use App\Models\SiteVisit;
 use App\Models\Invoice;
 use App\Mail\EstimateMail;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -162,6 +163,17 @@ class EstimateController extends Controller
     public function print(Estimate $estimate)
     {
         return view('estimates.print', compact('estimate'));
+    }
+
+    public function siteVisitLineItems(SiteVisit $siteVisit): JsonResponse
+    {
+        $lineItems = $this->buildLineItemsFromSiteVisit($siteVisit->id) ?? [];
+
+        return response()->json([
+            'line_items' => $lineItems,
+            'client_id' => $siteVisit->client_id,
+            'property_id' => $siteVisit->property_id,
+        ]);
     }
 
     protected function buildLineItemsFromSiteVisit(?int $siteVisitId): ?array

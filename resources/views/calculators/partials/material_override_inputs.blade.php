@@ -22,13 +22,13 @@
     </label>
 </div>
 
-@if (!empty($customContent))
-    <div class="mt-4">
-        {!! $customContent !!}
-    </div>
-@endif
-
 <div id="{{ $sectionId }}" class="mt-4 space-y-4 {{ $overrideChecked ? '' : 'hidden' }}">
+    @if (!empty($customContent))
+        <div class="space-y-4">
+            {!! $customContent !!}
+        </div>
+    @endif
+
     @foreach ($fullFields as $field)
         <div>
             <label class="block text-sm font-semibold">{{ $field['label'] }}</label>

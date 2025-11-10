@@ -121,8 +121,8 @@
                     <td class="text-right">${{ number_format($data['labor_cost'], 2) }}</td>
                 </tr>
                 <tr>
-                    <td>Markup</td>
-                    <td class="text-right">${{ number_format($data['markup_amount'], 2) }}</td>
+                    <td>Total Cost</td>
+                    <td class="text-right">${{ number_format(($data['labor_cost'] ?? 0) + ($data['material_total'] ?? 0), 2) }}</td>
                 </tr>
                 <tr style="font-weight: bold; background-color: #f3f4f6;">
                     <td>Final Price</td>

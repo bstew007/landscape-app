@@ -91,19 +91,11 @@
             <span>${{ number_format($data['material_total'], 2) }}</span>
         </div>
         <div class="flex justify-between border-t pt-2 mt-2 font-semibold">
-            <span>Total Cost (Before Margin):</span>
+            <span>Total Cost:</span>
             <span>${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
         </div>
-        <div class="flex justify-between mt-2">
-            <span>Target Margin:</span>
-            <span>{{ $data['markup'] }}%</span>
-        </div>
-        <div class="flex justify-between">
-            <span>Markup (Dollar Amount):</span>
-            <span>${{ number_format($data['markup_amount'], 2) }}</span>
-        </div>
         <div class="flex justify-between font-bold text-lg mt-2 border-t pt-2">
-            <span>Final Price (With Margin):</span>
+            <span>Final Price:</span>
             <span>${{ number_format($data['final_price'], 2) }}</span>
         </div>
     </div>

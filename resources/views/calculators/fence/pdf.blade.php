@@ -157,19 +157,11 @@
                     <td style="text-align: right;">${{ number_format($data['material_total'], 2) }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Total Cost (Before Margin)</strong></td>
+                    <td><strong>Total Cost</strong></td>
                     <td style="text-align: right;">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</td>
                 </tr>
-                <tr>
-                    <td><strong>Target Margin</strong></td>
-                    <td style="text-align: right;">{{ $data['markup'] }}%</td>
-                </tr>
-                <tr>
-                    <td><strong>Markup (Dollar Amount)</strong></td>
-                    <td style="text-align: right;">${{ number_format($data['markup_amount'], 2) }}</td>
-                </tr>
                 <tr style="font-weight: bold;">
-                    <td><strong>Final Price (With Margin)</strong></td>
+                    <td><strong>Final Price</strong></td>
                     <td style="text-align: right;">${{ number_format($data['final_price'], 2) }}</td>
                 </tr>
             </tbody>

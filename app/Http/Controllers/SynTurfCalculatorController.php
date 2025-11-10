@@ -47,7 +47,6 @@ class SynTurfCalculatorController extends Controller
             'site_conditions' => 'nullable|numeric|min:0',
             'material_pickup' => 'nullable|numeric|min:0',
             'cleanup' => 'nullable|numeric|min:0',
-            'markup' => 'nullable|numeric|min:0',
             'site_visit_id' => 'required|exists:site_visits,id',
             'calculation_id' => 'nullable|exists:calculations,id',
             'job_notes' => 'nullable|string|max:2000',
@@ -117,20 +116,6 @@ class SynTurfCalculatorController extends Controller
             $laborRate,
             array_merge($request->all(), ['material_total' => $materialTotal])
         );
-
-        $laborCost = $totals['labor_cost'] ?? 0;
-        $markupPercent = (float) ($validated['markup'] ?? 0);
-        $marginDecimal = $markupPercent / 100;
-        $preMarkupTotal = $laborCost + $materialTotal;
-        $finalPrice = $marginDecimal >= 1 ? $preMarkupTotal : ($marginDecimal > 0
-            ? $preMarkupTotal / (1 - $marginDecimal)
-            : $preMarkupTotal);
-        $markupAmount = $finalPrice - $preMarkupTotal;
-
-        $totals['labor_cost'] = round($laborCost, 2);
-        $totals['final_price'] = round($finalPrice, 2);
-        $totals['markup_amount'] = round($markupAmount, 2);
-        $totals['markup'] = $markupPercent;
 
         $data = array_merge(
             $validated,
