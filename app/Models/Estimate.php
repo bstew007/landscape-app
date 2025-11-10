@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Estimate extends Model
 {
@@ -20,12 +21,18 @@ class Estimate extends Model
         'line_items',
         'notes',
         'terms',
+        'email_sent_at',
+        'email_last_sent_at',
+        'email_send_count',
+        'email_last_sent_by',
     ];
 
     protected $casts = [
         'line_items' => 'array',
         'expires_at' => 'date',
         'total' => 'decimal:2',
+        'email_sent_at' => 'datetime',
+        'email_last_sent_at' => 'datetime',
     ];
 
     public const STATUSES = ['draft', 'pending', 'sent', 'approved', 'rejected'];
@@ -48,5 +55,10 @@ class Estimate extends Model
     public function invoice()
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    public function emailSender()
+    {
+        return $this->belongsTo(User::class, 'email_last_sent_by');
     }
 }

@@ -2,6 +2,7 @@
 
 @php
     use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Str;
 @endphp
 
 @section('content')
@@ -28,7 +29,7 @@
         </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-4 md:grid-cols-4">
         <div class="bg-white rounded-lg shadow p-4">
             <h2 class="text-xs font-semibold uppercase text-gray-500">Status</h2>
             <p class="text-xl font-bold text-gray-900">{{ ucfirst($estimate->status) }}</p>
@@ -50,6 +51,22 @@
                 </a>
             @else
                 <p class="text-sm text-gray-800">Not linked</p>
+            @endif
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="text-xs font-semibold uppercase text-gray-500">Email Status</h2>
+            @if ($estimate->email_send_count)
+                <p class="text-sm font-semibold text-gray-900">
+                    Last sent {{ $estimate->email_last_sent_at?->timezone(config('app.timezone'))->format('M j, Y g:i A') }}
+                </p>
+                <p class="text-xs text-gray-600 mt-1">
+                    Sent {{ $estimate->email_send_count }} {{ Str::plural('time', $estimate->email_send_count) }}
+                    @if ($estimate->emailSender)
+                        by {{ $estimate->emailSender->name ?? $estimate->emailSender->email }}
+                    @endif
+                </p>
+            @else
+                <p class="text-sm text-gray-700 mt-2">Not emailed yet.</p>
             @endif
         </div>
     </div>

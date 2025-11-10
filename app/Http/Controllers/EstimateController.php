@@ -64,7 +64,7 @@ class EstimateController extends Controller
 
     public function show(Estimate $estimate)
     {
-        $estimate->load(['client', 'property', 'siteVisit', 'invoice']);
+        $estimate->load(['client', 'property', 'siteVisit', 'invoice', 'emailSender']);
         return view('estimates.show', compact('estimate'));
     }
 
@@ -138,7 +138,22 @@ class EstimateController extends Controller
     {
         Mail::to($estimate->client->email ?? 'test@example.com')->send(new EstimateMail($estimate));
 
-        return back()->with('success', "Estimate #{$estimate->id} emailed to {$estimate->client->email}.");
+        $now = now();
+
+        $estimate->forceFill([
+            'email_sent_at' => $estimate->email_sent_at ?? $now,
+            'email_last_sent_at' => $now,
+            'email_send_count' => (int) ($estimate->email_send_count ?? 0) + 1,
+            'email_last_sent_by' => auth()->id(),
+        ])->save();
+
+        $estimate->refresh();
+
+        $message = $estimate->email_send_count > 1
+            ? "Estimate #{$estimate->id} re-sent to {$estimate->client->email}."
+            : "Estimate #{$estimate->id} emailed to {$estimate->client->email}.";
+
+        return back()->with('success', $message);
     }
 
     public function createInvoice(Estimate $estimate)

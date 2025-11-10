@@ -43,6 +43,7 @@
                 <th class="px-4 py-3">Estimate</th>
                 <th class="px-4 py-3">Client / Property</th>
                 <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Email</th>
                 <th class="px-4 py-3 text-right">Total</th>
                 <th class="px-4 py-3">Expires</th>
                 <th class="px-4 py-3"></th>
@@ -70,6 +71,18 @@
                             ])">
                             {{ ucfirst($estimate->status) }}
                         </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        @if ($estimate->email_last_sent_at)
+                            <div class="text-xs font-semibold text-green-700">
+                                Sent {{ $estimate->email_last_sent_at->format('M j, Y') }}
+                            </div>
+                            <div class="text-[11px] text-gray-500">
+                                {{ $estimate->email_send_count }} {{ \Illuminate\Support\Str::plural('time', $estimate->email_send_count) }}
+                            </div>
+                        @else
+                            <span class="text-xs text-gray-400">Not sent</span>
+                        @endif
                     </td>
                     <td class="px-4 py-3 text-right font-semibold text-gray-900">
                         {{ $estimate->total ? '$' . number_format($estimate->total, 2) : '—' }}
