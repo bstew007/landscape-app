@@ -1,8 +1,24 @@
 @extends('layouts.sidebar')
 
+@php
+    use Illuminate\Support\Facades\Storage;
+@endphp
+
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">🗓️ Site Visit Details</h1>
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <h1 class="text-3xl font-bold">🗓️ Site Visit Details</h1>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('site-visits.report', $siteVisit) }}"
+               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                📋 View Report
+            </a>
+            <a href="{{ route('site-visits.report.pdf', $siteVisit) }}"
+               class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">
+                📄 Download Report PDF
+            </a>
+        </div>
+    </div>
 
     {{-- Site Visit Info --}}
     <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2 mb-6">
@@ -146,9 +162,74 @@
                 </div>
             @endforeach
         </div>
-    @else
+@else
         <p class="text-gray-600 mb-6">No calculations saved for this visit.</p>
-    @endif
+@endif
+
+    {{-- 📷 Photos --}}
+    <div class="mt-10">
+        <h2 class="text-2xl font-semibold mb-4">📷 Site Visit Photos</h2>
+
+        <form method="POST"
+              action="{{ route('clients.site-visits.photos.store', [$client, $siteVisit]) }}"
+              enctype="multipart/form-data"
+              class="mb-6 bg-white p-4 rounded shadow">
+            @csrf
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold mb-1">Upload Photo</label>
+                    <input type="file"
+                           name="photo"
+                           accept="image/*"
+                           capture="environment"
+                           class="form-input w-full"
+                           required>
+                    @error('photo')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Caption (optional)</label>
+                    <input type="text"
+                           name="caption"
+                           class="form-input w-full"
+                           value="{{ old('caption') }}"
+                           placeholder="e.g. Front lawn before service">
+                </div>
+            </div>
+            <button type="submit"
+                    class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                ⬆️ Upload Photo
+            </button>
+        </form>
+
+        @if ($siteVisit->photos->count())
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach ($siteVisit->photos as $photo)
+                    <div class="bg-white rounded shadow overflow-hidden">
+                        <img src="{{ Storage::disk('public')->url($photo->path) }}"
+                             alt="{{ $photo->caption ?? 'Site photo' }}"
+                             class="w-full h-48 object-cover">
+                        <div class="p-3">
+                            <p class="text-sm text-gray-700 mb-2">{{ $photo->caption ?? '—' }}</p>
+                            <form method="POST"
+                                  action="{{ route('clients.site-visits.photos.destroy', [$client, $siteVisit, $photo]) }}"
+                                  onsubmit="return confirm('Delete this photo?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="text-red-600 text-sm hover:underline">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-gray-600">No photos uploaded yet.</p>
+        @endif
+    </div>
 
     {{-- 🔙 Back to Client --}}
     <div class="mt-8">

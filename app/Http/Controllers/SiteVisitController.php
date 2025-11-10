@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Calculation;
 use App\Models\Client;
 use App\Models\SiteVisit;
+use App\Models\SiteVisitPhoto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SiteVisitController extends Controller
 {
@@ -120,9 +123,37 @@ public function storeCalculation(Request $request)
 
     public function show(Client $client, SiteVisit $siteVisit)
     {
+        $siteVisit->load('photos');
         $calculations = $siteVisit->calculations()->latest()->get();
 
         return view('site-visits.show', compact('client', 'siteVisit', 'calculations'));
     }
-}
 
+    public function storePhoto(Request $request, Client $client, SiteVisit $siteVisit)
+    {
+        $validated = $request->validate([
+            'photo' => 'required|image|max:5120',
+            'caption' => 'nullable|string|max:255',
+        ]);
+
+        $path = $request->file('photo')->store("site-visits/{$siteVisit->id}", 'public');
+
+        $siteVisit->photos()->create([
+            'path' => $path,
+            'caption' => $validated['caption'] ?? null,
+            'uploaded_by' => optional($request->user())->id,
+        ]);
+
+        return back()->with('success', 'Photo uploaded successfully.');
+    }
+
+    public function destroyPhoto(Client $client, SiteVisit $siteVisit, SiteVisitPhoto $photo)
+    {
+        abort_unless($photo->site_visit_id === $siteVisit->id, 404);
+
+        Storage::disk('public')->delete($photo->path);
+        $photo->delete();
+
+        return back()->with('success', 'Photo deleted.');
+    }
+}

@@ -14,6 +14,7 @@ use App\Http\Controllers\WeedingCalculatorController;
 use App\Http\Controllers\MulchingCalculatorController;
 use App\Http\Controllers\PineNeedleCalculatorController;
 use App\Http\Controllers\SynTurfCalculatorController;
+use App\Http\Controllers\SiteVisitReportController;
 use App\Http\Controllers\TurfMowingCalculatorController;
 
 
@@ -179,5 +180,10 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // ================================
     Route::resource('clients', ClientController::class);
     Route::resource('clients.site-visits', SiteVisitController::class);
+    Route::post('clients/{client}/site-visits/{site_visit}/photos', [SiteVisitController::class, 'storePhoto'])->name('clients.site-visits.photos.store');
+    Route::delete('clients/{client}/site-visits/{site_visit}/photos/{photo}', [SiteVisitController::class, 'destroyPhoto'])->name('clients.site-visits.photos.destroy');
+
+    Route::get('site-visits/{site_visit}/report', [SiteVisitReportController::class, 'show'])->name('site-visits.report');
+    Route::get('site-visits/{site_visit}/report/pdf', [SiteVisitReportController::class, 'downloadPdf'])->name('site-visits.report.pdf');
 });
 require __DIR__.'/auth.php';

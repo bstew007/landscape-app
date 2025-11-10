@@ -28,4 +28,9 @@ class SiteVisit extends Model
     {
      return $this->hasMany(Calculation::class);
     }
+
+    public function photos()
+    {
+        return $this->hasMany(SiteVisitPhoto::class);
+    }
 }
