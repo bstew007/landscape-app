@@ -39,7 +39,18 @@
                         <tr>
                             @foreach ($chunk as $photo)
                                 <td style="width:50%; text-align:center;">
-                                    <img src="{{ $photo['path'] }}" alt="{{ $photo['caption'] ?? 'Site photo' }}" style="width:95%; height:auto; object-fit:cover;">
+                                    @php
+                                        $extension = pathinfo($photo['path'], PATHINFO_EXTENSION);
+                                        $dataUri = null;
+                                        if (is_readable($photo['path'])) {
+                                            $dataUri = 'data:image/'.$extension.';base64,'.base64_encode(file_get_contents($photo['path']));
+                                        }
+                                    @endphp
+                                    @if ($dataUri)
+                                        <img src="{{ $dataUri }}" alt="{{ $photo['caption'] ?? 'Site photo' }}" style="width:95%; height:auto; object-fit:cover;">
+                                    @else
+                                        <span>Image unavailable</span>
+                                    @endif
                                     <div style="font-size:11px; margin-top:4px;">{{ $photo['caption'] ?? '—' }}</div>
                                 </td>
                             @endforeach

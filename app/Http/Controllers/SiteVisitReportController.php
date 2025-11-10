@@ -30,11 +30,16 @@ class SiteVisitReportController extends Controller
         $calculationsByType = $siteVisit->calculations->groupBy('calculation_type');
         [$summaryRows, $summaryTotals] = $this->buildSummary($calculationsByType);
         $photoSources = $siteVisit->photos->map(function ($photo) {
+            $absolutePath = public_path('storage/'.$photo->path);
+            if (!file_exists($absolutePath)) {
+                $absolutePath = Storage::disk('public')->path($photo->path);
+            }
+
             return [
-                'path' => Storage::disk('public')->path($photo->path),
+                'path' => $absolutePath,
                 'caption' => $photo->caption,
             ];
-        });
+        })->filter(fn ($photo) => file_exists($photo['path']))->values();
 
         $pdf = Pdf::loadView('site-visits.report-pdf', [
             'siteVisit' => $siteVisit,
