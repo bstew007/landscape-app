@@ -2,6 +2,7 @@
 
 @php
     $hasOverrides = collect(old())->keys()->filter(fn($key) => str_contains($key, 'override_'))->isNotEmpty();
+    $overrideChecked = old('materials_override_enabled', $formData['materials_override_enabled'] ?? $hasOverrides);
 @endphp
 
 @section('content')
@@ -21,6 +22,12 @@
 
         {{-- Site Visit --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
+
+        {{-- Crew & Logistics --}}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.overhead_inputs')
+        </div>
 
         {{-- Fence Type --}}
         <div class="mb-4">
@@ -95,21 +102,15 @@
         </div>
 
         {{-- Toggle Material Overrides --}}
-        <div class="mb-4">
-            <label class="inline-flex items-center">
-                <input type="checkbox" id="showOverrides" class="form-checkbox" {{ $hasOverrides ? 'checked' : '' }}>
-                <span class="ml-2">Show Material Cost Overrides</span>
-            </label>
-        </div>
-
-        <div id="overrides-section" style="display: none;">
-            @include('calculators.fence.partials.overrides')
-        </div>
-
-        {{-- Overhead Inputs --}}
-        <div class="mb-6">
-            @include('calculators.partials.overhead_inputs')
-        </div>
+        @include('calculators.partials.material_override_inputs', [
+            'overrideToggleName' => 'materials_override_enabled',
+            'overrideToggleLabel' => 'Show Material Cost Overrides',
+            'overrideToggleId' => 'showOverrides',
+            'overrideSectionId' => 'overrides-section',
+            'overrideChecked' => (bool) $overrideChecked,
+            'fields' => [],
+            'customContent' => view('calculators.fence.partials.overrides'),
+        ])
 
         {{-- Submit Button --}}
         <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700">
@@ -142,23 +143,21 @@
             }
         }
 
-        function toggleOverrideSection() {
-            const section = document.getElementById('overrides-section');
-            const show = overridesCheckbox.checked;
-            section.style.display = show ? 'block' : 'none';
-            if (show) toggleFenceSpecificOverrides();
+        function handleOverrideVisibility() {
+            if (overridesCheckbox.checked) {
+                toggleFenceSpecificOverrides();
+            }
         }
 
         toggleSections();
-        toggleOverrideSection();
+        handleOverrideVisibility();
 
         fenceTypeSelect.addEventListener('change', function () {
             toggleSections();
-            if (overridesCheckbox.checked) toggleFenceSpecificOverrides();
+            handleOverrideVisibility();
         });
 
-        overridesCheckbox.addEventListener('change', toggleOverrideSection);
+        overridesCheckbox.addEventListener('change', handleOverrideVisibility);
     });
 </script>
 @endpush
-

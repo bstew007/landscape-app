@@ -3,38 +3,30 @@
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Pruning Data' : '🌿 Pruning Calculator' }}
+        {{ $editMode ? '✏️ Edit Turf Maintenance Estimate' : '🌱 Turf Mowing Calculator' }}
     </h1>
 
-    <form method="POST" action="{{ route('calculators.pruning.calculate') }}">
+    <p class="text-gray-600 mb-6">
+        Enter the square footage and linear footage covered by each task. Mowing, trimming, edging, and blowing
+        quantities feed directly into labor hours using your production rates.
+    </p>
+
+    <form method="POST" action="{{ route('calculators.turf_mowing.calculate') }}">
         @csrf
 
-        {{-- Edit Mode: Calculation ID --}}
         @if ($editMode && isset($calculation))
             <input type="hidden" name="calculation_id" value="{{ $calculation->id }}">
         @endif
 
-        {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
-        {{-- Crew & Logistics --}}
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
             @include('calculators.partials.overhead_inputs')
         </div>
 
-        {{-- Toggle for Advanced Tasks --}}
-        <div class="mb-4">
-            <label class="inline-flex items-center">
-                <input type="checkbox" id="toggleAdvancedTasks" class="form-checkbox h-5 w-5 text-blue-600">
-                <span class="ml-2 text-sm font-medium">Show Palm Pruning & Overgrown Tasks</span>
-            </label>
-        </div>
-
-        {{-- Task Inputs from DB --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Pruning Tasks</h2>
-
+            <h2 class="text-xl font-semibold mb-2">Turf Tasks</h2>
             @php
                 $savedTasks = $formData['tasks'] ?? [];
                 $savedQuantities = [];
@@ -44,7 +36,7 @@
                     $savedQuantities[$key] = $taskRow['qty'] ?? null;
                 }
 
-                $rates = \App\Models\ProductionRate::where('calculator', 'pruning')
+                $rates = \App\Models\ProductionRate::where('calculator', 'turf_mowing')
                     ->orderBy('task')
                     ->get();
             @endphp
@@ -55,17 +47,16 @@
                         $key = $rate->task;
                         $label = ucwords(str_replace('_', ' ', $key));
                         $value = old("tasks.$key.qty", $savedQuantities[$key] ?? '');
-                        $isAdvanced = str_contains($key, 'overgrown') || str_contains($key, 'palm');
+                        $unitLabel = $rate->unit === 'linear ft' ? 'Linear Feet' : 'Square Feet';
                     @endphp
-
-                    <div class="border p-4 rounded bg-gray-50 {{ $isAdvanced ? 'advanced-task hidden' : '' }}">
-                        <label class="block font-semibold mb-1">{{ $label }} ({{ $rate->unit }})</label>
+                    <div class="border p-4 rounded bg-gray-50">
+                        <label class="block font-semibold mb-1">{{ $label }} ({{ $unitLabel }})</label>
                         <input type="number"
                                name="tasks[{{ $key }}][qty]"
                                step="any"
                                min="0"
                                class="form-input w-full"
-                               placeholder="Enter quantity"
+                               placeholder="Enter {{ strtolower($unitLabel) }}"
                                value="{{ $value }}">
                         <p class="text-sm text-gray-500">Rate: {{ number_format($rate->rate, 4) }} hrs/{{ $rate->unit }}</p>
                     </div>
@@ -73,14 +64,20 @@
             </div>
         </div>
 
-        {{-- Submit --}}
+        <div class="mb-6">
+            <label class="block font-semibold" for="job_notes">Job Notes (optional)</label>
+            <textarea name="job_notes" id="job_notes" rows="4"
+                      class="form-textarea w-full"
+                      placeholder="Add mowing patterns, obstacles, dump locations, etc.">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+        </div>
+
         <button type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-            {{ $editMode ? '🔄 Recalculate Pruning' : '🧮 Calculate Pruning Estimate' }}
+            {{ $editMode ? '🔄 Recalculate Turf Maintenance' : '🧮 Calculate Turf Maintenance' }}
         </button>
 
         <div class="mt-6">
-            <a href="{{ route('clients.show', $siteVisitId) }}"
+            <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}"
                class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
                 🔙 Back to Client
             </a>
@@ -88,22 +85,3 @@
     </form>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const toggle = document.getElementById('toggleAdvancedTasks');
-        const advanced = document.querySelectorAll('.advanced-task');
-
-        function updateVisibility() {
-            advanced.forEach(el => {
-                el.classList.toggle('hidden', !toggle.checked);
-            });
-        }
-
-        toggle.addEventListener('change', updateVisibility);
-        updateVisibility(); // on load
-    });
-</script>
-@endpush
-

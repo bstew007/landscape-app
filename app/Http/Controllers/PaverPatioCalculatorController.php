@@ -58,6 +58,7 @@ class PaverPatioCalculatorController extends Controller
         'site_visit_id' => 'required|exists:site_visits,id',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
+        'materials_override_enabled' => 'nullable|boolean',
 
         // Material cost overrides
         'override_paver_cost' => 'nullable|numeric|min:0',
@@ -150,6 +151,7 @@ class PaverPatioCalculatorController extends Controller
         'labor_hours' => round($baseLaborHours, 2),
         'materials' => $materials,
         'material_total' => round($material_total, 2),
+        'materials_override_enabled' => !empty($validated['materials_override_enabled']),
     ], $totals);
 
     $calc = !empty($validated['calculation_id'])

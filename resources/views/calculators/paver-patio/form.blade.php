@@ -2,6 +2,7 @@
 
 @php
     $hasOverrides = collect(old())->keys()->filter(fn($key) => str_starts_with($key, 'override_'))->isNotEmpty();
+    $overrideChecked = old('materials_override_enabled', $formData['materials_override_enabled'] ?? $hasOverrides);
 @endphp
 
 @section('content')
@@ -20,6 +21,12 @@
 
         {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
+
+        {{-- Crew & Logistics --}}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.overhead_inputs')
+        </div>
 
         {{-- Dimensions --}}
         <div class="mb-4">
@@ -54,46 +61,50 @@
             </select>
         </div>
 
-        {{-- Overhead (Use Partial) --}}
-        <div class="mb-6">
-            @include('calculators.partials.overhead_inputs')
-        </div>
-
         {{-- Material Overrides --}}
-        <div class="mb-6">
-            <label class="inline-flex items-center">
-                <input type="checkbox" id="showOverrides" class="form-checkbox" {{ $hasOverrides ? 'checked' : '' }}>
-                <span class="ml-2">Show Material Cost Overrides</span>
-            </label>
-        </div>
-
-        <div id="overrides-section" style="display: none;">
-            <div class="border p-4 rounded bg-gray-50 mb-6">
-                <h3 class="font-semibold mb-3">Material Unit Costs</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label>Paver Cost per sqft ($)</label>
-                        <input type="number" step="0.01" name="override_paver_cost" class="form-input w-full"
-                               value="{{ old('override_paver_cost', $formData['override_paver_cost'] ?? '') }}">
-                    </div>
-                    <div>
-                        <label>Base Gravel Cost per Ton ($)</label>
-                        <input type="number" step="0.01" name="override_base_cost" class="form-input w-full"
-                               value="{{ old('override_base_cost', $formData['override_base_cost'] ?? '') }}">
-                    </div>
-                    <div>
-                        <label>Plastic Edge ($/20ft)</label>
-                        <input type="number" step="0.01" name="override_plastic_edge_cost" class="form-input w-full"
-                               value="{{ old('override_plastic_edge_cost', $formData['override_plastic_edge_cost'] ?? '') }}">
-                    </div>
-                    <div>
-                        <label>Concrete Edge ($/20ft)</label>
-                        <input type="number" step="0.01" name="override_concrete_edge_cost" class="form-input w-full"
-                               value="{{ old('override_concrete_edge_cost', $formData['override_concrete_edge_cost'] ?? '') }}">
-                    </div>
-                </div>
-            </div>
-        </div>
+        @include('calculators.partials.material_override_inputs', [
+            'overrideToggleName' => 'materials_override_enabled',
+            'overrideToggleLabel' => 'Show Material Cost Overrides',
+            'overrideChecked' => (bool) $overrideChecked,
+            'fields' => [
+                [
+                    'name' => 'override_paver_cost',
+                    'label' => 'Paver Cost per sqft ($)',
+                    'type' => 'number',
+                    'step' => '0.01',
+                    'min' => '0',
+                    'value' => $formData['override_paver_cost'] ?? '',
+                    'width' => 'half',
+                ],
+                [
+                    'name' => 'override_base_cost',
+                    'label' => 'Base Gravel Cost per Ton ($)',
+                    'type' => 'number',
+                    'step' => '0.01',
+                    'min' => '0',
+                    'value' => $formData['override_base_cost'] ?? '',
+                    'width' => 'half',
+                ],
+                [
+                    'name' => 'override_plastic_edge_cost',
+                    'label' => 'Plastic Edge ($/20ft)',
+                    'type' => 'number',
+                    'step' => '0.01',
+                    'min' => '0',
+                    'value' => $formData['override_plastic_edge_cost'] ?? '',
+                    'width' => 'half',
+                ],
+                [
+                    'name' => 'override_concrete_edge_cost',
+                    'label' => 'Concrete Edge ($/20ft)',
+                    'type' => 'number',
+                    'step' => '0.01',
+                    'min' => '0',
+                    'value' => $formData['override_concrete_edge_cost'] ?? '',
+                    'width' => 'half',
+                ],
+            ],
+        ])
 
         
 
@@ -112,21 +123,4 @@
     </form>
 </div>
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const overridesCheckbox = document.getElementById('showOverrides');
-        const section = document.getElementById('overrides-section');
-
-        function toggleOverrides() {
-            section.style.display = overridesCheckbox.checked ? 'block' : 'none';
-        }
-
-        overridesCheckbox.addEventListener('change', toggleOverrides);
-        toggleOverrides(); // Initial state
-    });
-</script>
-@endpush
-
 @endsection
-

@@ -78,6 +78,7 @@ class RetainingWallCalculatorController extends Controller
         'override_fabric_cost' => 'nullable|numeric|min:0',
         'override_geogrid_cost' => 'nullable|numeric|min:0',
         'override_adhesive_cost' => 'nullable|numeric|min:0',
+        'materials_override_enabled' => 'nullable|boolean',
     ]);
 
     $length = $validated['length'];
@@ -210,6 +211,7 @@ class RetainingWallCalculatorController extends Controller
     'labor_hours' => round($wallLabor, 2), // ✅ Add this line
     'material_total' => round($material_total, 2),
     'materials' => $materials,
+    'materials_override_enabled' => !empty($validated['materials_override_enabled']),
 
     'ab_straight_sqft' => round(($validated['ab_straight_length'] ?? 0) * ($validated['ab_straight_height'] ?? 0), 2),
     'ab_curved_sqft' => round(($validated['ab_curved_length'] ?? 0) * ($validated['ab_curved_height'] ?? 0), 2),

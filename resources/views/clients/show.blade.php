@@ -56,6 +56,11 @@
                class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
                 ➕ Synthetic Turf Calculator
             </a>
+
+            <a href="{{ route('calculators.turf_mowing.form', ['site_visit_id' => $siteVisit->id]) }}"
+               class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
+                ➕ Turf Mowing Calculator
+            </a>
         </div>
 
         <p class="text-sm text-gray-500">

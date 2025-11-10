@@ -17,6 +17,12 @@
         {{-- Required --}}
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
+        {{-- Crew & Logistics --}}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.overhead_inputs')
+        </div>
+
         {{-- Task Inputs from DB --}}
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-2">Weeding Tasks</h2>
@@ -59,11 +65,6 @@
             </div>
         </div>
 
-        {{-- Overhead Input Partial --}}
-        <div class="mb-6">
-            @include('calculators.partials.overhead_inputs')
-        </div>
-
         {{-- Submit --}}
         <button type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
@@ -86,6 +87,10 @@
         const toggle = document.getElementById('toggleAdvancedTasks');
         const advanced = document.querySelectorAll('.advanced-task');
 
+        if (!toggle) {
+            return;
+        }
+
         function updateVisibility() {
             advanced.forEach(el => {
                 el.classList.toggle('hidden', !toggle.checked);
@@ -97,5 +102,3 @@
     });
 </script>
 @endpush
-
-

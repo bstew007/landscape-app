@@ -1,7 +1,7 @@
 <?php
 
-it('returns a successful response', function () {
+it('redirects visitors hitting the root to the client hub', function () {
     $response = $this->get('/');
 
-    $response->assertStatus(200);
+    $response->assertRedirect('/clients');
 });

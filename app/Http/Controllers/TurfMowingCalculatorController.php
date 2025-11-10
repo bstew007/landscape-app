@@ -6,18 +6,17 @@ use App\Models\Calculation;
 use App\Models\ProductionRate;
 use App\Models\SiteVisit;
 use App\Services\LaborCostCalculatorService;
-use App\Services\SynTurfMaterialService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
-class SynTurfCalculatorController extends Controller
+class TurfMowingCalculatorController extends Controller
 {
     public function showForm(Request $request)
     {
         $siteVisitId = $request->query('site_visit_id');
         $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
 
-        return view('calculators.syn-turf.form', [
+        return view('calculators.turf-mowing.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
             'clientId' => $siteVisit->client->id,
@@ -28,7 +27,7 @@ class SynTurfCalculatorController extends Controller
 
     public function edit(Calculation $calculation)
     {
-        return view('calculators.syn-turf.form', [
+        return view('calculators.turf-mowing.form', [
             'editMode' => true,
             'formData' => $calculation->data,
             'calculation' => $calculation,
@@ -53,32 +52,24 @@ class SynTurfCalculatorController extends Controller
             'job_notes' => 'nullable|string|max:2000',
             'tasks' => 'required|array',
             'tasks.*.qty' => 'nullable|numeric|min:0',
-            'area_sqft' => 'required|numeric|min:1',
-            'edging_linear_ft' => 'required|numeric|min:0',
-            'turf_grade' => 'required|string|in:good,better,best',
-            'turf_custom_name' => 'nullable|string|max:255',
-            'override_turf_price' => 'nullable|numeric|min:0',
-            'override_infill_price' => 'nullable|numeric|min:0',
-            'override_edging_price' => 'nullable|numeric|min:0',
-            'override_weed_barrier_price' => 'nullable|numeric|min:0',
-            'materials_override_enabled' => 'nullable|boolean',
         ]);
 
         $inputTasks = $request->input('tasks', []);
         $laborRate = (float) $validated['labor_rate'];
 
-        $dbRates = ProductionRate::where('calculator', 'syn_turf')->pluck('rate', 'task');
+        $dbRates = ProductionRate::where('calculator', 'turf_mowing')->pluck('rate', 'task');
 
         $results = [];
         $totalHours = 0;
 
         foreach ($inputTasks as $taskKey => $taskData) {
             $qty = (float) ($taskData['qty'] ?? 0);
-            if ($qty <= 0 || !isset($dbRates[$taskKey])) {
+            $rate = (float) ($dbRates[$taskKey] ?? 0);
+
+            if ($qty <= 0 || $rate <= 0) {
                 continue;
             }
 
-            $rate = $dbRates[$taskKey];
             $hours = $qty * $rate;
             $cost = $hours * $laborRate;
 
@@ -93,40 +84,8 @@ class SynTurfCalculatorController extends Controller
             $totalHours += $hours;
         }
 
-        $areaSqft = (float) $validated['area_sqft'];
-        $edgingLf = (float) $validated['edging_linear_ft'];
-
-        $materialService = app(SynTurfMaterialService::class);
-        $materialData = $materialService->buildMaterials($areaSqft, $edgingLf, $validated['turf_grade'], [
-            'turf_price' => $validated['override_turf_price'],
-            'turf_name' => $validated['turf_custom_name'],
-            'infill_price' => $validated['override_infill_price'],
-            'edging_price' => $validated['override_edging_price'],
-            'weed_barrier_price' => $validated['override_weed_barrier_price'],
-        ]);
-
-        $materials = $materialData['materials'];
-        $materialTotal = $materialData['material_total'];
-        $turfName = $materialData['turf_name'];
-        $turfUnitCost = $materialData['turf_unit_cost'];
-        $overridesEnabled = $materialData['overrides_enabled'];
-
         $calculator = new LaborCostCalculatorService();
         $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
-
-        $laborCost = $totals['labor_cost'] ?? 0;
-        $markupPercent = (float) ($validated['markup'] ?? 0);
-        $marginDecimal = $markupPercent / 100;
-        $preMarkupTotal = $laborCost + $materialTotal;
-        $finalPrice = $marginDecimal >= 1 ? $preMarkupTotal : ($marginDecimal > 0
-            ? $preMarkupTotal / (1 - $marginDecimal)
-            : $preMarkupTotal);
-        $markupAmount = $finalPrice - $preMarkupTotal;
-
-        $totals['labor_cost'] = round($laborCost, 2);
-        $totals['final_price'] = round($finalPrice, 2);
-        $totals['markup_amount'] = round($markupAmount, 2);
-        $totals['markup'] = $markupPercent;
 
         $data = array_merge(
             $validated,
@@ -137,19 +96,8 @@ class SynTurfCalculatorController extends Controller
                     ->map(fn ($h) => round($h, 2))
                     ->toArray(),
                 'labor_hours' => round($totalHours, 2),
-                'materials' => $materials,
-                'material_total' => round($materialTotal, 2),
-                'area_sqft' => round($areaSqft, 2),
-                'edging_linear_ft' => round($edgingLf, 2),
-                'turf_grade' => $validated['turf_grade'],
-                'turf_unit_cost' => $turfUnitCost,
-                'turf_name' => $turfName,
-                'override_turf_price' => $validated['override_turf_price'],
-                'override_infill_price' => $validated['override_infill_price'],
-                'override_edging_price' => $validated['override_edging_price'],
-                'override_weed_barrier_price' => $validated['override_weed_barrier_price'],
-                'turf_custom_name' => $validated['turf_custom_name'],
-                'materials_override_enabled' => $overridesEnabled,
+                'materials' => [],
+                'material_total' => 0,
             ],
             $totals
         );
@@ -160,19 +108,19 @@ class SynTurfCalculatorController extends Controller
         } else {
             $calc = Calculation::create([
                 'site_visit_id' => $validated['site_visit_id'],
-                'calculation_type' => 'syn_turf',
+                'calculation_type' => 'turf_mowing',
                 'data' => $data,
             ]);
         }
 
-        return redirect()->route('calculators.syn_turf.showResult', $calc->id);
+        return redirect()->route('calculators.turf_mowing.showResult', $calc->id);
     }
 
     public function showResult(Calculation $calculation)
     {
         $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail();
 
-        return view('calculators.syn-turf.result', [
+        return view('calculators.turf-mowing.result', [
             'data' => $calculation->data,
             'siteVisit' => $siteVisit,
             'calculation' => $calculation,
@@ -183,12 +131,12 @@ class SynTurfCalculatorController extends Controller
     {
         $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
 
-        $pdf = Pdf::loadView('calculators.syn-turf.pdf', [
+        $pdf = Pdf::loadView('calculators.turf-mowing.pdf', [
             'data' => $calculation->data,
             'siteVisit' => $siteVisit,
             'calculation' => $calculation,
         ]);
 
-        return $pdf->download('synthetic_turf_estimate.pdf');
+        return $pdf->download('turf_mowing_estimate.pdf');
     }
 }

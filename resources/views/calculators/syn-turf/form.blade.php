@@ -15,6 +15,11 @@
 
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.overhead_inputs')
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
                 <label class="block font-semibold mb-1">Project Square Footage</label>
@@ -42,84 +47,76 @@
         <div class="mb-6 bg-white rounded border p-4">
             <h2 class="text-xl font-semibold mb-3">Synthetic Turf Selection</h2>
             @php
+                $turfOptions = config('syn_turf.materials.turf_tiers', []);
                 $turfGrade = old('turf_grade', $formData['turf_grade'] ?? 'better');
                 $overrideChecked = old('materials_override_enabled', $formData['materials_override_enabled'] ?? false);
             @endphp
             <label class="block font-semibold mb-1">Turf Tier</label>
             <select name="turf_grade" class="form-select w-full">
-                <option value="good" {{ $turfGrade === 'good' ? 'selected' : '' }}>Good ($2.00 / sq ft)</option>
-                <option value="better" {{ $turfGrade === 'better' ? 'selected' : '' }}>Better ($3.00 / sq ft)</option>
-                <option value="best" {{ $turfGrade === 'best' ? 'selected' : '' }}>Best ($4.00 / sq ft)</option>
+                @foreach ($turfOptions as $key => $tier)
+                    <option value="{{ $key }}"
+                        {{ $turfGrade === $key ? 'selected' : '' }}>
+                        {{ $tier['label'] ?? ucfirst($key) }} (${{ number_format($tier['unit_cost'] ?? 0, 2) }} / sq ft)
+                    </option>
+                @endforeach
             </select>
 
-            <div class="mt-4">
-                <label class="inline-flex items-center">
-                    <input type="checkbox"
-                           id="toggleOverride"
-                           name="materials_override_enabled"
-                           value="1"
-                           class="form-checkbox h-5 w-5 text-blue-600"
-                           {{ $overrideChecked ? 'checked' : '' }}>
-                    <span class="ml-2 text-sm font-medium">Manually override material pricing / product name</span>
-                </label>
-            </div>
-
-            <div id="overrideFields" class="mt-4 space-y-4 {{ $overrideChecked ? '' : 'hidden' }}">
-                <div>
-                    <label class="block text-sm font-semibold">Turf Product Name</label>
-                    <input type="text"
-                           name="turf_custom_name"
-                           class="form-input w-full"
-                           placeholder="e.g. Emerald Pro 90"
-                           value="{{ old('turf_custom_name', $formData['turf_custom_name'] ?? '') }}">
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold">Turf Price ($ / sq ft)</label>
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               name="override_turf_price"
-                               class="form-input w-full"
-                               value="{{ old('override_turf_price', $formData['override_turf_price'] ?? '') }}"
-                               placeholder="Leave blank for default tier price">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold">Infill Price ($ / bag)</label>
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               name="override_infill_price"
-                               class="form-input w-full"
-                               value="{{ old('override_infill_price', $formData['override_infill_price'] ?? '') }}"
-                               placeholder="Default $25">
-                    </div>
-                </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold">Edging Board Price ($ / 20')</label>
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               name="override_edging_price"
-                               class="form-input w-full"
-                               value="{{ old('override_edging_price', $formData['override_edging_price'] ?? '') }}"
-                               placeholder="Default $45">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold">Weed Barrier Price ($ / roll)</label>
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               name="override_weed_barrier_price"
-                               class="form-input w-full"
-                               value="{{ old('override_weed_barrier_price', $formData['override_weed_barrier_price'] ?? '') }}"
-                               placeholder="Default $75">
-                    </div>
-                </div>
-            </div>
+            @include('calculators.partials.material_override_inputs', [
+                'overrideToggleName' => 'materials_override_enabled',
+                'overrideToggleLabel' => 'Manually override material pricing / product name',
+                'overrideChecked' => (bool) $overrideChecked,
+                'fields' => [
+                    [
+                        'type' => 'text',
+                        'name' => 'turf_custom_name',
+                        'label' => 'Turf Product Name',
+                        'placeholder' => 'e.g. Emerald Pro 90',
+                        'value' => $formData['turf_custom_name'] ?? '',
+                        'help' => 'Optional custom label shown in estimates/PDFs.',
+                        'width' => 'full',
+                    ],
+                    [
+                        'type' => 'number',
+                        'name' => 'override_turf_price',
+                        'label' => 'Turf Price ($ / sq ft)',
+                        'placeholder' => 'Leave blank for tier default',
+                        'value' => $formData['override_turf_price'] ?? '',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'width' => 'half',
+                    ],
+                    [
+                        'type' => 'number',
+                        'name' => 'override_infill_price',
+                        'label' => 'Infill Price ($ / bag)',
+                        'placeholder' => 'Default $25',
+                        'value' => $formData['override_infill_price'] ?? '',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'width' => 'half',
+                    ],
+                    [
+                        'type' => 'number',
+                        'name' => 'override_edging_price',
+                        'label' => "Edging Board Price ($ / 20')",
+                        'placeholder' => 'Default $45',
+                        'value' => $formData['override_edging_price'] ?? '',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'width' => 'half',
+                    ],
+                    [
+                        'type' => 'number',
+                        'name' => 'override_weed_barrier_price',
+                        'label' => 'Weed Barrier Price ($ / roll)',
+                        'placeholder' => 'Default $75',
+                        'value' => $formData['override_weed_barrier_price'] ?? '',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'width' => 'half',
+                    ],
+                ],
+            ])
         </div>
 
         <div class="mb-4">
@@ -198,8 +195,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         const toggle = document.getElementById('toggleAdvancedTasks');
         const advanced = document.querySelectorAll('.advanced-task');
-        const overrideToggle = document.getElementById('toggleOverride');
-        const overrideFields = document.getElementById('overrideFields');
 
         function updateVisibility() {
             advanced.forEach(el => el.classList.toggle('hidden', !toggle.checked));
@@ -207,15 +202,6 @@
 
         toggle.addEventListener('change', updateVisibility);
         updateVisibility();
-
-        if (overrideToggle && overrideFields) {
-            const updateOverrideVisibility = () => {
-                overrideFields.classList.toggle('hidden', !overrideToggle.checked);
-            };
-
-            overrideToggle.addEventListener('change', updateOverrideVisibility);
-            updateOverrideVisibility();
-        }
     });
 </script>
 @endpush

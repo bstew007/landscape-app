@@ -12,6 +12,10 @@
     </div>
 @endif
 
+@php
+    $overrideChecked = (bool) old('materials_override_enabled', $formData['materials_override_enabled'] ?? false);
+@endphp
+
 <div class="max-w-3xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">
         {{ $editMode ? '✏️ Edit Retaining Wall Calculation' : '🧱 Retaining Wall Calculator' }}
@@ -116,70 +120,87 @@
             <div><label>Markup (%)</label><input type="number" step="0.1" name="markup" class="form-input w-full" value="{{ old('markup', $formData['markup'] ?? '') }}" required></div>
         </div>
 
-        <div x-data="{ showOverrides: false }" class="mt-6 border-t pt-4">
-    <label class="inline-flex items-center cursor-pointer mb-3">
-        <input type="checkbox" x-model="showOverrides" class="form-checkbox mr-2">
-        <span class="font-semibold">Override Material Prices</span>
-    </label>
-
-    <div x-show="showOverrides" class="space-y-4 mt-4">
-        <div>
-            <label class="block font-semibold">Wall Block ($/block)</label>
-            <input type="number" step="0.01" name="override_block_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_block_cost', $formData['override_block_cost'] ?? '') }}">
+        <div class="mt-6 border-t pt-4">
+            @include('calculators.partials.material_override_inputs', [
+                'overrideToggleName' => 'materials_override_enabled',
+                'overrideToggleLabel' => 'Override Material Prices',
+                'overrideChecked' => $overrideChecked,
+                'fields' => [
+                    [
+                        'name' => 'override_block_cost',
+                        'label' => 'Wall Block ($/block)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_block_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_capstone_cost',
+                        'label' => 'Capstone ($/cap)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_capstone_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_pipe_cost',
+                        'label' => 'Drain Pipe ($/ft)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_pipe_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_gravel_cost',
+                        'label' => '#57 Gravel ($/ton)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_gravel_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_topsoil_cost',
+                        'label' => 'Topsoil ($/yd³)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_topsoil_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_fabric_cost',
+                        'label' => 'Underlayment Fabric ($/ft²)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_fabric_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_geogrid_cost',
+                        'label' => 'Geogrid ($/ft²)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_geogrid_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                    [
+                        'name' => 'override_adhesive_cost',
+                        'label' => 'Adhesive ($/tube)',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '0',
+                        'value' => $formData['override_adhesive_cost'] ?? '',
+                        'width' => 'half',
+                    ],
+                ],
+            ])
         </div>
-
-        <div>
-            <label class="block font-semibold">Capstone ($/cap)</label>
-            <input type="number" step="0.01" name="override_capstone_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_capstone_cost', $formData['override_capstone_cost'] ?? '') }}">
-        </div>
-
-        <div>
-            <label class="block font-semibold">Drain Pipe ($/ft)</label>
-            <input type="number" step="0.01" name="override_pipe_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_pipe_cost', $formData['override_pipe_cost'] ?? '') }}">
-        </div>
-
-        <div>
-            <label class="block font-semibold">#57 Gravel ($/ton)</label>
-            <input type="number" step="0.01" name="override_gravel_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_gravel_cost', $formData['override_gravel_cost'] ?? '') }}">
-        </div>
-
-        <div>
-            <label class="block font-semibold">Topsoil ($/yd³)</label>
-            <input type="number" step="0.01" name="override_topsoil_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_topsoil_cost', $formData['override_topsoil_cost'] ?? '') }}">
-        </div>
-
-        <div>
-            <label class="block font-semibold">Underlayment Fabric ($/ft²)</label>
-            <input type="number" step="0.01" name="override_fabric_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_fabric_cost', $formData['override_fabric_cost'] ?? '') }}">
-        </div>
-
-        <div>
-            <label class="block font-semibold">Geogrid ($/ft²)</label>
-            <input type="number" step="0.01" name="override_geogrid_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_geogrid_cost', $formData['override_geogrid_cost'] ?? '') }}">
-        </div>
-
-        <div>
-            <label class="block font-semibold">Adhesive ($/tube)</label>
-            <input type="number" step="0.01" name="override_adhesive_cost"
-                   class="form-input w-full"
-                   value="{{ old('override_adhesive_cost', $formData['override_adhesive_cost'] ?? '') }}">
-        </div>
-    </div>
-</div>
 
 <div class="mb-4">
     <label class="block font-semibold" for="job_notes">Job Notes (optional)</label>

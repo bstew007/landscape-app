@@ -93,6 +93,7 @@ public function downloadPdf($id)
         'dig_method' => 'required|in:hand,auger',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
+        'materials_override_enabled' => 'nullable|boolean',
     ]);
 
     // 🔧 Basic setup
@@ -244,6 +245,7 @@ public function downloadPdf($id)
         'vinyl_corner_posts' => $validated['vinyl_corner_posts'] ?? 0,
         'vinyl_end_posts' => $validated['vinyl_end_posts'] ?? 0,
         'base_hours' => round($base_hours, 2), // add this line
+        'materials_override_enabled' => !empty($validated['materials_override_enabled']),
 
     ], $totals);
 
@@ -272,4 +274,3 @@ public function showResult(Calculation $calculation)
     ]);
 }
 }
-
