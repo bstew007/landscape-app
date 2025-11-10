@@ -26,6 +26,13 @@
             <p class="text-gray-600 mt-2">Estimate pruning, mulching, and more with labor and materials.</p>
         </a>
 
+        {{-- Synthetic Turf --}}
+        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.syn_turf.form')]) }}"
+           class="bg-white p-6 rounded-lg shadow hover:bg-green-50 transition">
+            <h2 class="text-xl font-semibold text-green-700">Synthetic Turf</h2>
+            <p class="text-gray-600 mt-2">Estimate base prep, turf install, and infill labor.</p>
+        </a>
+
          {{-- Fence Construction --}}
         <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('fence.form')]) }}"
            class="bg-white p-6 rounded-lg shadow hover:bg-green-50 transition">

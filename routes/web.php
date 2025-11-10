@@ -13,6 +13,7 @@ use App\Http\Controllers\PruningCalculatorController;
 use App\Http\Controllers\WeedingCalculatorController;
 use App\Http\Controllers\MulchingCalculatorController;
 use App\Http\Controllers\PineNeedleCalculatorController;
+use App\Http\Controllers\SynTurfCalculatorController;
 
 
 Route::get('/', fn () => redirect()->route('clients.index'));
@@ -125,6 +126,21 @@ Route::prefix('calculators/fence')->group(function () {
 
     Route::get('/calculators/pine_needles/pdf/{calculation}', [PineNeedleCalculatorController::class, 'downloadPdf'])
     ->name('calculators.pine_needles.downloadPdf');
+
+
+
+// ================================
+// ✅ Synthetic Turf
+// ================================
+Route::prefix('calculators/syn-turf')->name('calculators.syn_turf.')->group(function () {
+    Route::get('/', [SynTurfCalculatorController::class, 'showForm'])->name('form');
+    Route::post('/calculate', [SynTurfCalculatorController::class, 'calculate'])->name('calculate');
+    Route::get('/{calculation}/edit', [SynTurfCalculatorController::class, 'edit'])->name('edit');
+    Route::get('/results/{calculation}', [SynTurfCalculatorController::class, 'showResult'])->name('showResult');
+});
+
+Route::get('/calculators/syn-turf/pdf/{calculation}', [SynTurfCalculatorController::class, 'downloadPdf'])
+    ->name('calculators.syn_turf.downloadPdf');
 
 
 
