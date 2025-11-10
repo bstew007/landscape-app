@@ -29,15 +29,27 @@
     @if ($siteVisit->photos->count())
         <section class="bg-white p-6 rounded shadow">
             <h2 class="text-2xl font-semibold mb-4">📷 Photos</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                @foreach ($siteVisit->photos as $photo)
-                    <div>
-                        <img src="{{ Storage::disk('public')->url($photo->path) }}"
-                             alt="{{ $photo->caption ?? 'Site photo' }}"
-                             class="w-full h-48 object-cover rounded">
-                        <p class="mt-2 text-sm text-gray-700">{{ $photo->caption ?? '—' }}</p>
-                    </div>
-                @endforeach
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200 text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 border-b text-left">Preview</th>
+                            <th class="px-4 py-2 border-b text-left">Caption</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($siteVisit->photos as $photo)
+                            <tr>
+                                <td class="px-4 py-2 border-b">
+                                    <img src="{{ Storage::disk('public')->url($photo->path) }}"
+                                         alt="{{ $photo->caption ?? 'Site photo' }}"
+                                         class="w-48 h-32 object-cover rounded">
+                                </td>
+                                <td class="px-4 py-2 border-b align-top">{{ $photo->caption ?? '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </section>
     @endif
@@ -56,6 +68,43 @@
             </section>
         @endif
     @endforeach
+
+    @if ($reportSummary->count())
+        <section class="bg-white p-6 rounded shadow space-y-4">
+            <h2 class="text-2xl font-semibold">📊 Calculator Summary</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200 text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 border-b text-left">Calculator</th>
+                            <th class="px-4 py-2 border-b text-right">Labor Cost</th>
+                            <th class="px-4 py-2 border-b text-right">Material Cost</th>
+                            <th class="px-4 py-2 border-b text-right">Total Cost</th>
+                            <th class="px-4 py-2 border-b text-right">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($reportSummary as $row)
+                            <tr>
+                                <td class="px-4 py-2 border-b">{{ $row['label'] }}</td>
+                                <td class="px-4 py-2 border-b text-right">${{ number_format($row['labor'], 2) }}</td>
+                                <td class="px-4 py-2 border-b text-right">${{ number_format($row['materials'], 2) }}</td>
+                                <td class="px-4 py-2 border-b text-right">${{ number_format($row['cost'], 2) }}</td>
+                                <td class="px-4 py-2 border-b text-right">${{ number_format($row['price'], 2) }}</td>
+                            </tr>
+                        @endforeach
+                        <tr class="bg-gray-50 font-semibold">
+                            <td class="px-4 py-2 border-t text-right">Totals:</td>
+                            <td class="px-4 py-2 border-t text-right">${{ number_format($reportTotals['labor'], 2) }}</td>
+                            <td class="px-4 py-2 border-t text-right">${{ number_format($reportTotals['materials'], 2) }}</td>
+                            <td class="px-4 py-2 border-t text-right">${{ number_format($reportTotals['cost'], 2) }}</td>
+                            <td class="px-4 py-2 border-t text-right">${{ number_format($reportTotals['price'], 2) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
 
     <div class="flex justify-between">
         <a href="{{ route('clients.show', $siteVisit->client_id) }}"

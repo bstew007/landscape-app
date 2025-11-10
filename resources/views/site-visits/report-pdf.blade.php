@@ -30,17 +30,26 @@
         <p><strong>Site Notes:</strong> {{ $siteVisit->notes ?? '—' }}</p>
     </div>
 
-    @if ($siteVisit->photos->count())
+    @if (!empty($photoSources) && count($photoSources))
         <div class="section">
             <h2>Photos</h2>
-            <div class="photo-grid">
-                @foreach ($siteVisit->photos as $photo)
-                    <div>
-                        <img src="{{ public_path('storage/'.$photo->path) }}" alt="{{ $photo->caption ?? 'Site photo' }}">
-                        <p style="font-size: 11px;">{{ $photo->caption ?? '—' }}</p>
-                    </div>
-                @endforeach
-            </div>
+            <table>
+                <tbody>
+                    @foreach (array_chunk($photoSources->toArray(), 2) as $chunk)
+                        <tr>
+                            @foreach ($chunk as $photo)
+                                <td style="width:50%; text-align:center;">
+                                    <img src="{{ $photo['path'] }}" alt="{{ $photo['caption'] ?? 'Site photo' }}" style="width:95%; height:auto; object-fit:cover;">
+                                    <div style="font-size:11px; margin-top:4px;">{{ $photo['caption'] ?? '—' }}</div>
+                                </td>
+                            @endforeach
+                            @if (count($chunk) === 1)
+                                <td style="width:50%;"></td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     @endif
 
@@ -58,5 +67,40 @@
             </div>
         @endif
     @endforeach
+
+    @if (!empty($reportSummary) && count($reportSummary))
+        <div class="section">
+            <h2>Calculator Summary</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Calculator</th>
+                        <th style="text-align:right;">Labor Cost</th>
+                        <th style="text-align:right;">Material Cost</th>
+                        <th style="text-align:right;">Total Cost</th>
+                        <th style="text-align:right;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($reportSummary as $row)
+                        <tr>
+                            <td>{{ $row['label'] }}</td>
+                            <td style="text-align:right;">${{ number_format($row['labor'], 2) }}</td>
+                            <td style="text-align:right;">${{ number_format($row['materials'], 2) }}</td>
+                            <td style="text-align:right;">${{ number_format($row['cost'], 2) }}</td>
+                            <td style="text-align:right;">${{ number_format($row['price'], 2) }}</td>
+                        </tr>
+                    @endforeach
+                    <tr style="font-weight:bold; background-color:#f5f5f5;">
+                        <td style="text-align:right;">Totals:</td>
+                        <td style="text-align:right;">${{ number_format($reportTotals['labor'], 2) }}</td>
+                        <td style="text-align:right;">${{ number_format($reportTotals['materials'], 2) }}</td>
+                        <td style="text-align:right;">${{ number_format($reportTotals['cost'], 2) }}</td>
+                        <td style="text-align:right;">${{ number_format($reportTotals['price'], 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    @endif
 </body>
 </html>
