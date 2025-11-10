@@ -64,21 +64,14 @@
             </div>
         </div>
 
-        <div class="mb-6">
-            <label class="block font-semibold" for="job_notes">Job Notes (optional)</label>
-            <textarea name="job_notes" id="job_notes" rows="4"
-                      class="form-textarea w-full"
-                      placeholder="Add mowing patterns, obstacles, dump locations, etc.">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
-        </div>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+                {{ $editMode ? '🔄 Recalculate Turf Maintenance' : '🧮 Calculate Turf Maintenance' }}
+            </button>
 
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-            {{ $editMode ? '🔄 Recalculate Turf Maintenance' : '🧮 Calculate Turf Maintenance' }}
-        </button>
-
-        <div class="mt-6">
             <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}"
-               class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
+               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
                 🔙 Back to Client
             </a>
         </div>

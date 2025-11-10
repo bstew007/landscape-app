@@ -110,14 +110,14 @@
         
 
         {{-- Submit --}}
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-            {{ $editMode ? '🔄 Recalculate Pine Needle Data' : '🧮 Calculate Pine Needle Data' }}
-        </button>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+                {{ $editMode ? '🔄 Recalculate Pine Needle Data' : '🧮 Calculate Pine Needle Data' }}
+            </button>
 
-        <div class="mt-6">
             <a href="{{ route('clients.show', $siteVisitId) }}"
-               class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
+               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
                 🔙 Back to Client
             </a>
         </div>

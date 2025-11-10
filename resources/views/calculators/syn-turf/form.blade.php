@@ -171,18 +171,14 @@
             </div>
         </div>
 
-        <div class="mb-6">
-            @include('calculators.partials.overhead_inputs')
-        </div>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+                {{ $editMode ? '🔄 Recalculate Synthetic Turf' : '🧮 Calculate Synthetic Turf' }}
+            </button>
 
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-            {{ $editMode ? '🔄 Recalculate Synthetic Turf' : '🧮 Calculate Synthetic Turf' }}
-        </button>
-
-        <div class="mt-6">
             <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}"
-               class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
+               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
                 🔙 Back to Client
             </a>
         </div>

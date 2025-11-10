@@ -3,14 +3,34 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-semibold text-gray-800">Client Hub</h1>
-        <a href="{{ route('clients.create') }}"
-           class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-lg font-medium rounded-lg shadow">
-            ➕ Add Client
-        </a>
-        
-
+    <div class="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-3xl font-semibold text-gray-800">Client Hub</h1>
+            <p class="text-gray-500 text-sm">Search by client or company name.</p>
+        </div>
+        <div class="flex flex-col gap-3 md:flex-row md:items-center">
+            <form method="GET" action="{{ route('clients.index') }}" class="flex flex-1 items-center">
+                <input type="text"
+                       name="search"
+                       value="{{ $search ?? '' }}"
+                       placeholder="Search clients..."
+                       class="flex-1 form-input border-gray-300 rounded-l-lg focus:ring-blue-500 focus:border-blue-500">
+                @if(!empty($search))
+                    <a href="{{ route('clients.index') }}"
+                       class="px-3 py-2 border-t border-b border-gray-300 text-gray-600 bg-gray-100 hover:bg-gray-200">
+                        ✕
+                    </a>
+                @endif
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700">
+                    🔍
+                </button>
+            </form>
+            <a href="{{ route('clients.create') }}"
+               class="inline-flex items-center justify-center px-4 py-2 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow">
+                ➕ Add Client
+            </a>
+        </div>
     </div>
 
     @if (session('success'))
@@ -42,22 +62,25 @@
                             </td>
                             <td class="px-6 py-4">{{ $client->email }}</td>
                             <td class="px-6 py-4">{{ $client->phone }}</td>
-                            <td class="px-6 py-4 flex flex-wrap gap-2">
+                            <td class="px-6 py-4 flex flex-wrap gap-3">
+                                <a href="{{ route('clients.show', $client) }}"
+                                   class="text-blue-600 hover:underline">
+                                    👁 View
+                                </a>
                                 <a href="{{ route('clients.site-visits.index', $client) }}"
-                                    class="text-blue-600 hover:underline mr-2">
+                                   class="text-blue-600 hover:underline">
                                     📋 Visits
                                 </a>
                                 <a href="{{ route('clients.edit', $client) }}"
-                                   class="inline-block px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md">
+                                   class="text-blue-600 hover:underline">
                                     ✏️ Edit
                                 </a>
-
                                 <form action="{{ route('clients.destroy', $client) }}" method="POST"
                                       onsubmit="return confirm('Delete this client?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md">
+                                            class="text-red-600 hover:underline">
                                         🗑️ Delete
                                     </button>
                                 </form>
