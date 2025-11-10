@@ -68,7 +68,6 @@
     <section class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-900">Line Items</h2>
-            <p class="text-sm text-gray-500">Structure coming soon</p>
         </div>
         @if (!empty($estimate->line_items))
             <table class="w-full text-sm">

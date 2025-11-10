@@ -44,18 +44,28 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700">Site Visit (optional)</label>
-            <select
-                name="site_visit_id"
-                class="form-select w-full mt-1"
-                data-line-items-url="{{ route('site-visits.estimate-line-items', ['site_visit' => '__SITE_VISIT__']) }}"
-            >
-                <option value="">Link visit</option>
-                @foreach ($siteVisits as $visit)
-                    <option value="{{ $visit->id }}" data-client-id="{{ $visit->client_id }}" @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
-                        {{ optional($visit->client)->name }} – {{ optional($visit->visit_date)->format('M j, Y') }}
-                    </option>
-                @endforeach
-            </select>
+            <div class="flex gap-2 mt-1">
+                <select
+                    name="site_visit_id"
+                    class="form-select w-full flex-1"
+                    data-line-items-url="{{ route('site-visits.estimate-line-items', ['site_visit' => '__SITE_VISIT__']) }}"
+                >
+                    <option value="">Link visit</option>
+                    @foreach ($siteVisits as $visit)
+                        <option value="{{ $visit->id }}" data-client-id="{{ $visit->client_id }}" @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
+                            {{ optional($visit->client)->name }} – {{ optional($visit->visit_date)->format('M j, Y') }}
+                        </option>
+                    @endforeach
+                </select>
+                <button
+                    type="button"
+                    id="import-line-items"
+                    class="px-3 py-2 text-sm border rounded bg-gray-50 hover:bg-gray-100 opacity-50 cursor-not-allowed"
+                    disabled
+                >
+                    Import
+                </button>
+            </div>
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700">Expires On</label>
@@ -118,7 +128,7 @@
                             <input type="number" step="0.1" class="line-margin form-input w-full" value="{{ $margin }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
-                            <input type="number" step="0.01" class="line-price form-input w-full" value="{{ number_format($price, 2, '.', '') }}" readonly />
+                        <input type="number" step="0.01" class="line-price form-input w-full" value="{{ number_format($price, 2, '.', '') }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
                             <span class="line-total text-gray-700 font-semibold">{{ number_format($total, 2) }}</span>
@@ -164,10 +174,15 @@
             const lineItemsEndpointTemplate = siteVisitSelect && siteVisitSelect.dataset
                 ? siteVisitSelect.dataset.lineItemsUrl || null
                 : null;
+            const importButton = document.getElementById('import-line-items');
 
             if (!tableBody || !lineItemsInput || !form) {
                 return;
             }
+
+            const DEFAULT_MARGIN = 15;
+            const MAX_MARGIN = 95;
+            const MIN_MARGIN = -90;
 
             const propertyOptions = propertySelect
                 ? Array.from(propertySelect.options).map(option => ({
@@ -185,57 +200,139 @@
                 }))
                 : [];
 
+            function updateImportButtonState() {
+                if (!importButton) {
+                    return;
+                }
+
+                const hasVisit = Boolean(siteVisitSelect && siteVisitSelect.value);
+                importButton.disabled = !hasVisit;
+                importButton.classList.toggle('opacity-50', !hasVisit);
+                importButton.classList.toggle('cursor-not-allowed', !hasVisit);
+            }
+
             function rebuildSelect(select, options, clientId, selectedValue) {
+                if (!select || !options.length) {
+                    return;
+                }
+
                 const fragment = document.createDocumentFragment();
+
                 options.forEach(option => {
-                    const matches = !option.value || !clientId || option.clientId === clientId || option.value === selectedValue;
-                    if (!matches) {
+                    if (option.value !== '' && clientId && option.clientId !== clientId) {
                         return;
                     }
+
                     const opt = document.createElement('option');
                     opt.value = option.value;
                     opt.textContent = option.text;
                     if (option.clientId) {
                         opt.dataset.clientId = option.clientId;
                     }
-                    if (selectedValue && option.value === selectedValue) {
-                        opt.selected = true;
-                    }
                     fragment.appendChild(opt);
                 });
+
                 select.innerHTML = '';
                 select.appendChild(fragment);
+
+                const hasSelected = selectedValue && Array.from(select.options).some(opt => opt.value === selectedValue);
+                select.value = hasSelected ? selectedValue : '';
             }
 
             function filterClientRelatedSelects() {
                 if (!clientSelect) {
                     return;
                 }
+
                 const clientId = clientSelect.value;
+                const currentProperty = propertySelect ? propertySelect.value : '';
+                const currentVisit = siteVisitSelect ? siteVisitSelect.value : '';
 
                 if (propertySelect) {
-                    const currentProperty = propertySelect.value;
-                    const propertyValid = propertyOptions.some(opt => opt.value === currentProperty && opt.clientId === clientId);
-                    rebuildSelect(propertySelect, propertyOptions, clientId, propertyValid ? currentProperty : '');
+                    rebuildSelect(propertySelect, propertyOptions, clientId, currentProperty);
                 }
 
                 if (siteVisitSelect) {
-                    const currentVisit = siteVisitSelect.value;
-                    const visitValid = siteVisitOptions.some(opt => opt.value === currentVisit && opt.clientId === clientId);
-                    rebuildSelect(siteVisitSelect, siteVisitOptions, clientId, visitValid ? currentVisit : '');
+                    rebuildSelect(siteVisitSelect, siteVisitOptions, clientId, currentVisit);
                 }
+
+                updateImportButtonState();
             }
 
-            function recalcRow(row) {
-                const qty = parseFloat(row.querySelector('.line-qty').value) || 0;
-                const cost = parseFloat(row.querySelector('.line-cost').value) || 0;
-                const margin = parseFloat(row.querySelector('.line-margin').value) || 0;
-                const priceField = row.querySelector('.line-price');
-                const marginFraction = Math.min(Math.max(margin / 100, 0), 0.99);
-                const price = marginFraction >= 0.99 ? cost : (cost / (1 - marginFraction)) || cost;
-                const total = price * qty || 0;
-                priceField.value = price.toFixed(2);
-                row.querySelector('.line-total').textContent = total.toFixed(2);
+            function clampMargin(value) {
+                if (!Number.isFinite(value)) {
+                    return DEFAULT_MARGIN;
+                }
+                if (value > MAX_MARGIN) {
+                    return MAX_MARGIN;
+                }
+                if (value < MIN_MARGIN) {
+                    return MIN_MARGIN;
+                }
+                return value;
+            }
+
+            function computePrice(cost, margin) {
+                if (!Number.isFinite(cost)) {
+                    cost = 0;
+                }
+
+                const safeMargin = clampMargin(margin);
+                const fraction = Math.min(safeMargin / 100, 0.95);
+                const denominator = 1 - fraction;
+
+                if (denominator <= 0) {
+                    return cost;
+                }
+
+                return cost / denominator;
+            }
+
+            function computeMargin(cost, price) {
+                if (!Number.isFinite(cost) || cost <= 0 || !Number.isFinite(price) || price <= 0) {
+                    return 0;
+                }
+
+                const ratio = 1 - (cost / price);
+                return clampMargin(ratio * 100);
+            }
+
+            function recalcRow(row, changedField = null) {
+                const qtyInput = row.querySelector('.line-qty');
+                const costInput = row.querySelector('.line-cost');
+                const marginInput = row.querySelector('.line-margin');
+                const priceInput = row.querySelector('.line-price');
+                const totalDisplay = row.querySelector('.line-total');
+
+                const qty = parseFloat(qtyInput.value) || 0;
+                const cost = parseFloat(costInput.value) || 0;
+                let margin = parseFloat(marginInput.value);
+                let price = parseFloat(priceInput.value);
+
+                if (!Number.isFinite(margin)) {
+                    margin = DEFAULT_MARGIN;
+                }
+                if (!Number.isFinite(price)) {
+                    price = 0;
+                }
+
+                if (changedField === 'price') {
+                    price = Math.max(0, price);
+                    margin = cost > 0 ? computeMargin(cost, price) : 0;
+                    marginInput.value = margin.toFixed(1);
+                    priceInput.value = price.toFixed(2);
+                } else if (changedField === 'margin' || changedField === 'cost') {
+                    margin = clampMargin(margin);
+                    price = computePrice(cost, margin);
+                    marginInput.value = margin.toFixed(1);
+                    priceInput.value = price.toFixed(2);
+                } else {
+                    priceInput.value = price.toFixed(2);
+                    marginInput.value = clampMargin(margin).toFixed(1);
+                }
+
+                const lineTotal = qty * (parseFloat(priceInput.value) || 0);
+                totalDisplay.textContent = Number.isFinite(lineTotal) ? lineTotal.toFixed(2) : '0.00';
                 updateEstimateTotal();
             }
 
@@ -243,13 +340,14 @@
                 if (!totalField) {
                     return;
                 }
+
                 const sum = Array.from(tableBody.querySelectorAll('.line-item-row')).reduce((carry, row) => {
                     const qty = parseFloat(row.querySelector('.line-qty').value) || 0;
                     const price = parseFloat(row.querySelector('.line-price').value) || 0;
                     return carry + (qty * price);
                 }, 0);
 
-                totalField.value = sum > 0 ? sum.toFixed(2) : '';
+                totalField.value = sum > 0 ? sum.toFixed(2) : '0.00';
             }
 
             function serializeLineItems() {
@@ -261,18 +359,28 @@
                     const margin = parseFloat(row.querySelector('.line-margin').value) || 0;
                     const price = parseFloat(row.querySelector('.line-price').value) || 0;
                     const total = qty * price;
+
                     if (!label && qty === 0) {
                         return;
                     }
-                    payload.push({ label, qty, cost, margin, price, total });
+
+                    payload.push({
+                        label,
+                        qty,
+                        cost,
+                        margin,
+                        price,
+                        total,
+                    });
                 });
+
                 lineItemsInput.value = JSON.stringify(payload);
             }
 
             function addRow(prefill = null) {
                 const row = document.createElement('tr');
                 row.classList.add('line-item-row');
-                row.innerHTML = 
+                row.innerHTML = `
                     <td class="px-2 py-1">
                         <input type="text" class="line-label form-input w-full" value="">
                     </td>
@@ -283,10 +391,10 @@
                         <input type="number" step="0.01" class="line-cost form-input w-full" value="0">
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <input type="number" step="0.1" class="line-margin form-input w-full" value="15">
+                        <input type="number" step="0.1" class="line-margin form-input w-full" value="${DEFAULT_MARGIN}">
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <input type="number" step="0.01" class="line-price form-input w-full" value="0" readonly>
+                        <input type="number" step="0.01" class="line-price form-input w-full" value="0">
                     </td>
                     <td class="px-2 py-1 text-center">
                         <span class="line-total text-gray-700 font-semibold">0.00</span>
@@ -294,37 +402,57 @@
                     <td class="px-2 py-1 text-center">
                         <button type="button" class="remove-line text-red-600 hover:text-red-900">A-</button>
                     </td>
-                ;
+                `;
+
                 tableBody.appendChild(row);
-                attachRowListeners(row);
+
+                const labelInput = row.querySelector('.line-label');
+                const qtyInput = row.querySelector('.line-qty');
+                const costInput = row.querySelector('.line-cost');
+                const marginInput = row.querySelector('.line-margin');
+                const priceInput = row.querySelector('.line-price');
 
                 if (prefill) {
-                    row.querySelector('.line-label').value = prefill.label ?? '';
-                    const qtyValue = Number(prefill.qty ?? 1) || 1;
-                    const baseCost = Number(prefill.cost ?? prefill.rate ?? prefill.price ?? prefill.total ?? 0) || 0;
-                    row.querySelector('.line-qty').value = qtyValue;
-                    row.querySelector('.line-cost').value = baseCost.toFixed(2);
-                    row.querySelector('.line-margin').value = prefill.margin ?? 0;
+                    labelInput.value = prefill.label ?? '';
+                    qtyInput.value = Number(prefill.qty ?? 1) || 1;
+
+                    const costValue = Number(prefill.cost ?? prefill.rate ?? prefill.price ?? prefill.total ?? 0) || 0;
+                    costInput.value = costValue.toFixed(2);
+
+                    if (prefill.margin !== undefined) {
+                        marginInput.value = prefill.margin;
+                    } else if (prefill.price && costValue > 0) {
+                        const derivedMargin = computeMargin(costValue, Number(prefill.price));
+                        marginInput.value = derivedMargin.toFixed(1);
+                    }
+
+                    if (prefill.price !== undefined) {
+                        priceInput.value = Number(prefill.price).toFixed(2);
+                    }
                 }
 
+                attachRowListeners(row);
                 recalcRow(row);
             }
 
             function replaceLineItems(items) {
                 tableBody.innerHTML = '';
+
                 if (!Array.isArray(items) || items.length === 0) {
                     addRow();
                     updateEstimateTotal();
                     return;
                 }
+
                 items.forEach(item => addRow(item));
                 updateEstimateTotal();
             }
 
             function attachRowListeners(row) {
-                ['line-qty', 'line-cost', 'line-margin'].forEach(selector => {
-                    row.querySelector(.).addEventListener('input', () => recalcRow(row));
-                });
+                row.querySelector('.line-qty').addEventListener('input', () => recalcRow(row, 'qty'));
+                row.querySelector('.line-cost').addEventListener('input', () => recalcRow(row, 'cost'));
+                row.querySelector('.line-margin').addEventListener('input', () => recalcRow(row, 'margin'));
+                row.querySelector('.line-price').addEventListener('input', () => recalcRow(row, 'price'));
                 row.querySelector('.remove-line').addEventListener('click', () => {
                     row.remove();
                     updateEstimateTotal();
@@ -346,25 +474,23 @@
 
                     const payload = await response.json();
 
-                    if (clientSelect) {
-                        if (payload.client_id) {
-                            const newClientId = String(payload.client_id);
-                            if (clientSelect.value !== newClientId) {
-                                clientSelect.value = newClientId;
-                                clientSelect.dispatchEvent(new Event('change'));
-                            } else {
-                                filterClientRelatedSelects();
-                            }
+                    if (clientSelect && payload.client_id) {
+                        const newClientId = String(payload.client_id);
+                        if (clientSelect.value !== newClientId) {
+                            clientSelect.value = newClientId;
+                            clientSelect.dispatchEvent(new Event('change'));
                         } else {
                             filterClientRelatedSelects();
                         }
                     }
 
                     if (propertySelect && payload.property_id) {
-                        if (!propertySelect.querySelector(option[value=""])) {
-                            filterClientRelatedSelects();
+                        const propertyValue = String(payload.property_id);
+                        const exists = Array.from(propertySelect.options).some(opt => opt.value === propertyValue);
+                        if (!exists) {
+                            rebuildSelect(propertySelect, propertyOptions, clientSelect ? clientSelect.value : '', propertyValue);
                         }
-                        propertySelect.value = String(payload.property_id);
+                        propertySelect.value = propertyValue;
                     }
 
                     if (Array.isArray(payload.line_items)) {
@@ -375,7 +501,10 @@
                 }
             }
 
-            tableBody.querySelectorAll('.line-item-row').forEach(row => attachRowListeners(row));
+            tableBody.querySelectorAll('.line-item-row').forEach(row => {
+                attachRowListeners(row);
+                recalcRow(row);
+            });
 
             const addLineItemButton = document.getElementById('add-line-item');
             if (addLineItemButton) {
@@ -388,14 +517,13 @@
             });
 
             if (clientSelect) {
-                clientSelect.addEventListener('change', () => {
-                    filterClientRelatedSelects();
-                });
+                clientSelect.addEventListener('change', filterClientRelatedSelects);
                 filterClientRelatedSelects();
             }
 
             if (siteVisitSelect && lineItemsEndpointTemplate) {
                 siteVisitSelect.addEventListener('change', () => {
+                    updateImportButtonState();
                     const siteVisitId = siteVisitSelect.value;
                     if (siteVisitId) {
                         hydrateFromSiteVisit(siteVisitId);
@@ -403,8 +531,20 @@
                 });
             }
 
+            if (importButton && lineItemsEndpointTemplate) {
+                importButton.addEventListener('click', () => {
+                    const siteVisitId = siteVisitSelect ? siteVisitSelect.value : null;
+                    if (siteVisitId) {
+                        hydrateFromSiteVisit(siteVisitId);
+                    }
+                });
+            }
+
             updateEstimateTotal();
+            updateImportButtonState();
         });
     </script>
 @endpush
+
+
 
