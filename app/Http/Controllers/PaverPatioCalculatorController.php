@@ -133,7 +133,7 @@ class PaverPatioCalculatorController extends Controller
     $totals = $calculator->calculate(
         baseHours: $baseLaborHours,
         laborRate: (float) $validated['labor_rate'],
-        inputs: $request->all()
+        inputs: array_merge($request->all(), ['material_total' => $material_total])
     );
 
     // --------------------------------------------

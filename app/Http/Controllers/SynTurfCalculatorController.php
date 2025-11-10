@@ -112,7 +112,11 @@ class SynTurfCalculatorController extends Controller
         $overridesEnabled = $materialData['overrides_enabled'];
 
         $calculator = new LaborCostCalculatorService();
-        $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
+        $totals = $calculator->calculate(
+            $totalHours,
+            $laborRate,
+            array_merge($request->all(), ['material_total' => $materialTotal])
+        );
 
         $laborCost = $totals['labor_cost'] ?? 0;
         $markupPercent = (float) ($validated['markup'] ?? 0);

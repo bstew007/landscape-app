@@ -226,7 +226,11 @@ public function downloadPdf($id)
 
     // ✅ Use shared LaborCostCalculatorService
     $calculator = new \App\Services\LaborCostCalculatorService();
-    $totals = $calculator->calculate($base_hours, $validated['labor_rate'] ?? 45, $validated);
+    $totals = $calculator->calculate(
+        $base_hours,
+        $validated['labor_rate'] ?? 45,
+        array_merge($validated, ['material_total' => $material_total])
+    );
 
     // Final data array
     $data = array_merge($validated, [

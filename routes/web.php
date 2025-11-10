@@ -12,6 +12,8 @@ use App\Http\Controllers\FenceCalculatorController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\CalculationController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ClientHubController;
+use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\PruningCalculatorController;
 use App\Http\Controllers\WeedingCalculatorController;
 use App\Http\Controllers\MulchingCalculatorController;
@@ -22,7 +24,7 @@ use App\Http\Controllers\TurfMowingCalculatorController;
 use App\Http\Controllers\TodoController;
 
 
-Route::get('/', fn () => redirect()->route('clients.index'));
+Route::get('/', fn () => redirect()->route('client-hub'));
 
 Route::get('/dashboard', fn () => view('dashboard'))
     ->middleware(['auth', 'verified'])
@@ -33,6 +35,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/calculators', function () {
         return view('calculators.index');
     })->name('calculators.index');
+
+    Route::get('/client-hub', ClientHubController::class)->name('client-hub');
 
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
 
@@ -195,6 +199,12 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
 
     Route::resource('todos', TodoController::class)->except(['show']);
     Route::patch('todos/{todo}/status', [TodoController::class, 'updateStatus'])->name('todos.updateStatus');
+
+    Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
+    Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
+    Route::resource('estimates', EstimateController::class);
+    Route::post('estimates/{estimate}/email', [EstimateController::class, 'sendEmail'])->name('estimates.email');
+    Route::post('estimates/{estimate}/invoice', [EstimateController::class, 'createInvoice'])->name('estimates.invoice');
 
     Route::get('asset-issues/create', [AssetController::class, 'createIssue'])->name('assets.issues.create');
     Route::post('asset-issues', [AssetController::class, 'storeIssueQuick'])->name('assets.issues.quickStore');

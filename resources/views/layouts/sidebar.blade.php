@@ -37,9 +37,11 @@
         <nav class="mt-4 px-4 space-y-6 text-sm">
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Client Hub</h3>
-                <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Clients</a>
-                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Calendar</a>
+                <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Dashboard</a>
+                <a href="{{ route('clients.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Clients</a>
+                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Schedule</a>
                 <a href="{{ route('todos.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">To-Do Board</a>
+                <a href="{{ route('estimates.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Estimates</a>
             </div>
 
             <div>
@@ -49,21 +51,9 @@
                 <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Log Issue</a>
                 <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Schedule Reminder</a>
             </div>
-
-            <div>
-                <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Estimators</h3>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧱 Retaining Wall</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧮 Paver Patio</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Pruning</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.weeding.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧤 Weeding</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Mulching</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pine_needles.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Pine Needles</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.syn_turf.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🏟️ Synthetic Turf</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.turf_mowing.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🚜 Turf Mowing</a>
-                
-            </div>
         </nav>
+
+
     </aside>
 
       
@@ -83,10 +73,13 @@
         <nav class="mt-4 px-4 space-y-6 text-sm">
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Client Hub</h3>
-                <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Clients</a>
-                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Calendar</a>
+                <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Dashboard</a>
+                <a href="{{ route('clients.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Clients</a>
+                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Schedule</a>
                 <a href="{{ route('todos.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">To-Do Board</a>
+                <a href="{{ route('estimates.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Estimates</a>
             </div>
+
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Assets & Equipment</h3>
                 <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Dashboard</a>
@@ -94,23 +87,8 @@
                 <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Log Issue</a>
                 <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Schedule Reminder</a>
             </div>
-            <div>
-                <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Estimators</h3>
-                <a href="{{ route('calculators.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">📊 Calculator Dashboard</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧱 Retaining Wall</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧮 Paver Patio</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}"class="block px-2 py-1 rounded hover:bg-blue-100">🛠️ Fence</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🌿 Pruning</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.weeding.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🧤 Weeding</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Mulching</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pine_needles.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🪵 Pine Needles</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.syn_turf.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🏟️ Synthetic Turf</a>
-                <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.turf_mowing.form')]) }}" class="block px-2 py-1 rounded hover:bg-blue-100">🚜 Turf Mowing</a>
-                
-                
-    </a>
-            </div>
         </nav>
+
     </aside>
 
     {{-- Main Content --}}

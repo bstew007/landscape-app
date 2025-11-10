@@ -1,0 +1,93 @@
+@extends('layouts.sidebar')
+
+@section('content')
+<div class="space-y-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">Estimates</h1>
+            <p class="text-gray-600">Draft, send, and track pricing packages.</p>
+        </div>
+        <a href="{{ route('estimates.create') }}" class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+            + New Estimate
+        </a>
+    </div>
+
+    <form method="GET" class="bg-white rounded-lg shadow p-4 grid md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Status</label>
+            <select name="status" class="form-select w-full mt-1">
+                <option value="">All</option>
+                @foreach (\App\Models\Estimate::STATUSES as $option)
+                    <option value="{{ $option }}" @selected($status === $option)>{{ ucfirst($option) }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Client</label>
+            <select name="client_id" class="form-select w-full mt-1">
+                <option value="">All</option>
+                @foreach ($clients as $client)
+                    <option value="{{ $client->id }}" @selected($clientId == $client->id)>{{ $client->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button type="submit" class="w-full bg-gray-900 text-white rounded py-2 hover:bg-black">Filter</button>
+        </div>
+    </form>
+
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+            <tr>
+                <th class="px-4 py-3">Estimate</th>
+                <th class="px-4 py-3">Client / Property</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3 text-right">Total</th>
+                <th class="px-4 py-3">Expires</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+            </thead>
+            <tbody class="divide-y">
+            @foreach ($estimates as $estimate)
+                <tr>
+                    <td class="px-4 py-3">
+                        <p class="font-semibold text-gray-900">{{ $estimate->title }}</p>
+                        <p class="text-xs text-gray-500">Created {{ $estimate->created_at->format('M j, Y') }}</p>
+                    </td>
+                    <td class="px-4 py-3">
+                        <p class="text-sm text-gray-800">{{ $estimate->client->name }}</p>
+                        <p class="text-xs text-gray-500">{{ $estimate->property->name ?? 'No property' }}</p>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold
+                            @class([
+                                'bg-gray-100 text-gray-700' => $estimate->status === 'draft',
+                                'bg-amber-100 text-amber-700' => $estimate->status === 'pending',
+                                'bg-blue-100 text-blue-700' => $estimate->status === 'sent',
+                                'bg-green-100 text-green-700' => $estimate->status === 'approved',
+                                'bg-red-100 text-red-700' => $estimate->status === 'rejected',
+                            ])">
+                            {{ ucfirst($estimate->status) }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right font-semibold text-gray-900">
+                        {{ $estimate->total ? '$' . number_format($estimate->total, 2) : '—' }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                        {{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="{{ route('estimates.show', $estimate) }}" class="text-blue-600 hover:text-blue-800 text-sm">Open</a>
+                    </td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div>
+        {{ $estimates->links() }}
+    </div>
+</div>
+@endsection

@@ -107,7 +107,11 @@ class MulchingCalculatorController extends Controller
 
     // ✅ Overhead and Totals (via service)
     $calculator = new LaborCostCalculatorService();
-    $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
+    $totals = $calculator->calculate(
+        $totalHours,
+        $laborRate,
+        array_merge($request->all(), ['material_total' => $materialTotal])
+    );
 
     // ✅ Combine labor + materials + markup
     $laborCost = $totals['labor_cost'] ?? 0;

@@ -193,7 +193,11 @@ class RetainingWallCalculatorController extends Controller
 
     // ✅ Use shared calculator
     $calculator = new \App\Services\LaborCostCalculatorService();
-    $totals = $calculator->calculate($wallLabor, $validated['labor_rate'], $validated);
+    $totals = $calculator->calculate(
+        $wallLabor,
+        $validated['labor_rate'],
+        array_merge($validated, ['material_total' => $material_total])
+    );
 
     $data = array_merge($validated, [
     'block_count' => $blockCount,

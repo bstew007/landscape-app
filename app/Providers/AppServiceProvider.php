@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $mailPaths = [
+            resource_path('views/vendor/mail'),
+            base_path('vendor/laravel/framework/src/Illuminate/Mail/resources/views'),
+        ];
+
+        $this->app['view']->addNamespace('mail', $mailPaths);
     }
 }

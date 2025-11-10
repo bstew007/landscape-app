@@ -13,6 +13,7 @@ class LaborCostCalculatorService
         $driveDistance = (float) ($inputs['drive_distance'] ?? 0);
         $driveSpeed = (float) ($inputs['drive_speed'] ?? 30); // default 30mph
         $markup = (float) ($inputs['markup'] ?? 0);
+        $materialTotal = (float) ($inputs['material_total'] ?? 0);
         $hoursPerPersonPerDay = 10; // 10-hour day
 
         // 🕒 Drive time per person (one-way)
@@ -38,8 +39,18 @@ class LaborCostCalculatorService
 
         // 💵 Costs
         $laborCost = $totalHours * $laborRate;
-        $finalPrice = $markup > 0 ? $laborCost / (1 - ($markup / 100)) : $laborCost;
-        $markupAmount = $finalPrice - $laborCost;
+        $preMarkup = $laborCost + $materialTotal;
+        $margin = $markup / 100;
+
+        if ($margin <= 0) {
+            $finalPrice = $preMarkup;
+        } elseif ($margin >= 1) {
+            $finalPrice = $preMarkup;
+        } else {
+            $finalPrice = $preMarkup / (1 - $margin);
+        }
+
+        $markupAmount = $finalPrice - $preMarkup;
 
         return [
             'visits' => $visits,
