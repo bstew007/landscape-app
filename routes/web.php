@@ -9,6 +9,7 @@ use App\Http\Controllers\PaverPatioCalculatorController;
 use App\Http\Controllers\ProductionRateController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FenceCalculatorController;
+use App\Http\Controllers\AssetController;
 use App\Http\Controllers\CalculationController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\PruningCalculatorController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\PineNeedleCalculatorController;
 use App\Http\Controllers\SynTurfCalculatorController;
 use App\Http\Controllers\SiteVisitReportController;
 use App\Http\Controllers\TurfMowingCalculatorController;
+use App\Http\Controllers\TodoController;
 
 
 Route::get('/', fn () => redirect()->route('clients.index'));
@@ -190,5 +192,19 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
 
     Route::get('site-visits/{site_visit}/report', [SiteVisitReportController::class, 'show'])->name('site-visits.report');
     Route::get('site-visits/{site_visit}/report/pdf', [SiteVisitReportController::class, 'downloadPdf'])->name('site-visits.report.pdf');
+
+    Route::resource('todos', TodoController::class)->except(['show']);
+    Route::patch('todos/{todo}/status', [TodoController::class, 'updateStatus'])->name('todos.updateStatus');
+
+    Route::get('asset-issues/create', [AssetController::class, 'createIssue'])->name('assets.issues.create');
+    Route::post('asset-issues', [AssetController::class, 'storeIssueQuick'])->name('assets.issues.quickStore');
+    Route::get('asset-reminders/create', [AssetController::class, 'createReminder'])->name('assets.reminders.create');
+    Route::post('asset-reminders', [AssetController::class, 'storeReminder'])->name('assets.reminders.store');
+
+    Route::resource('assets', AssetController::class);
+    Route::post('assets/{asset}/maintenance', [AssetController::class, 'storeMaintenance'])->name('assets.maintenance.store');
+    Route::post('assets/{asset}/issues', [AssetController::class, 'storeIssue'])->name('assets.issues.store');
+    Route::post('assets/{asset}/attachments', [AssetController::class, 'storeAttachment'])->name('assets.attachments.store');
+    Route::delete('assets/{asset}/attachments/{attachment}', [AssetController::class, 'destroyAttachment'])->name('assets.attachments.destroy');
 });
 require __DIR__.'/auth.php';

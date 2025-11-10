@@ -39,6 +39,15 @@
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Client Hub</h3>
                 <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Clients</a>
                 <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Calendar</a>
+                <a href="{{ route('todos.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">To-Do Board</a>
+            </div>
+
+            <div>
+                <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Assets & Equipment</h3>
+                <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Dashboard</a>
+                <a href="{{ route('assets.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Add Asset</a>
+                <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Log Issue</a>
+                <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Schedule Reminder</a>
             </div>
 
             <div>
@@ -76,6 +85,14 @@
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Client Hub</h3>
                 <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Clients</a>
                 <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Calendar</a>
+                <a href="{{ route('todos.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">To-Do Board</a>
+            </div>
+            <div>
+                <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Assets & Equipment</h3>
+                <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Dashboard</a>
+                <a href="{{ route('assets.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Add Asset</a>
+                <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Log Issue</a>
+                <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Schedule Reminder</a>
             </div>
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Estimators</h3>
