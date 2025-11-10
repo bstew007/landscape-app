@@ -37,7 +37,8 @@
         <nav class="mt-4 px-4 space-y-6 text-sm">
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Client Hub</h3>
-                <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">👥 Clients</a>
+                <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Clients</a>
+                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Calendar</a>
             </div>
 
             <div>
@@ -73,7 +74,8 @@
         <nav class="mt-4 px-4 space-y-6 text-sm">
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Client Hub</h3>
-                <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">👥 Clients</a>
+                <a href="{{ route('clients.index') }}" class="block px-2 py-1 rounded hover:bg-blue-100">Clients</a>
+                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded hover:bg-blue-100">Calendar</a>
             </div>
             <div>
                 <h3 class="text-xs text-gray-500 uppercase tracking-wide mb-1">Estimators</h3>

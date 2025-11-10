@@ -10,6 +10,7 @@ use App\Http\Controllers\ProductionRateController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FenceCalculatorController;
 use App\Http\Controllers\CalculationController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\PruningCalculatorController;
 use App\Http\Controllers\WeedingCalculatorController;
 use App\Http\Controllers\MulchingCalculatorController;
@@ -30,6 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/calculators', function () {
         return view('calculators.index');
     })->name('calculators.index');
+
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
 
     // ✅ Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
