@@ -162,8 +162,11 @@ class SiteVisitController extends Controller
     {
         $siteVisit->load(['photos', 'property']);
         $calculations = $siteVisit->calculations()->latest()->get();
+        $siteVisitOptions = $client->siteVisits()
+            ->orderByDesc('visit_date')
+            ->get(['id', 'visit_date']);
 
-        return view('site-visits.show', compact('client', 'siteVisit', 'calculations'));
+        return view('site-visits.show', compact('client', 'siteVisit', 'calculations', 'siteVisitOptions'));
     }
 
     public function storePhoto(Request $request, Client $client, SiteVisit $siteVisit)
