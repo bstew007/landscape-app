@@ -58,6 +58,10 @@ class PaverPatioCalculatorController extends Controller
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
         'materials_override_enabled' => 'nullable|boolean',
+        'custom_materials' => 'nullable|array',
+        'custom_materials.*.name' => 'nullable|string|max:255',
+        'custom_materials.*.qty' => 'nullable|numeric|min:0',
+        'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
 
         // Material cost overrides
         'override_paver_cost' => 'nullable|numeric|min:0',
@@ -107,6 +111,39 @@ class PaverPatioCalculatorController extends Controller
         ]
     ];
 
+    $customMaterialsInput = $validated['custom_materials'] ?? [];
+    $customMaterials = collect($customMaterialsInput)
+        ->map(function ($item) {
+            $name = trim($item['name'] ?? '');
+            $qty = isset($item['qty']) ? (float) $item['qty'] : null;
+            $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
+
+            if ($name === '' || $qty === null || $unitCost === null) {
+                return null;
+            }
+
+            $total = $qty * $unitCost;
+
+            return [
+                'name' => $name,
+                'qty' => round($qty, 2),
+                'unit_cost' => round($unitCost, 2),
+                'total' => round($total, 2),
+            ];
+        })
+        ->filter()
+        ->values()
+        ->all();
+
+    foreach ($customMaterials as $customMaterial) {
+        $materials[$customMaterial['name']] = [
+            'qty' => $customMaterial['qty'],
+            'unit_cost' => $customMaterial['unit_cost'],
+            'total' => $customMaterial['total'],
+            'is_custom' => true,
+        ];
+    }
+
     $material_total = array_sum(array_column($materials, 'total'));
 
     // --------------------------------------------
@@ -151,6 +188,7 @@ class PaverPatioCalculatorController extends Controller
         'materials' => $materials,
         'material_total' => round($material_total, 2),
         'materials_override_enabled' => !empty($validated['materials_override_enabled']),
+        'custom_materials' => $customMaterials,
     ], $totals);
 
     $calc = !empty($validated['calculation_id'])

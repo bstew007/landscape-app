@@ -58,12 +58,30 @@ class ClientController extends Controller
             ->orderBy('name')
             ->get();
 
-        $latestVisit = $client->siteVisits()->with('property')->latest()->first();
-        $recentVisits = $client->siteVisits()->with('property')->latest()->limit(5)->get();
+        $siteVisitOptions = $client->siteVisits()
+            ->with('property')
+            ->orderByDesc('visit_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $siteVisitSummaries = $siteVisitOptions->map(function ($visit) {
+            return [
+                'id' => $visit->id,
+                'date' => optional($visit->visit_date)->format('F j, Y'),
+                'property' => optional($visit->property)->name,
+            ];
+        });
+
+        $selectedSiteVisit = $siteVisitOptions->firstWhere('id', (int) request('site_visit_id'))
+            ?? $siteVisitOptions->first();
+
+        $recentVisits = $siteVisitOptions->take(5);
 
         return view('clients.show', [
             'client' => $client,
-            'siteVisit' => $latestVisit, // This line is key
+            'siteVisit' => $selectedSiteVisit,
+            'siteVisitOptions' => $siteVisitOptions,
+            'siteVisitSummaries' => $siteVisitSummaries,
             'properties' => $properties,
             'recentVisits' => $recentVisits,
         ]);

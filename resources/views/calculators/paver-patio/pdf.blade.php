@@ -40,24 +40,16 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Pavers</td>
-                    <td class="text-right">{{ $data['paver_count'] }}</td>
-                    <td class="text-right">${{ number_format($data['paver_unit_cost'], 2) }}</td>
-                    <td class="text-right">${{ number_format($data['materials']['Pavers']['total'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td>#78 Base Gravel</td>
-                    <td class="text-right">{{ $data['base_tons'] }} tons</td>
-                    <td class="text-right">${{ number_format($data['base_unit_cost'], 2) }}</td>
-                    <td class="text-right">${{ number_format($data['materials']['#78 Base Gravel']['total'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td>Edge Restraints</td>
-                    <td class="text-right">{{ $data['edge_lf'] }} lf</td>
-                    <td class="text-right">${{ number_format($data['edge_unit_cost'], 2) }} / 20ft</td>
-                    <td class="text-right">${{ number_format($data['materials']['Edge Restraints']['total'], 2) }}</td>
-                </tr>
+                @foreach ($data['materials'] as $label => $item)
+                    @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
+                        <tr>
+                            <td>{{ $label }}</td>
+                            <td class="text-right">{{ $item['qty'] }}</td>
+                            <td class="text-right">${{ number_format($item['unit_cost'], 2) }}</td>
+                            <td class="text-right">${{ number_format($item['total'], 2) }}</td>
+                        </tr>
+                    @endif
+                @endforeach
                 <tr style="font-weight: bold; background-color: #f3f4f6;">
                     <td colspan="3" class="text-right">Total Material Cost:</td>
                     <td class="text-right">${{ number_format($data['material_total'], 2) }}</td>

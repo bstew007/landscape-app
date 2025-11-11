@@ -78,6 +78,10 @@ class RetainingWallCalculatorController extends Controller
         'override_geogrid_cost' => 'nullable|numeric|min:0',
         'override_adhesive_cost' => 'nullable|numeric|min:0',
         'materials_override_enabled' => 'nullable|boolean',
+        'custom_materials' => 'nullable|array',
+        'custom_materials.*.name' => 'nullable|string|max:255',
+        'custom_materials.*.qty' => 'nullable|numeric|min:0',
+        'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
     ]);
 
     $length = $validated['length'];
@@ -101,7 +105,7 @@ class RetainingWallCalculatorController extends Controller
 
     $pipeUnitCost = $validated['override_pipe_cost'] ?? 2.00;
     $gravelUnitCost = $validated['override_gravel_cost'] ?? 85.00;
-    $topsoilUnitCost = $validated['override_topsoil_cost'] ?? 5.00;
+    $topsoilUnitCost = $validated['override_topsoil_cost'] ?? 17.00;
     $fabricUnitCost = $validated['override_fabric_cost'] ?? 0.30;
     $geogridUnitCost = $validated['override_geogrid_cost'] ?? 1.50;
     $adhesiveUnitCost = $validated['override_adhesive_cost'] ?? 8.00;
@@ -163,6 +167,40 @@ class RetainingWallCalculatorController extends Controller
         ],
     ];
 
+    $customMaterialsInput = $validated['custom_materials'] ?? [];
+    $customMaterials = collect($customMaterialsInput)
+        ->map(function ($item) {
+            $name = trim($item['name'] ?? '');
+            $qty = isset($item['qty']) ? (float) $item['qty'] : null;
+            $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
+
+            if ($name === '' || $qty === null || $unitCost === null) {
+                return null;
+            }
+
+            $total = round($qty * $unitCost, 2);
+
+            return [
+                'name' => $name,
+                'qty' => round($qty, 2),
+                'unit_cost' => round($unitCost, 2),
+                'total' => $total,
+                'is_custom' => true,
+            ];
+        })
+        ->filter()
+        ->values()
+        ->all();
+
+    foreach ($customMaterials as $customMaterial) {
+        $materials[$customMaterial['name']] = [
+            'qty' => $customMaterial['qty'],
+            'unit_cost' => $customMaterial['unit_cost'],
+            'total' => $customMaterial['total'],
+            'is_custom' => true,
+        ];
+    }
+
     $material_total = array_sum(array_column($materials, 'total'));
 
     $rates = ProductionRate::where('calculator', 'retaining_wall')->pluck('rate', 'task');
@@ -215,6 +253,7 @@ class RetainingWallCalculatorController extends Controller
     'material_total' => round($material_total, 2),
     'materials' => $materials,
     'materials_override_enabled' => !empty($validated['materials_override_enabled']),
+    'custom_materials' => $customMaterials,
 
     'ab_straight_sqft' => round(($validated['ab_straight_length'] ?? 0) * ($validated['ab_straight_height'] ?? 0), 2),
     'ab_curved_sqft' => round(($validated['ab_curved_length'] ?? 0) * ($validated['ab_curved_height'] ?? 0), 2),

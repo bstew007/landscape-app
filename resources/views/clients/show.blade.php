@@ -1,4 +1,4 @@
-@extends('layouts.sidebar')
+﻿@extends('layouts.sidebar')
 
 @section('content')
 <div class="max-w-6xl mx-auto py-10 space-y-8">
@@ -137,55 +137,58 @@
     <div class="bg-white p-6 rounded-lg shadow text-gray-800">
         <h2 class="text-2xl font-semibold mb-4">Add Calculations to Site Visit</h2>
 
-        @if ($siteVisit)
-            <p class="text-sm text-gray-500 mb-4">
-                Latest visit: {{ optional($siteVisit->visit_date)->format('F j, Y') ?? 'N/A' }}
-                @if($siteVisit->property)
-                    — {{ $siteVisit->property->name }}
-                @endif
-            </p>
+        @if (($siteVisitOptions ?? collect())->isNotEmpty())
+            <div class="mb-4 space-y-2">
+                <label for="client-site-visit-select" class="block text-sm font-semibold text-gray-700">
+                    Choose site visit to attach calculations
+                </label>
+                <select id="client-site-visit-select" class="form-select w-full max-w-md">
+                    @foreach ($siteVisitOptions as $option)
+                        <option value="{{ $option->id }}" @selected(optional($siteVisit)->id === $option->id)>
+                            {{ optional($option->visit_date)->format('M j, Y') ?? 'Visit #' . $option->id }}
+                            @if($option->property)
+                                - {{ $option->property->name }}
+                            @endif
+                        </option>
+                    @endforeach
+                </select>
+                <p id="selected-site-visit-meta" class="text-xs text-gray-500">
+                    @if($siteVisit)
+                        Selected visit: {{ optional($siteVisit->visit_date)->format('F j, Y') ?? 'N/A' }}
+                        @if($siteVisit->property)
+                            - {{ $siteVisit->property->name }}
+                        @endif
+                    @endif
+                </p>
+            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <a href="{{ route('calculators.wall.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Retaining Wall Calculator
-                </a>
-                <a href="{{ route('calculators.patio.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Paver Calculator
-                </a>
-                <a href="{{ route('calculators.fence.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Fence Calculator
-                </a>
-                <a href="{{ route('calculators.pruning.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Pruning Calculator
-                </a>
-                <a href="{{ route('calculators.weeding.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Weeding Calculator
-                </a>
-                <a href="{{ route('calculators.mulching.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Mulching Calculator
-                </a>
-                <a href="{{ route('calculators.planting.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Planting Calculator
-                </a>
-                <a href="{{ route('calculators.pine_needles.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Pine Needle Calculator
-                </a>
-                <a href="{{ route('calculators.syn_turf.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Synthetic Turf Calculator
-                </a>
-                <a href="{{ route('calculators.turf_mowing.form', ['site_visit_id' => $siteVisit->id]) }}"
-                   class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center">
-                    Turf Mowing Calculator
-                </a>
+            @php
+                $calculatorLinks = [
+                    ['label' => 'Retaining Wall Calculator', 'template' => route('calculators.wall.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Paver Calculator', 'template' => route('calculators.patio.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Fence Calculator', 'template' => route('calculators.fence.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Pruning Calculator', 'template' => route('calculators.pruning.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Weeding Calculator', 'template' => route('calculators.weeding.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Mulching Calculator', 'template' => route('calculators.mulching.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Planting Calculator', 'template' => route('calculators.planting.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Pine Needle Calculator', 'template' => route('calculators.pine_needles.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Synthetic Turf Calculator', 'template' => route('calculators.syn_turf.form', ['site_visit_id' => '__SITE_ID__'])],
+                    ['label' => 'Turf Mowing Calculator', 'template' => route('calculators.turf_mowing.form', ['site_visit_id' => '__SITE_ID__'])],
+                ];
+                $selectedId = optional($siteVisit)->id;
+            @endphp
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="calculator-link-grid">
+                @foreach ($calculatorLinks as $link)
+                    @php
+                        $href = $selectedId ? str_replace('__SITE_ID__', $selectedId, $link['template']) : '#';
+                    @endphp
+                    <a href="{{ $href }}"
+                       class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded shadow text-center {{ $selectedId ? '' : 'opacity-50 pointer-events-none' }}"
+                       data-template-href="{{ $link['template'] }}">
+                        {{ $link['label'] }}
+                    </a>
+                @endforeach
             </div>
         @else
             <p class="text-gray-700 mb-4">
@@ -200,3 +203,49 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+@if (($siteVisitOptions ?? collect())->isNotEmpty())
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const select = document.getElementById('client-site-visit-select');
+        const links = document.querySelectorAll('#calculator-link-grid [data-template-href]');
+        const meta = document.getElementById('selected-site-visit-meta');
+
+        if (!select) return;
+
+        const siteVisits = @json($siteVisitSummaries ?? []);
+
+        const updateLinks = () => {
+            const value = select.value;
+            links.forEach((link) => {
+                const template = link.dataset.templateHref;
+                if (value) {
+                    link.href = template.replace('__SITE_ID__', value);
+                    link.classList.remove('opacity-50', 'pointer-events-none');
+                } else {
+                    link.href = '#';
+                    link.classList.add('opacity-50', 'pointer-events-none');
+                }
+            });
+
+            if (meta) {
+                const visit = siteVisits.find((v) => String(v.id) === String(value));
+                if (visit) {
+                    meta.textContent = `Selected visit: ${visit.date ?? 'N/A'}${visit.property ? ' - ' + visit.property : ''}`;
+                } else {
+                    meta.textContent = '';
+                }
+            }
+        };
+
+        select.addEventListener('change', updateLinks);
+        updateLinks();
+    });
+</script>
+@endif
+@endpush
+
+
+
+
