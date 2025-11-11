@@ -19,7 +19,7 @@ return [
     ],
 
     'resend' => [
-        'api_key' => env('RESEND_API_KEY'),
+        'key' => env('RESEND_API_KEY'),
     ],
 
     'ses' => [
