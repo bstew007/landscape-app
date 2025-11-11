@@ -37,6 +37,14 @@
                 $unitCosts = $formData['unit_costs'] ?? [];
             @endphp
 
+            @if ($rates->isEmpty())
+                <div class="p-4 rounded bg-yellow-100 border border-yellow-300 text-sm text-yellow-900">
+                    No planting production rates found. Please run
+                    <code>php artisan db:seed --class=ProductionRateSeeder</code>
+                    on this environment.
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach ($rates as $rate)
                     @php
@@ -73,16 +81,6 @@
                     </div>
                 @endforeach
             </div>
-        </div>
-
-        <div class="mb-6">
-            <label class="block font-semibold mb-1">Job Notes</label>
-            <textarea
-                name="job_notes"
-                rows="4"
-                class="form-textarea w-full"
-                placeholder="Irrigation, soil conditions, staging notes..."
-            >{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
         </div>
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
