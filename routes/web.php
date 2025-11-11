@@ -22,6 +22,7 @@ use App\Http\Controllers\SynTurfCalculatorController;
 use App\Http\Controllers\SiteVisitReportController;
 use App\Http\Controllers\TurfMowingCalculatorController;
 use App\Http\Controllers\TodoController;
+use App\Http\Controllers\PlantingCalculatorController;
 
 
 Route::get('/', fn () => redirect()->route('client-hub'));
@@ -154,6 +155,19 @@ Route::prefix('calculators/syn-turf')->name('calculators.syn_turf.')->group(func
 
 Route::get('/calculators/syn-turf/pdf/{calculation}', [SynTurfCalculatorController::class, 'downloadPdf'])
     ->name('calculators.syn_turf.downloadPdf');
+
+// ================================
+// Planting
+// ================================
+Route::prefix('calculators/planting')->name('calculators.planting.')->group(function () {
+    Route::get('/', [PlantingCalculatorController::class, 'showForm'])->name('form');
+    Route::post('/calculate', [PlantingCalculatorController::class, 'calculate'])->name('calculate');
+    Route::get('/{calculation}/edit', [PlantingCalculatorController::class, 'edit'])->name('edit');
+    Route::get('/results/{calculation}', [PlantingCalculatorController::class, 'showResult'])->name('showResult');
+});
+
+Route::get('/calculators/planting/pdf/{calculation}', [PlantingCalculatorController::class, 'downloadPdf'])
+    ->name('calculators.planting.downloadPdf');
 
 
 // ================================
