@@ -56,22 +56,27 @@ class PruningCalculatorController extends Controller
     $laborRate = (float) $validated['labor_rate'];
 
     // 🔍 Load production rates from DB
-    $dbRates = ProductionRate::where('calculator', 'pruning')->pluck('rate', 'task');
+    $productionRates = ProductionRate::where('calculator', 'pruning')->get()->keyBy('task');
 
     $results = [];
     $totalHours = 0;
 
     foreach ($inputTasks as $taskKey => $taskData) {
         $qty = (float) ($taskData['qty'] ?? 0);
-        if ($qty <= 0 || !isset($dbRates[$taskKey])) continue;
+        $rateModel = $productionRates[$taskKey] ?? null;
+        if ($qty <= 0 || ! $rateModel) {
+            continue;
+        }
 
-        $rate = $dbRates[$taskKey];
+        $rate = $rateModel->rate;
+        $unitLabel = $rateModel->unit ?? '';
         $hours = $qty * $rate;
         $cost = $hours * $laborRate;
 
         $results[] = [
             'task' => str_replace('_', ' ', $taskKey),
             'qty' => $qty,
+            'unit' => $unitLabel,
             'rate' => $rate,
             'hours' => round($hours, 2),
             'cost' => round($cost, 2),

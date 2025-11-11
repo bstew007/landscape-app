@@ -54,10 +54,10 @@
                                 <a href="{{ route('clients.site-visits.show', [$visit->client_id, $visit->id]) }}"
                                    class="block rounded border border-blue-100 bg-blue-50 px-2 py-1 text-xs text-blue-900 hover:bg-blue-100">
                                     <p class="font-semibold">
-                                        {{ optional($visit->property)->name ?? 'Property' }}
-                                    </p>
-                                    <p class="text-[11px] text-blue-800">
                                         {{ $visit->client->name }}
+                                    </p>
+                                    <p class="text-[11px] text-blue-800 truncate">
+                                        {{ $visit->client->address ?? ($visit->property->address ?? 'No address on file') }}
                                     </p>
                                 </a>
                             @empty

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SynTurfEstimateMail;
 use App\Models\Calculation;
 use App\Models\ProductionRate;
 use App\Models\SiteVisit;
@@ -9,6 +10,7 @@ use App\Services\LaborCostCalculatorService;
 use App\Services\SynTurfMaterialService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class SynTurfCalculatorController extends Controller
 {
@@ -179,5 +181,41 @@ class SynTurfCalculatorController extends Controller
         ]);
 
         return $pdf->download('synthetic_turf_estimate.pdf');
+    }
+
+    public function emailEstimate(Request $request, Calculation $calculation)
+    {
+        $validated = $request->validate([
+            'recipient' => 'required|email',
+            'cc' => 'nullable|email',
+            'subject' => 'required|string|max:255',
+            'message' => 'nullable|string|max:2000',
+        ]);
+
+        $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
+
+        $pdfBinary = Pdf::loadView('calculators.syn-turf.pdf', [
+            'data' => $calculation->data,
+            'siteVisit' => $siteVisit,
+            'calculation' => $calculation,
+        ])->output();
+
+        $mailable = new SynTurfEstimateMail(
+            $siteVisit,
+            $calculation,
+            $validated['subject'],
+            $validated['message'] ?? '',
+            base64_encode($pdfBinary)
+        );
+
+        $mail = Mail::to($validated['recipient']);
+
+        if (!empty($validated['cc'])) {
+            $mail->cc($validated['cc']);
+        }
+
+        $mail->send($mailable);
+
+        return back()->with('status', 'Estimate emailed successfully.');
     }
 }

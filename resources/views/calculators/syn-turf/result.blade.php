@@ -122,10 +122,13 @@
     </form>
 
     @isset($calculation)
-        <a href="{{ route('calculators.syn_turf.downloadPdf', $calculation->id) }}"
-           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mb-4 ml-4">
-            📄 Download PDF
-        </a>
+        <div class="flex flex-wrap items-center gap-4 mb-6">
+            <a href="{{ route('calculators.syn_turf.downloadPdf', $calculation->id) }}"
+               class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
+                📄 Download PDF
+            </a>
+        </div>
+
     @endisset
 
     <div class="mt-6">

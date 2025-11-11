@@ -8,10 +8,13 @@ use App\Models\Property;
 use App\Models\SiteVisit;
 use App\Models\Invoice;
 use App\Mail\EstimateMail;
+use App\Support\ScopeDescriptionResolver;
+use App\Support\ScopeSummaryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class EstimateController extends Controller
 {
@@ -57,6 +60,12 @@ class EstimateController extends Controller
             $data['line_items'] = $this->buildLineItemsFromSiteVisit($data['site_visit_id']);
         }
 
+        try {
+            $this->assertMinimumProfit($data['line_items']);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+
         $estimate = Estimate::create($data);
 
         return redirect()->route('estimates.show', $estimate)->with('success', 'Estimate created.');
@@ -79,6 +88,12 @@ class EstimateController extends Controller
 
         if (empty($data['line_items']) && ! empty($data['site_visit_id'])) {
             $data['line_items'] = $this->buildLineItemsFromSiteVisit($data['site_visit_id']);
+        }
+
+        try {
+            $this->assertMinimumProfit($data['line_items']);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
         }
 
         $estimate->update($data);
@@ -117,14 +132,72 @@ class EstimateController extends Controller
     protected function formData(Estimate $estimate): array
     {
         $clients = Client::with('properties')->orderBy('company_name')->orderBy('last_name')->get();
-        $siteVisits = SiteVisit::with('client')->latest()->limit(50)->get();
+        $siteVisits = SiteVisit::with(['client', 'calculations'])
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(function (SiteVisit $visit) {
+                $descriptions = ScopeDescriptionResolver::descriptionsForSiteVisit($visit);
+                $visit->scope_note_template = ScopeDescriptionResolver::templateFromDescriptions($descriptions);
+                return $visit;
+            });
+
+        $scopeSummaries = ScopeSummaryBuilder::fromEstimate($estimate);
+        $scopeDescriptions = ScopeDescriptionResolver::descriptionsForEstimate($estimate);
+        $scopeNoteTemplate = ScopeDescriptionResolver::templateFromDescriptions($scopeDescriptions);
 
         return [
             'estimate' => $estimate,
             'clients' => $clients,
             'siteVisits' => $siteVisits,
             'statuses' => Estimate::STATUSES,
+            'scopeSummaries' => $scopeSummaries,
+            'scopeNoteTemplate' => $scopeNoteTemplate,
         ];
+    }
+
+    protected function assertMinimumProfit(?array $lineItems, string $context = 'saved', float $minimum = 10.0): void
+    {
+        $margin = $this->calculateProfitPercent($lineItems);
+
+        if ($margin !== null && $margin < $minimum) {
+            $action = $context === 'sent' ? 'sent' : 'saved';
+            throw ValidationException::withMessages([
+                'line_items' => "Profit margin is {$margin}% and must be at least {$minimum}% before this estimate can be {$action}.",
+            ]);
+        }
+    }
+
+    protected function calculateProfitPercent(?array $lineItems): ?float
+    {
+        if (!is_array($lineItems) || empty($lineItems)) {
+            return null;
+        }
+
+        $revenue = 0;
+        $cost = 0;
+
+        foreach ($lineItems as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $qty = (float) ($item['qty'] ?? 1);
+            $price = (float) ($item['price'] ?? $item['rate'] ?? 0);
+            $lineRevenue = $item['total'] ?? ($qty * $price);
+            $lineCost = (float) ($item['cost'] ?? 0) * ($qty ?: 1);
+
+            $revenue += max(0, $lineRevenue);
+            $cost += max(0, $lineCost);
+        }
+
+        if ($revenue <= 0) {
+            return null;
+        }
+
+        $profit = $revenue - $cost;
+
+        return round(($profit / $revenue) * 100, 2);
     }
 
     public function previewEmail(Estimate $estimate)
@@ -136,6 +209,12 @@ class EstimateController extends Controller
 
     public function sendEmail(Estimate $estimate)
     {
+        try {
+            $this->assertMinimumProfit($estimate->line_items, 'sent');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
         Mail::to($estimate->client->email ?? 'test@example.com')->send(new EstimateMail($estimate));
 
         $now = now();
@@ -177,7 +256,12 @@ class EstimateController extends Controller
 
     public function print(Estimate $estimate)
     {
-        return view('estimates.print', compact('estimate'));
+        $scopeSummaries = ScopeSummaryBuilder::fromEstimate($estimate);
+
+        return view('estimates.print', [
+            'estimate' => $estimate,
+            'scopeSummaries' => $scopeSummaries,
+        ]);
     }
 
     public function siteVisitLineItems(SiteVisit $siteVisit): JsonResponse

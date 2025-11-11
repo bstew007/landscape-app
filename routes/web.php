@@ -149,6 +149,7 @@ Route::prefix('calculators/syn-turf')->name('calculators.syn_turf.')->group(func
     Route::post('/calculate', [SynTurfCalculatorController::class, 'calculate'])->name('calculate');
     Route::get('/{calculation}/edit', [SynTurfCalculatorController::class, 'edit'])->name('edit');
     Route::get('/results/{calculation}', [SynTurfCalculatorController::class, 'showResult'])->name('showResult');
+    Route::post('/{calculation}/email', [SynTurfCalculatorController::class, 'emailEstimate'])->name('email');
 });
 
 Route::get('/calculators/syn-turf/pdf/{calculation}', [SynTurfCalculatorController::class, 'downloadPdf'])

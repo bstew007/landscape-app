@@ -52,7 +52,10 @@
                 >
                     <option value="">Link visit</option>
                     @foreach ($siteVisits as $visit)
-                        <option value="{{ $visit->id }}" data-client-id="{{ $visit->client_id }}" @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
+                        <option value="{{ $visit->id }}"
+                                data-client-id="{{ $visit->client_id }}"
+                                data-scope-template="{{ base64_encode($visit->scope_note_template ?? '') }}"
+                                @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
                             {{ optional($visit->client)->name }} – {{ optional($visit->visit_date)->format('M j, Y') }}
                         </option>
                     @endforeach
@@ -145,10 +148,79 @@
         <input type="hidden" name="line_items" id="line_items_input">
     </div>
 
+    @php
+        $scopeNoteTemplate = $scopeNoteTemplate ?? '';
+        $noteDefault = old('notes', $estimate->notes ?? $scopeNoteTemplate);
+    @endphp
+
     <div>
         <label class="block text-sm font-medium text-gray-700">Notes / Scope</label>
-        <textarea name="notes" rows="4" class="form-textarea w-full mt-1">{{ old('notes', $estimate->notes ?? '') }}</textarea>
+        <textarea name="notes"
+                  rows="4"
+                  class="form-textarea w-full mt-1"
+                  data-initial-template="{{ base64_encode($scopeNoteTemplate ?? '') }}">{{ $noteDefault }}</textarea>
     </div>
+
+    @php
+        $scopeSummaries = $scopeSummaries ?? [];
+    @endphp
+
+    @if (!empty($scopeSummaries))
+        <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-gray-700">Calculator Measurements</h3>
+            @foreach ($scopeSummaries as $summary)
+                <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div class="border-b border-gray-100 px-4 py-3">
+                        <p class="font-semibold text-gray-900">{{ $summary['title'] }}</p>
+                    </div>
+                    <div class="px-4 py-4 grid gap-4 md:grid-cols-2">
+                        @if (!empty($summary['measurements']))
+                            <table class="w-full text-sm border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wide">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left">Measurement</th>
+                                        <th class="px-3 py-2 text-left">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($summary['measurements'] as $measurement)
+                                        <tr class="border-t border-gray-100">
+                                            <td class="px-3 py-2 text-gray-600">{{ $measurement['label'] }}</td>
+                                            <td class="px-3 py-2 font-semibold text-gray-900">{{ $measurement['value'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+
+                        @if (!empty($summary['materials']))
+                            <table class="w-full text-sm border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wide">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left">Material</th>
+                                        <th class="px-3 py-2 text-left">Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($summary['materials'] as $material)
+                                        <tr class="border-t border-gray-100">
+                                            <td class="px-3 py-2 text-gray-600">
+                                                {{ $material['label'] }}
+                                                @if (!empty($material['meta']))
+                                                    <span class="block text-xs text-gray-400">{{ $material['meta'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-2 font-semibold text-gray-900">{{ $material['value'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     <div>
         <label class="block text-sm font-medium text-gray-700">Terms & Conditions</label>
@@ -171,6 +243,7 @@
             const clientSelect = document.querySelector('select[name="client_id"]');
             const propertySelect = document.querySelector('select[name="property_id"]');
             const siteVisitSelect = document.querySelector('select[name="site_visit_id"]');
+            const notesField = document.querySelector('textarea[name="notes"]');
             const lineItemsEndpointTemplate = siteVisitSelect && siteVisitSelect.dataset
                 ? siteVisitSelect.dataset.lineItemsUrl || null
                 : null;
@@ -183,6 +256,58 @@
             const DEFAULT_MARGIN = 15;
             const MAX_MARGIN = 95;
             const MIN_MARGIN = -90;
+
+            function decodeTemplate(raw) {
+                if (!raw) {
+                    return '';
+                }
+
+                try {
+                    return decodeURIComponent(escape(window.atob(raw)));
+                } catch (error) {
+                    return raw.replace(/&#10;/g, '\n').replace(/\\r/g, '');
+                }
+            }
+
+            const initialTemplateRaw = notesField ? decodeTemplate(notesField.dataset.initialTemplate || '') : '';
+            const initialTemplateTrimmed = initialTemplateRaw.trim();
+
+            if (notesField && !notesField.value && initialTemplateRaw) {
+                notesField.value = initialTemplateRaw;
+            }
+
+            let lastAutoNotes = notesField && initialTemplateTrimmed && notesField.value.trim() === initialTemplateTrimmed
+                ? notesField.value
+                : '';
+            let notesDirty = notesField
+                ? (lastAutoNotes
+                    ? notesField.value !== lastAutoNotes
+                    : notesField.value.trim().length > 0)
+                : false;
+
+            function maybeApplyNotesTemplate(template) {
+                if (!notesField) {
+                    return;
+                }
+
+                const normalizedTemplate = (template || '').trim();
+
+                if (!normalizedTemplate) {
+                    return;
+                }
+
+                if (!notesDirty || notesField.value === lastAutoNotes || notesField.value.trim() === '') {
+                    notesField.value = template;
+                    lastAutoNotes = template;
+                    notesDirty = false;
+                }
+            }
+
+            if (notesField) {
+                notesField.addEventListener('input', () => {
+                    notesDirty = notesField.value !== lastAutoNotes;
+                });
+            }
 
             const propertyOptions = propertySelect
                 ? Array.from(propertySelect.options).map(option => ({
@@ -197,6 +322,7 @@
                     value: option.value,
                     text: option.textContent,
                     clientId: option.dataset.clientId || '',
+                    scopeTemplate: option.dataset.scopeTemplate || '',
                 }))
                 : [];
 
@@ -228,6 +354,9 @@
                     opt.textContent = option.text;
                     if (option.clientId) {
                         opt.dataset.clientId = option.clientId;
+                    }
+                    if (option.scopeTemplate) {
+                        opt.dataset.scopeTemplate = option.scopeTemplate;
                     }
                     fragment.appendChild(opt);
                 });
@@ -411,6 +540,7 @@
                 const costInput = row.querySelector('.line-cost');
                 const marginInput = row.querySelector('.line-margin');
                 const priceInput = row.querySelector('.line-price');
+                const totalDisplay = row.querySelector('.line-total');
 
                 if (prefill) {
                     labelInput.value = prefill.label ?? '';
@@ -419,16 +549,18 @@
                     const costValue = Number(prefill.cost ?? prefill.rate ?? prefill.price ?? prefill.total ?? 0) || 0;
                     costInput.value = costValue.toFixed(2);
 
+                    const rawPrice = Number(prefill.price ?? prefill.rate ?? prefill.total ?? costValue) || 0;
+                    priceInput.value = rawPrice.toFixed(2);
+
                     if (prefill.margin !== undefined) {
-                        marginInput.value = prefill.margin;
-                    } else if (prefill.price && costValue > 0) {
-                        const derivedMargin = computeMargin(costValue, Number(prefill.price));
+                        marginInput.value = Number(prefill.margin).toFixed(1);
+                    } else if (costValue > 0 && rawPrice > 0) {
+                        const derivedMargin = computeMargin(costValue, rawPrice);
                         marginInput.value = derivedMargin.toFixed(1);
                     }
 
-                    if (prefill.price !== undefined) {
-                        priceInput.value = Number(prefill.price).toFixed(2);
-                    }
+                    const initialTotal = (Number(qtyInput.value) || 0) * rawPrice;
+                    totalDisplay.textContent = initialTotal.toFixed(2);
                 }
 
                 attachRowListeners(row);
@@ -521,14 +653,25 @@
                 filterClientRelatedSelects();
             }
 
-            if (siteVisitSelect && lineItemsEndpointTemplate) {
+            if (siteVisitSelect) {
                 siteVisitSelect.addEventListener('change', () => {
+                    const selectedOption = siteVisitSelect.options[siteVisitSelect.selectedIndex];
+                    const scopeTemplate = selectedOption ? decodeTemplate(selectedOption.dataset.scopeTemplate || '') : '';
                     updateImportButtonState();
+                    if (scopeTemplate) {
+                        maybeApplyNotesTemplate(scopeTemplate);
+                    }
                     const siteVisitId = siteVisitSelect.value;
-                    if (siteVisitId) {
+                    if (lineItemsEndpointTemplate && siteVisitId) {
                         hydrateFromSiteVisit(siteVisitId);
                     }
                 });
+
+                // Apply template for preselected visit on load
+                const initialOption = siteVisitSelect.options[siteVisitSelect.selectedIndex];
+                if (initialOption && initialOption.dataset.scopeTemplate && notesField && notesField.value.trim() === '') {
+                    maybeApplyNotesTemplate(decodeTemplate(initialOption.dataset.scopeTemplate));
+                }
             }
 
             if (importButton && lineItemsEndpointTemplate) {
@@ -545,6 +688,3 @@
         });
     </script>
 @endpush
-
-
-
