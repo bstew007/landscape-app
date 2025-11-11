@@ -122,16 +122,16 @@
                             <input type="text" class="line-label form-input w-full" value="{{ $item['label'] ?? '' }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
-                            <input type="number" min="1" class="line-qty form-input w-full" value="{{ $qty }}" />
+                            <input type="text" inputmode="decimal" class="line-qty form-input w-full" value="{{ $qty }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
-                            <input type="number" step="0.01" class="line-cost form-input w-full" value="{{ $cost }}" />
+                            <input type="text" inputmode="decimal" class="line-cost form-input w-full" value="{{ $cost }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
-                            <input type="number" step="0.1" class="line-margin form-input w-full" value="{{ $margin }}" />
+                            <input type="text" inputmode="decimal" class="line-margin form-input w-full" value="{{ $margin }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
-                        <input type="number" step="0.01" class="line-price form-input w-full" value="{{ number_format($price, 2, '.', '') }}" />
+                        <input type="text" inputmode="decimal" class="line-price form-input w-full" value="{{ number_format($price, 2, '.', '') }}" />
                         </td>
                         <td class="px-2 py-1 text-center">
                             <span class="line-total text-gray-700 font-semibold">{{ number_format($total, 2) }}</span>
@@ -426,12 +426,14 @@
                 return clampMargin(ratio * 100);
             }
 
-            function recalcRow(row, changedField = null) {
+            function recalcRow(row, changedField = null, options = {}) {
+                const { formatChangedField = true } = options;
                 const qtyInput = row.querySelector('.line-qty');
                 const costInput = row.querySelector('.line-cost');
                 const marginInput = row.querySelector('.line-margin');
                 const priceInput = row.querySelector('.line-price');
                 const totalDisplay = row.querySelector('.line-total');
+                const shouldFormat = (field) => formatChangedField || changedField !== field;
 
                 const qty = parseFloat(qtyInput.value) || 0;
                 const cost = parseFloat(costInput.value) || 0;
@@ -448,16 +450,29 @@
                 if (changedField === 'price') {
                     price = Math.max(0, price);
                     margin = cost > 0 ? computeMargin(cost, price) : 0;
-                    marginInput.value = margin.toFixed(1);
+                    if (shouldFormat('price')) {
+                        priceInput.value = price.toFixed(2);
+                    }
+                    marginInput.value = clampMargin(margin).toFixed(1);
+                } else if (changedField === 'margin') {
+                    margin = clampMargin(margin);
+                    price = computePrice(cost, margin);
+                    if (shouldFormat('margin')) {
+                        marginInput.value = margin.toFixed(1);
+                    }
                     priceInput.value = price.toFixed(2);
-                } else if (changedField === 'margin' || changedField === 'cost') {
+                } else if (changedField === 'cost') {
                     margin = clampMargin(margin);
                     price = computePrice(cost, margin);
                     marginInput.value = margin.toFixed(1);
                     priceInput.value = price.toFixed(2);
                 } else {
-                    priceInput.value = price.toFixed(2);
-                    marginInput.value = clampMargin(margin).toFixed(1);
+                    if (shouldFormat('price')) {
+                        priceInput.value = price.toFixed(2);
+                    }
+                    if (shouldFormat('margin')) {
+                        marginInput.value = clampMargin(margin).toFixed(1);
+                    }
                 }
 
                 const lineTotal = qty * (parseFloat(priceInput.value) || 0);
@@ -514,16 +529,16 @@
                         <input type="text" class="line-label form-input w-full" value="">
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <input type="number" min="1" class="line-qty form-input w-full" value="1">
+                        <input type="text" inputmode="decimal" class="line-qty form-input w-full" value="1">
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <input type="number" step="0.01" class="line-cost form-input w-full" value="0">
+                        <input type="text" inputmode="decimal" class="line-cost form-input w-full" value="0">
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <input type="number" step="0.1" class="line-margin form-input w-full" value="${DEFAULT_MARGIN}">
+                        <input type="text" inputmode="decimal" class="line-margin form-input w-full" value="${DEFAULT_MARGIN}">
                     </td>
                     <td class="px-2 py-1 text-center">
-                        <input type="number" step="0.01" class="line-price form-input w-full" value="0">
+                        <input type="text" inputmode="decimal" class="line-price form-input w-full" value="0">
                     </td>
                     <td class="px-2 py-1 text-center">
                         <span class="line-total text-gray-700 font-semibold">0.00</span>
@@ -581,10 +596,19 @@
             }
 
             function attachRowListeners(row) {
-                row.querySelector('.line-qty').addEventListener('input', () => recalcRow(row, 'qty'));
-                row.querySelector('.line-cost').addEventListener('input', () => recalcRow(row, 'cost'));
-                row.querySelector('.line-margin').addEventListener('input', () => recalcRow(row, 'margin'));
-                row.querySelector('.line-price').addEventListener('input', () => recalcRow(row, 'price'));
+                const wireField = (selector, field) => {
+                    const input = row.querySelector(selector);
+                    if (!input) {
+                        return;
+                    }
+                    input.addEventListener('input', () => recalcRow(row, field, { formatChangedField: false }));
+                    input.addEventListener('blur', () => recalcRow(row, field));
+                };
+
+                wireField('.line-qty', 'qty');
+                wireField('.line-cost', 'cost');
+                wireField('.line-margin', 'margin');
+                wireField('.line-price', 'price');
                 row.querySelector('.remove-line').addEventListener('click', () => {
                     row.remove();
                     updateEstimateTotal();
