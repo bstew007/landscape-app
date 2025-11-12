@@ -26,6 +26,7 @@ use App\Http\Controllers\PlantingCalculatorController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\LaborController;
 use App\Http\Controllers\EstimateItemController;
+use App\Http\Controllers\Admin\CompanyBudgetController;
 
 
 Route::get('/', fn () => redirect()->route('client-hub'));
@@ -230,13 +231,29 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
     Route::resource('estimates', EstimateController::class);
+    // Admin budgets (protect with auth/ability middleware in your app)
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::resource('budgets', CompanyBudgetController::class)->except(['destroy', 'show']);
+    });
+
     Route::prefix('estimates/{estimate}')->name('estimates.')->group(function () {
         Route::post('items', [EstimateItemController::class, 'store'])->name('items.store');
         Route::patch('items/{item}', [EstimateItemController::class, 'update'])->name('items.update');
         Route::delete('items/{item}', [EstimateItemController::class, 'destroy'])->name('items.destroy');
         Route::post('items/reorder', [EstimateItemController::class, 'reorder'])->name('items.reorder');
+
+        // Work Areas
+        Route::post('areas', [\App\Http\Controllers\EstimateAreaController::class, 'store'])->name('areas.store');
+        Route::patch('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'update'])->name('areas.update');
+        Route::delete('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'destroy'])->name('areas.destroy');
+        Route::post('areas/reorder', [\App\Http\Controllers\EstimateAreaController::class, 'reorder'])->name('areas.reorder');
+
         Route::post('import-calculation/{calculation}', [EstimateController::class, 'importCalculation'])->name('import-calculation');
         Route::delete('remove-calculation/{calculation}', [EstimateController::class, 'removeCalculation'])->name('remove-calculation');
+
+        // Files
+        Route::post('files', [\App\Http\Controllers\EstimateFileController::class, 'store'])->name('files.store');
+        Route::delete('files/{file}', [\App\Http\Controllers\EstimateFileController::class, 'destroy'])->name('files.destroy');
     });
     Route::post('estimates/{estimate}/email', [EstimateController::class, 'sendEmail'])->name('estimates.email');
     Route::post('estimates/{estimate}/invoice', [EstimateController::class, 'createInvoice'])->name('estimates.invoice');

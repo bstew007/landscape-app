@@ -79,7 +79,22 @@ class EstimateController extends Controller
         }
 
         $estimate = Estimate::create($data);
-        if ($lineItems) {
+
+        // Auto-create a default General work area
+        if ($estimate->areas()->count() === 0) {
+            $estimate->areas()->create(['name' => 'General', 'sort_order' => 1]);
+        }
+
+        if ($data['site_visit_id']) {
+            // Prefer structured import from calculations so budget margins apply per line item
+            $siteVisit = SiteVisit::with('calculations')->find($data['site_visit_id']);
+            if ($siteVisit) {
+                $this->calculationImporter->importSiteVisitCalculations($estimate->fresh(), $siteVisit, true);
+            } else {
+                $this->itemService->recalculateTotals($estimate);
+            }
+        } elseif ($lineItems) {
+            // Legacy path if provided explicitly
             $this->itemService->syncFromLegacyLineItems($estimate, $lineItems);
         } else {
             $this->itemService->recalculateTotals($estimate);
@@ -97,13 +112,68 @@ class EstimateController extends Controller
             'invoice',
             'emailSender',
             'items.calculation',
+            'areas',
+            'files',
         ]);
 
         $materials = Material::where('is_active', true)->orderBy('name')->get();
         $laborCatalog = LaborItem::where('is_active', true)->orderBy('name')->get();
         $availableCalculations = $estimate->siteVisit?->calculations ?? collect();
 
-        return view('estimates.show', compact('estimate', 'materials', 'laborCatalog', 'availableCalculations'));
+        // Budget default margin for UI defaults
+        $budget = app(\App\Services\BudgetService::class)->active();
+        $defaultMarginRate = (float) (($budget->desired_profit_margin ?? 0.2));
+        $defaultMarginPercent = round($defaultMarginRate * 100, 1);
+
+        $itemsByType = $estimate->items->groupBy('item_type');
+        $typeBreakdown = [
+            'material' => [
+                'label' => 'Materials',
+                'revenue' => $estimate->material_subtotal,
+                'cost' => $estimate->material_cost_total,
+                'profit' => $itemsByType->get('material', collect())->sum('margin_total'),
+            ],
+            'labor' => [
+                'label' => 'Labor',
+                'revenue' => $estimate->labor_subtotal,
+                'cost' => $estimate->labor_cost_total,
+                'profit' => $itemsByType->get('labor', collect())->sum('margin_total'),
+            ],
+            'fee' => [
+                'label' => 'Fees',
+                'revenue' => $estimate->fee_total,
+                'cost' => $itemsByType->get('fee', collect())->sum('cost_total'),
+                'profit' => $itemsByType->get('fee', collect())->sum('margin_total'),
+            ],
+            'discount' => [
+                'label' => 'Discounts',
+                'revenue' => $estimate->discount_total,
+                'cost' => $itemsByType->get('discount', collect())->sum('cost_total'),
+                'profit' => $itemsByType->get('discount', collect())->sum('margin_total'),
+            ],
+        ];
+
+        $financialSummary = [
+            'revenue' => $estimate->revenue_total,
+            'costs' => $estimate->cost_total,
+            'gross_profit' => $estimate->profit_total,
+            'net_profit' => $estimate->net_profit_total,
+            'profit_margin' => $estimate->profit_margin,
+            'net_margin' => $estimate->net_margin,
+            'tax_total' => $estimate->tax_total,
+        ];
+
+        return view('estimates.show', [
+            'estimate' => $estimate,
+            'materials' => $materials,
+            'laborCatalog' => $laborCatalog,
+            'availableCalculations' => $availableCalculations,
+            'financialSummary' => $financialSummary,
+            'typeBreakdown' => $typeBreakdown,
+            'defaultMarginRate' => $defaultMarginRate,
+            'defaultMarginPercent' => $defaultMarginPercent,
+            'statuses' => Estimate::STATUSES,
+        ]);
     }
 
     public function edit(Estimate $estimate)
@@ -126,7 +196,14 @@ class EstimateController extends Controller
         }
 
         $estimate->update($data);
-        if ($lineItems) {
+        if ($data['site_visit_id']) {
+            $siteVisit = SiteVisit::with('calculations')->find($data['site_visit_id']);
+            if ($siteVisit) {
+                $this->calculationImporter->importSiteVisitCalculations($estimate->fresh(), $siteVisit, true);
+            } else {
+                $this->itemService->recalculateTotals($estimate->fresh());
+            }
+        } elseif ($lineItems) {
             $this->itemService->syncFromLegacyLineItems($estimate->fresh(), $lineItems);
         } else {
             $this->itemService->recalculateTotals($estimate->fresh());
@@ -193,6 +270,9 @@ class EstimateController extends Controller
             'expires_at' => 'nullable|date',
             'notes' => 'nullable|string',
             'terms' => 'nullable|string',
+            'terms_header' => 'nullable|string',
+            'terms_footer' => 'nullable|string',
+            'crew_notes' => 'nullable|string',
         ]);
 
         return $data;

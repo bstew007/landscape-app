@@ -29,7 +29,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('todos.create') }}"
-                   class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                   class="inline-flex items-center rounded-md bg-brand-700 px-4 py-2 text-white hover:bg-brand-800">
                     + Add To-Do
                 </a>
                 <a href="{{ route('todos.index', array_merge(request()->except('view'), ['view' => 'kanban'])) }}"

@@ -9,11 +9,11 @@
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route('materials.importForm') }}"
-               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+               class="inline-flex items-center px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800">
                 ⬆ Import JSON
             </a>
             <a href="{{ route('materials.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+               class="inline-flex items-center px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800">
                 + Add Material
             </a>
         </div>
@@ -26,7 +26,7 @@
     <form method="GET" class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded shadow">
         <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, SKU, category"
                class="form-input flex-1">
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
+        <button class="px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">Search</button>
     </form>
 
     <div class="bg-white rounded shadow overflow-x-auto">

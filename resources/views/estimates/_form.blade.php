@@ -163,5 +163,51 @@
 </form>
 
 @push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const clientSelect = document.querySelector('select[name="client_id"]');
+        const propertySelect = document.querySelector('select[name="property_id"]');
+        const visitSelect = document.querySelector('select[name="site_visit_id"]');
+
+        function getSelectedClientId() {
+            return (clientSelect && clientSelect.value) ? String(clientSelect.value) : '';
+        }
+
+        function filterSelectByClient(selectEl, clientId) {
+            if (!selectEl) return;
+            let hasVisible = false;
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (idx === 0) {
+                    opt.hidden = false; // keep placeholder visible
+                    return;
+                }
+                const optClientId = opt.getAttribute('data-client-id') || '';
+                const matches = clientId ? (optClientId === clientId) : true;
+                opt.hidden = !matches;
+                if (matches) hasVisible = true;
+            });
+            // Clear selection if current option is hidden or not matching
+            const selOpt = selectEl.selectedOptions[0];
+            if (selOpt && (selOpt.hidden || (clientId && selOpt.getAttribute('data-client-id') !== clientId))) {
+                selectEl.value = '';
+            }
+            // Disable if no client selected; enable otherwise
+            selectEl.disabled = !clientId;
+        }
+
+        function applyFilters() {
+            const cid = getSelectedClientId();
+            filterSelectByClient(propertySelect, cid);
+            filterSelectByClient(visitSelect, cid);
+            // If a site visit carries a scope template for this client and notes field is empty, we could auto-fill after save
+        }
+
+        if (clientSelect) {
+            clientSelect.addEventListener('change', applyFilters);
+        }
+        // Initial run on load (handles edit form pre-selection or query-param prefill)
+        applyFilters();
+    });
+</script>
 @endpush
 

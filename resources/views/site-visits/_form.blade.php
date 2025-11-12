@@ -56,7 +56,7 @@
 
     <div class="flex items-center justify-between">
         <button type="submit"
-                class="px-6 py-3 bg-green-600 text-white text-lg rounded-md shadow hover:bg-green-700"
+                class="px-6 py-3 bg-brand-700 text-white text-lg rounded-md shadow hover:bg-brand-800"
                 @disabled($propertyOptions->isEmpty())>
             Save
         </button>

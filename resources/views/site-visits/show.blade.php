@@ -10,7 +10,7 @@
         <h1 class="text-3xl font-bold"> Site Visit Details</h1>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('site-visits.report', $siteVisit) }}"
-               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+               class="px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">
                  View Report
             </a>
             <a href="{{ route('site-visits.report.pdf', $siteVisit) }}"
@@ -42,7 +42,7 @@
     {{--  Edit and  Delete Site Visit --}}
     <div class="flex gap-4 mb-8">
         <a href="{{ route('clients.site-visits.edit', [$client, $siteVisit]) }}"
-           class="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold">
+           class="px-5 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-semibold">
              Edit Site Visit
         </a>
 
@@ -109,7 +109,7 @@
                         {{--  View/Edit --}}
                         @if ($calc->calculation_type === 'retaining_wall')
                             <a href="{{ route('calculators.wall.edit', $calc->id) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                               class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculations.wall.downloadPdf', $calc->id) }}"
@@ -118,7 +118,7 @@
                             </a>
                         @elseif ($calc->calculation_type === 'paver_patio')
                             <a href="{{ route('calculators.patio.edit', $calc->id) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                               class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculations.patio.downloadPdf', $calc->id) }}"
@@ -127,7 +127,7 @@
                             </a>
                         @elseif ($calc->calculation_type === 'fence')
                              <a href="{{ route('calculators.fence.edit', $calc->id) }}"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                                class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.fence.downloadPdf', $calc->id) }}"
@@ -137,7 +137,7 @@
 
                             @elseif ($calc->calculation_type === 'pruning')
                             <a href="{{ route('calculators.pruning.edit', $calc->id) }}"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                            class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.pruning.downloadPdf', $calc->id) }}"
@@ -147,7 +147,7 @@
 
                              @elseif ($calc->calculation_type === 'weeding')
                             <a href="{{ route('calculators.weeding.edit', $calc->id) }}"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                            class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.weeding.downloadPdf', $calc->id) }}"
@@ -157,7 +157,7 @@
 
                             @elseif ($calc->calculation_type === 'mulching')
                             <a href="{{ route('calculators.mulching.edit', $calc->id) }}"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                            class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.mulching.downloadPdf', $calc->id) }}"
@@ -167,7 +167,7 @@
 
                             @elseif ($calc->calculation_type === 'pine_needles')
                             <a href="{{ route('calculators.pine_needles.edit', $calc->id) }}"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                            class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.pine_needles.downloadPdf', $calc->id) }}"
@@ -177,7 +177,7 @@
 
                             @elseif ($calc->calculation_type === 'syn_turf')
                             <a href="{{ route('calculators.syn_turf.edit', $calc->id) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                               class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.syn_turf.downloadPdf', $calc->id) }}"
@@ -187,7 +187,7 @@
 
                             @elseif ($calc->calculation_type === 'turf_mowing')
                             <a href="{{ route('calculators.turf_mowing.edit', $calc->id) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                               class="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded text-sm">
                                 Edit
                             </a>
                             <a href="{{ route('calculators.turf_mowing.downloadPdf', $calc->id) }}"

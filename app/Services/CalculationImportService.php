@@ -6,30 +6,41 @@ use App\Models\Calculation;
 use App\Models\Estimate;
 use App\Models\SiteVisit;
 use Illuminate\Support\Str;
+use App\Services\BudgetService;
 
 class CalculationImportService
 {
-    public function __construct(protected EstimateItemService $items)
-    {
+    public function __construct(
+        protected EstimateItemService $items,
+        protected ?BudgetService $budget = null,
+    ) {
+        if (!$this->budget) {
+            $this->budget = app(BudgetService::class);
+        }
     }
 
     public function importCalculation(Estimate $estimate, Calculation $calculation, bool $replace = true): void
     {
         $data = $calculation->data ?? [];
         $calcLabel = Str::headline($calculation->calculation_type);
+        $activeBudget = $this->budget?->active();
+        $marginRate = (float) (($activeBudget?->desired_profit_margin) ?? 0.0);
 
         if ($replace) {
             $this->items->removeCalculationItems($estimate, $calculation->id);
         }
 
-        $materialsCreated = $this->importMaterials($estimate, $data, $calcLabel, $calculation);
-        $laborTotal = $this->importLabor($estimate, $data, $calcLabel, $calculation);
+        $materialsCreated = $this->importMaterials($estimate, $data, $calcLabel, $calculation, $marginRate);
+        $laborTotal = $this->importLabor($estimate, $data, $calcLabel, $calculation, $marginRate);
 
         $materialTotal = array_reduce($materialsCreated, fn ($carry, $item) => $carry + $item, 0);
-        $this->importFeeOrMarkup($estimate, $data, $materialTotal + $laborTotal, $calcLabel, $calculation);
+        // If a budget margin is set (> 0), we distribute profit in line items and skip fee markup
+        if ($marginRate <= 0) {
+            $this->importFeeOrMarkup($estimate, $data, $materialTotal + $laborTotal, $calcLabel, $calculation);
+        }
     }
 
-    protected function importMaterials(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation): array
+    protected function importMaterials(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation, float $marginRate = 0): array
     {
         $materials = $data['materials'] ?? [];
         $totals = [];
@@ -51,6 +62,8 @@ class CalculationImportService
                     'unit' => $material['unit'] ?? null,
                     'quantity' => $qty,
                     'unit_cost' => $unitCost,
+                    'unit_price' => $marginRate > 0 ? round($unitCost * (1 + $marginRate), 2) : null,
+                    'margin_rate' => $marginRate > 0 ? $marginRate : null,
                     'tax_rate' => (float) ($material['tax_rate'] ?? 0),
                     'source' => 'calculator:' . $calculation->calculation_type,
                     'calculation_id' => $calculation->id,
@@ -74,6 +87,8 @@ class CalculationImportService
                 'quantity' => 1,
                 'unit' => 'lot',
                 'unit_cost' => $materialTotal,
+                'unit_price' => $marginRate > 0 ? round($materialTotal * (1 + $marginRate), 2) : null,
+                'margin_rate' => $marginRate > 0 ? $marginRate : null,
                 'tax_rate' => 0,
                 'source' => 'calculator:' . $calculation->calculation_type,
                 'calculation_id' => $calculation->id,
@@ -89,7 +104,7 @@ class CalculationImportService
         return [];
     }
 
-    protected function importLabor(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation): float
+    protected function importLabor(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation, float $marginRate = 0): float
     {
         $laborCost = (float) ($data['labor_cost'] ?? 0);
 
@@ -110,6 +125,8 @@ class CalculationImportService
             'unit' => 'hr',
             'quantity' => $hours,
             'unit_cost' => $unitCost,
+            'unit_price' => $marginRate > 0 ? round($unitCost * (1 + $marginRate), 2) : null,
+            'margin_rate' => $marginRate > 0 ? $marginRate : null,
             'tax_rate' => 0,
             'source' => 'calculator:' . $calculation->calculation_type,
             'calculation_id' => $calculation->id,
@@ -138,7 +155,9 @@ class CalculationImportService
                 'name' => "{$calcLabel} Markup/Overhead",
                 'unit' => 'lot',
                 'quantity' => 1,
-                'unit_cost' => $difference,
+                // Treat fee as pure revenue (no cost), so margin reflects the difference
+                'unit_cost' => 0,
+                'unit_price' => $difference,
                 'tax_rate' => 0,
                 'source' => 'calculator:' . $calculation->calculation_type,
                 'calculation_id' => $calculation->id,

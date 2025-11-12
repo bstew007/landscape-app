@@ -25,8 +25,8 @@
             <p class="text-xs text-gray-500 mt-1">Max 5MB. Example structure is in database/seeders/data/materials.json.</p>
         </div>
         <div class="flex items-center gap-3">
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Import</button>
-            <a href="{{ route('materials.index') }}" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50">Cancel</a>
+            <button type="submit" class="px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">Import</button>
+            <a href="{{ route('materials.index') }}" class="px-4 py-2 border border-brand-300 rounded text-brand-700 hover:bg-brand-50">Cancel</a>
         </div>
     </form>
 </div>

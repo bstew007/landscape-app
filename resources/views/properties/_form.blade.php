@@ -95,7 +95,7 @@
 
     <div class="flex items-center justify-between">
         <button type="submit"
-                class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-medium rounded-md shadow">
+                class="inline-flex items-center px-6 py-3 bg-brand-700 hover:bg-brand-800 text-white text-lg font-medium rounded-md shadow">
             Save
         </button>
 
