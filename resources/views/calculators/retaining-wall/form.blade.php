@@ -330,7 +330,7 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
                 <div>
                     <h2 class="text-xl font-semibold">Additional Materials</h2>
-                    <p class="text-gray-500 text-sm">Add polymeric sand, lighting, specialty drain items-everything rolls into material totals.</p>
+                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (lighting, specialty drain items, etc.).</p>
                 </div>
                 <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
                     + Add Material
@@ -713,6 +713,5 @@
     });
 </script>
 @endpush
-
 
 

@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Calculation;
 use App\Models\Client;
+use App\Models\Estimate;
 use App\Models\SiteVisit;
 use App\Models\SiteVisitPhoto;
+use App\Services\CalculationImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class SiteVisitController extends Controller
 {
+    public function __construct(protected CalculationImportService $importer)
+    {
+    }
+
     public function index(Client $client)
     {
         $siteVisits = $client->siteVisits()->with('property')->latest()->get();
@@ -108,42 +114,56 @@ class SiteVisitController extends Controller
             'data' => 'required|string',
             'site_visit_id' => 'required|exists:site_visits,id',
             'calculation_id' => 'nullable|exists:calculations,id',
+            'estimate_id' => 'nullable|exists:estimates,id',
         ]);
 
-        $calculationData = json_decode($validated['data'], true);// Already a JSON string, validated as string
-
+        $calculationData = json_decode($validated['data'], true); // Already a JSON string, validated as string
 
         $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
 
+        // Create or update the calculation record
         if (!empty($validated['calculation_id'])) {
-            // �o. Update existing calculation
             $calc = Calculation::findOrFail($validated['calculation_id']);
             $calc->update(['data' => $calculationData]);
+        } else {
+            // Check if a new calculation of this type already exists
+            $existing = $siteVisit->calculations()
+                ->where('calculation_type', $validated['calculation_type'])
+                ->first();
 
-            return redirect()
-                ->route('clients.show', $siteVisit->client_id)
-                ->with('success', 'Calculation updated successfully.');
+            if ($existing) {
+                return redirect()
+                    ->route('clients.show', $siteVisit->client_id)
+                    ->with('warning', 'A calculation of this type already exists for this site visit.');
+            }
+
+            $calc = $siteVisit->calculations()->create([
+                'calculation_type' => $validated['calculation_type'],
+                'data' => json_encode($calculationData),
+            ]);
         }
 
-        // �o. Check if a new calculation of this type already exists
-        $existing = $siteVisit->calculations()
-            ->where('calculation_type', $validated['calculation_type'])
-            ->first();
-
-        if ($existing) {
-            return redirect()
-                ->route('clients.show', $siteVisit->client_id)
-                ->with('warning', 'A calculation of this type already exists for this site visit.');
+        // Optionally import into a linked estimate automatically
+        $estimate = null;
+        if (!empty($validated['estimate_id'])) {
+            $estimate = Estimate::find($validated['estimate_id']);
+        }
+        if (!$estimate) {
+            $estimate = Estimate::where('site_visit_id', $siteVisit->id)
+                ->latest()
+                ->first();
         }
 
-        $siteVisit->calculations()->create([
-            'calculation_type' => $validated['calculation_type'],
-            'data' => json_encode($calculationData), // <-- This is essential
-        ]);
+        if ($estimate) {
+            $this->importer->importCalculation($estimate, $calc);
+            $message = 'Calculation saved to site visit and imported to estimate #' . $estimate->id . '.';
+        } else {
+            $message = 'Calculation saved to site visit.';
+        }
 
         return redirect()
             ->route('clients.show', $siteVisit->client_id)
-            ->with('success', 'Calculation saved to site visit.');
+            ->with('success', $message);
     }
 
 

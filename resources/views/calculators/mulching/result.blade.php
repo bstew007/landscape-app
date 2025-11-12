@@ -98,17 +98,24 @@
         </div>
     @endif
 
-    {{-- Save Calculation --}}
+    {{-- Save Calculation and Import --}}
     <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
         @csrf
         <input type="hidden" name="calculation_type" value="mulching">
         <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
         <input type="hidden" name="data" value="{{ json_encode($data) }}">
+        @if (!empty($siteVisit->estimate_id))
+            <input type="hidden" name="estimate_id" value="{{ $siteVisit->estimate_id }}">
+        @endif
 
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
-            💾 Save Calculation to Site Visit
-        </button>
+        <div class="flex flex-wrap gap-3">
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+                💾 Save to Site Visit
+            </button>
+            <button type="submit" name="replace" value="1" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold">
+                💾 Save & Replace on Estimate
+            </button>
+        </div>
     </form>
 
     {{-- PDF Download --}}

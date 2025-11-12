@@ -16,11 +16,14 @@
     $baseTonsEstimate = $areaSqft ? (int) ceil(($areaSqft * $baseDepthFeet) / 21.6) : null;
     $edgeLfEstimate = $areaSqft ? round($areaSqft / 20, 2) : null;
 
+    $polymericCoverageSqft = 60;
+
     $defaultUnitCosts = [
         'paver_unit_cost' => 3.25,
         'base_unit_cost' => 45.00,
         'plastic_edge_unit_cost' => 5.00,
         'concrete_edge_unit_cost' => 12.00,
+        'polymeric_sand_unit_cost' => 28.00,
     ];
 
     $edgeCostLookup = [
@@ -52,6 +55,14 @@
             'qty_is_int' => false,
             'unit_cost' => $edgeSelection ? $edgeCostLookup[$edgeSelection] : null,
             'description' => sprintf('Plastic $%s /20ft | Concrete $%s /20ft', number_format($defaultUnitCosts['plastic_edge_unit_cost'], 2), number_format($defaultUnitCosts['concrete_edge_unit_cost'], 2)),
+        ],
+        [
+            'label' => 'Polymeric Sand',
+            'unit' => 'bags',
+            'qty' => data_get($formData, 'materials.Polymeric Sand.qty') ?? ($areaSqft ? (int) ceil($areaSqft / $polymericCoverageSqft) : null),
+            'qty_is_int' => true,
+            'unit_cost' => old('override_polymeric_sand_cost', $formData['override_polymeric_sand_cost'] ?? null) ?: $defaultUnitCosts['polymeric_sand_unit_cost'],
+            'description' => 'Avg. coverage ~60 sqft per bag.',
         ],
     ];
 
@@ -197,7 +208,7 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
                 <div>
                     <h2 class="text-xl font-semibold">Additional Materials</h2>
-                    <p class="text-gray-500 text-sm">Add any other items (polymeric sand, lighting, etc.). They roll into material totals everywhere.</p>
+                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (lighting kits, low-voltage, etc.).</p>
                 </div>
                 <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
                     + Add Material
@@ -270,6 +281,15 @@
                     'value' => $formData['override_concrete_edge_cost'] ?? '',
                     'width' => 'half',
                 ],
+                [
+                    'name' => 'override_polymeric_sand_cost',
+                    'label' => 'Polymeric Sand ($/bag)',
+                    'type' => 'number',
+                    'step' => '0.01',
+                    'min' => '0',
+                    'value' => $formData['override_polymeric_sand_cost'] ?? '',
+                    'width' => 'half',
+                ],
             ],
         ])
 
@@ -300,18 +320,21 @@
             base: document.querySelector('input[name="override_base_cost"]'),
             plasticEdge: document.querySelector('input[name="override_plastic_edge_cost"]'),
             concreteEdge: document.querySelector('input[name="override_concrete_edge_cost"]'),
+            polymericSand: document.querySelector('input[name="override_polymeric_sand_cost"]'),
         };
 
         const qtyEls = {
             pavers: document.querySelector('[data-material-qty="pavers"]'),
             base: document.querySelector('[data-material-qty="78_base_gravel"]'),
             edge: document.querySelector('[data-material-qty="edge_restraints"]'),
+            polymeric_sand: document.querySelector('[data-material-qty="polymeric_sand"]'),
         };
 
         const costEls = {
             pavers: document.querySelector('[data-material-cost="pavers"]'),
             base: document.querySelector('[data-material-cost="78_base_gravel"]'),
             edge: document.querySelector('[data-material-cost="edge_restraints"]'),
+            polymeric_sand: document.querySelector('[data-material-cost="polymeric_sand"]'),
         };
 
         const areaBadge = document.getElementById('patioAreaBadge');
@@ -329,6 +352,8 @@
             baseDepthFeet: 2.5 / 12,
             baseTonsDivisor: 21.6,
             edgeLfDivisor: 20,
+            polymericSandCoverage: 60,
+            polymericSandUnitCost: 28.0,
         };
 
         const parseNumber = (value) => {
@@ -455,16 +480,20 @@
             const paverQty = area ? Math.ceil(area / defaults.paverCoverage) : null;
             const baseQty = area ? Math.ceil((area * defaults.baseDepthFeet) / defaults.baseTonsDivisor) : null;
             const edgeQty = area ? parseFloat((area / defaults.edgeLfDivisor).toFixed(2)) : null;
+            const polymericQty = area ? Math.ceil(area / defaults.polymericSandCoverage) : null;
 
             if (qtyEls.pavers) qtyEls.pavers.textContent = formatQty(paverQty, true);
             if (qtyEls.base) qtyEls.base.textContent = formatQty(baseQty, true);
             if (qtyEls.edge) qtyEls.edge.textContent = formatQty(edgeQty);
+            if (qtyEls.polymeric_sand) qtyEls.polymeric_sand.textContent = formatQty(polymericQty, true);
 
             const paverCost = resolveCost(overrideInputs.paver, defaults.paverUnitCost);
             const baseCost = resolveCost(overrideInputs.base, defaults.baseUnitCost);
+            const polymericCost = resolveCost(overrideInputs.polymericSand, defaults.polymericSandUnitCost);
 
             if (costEls.pavers) costEls.pavers.textContent = formatCurrency(paverCost);
             if (costEls.base) costEls.base.textContent = formatCurrency(baseCost);
+            if (costEls.polymeric_sand) costEls.polymeric_sand.textContent = formatCurrency(polymericCost);
 
             if (costEls.edge) {
                 const selection = edgeSelect ? edgeSelect.value : '';
@@ -497,4 +526,3 @@
     });
 </script>
 @endpush
-

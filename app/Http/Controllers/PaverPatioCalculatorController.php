@@ -68,6 +68,7 @@ class PaverPatioCalculatorController extends Controller
         'override_base_cost' => 'nullable|numeric|min:0',
         'override_plastic_edge_cost' => 'nullable|numeric|min:0',
         'override_concrete_edge_cost' => 'nullable|numeric|min:0',
+        'override_polymeric_sand_cost' => 'nullable|numeric|min:0',
     ]);
 
     $length = $validated['length'];
@@ -81,11 +82,14 @@ class PaverPatioCalculatorController extends Controller
     $paverCount = ceil($area / $paverUnitCoverage);
     $baseDepthFeet = 2.5 / 12;
     $baseTons = ceil(($area * $baseDepthFeet) / 21.6);
+    $polymericCoverageSqft = 60; // average coverage per bag for standard joint widths
+    $polymericBags = $area > 0 ? (int) ceil($area / $polymericCoverageSqft) : 0;
 
     $paverUnitCost = $validated['override_paver_cost'] ?? 3.25;
     $baseUnitCost = $validated['override_base_cost'] ?? 45.00;
     $plasticEdgeCostPer20ft = $validated['override_plastic_edge_cost'] ?? 5.00;
     $concreteEdgeCostPer20ft = $validated['override_concrete_edge_cost'] ?? 12.00;
+    $polymericSandCost = $validated['override_polymeric_sand_cost'] ?? 28.00;
 
     $edgeUnitCost = $validated['edge_restraint'] === 'plastic'
         ? $plasticEdgeCostPer20ft
@@ -108,7 +112,12 @@ class PaverPatioCalculatorController extends Controller
             'qty' => round($edgeLF, 2),
             'unit_cost' => $edgeUnitCost,
             'total' => $edgeLF * $edgeUnitCost
-        ]
+        ],
+        'Polymeric Sand' => [
+            'qty' => $polymericBags,
+            'unit_cost' => $polymericSandCost,
+            'total' => $polymericBags * $polymericSandCost
+        ],
     ];
 
     $customMaterialsInput = $validated['custom_materials'] ?? [];
@@ -183,6 +192,7 @@ class PaverPatioCalculatorController extends Controller
         'base_unit_cost' => $baseUnitCost,
         'edge_unit_cost' => $edgeUnitCost,
         'edge_lf' => round($edgeLF, 2),
+        'polymeric_bags' => $polymericBags,
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
         'labor_hours' => round($baseLaborHours, 2),
         'materials' => $materials,

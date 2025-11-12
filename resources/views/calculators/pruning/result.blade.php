@@ -97,16 +97,19 @@
         </div>
     @endif
 
-    {{-- Save Calculation --}}
+    {{-- Save Calculation and Import --}}
     <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
         @csrf
         <input type="hidden" name="calculation_type" value="pruning">
         <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
         <input type="hidden" name="data" value="{{ json_encode($data) }}">
+        @if (!empty($siteVisit->estimate_id))
+            <input type="hidden" name="estimate_id" value="{{ $siteVisit->estimate_id }}">
+        @endif
 
         <button type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
-            💾 Save Calculation to Site Visit
+            💾 Save to Site Visit @if(!empty($siteVisit->estimate_id)) & Import to Estimate @endif
         </button>
     </form>
 

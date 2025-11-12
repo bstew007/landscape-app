@@ -23,6 +23,9 @@ use App\Http\Controllers\SiteVisitReportController;
 use App\Http\Controllers\TurfMowingCalculatorController;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\PlantingCalculatorController;
+use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\LaborController;
+use App\Http\Controllers\EstimateItemController;
 
 
 Route::get('/', fn () => redirect()->route('client-hub'));
@@ -48,6 +51,14 @@ Route::middleware('auth')->group(function () {
 
     // ✅ Production Rates (Admin)
     Route::resource('production-rates', ProductionRateController::class)->except(['show']);
+
+    // ✅ Catalogs
+    Route::get('materials/import', [MaterialController::class, 'importForm'])->name('materials.importForm');
+    Route::post('materials/import', [MaterialController::class, 'import'])->name('materials.import');
+    Route::resource('materials', MaterialController::class)->except(['show']);
+    Route::get('labor/import', [LaborController::class, 'importForm'])->name('labor.importForm');
+    Route::post('labor/import', [LaborController::class, 'import'])->name('labor.import');
+    Route::resource('labor', LaborController::class)->except(['show']);
 
     // ✅ Save calculation to site visit
     Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
@@ -219,6 +230,14 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
     Route::resource('estimates', EstimateController::class);
+    Route::prefix('estimates/{estimate}')->name('estimates.')->group(function () {
+        Route::post('items', [EstimateItemController::class, 'store'])->name('items.store');
+        Route::patch('items/{item}', [EstimateItemController::class, 'update'])->name('items.update');
+        Route::delete('items/{item}', [EstimateItemController::class, 'destroy'])->name('items.destroy');
+        Route::post('items/reorder', [EstimateItemController::class, 'reorder'])->name('items.reorder');
+        Route::post('import-calculation/{calculation}', [EstimateController::class, 'importCalculation'])->name('import-calculation');
+        Route::delete('remove-calculation/{calculation}', [EstimateController::class, 'removeCalculation'])->name('remove-calculation');
+    });
     Route::post('estimates/{estimate}/email', [EstimateController::class, 'sendEmail'])->name('estimates.email');
     Route::post('estimates/{estimate}/invoice', [EstimateController::class, 'createInvoice'])->name('estimates.invoice');
 

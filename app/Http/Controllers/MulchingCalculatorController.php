@@ -52,6 +52,10 @@ class MulchingCalculatorController extends Controller
         'area_sqft' => 'nullable|numeric|min:0',
         'depth_inches' => 'nullable|numeric|min:0',
         'mulch_type' => 'nullable|string|max:255',
+        'custom_materials' => 'nullable|array',
+        'custom_materials.*.name' => 'nullable|string|max:255',
+        'custom_materials.*.qty' => 'nullable|numeric|min:0',
+        'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
     ]);
 
     // ✅ Mulch unit cost
@@ -74,6 +78,39 @@ class MulchingCalculatorController extends Controller
             'total' => round($mulchYards * $unitCost, 2),
         ],
     ];
+
+    $customMaterialsInput = $validated['custom_materials'] ?? [];
+    $customMaterials = collect($customMaterialsInput)
+        ->map(function ($item) {
+            $name = trim($item['name'] ?? '');
+            $qty = isset($item['qty']) ? (float) $item['qty'] : null;
+            $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
+
+            if ($name === '' || $qty === null || $unitCost === null) {
+                return null;
+            }
+
+            $total = $qty * $unitCost;
+
+            return [
+                'name' => $name,
+                'qty' => round($qty, 2),
+                'unit_cost' => round($unitCost, 2),
+                'total' => round($total, 2),
+            ];
+        })
+        ->filter()
+        ->values()
+        ->all();
+
+    foreach ($customMaterials as $customMaterial) {
+        $materials[$customMaterial['name']] = [
+            'qty' => $customMaterial['qty'],
+            'unit_cost' => $customMaterial['unit_cost'],
+            'total' => $customMaterial['total'],
+            'is_custom' => true,
+        ];
+    }
 
     $materialTotal = array_sum(array_column($materials, 'total'));
 
@@ -125,6 +162,7 @@ class MulchingCalculatorController extends Controller
             'labor_hours' => round($totalHours, 2),
             'materials' => $materials,
             'material_total' => $materialTotal,
+            'custom_materials' => $customMaterials,
         ]
     );
 

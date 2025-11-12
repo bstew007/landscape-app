@@ -17,7 +17,7 @@
                 name="custom_materials[{{ $rowIndex }}][name]"
                 class="form-input w-full"
                 value="{{ $material['name'] ?? '' }}"
-                placeholder="e.g., Polymeric Sand"
+                placeholder="e.g., Lighting Kit"
             >
         </div>
         <div>

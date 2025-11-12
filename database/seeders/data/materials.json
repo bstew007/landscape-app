@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Concrete Mix (Bag)",
+    "sku": "CONC-BAG",
+    "category": "Concrete",
+    "unit": "bag",
+    "unit_cost": 8.5,
+    "tax_rate": 0.07,
+    "description": "60–80 lb bags, general purpose",
+    "is_taxable": true,
+    "is_active": true
+  },
+  {
+    "name": "57 Gravel (Ton)",
+    "sku": "GRAV57-TON",
+    "category": "Aggregates",
+    "unit": "ton",
+    "unit_cost": 85,
+    "tax_rate": 0.07,
+    "is_taxable": true,
+    "is_active": true
+  },
+  {
+    "name": "Underlayment Fabric (Sq Ft)",
+    "sku": "FABRIC-SQFT",
+    "category": "Geotextile",
+    "unit": "sqft",
+    "unit_cost": 0.3,
+    "tax_rate": 0.07,
+    "is_taxable": true,
+    "is_active": true
+  }
+]

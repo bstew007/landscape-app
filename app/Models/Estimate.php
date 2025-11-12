@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\EstimateItem;
 
 class Estimate extends Model
 {
@@ -17,6 +18,12 @@ class Estimate extends Model
         'title',
         'status',
         'total',
+        'material_subtotal',
+        'labor_subtotal',
+        'fee_total',
+        'discount_total',
+        'tax_total',
+        'grand_total',
         'expires_at',
         'line_items',
         'notes',
@@ -31,6 +38,12 @@ class Estimate extends Model
         'line_items' => 'array',
         'expires_at' => 'date',
         'total' => 'decimal:2',
+        'material_subtotal' => 'decimal:2',
+        'labor_subtotal' => 'decimal:2',
+        'fee_total' => 'decimal:2',
+        'discount_total' => 'decimal:2',
+        'tax_total' => 'decimal:2',
+        'grand_total' => 'decimal:2',
         'email_sent_at' => 'datetime',
         'email_last_sent_at' => 'datetime',
     ];
@@ -55,6 +68,11 @@ class Estimate extends Model
     public function invoice()
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(EstimateItem::class)->orderBy('sort_order');
     }
 
     public function emailSender()

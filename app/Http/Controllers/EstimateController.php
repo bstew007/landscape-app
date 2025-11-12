@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EstimateMail;
+use App\Models\Calculation;
 use App\Models\Client;
 use App\Models\Estimate;
+use App\Models\Invoice;
+use App\Models\LaborItem;
+use App\Models\Material;
 use App\Models\Property;
 use App\Models\SiteVisit;
-use App\Models\Invoice;
-use App\Mail\EstimateMail;
+use App\Services\CalculationImportService;
+use App\Services\EstimateItemService;
 use App\Support\ScopeDescriptionResolver;
 use App\Support\ScopeSummaryBuilder;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +23,13 @@ use Illuminate\Validation\ValidationException;
 
 class EstimateController extends Controller
 {
+    public function __construct(
+        protected EstimateItemService $itemService,
+        protected CalculationImportService $calculationImporter
+    )
+    {
+    }
+
     public function index(Request $request)
     {
         $status = $request->get('status');
@@ -43,10 +55,6 @@ class EstimateController extends Controller
             'site_visit_id' => $request->get('site_visit_id'),
         ]);
 
-        if ($estimate->site_visit_id) {
-            $estimate->line_items = $this->buildLineItemsFromSiteVisit($estimate->site_visit_id);
-        }
-
         return view('estimates.create', $this->formData($estimate));
     }
 
@@ -60,21 +68,42 @@ class EstimateController extends Controller
             $data['line_items'] = $this->buildLineItemsFromSiteVisit($data['site_visit_id']);
         }
 
+        $lineItems = $data['site_visit_id']
+            ? $this->buildLineItemsFromSiteVisit($data['site_visit_id'])
+            : null;
+
         try {
-            $this->assertMinimumProfit($data['line_items']);
+            $this->assertMinimumProfit($lineItems);
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         }
 
         $estimate = Estimate::create($data);
+        if ($lineItems) {
+            $this->itemService->syncFromLegacyLineItems($estimate, $lineItems);
+        } else {
+            $this->itemService->recalculateTotals($estimate);
+        }
 
         return redirect()->route('estimates.show', $estimate)->with('success', 'Estimate created.');
     }
 
     public function show(Estimate $estimate)
     {
-        $estimate->load(['client', 'property', 'siteVisit', 'invoice', 'emailSender']);
-        return view('estimates.show', compact('estimate'));
+        $estimate->load([
+            'client',
+            'property',
+            'siteVisit.calculations',
+            'invoice',
+            'emailSender',
+            'items.calculation',
+        ]);
+
+        $materials = Material::where('is_active', true)->orderBy('name')->get();
+        $laborCatalog = LaborItem::where('is_active', true)->orderBy('name')->get();
+        $availableCalculations = $estimate->siteVisit?->calculations ?? collect();
+
+        return view('estimates.show', compact('estimate', 'materials', 'laborCatalog', 'availableCalculations'));
     }
 
     public function edit(Estimate $estimate)
@@ -86,17 +115,22 @@ class EstimateController extends Controller
     {
         $data = $this->validateEstimate($request);
 
-        if (empty($data['line_items']) && ! empty($data['site_visit_id'])) {
-            $data['line_items'] = $this->buildLineItemsFromSiteVisit($data['site_visit_id']);
-        }
+        $lineItems = $data['site_visit_id']
+            ? $this->buildLineItemsFromSiteVisit($data['site_visit_id'])
+            : null;
 
         try {
-            $this->assertMinimumProfit($data['line_items']);
+            $this->assertMinimumProfit($lineItems);
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         }
 
         $estimate->update($data);
+        if ($lineItems) {
+            $this->itemService->syncFromLegacyLineItems($estimate->fresh(), $lineItems);
+        } else {
+            $this->itemService->recalculateTotals($estimate->fresh());
+        }
 
         return redirect()->route('estimates.show', $estimate)->with('success', 'Estimate updated.');
     }
@@ -106,6 +140,45 @@ class EstimateController extends Controller
         $estimate->delete();
 
         return redirect()->route('estimates.index')->with('success', 'Estimate deleted.');
+    }
+
+    public function importCalculation(Estimate $estimate, Calculation $calculation)
+    {
+        if ($estimate->site_visit_id && $calculation->site_visit_id !== $estimate->site_visit_id) {
+            abort(404);
+        }
+
+        $replace = (bool) request('replace', false);
+
+        $this->calculationImporter->importCalculation($estimate, $calculation, $replace);
+
+        return back()->with('success', $replace ? 'Calculation re-imported into estimate.' : 'Calculation appended to estimate.');
+    }
+
+    public function removeCalculation(Estimate $estimate, Calculation $calculation)
+    {
+        if ($estimate->site_visit_id && $calculation->site_visit_id !== $estimate->site_visit_id) {
+            abort(404);
+        }
+
+        $this->itemService->removeCalculationItems($estimate, $calculation->id);
+
+        if (request()->ajax() || request()->wantsJson()) {
+            $estimate->refresh();
+            return response()->json([
+                'status' => 'ok',
+                'totals' => [
+                    'material_subtotal' => $estimate->material_subtotal,
+                    'labor_subtotal' => $estimate->labor_subtotal,
+                    'fee_total' => $estimate->fee_total,
+                    'discount_total' => $estimate->discount_total,
+                    'tax_total' => $estimate->tax_total,
+                    'grand_total' => $estimate->grand_total,
+                ],
+            ]);
+        }
+
+        return back()->with('success', 'Calculation items removed from estimate.');
     }
 
     protected function validateEstimate(Request $request): array
@@ -118,13 +191,9 @@ class EstimateController extends Controller
             'status' => 'required|in:' . implode(',', Estimate::STATUSES),
             'total' => 'nullable|numeric',
             'expires_at' => 'nullable|date',
-            'line_items' => 'nullable|string',
             'notes' => 'nullable|string',
             'terms' => 'nullable|string',
         ]);
-
-        $decoded = $this->decodeLineItems($data['line_items'] ?? null);
-        $data['line_items'] = $decoded;
 
         return $data;
     }

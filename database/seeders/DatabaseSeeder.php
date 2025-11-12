@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(ProductionRateSeeder::class);
         $this->call(EstimateSeeder::class);
+        $this->call(MaterialSeeder::class);
 
         // User::factory(10)->create();
 

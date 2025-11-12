@@ -1,5 +1,30 @@
 @extends('layouts.sidebar')
 
+@php
+    $customMaterials = old('custom_materials', $formData['custom_materials'] ?? []);
+    $areaValue = old('area_sqft', $formData['area_sqft'] ?? null);
+    $strawTypes = ['Pine Needles', 'Wheat Straw'];
+    $selectedStrawType = old('mulch_type', $formData['mulch_type'] ?? '');
+    $storedMaterials = $formData['materials'] ?? [];
+    $primaryMaterialName = $selectedStrawType ?: (collect($storedMaterials)->keys()->first() ?? 'Pine Needles');
+    $primaryMaterial = $storedMaterials[$primaryMaterialName] ?? null;
+    $defaultStrawCost = 7;
+    $prefillCost = data_get($primaryMaterial, 'unit_cost', $defaultStrawCost);
+    $prefillQty = data_get($primaryMaterial, 'qty');
+    $strawBalesPreview = $areaValue ? round($areaValue / 50, 0) : null;
+    $materialCards = [
+        [
+            'key' => 'straw_material',
+            'label' => $primaryMaterialName ?: 'Pine Needles',
+            'unit' => 'bales',
+            'qty' => $prefillQty ?? $strawBalesPreview,
+            'qty_is_int' => true,
+            'unit_cost' => $prefillCost,
+            'description' => 'Approx. 1 bale per 50 sqft.',
+        ],
+    ];
+@endphp
+
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">
@@ -24,46 +49,84 @@
         </div>
 
         {{-- Straw Area --}}
-<div class="mb-6">
-    <h2 class="text-xl font-semibold mb-2">Straw Coverage</h2>
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Straw Coverage</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {{-- Square Footage --}}
-        <div>
-            <label class="block font-semibold mb-1">Square Footage</label>
-            <input type="number"
-                   name="area_sqft"
-                   step="any"
-                   min="0"
-                   class="form-input w-full"
-                   placeholder="Enter total area (sqft)"
-                   value="{{ old('area_sqft', $formData['area_sqft'] ?? '') }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold mb-1">Square Footage</label>
+                    <input type="number"
+                           name="area_sqft"
+                           step="any"
+                           min="0"
+                           class="form-input w-full"
+                           placeholder="Enter total area (sqft)"
+                           value="{{ $areaValue }}">
+                </div>
+            </div>
         </div>
 
-</div>
+        {{-- Straw Type Dropdown --}}
+        <div class="mb-6">
+            <label class="block font-semibold mb-1">Straw Type</label>
+            <select name="mulch_type" class="form-select w-full">
+                <option value="" disabled {{ empty($selectedStrawType) ? 'selected' : '' }}>Select a straw type</option>
+                @foreach ($strawTypes as $type)
+                    <option value="{{ $type }}" {{ $selectedStrawType === $type ? 'selected' : '' }}>
+                        {{ $type }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
 
-<div id="mulchEstimate" class="mb-6 bg-green-50 border border-green-200 rounded p-4 text-green-800 font-semibold hidden">
-    🧮 <strong>Estimated Straw Needed:</strong> <span id="mulchYards"></span> bales
-</div>
+        {{-- Materials Preview --}}
+        <div class="mb-6">
+            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
+                <div>
+                    <h2 class="text-xl font-semibold">Materials & Pricing Preview</h2>
+                    <p class="text-gray-500 text-sm">Aligns with the other calculators—live bale counts + pricing.</p>
+                </div>
+                <span
+                    id="materialPreviewHint"
+                    class="text-sm {{ $areaValue ? 'text-gray-600' : 'text-gray-500' }}"
+                    data-empty-message="Enter square footage to unlock quantities."
+                    data-filled-message="Quantities update automatically while you type."
+                >
+                    {{ $areaValue ? 'Quantities update automatically while you type.' : 'Enter square footage to unlock quantities.' }}
+                </span>
+            </div>
 
-{{-- Straw Type Dropdown --}}
-<div class="mb-6">
-    <label class="block font-semibold mb-1">Straw Type</label>
-    <select name="mulch_type" class="form-select w-full">
-        <option value="" disabled {{ !isset($formData['mulch_type']) ? 'selected' : '' }}>Select a straw type</option>
-        @php
-            $types = [
-                'Pine Needles', 'Wheat Straw'
-            ];
-            $selectedType = old('mulch_type', $formData['mulch_type'] ?? '');
-        @endphp
-        @foreach ($types as $type)
-            <option value="{{ $type }}" {{ $selectedType === $type ? 'selected' : '' }}>
-                {{ $type }}
-            </option>
-        @endforeach
-    </select>
-</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach ($materialCards as $card)
+                    <div class="border rounded-lg p-4 bg-white shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between">
+                            <p class="font-semibold" data-material-label="{{ $card['key'] }}">{{ $card['label'] }}</p>
+                            <span class="text-sm text-gray-500">{{ $card['unit'] }}</span>
+                        </div>
+
+                        <div class="mt-4">
+                            <p class="text-xs uppercase tracking-wide text-gray-500">Qty Estimate</p>
+                            <p class="text-2xl font-bold" data-material-qty="{{ $card['key'] }}">
+                                @if(!is_null($card['qty']))
+                                    {{ number_format($card['qty']) }}
+                                @else
+                                    &mdash;
+                                @endif
+                            </p>
+                        </div>
+
+                        <div class="mt-4">
+                            <p class="text-xs uppercase tracking-wide text-gray-500">Default Unit Cost</p>
+                            <p class="text-lg font-semibold" data-material-cost="{{ $card['key'] }}">
+                                ${{ number_format($card['unit_cost'], 2) }}
+                            </p>
+                        </div>
+
+                        <p class="text-xs text-gray-500 mt-4">{{ $card['description'] }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
      
         {{-- Task Inputs from DB --}}
         <div class="mb-6">
@@ -108,6 +171,41 @@
         </div>
 
         
+        {{-- Additional Materials --}}
+        <div class="mb-6">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
+                <div>
+                    <h2 class="text-xl font-semibold">Additional Materials</h2>
+                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (delivery fees, edging, etc.).</p>
+                </div>
+                <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
+                    + Add Material
+                </button>
+            </div>
+
+            <div id="customMaterialRows" class="space-y-4">
+                @if (!empty($customMaterials))
+                    @foreach ($customMaterials as $index => $customMaterial)
+                        @include('calculators.partials.custom-material-row', [
+                            'rowIndex' => $index,
+                            'material' => $customMaterial,
+                        ])
+                    @endforeach
+                @else
+                    @include('calculators.partials.custom-material-row', [
+                        'rowIndex' => 0,
+                        'material' => [],
+                    ])
+                @endif
+            </div>
+
+            <template id="customMaterialTemplate">
+                @include('calculators.partials.custom-material-row', [
+                    'rowIndex' => '__INDEX__',
+                    'material' => [],
+                ])
+            </template>
+        </div>
 
         {{-- Submit --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
@@ -146,31 +244,151 @@
     });
 </script>
 @endpush
+
 @push('scripts')
 <script>
-    function calculateMulchYards() {
-        const areaInput = document.querySelector('input[name="area_sqft"]');
-        const outputDiv = document.getElementById('mulchEstimate');
-        const outputValue = document.getElementById('mulchYards');
+    document.addEventListener('DOMContentLoaded', function () {
+        const customRowsContainer = document.getElementById('customMaterialRows');
+        const customTemplate = document.getElementById('customMaterialTemplate');
+        const addCustomMaterialButton = document.getElementById('addCustomMaterial');
 
-        const area = parseFloat(areaInput.value);
+        const parseNumber = (value) => {
+            const num = parseFloat(value);
+            return Number.isFinite(num) ? num : null;
+        };
 
-        if (!isNaN(area) && area > 0) {
-           const mulchYards = Math.ceil(area /50);
-            outputValue.textContent = mulchYards;
-            outputDiv.classList.remove('hidden');
-        } else {
-            outputDiv.classList.add('hidden');
+        const formatCurrency = (value) => `$${Number(value).toFixed(2)}`;
+
+        const recalcCustomMaterials = () => {
+            if (!customRowsContainer) return;
+            customRowsContainer.querySelectorAll('[data-custom-row]').forEach((row) => {
+                const qtyInput = row.querySelector('[data-custom-qty]');
+                const costInput = row.querySelector('[data-custom-cost]');
+                const totalEl = row.querySelector('[data-custom-total]');
+                if (!totalEl) return;
+
+                const qty = qtyInput ? parseNumber(qtyInput.value) : null;
+                const cost = costInput ? parseNumber(costInput.value) : null;
+
+                totalEl.textContent = (qty === null || cost === null) ? '--' : formatCurrency(qty * cost);
+            });
+        };
+
+        const registerCustomRow = (row) => {
+            if (!row) return;
+            const qtyInput = row.querySelector('[data-custom-qty]');
+            const costInput = row.querySelector('[data-custom-cost]');
+            const removeBtn = row.querySelector('[data-action="remove-custom-material"]');
+
+            [qtyInput, costInput].forEach((input) => {
+                if (!input) return;
+                input.addEventListener('input', recalcCustomMaterials);
+            });
+
+            if (removeBtn) {
+                removeBtn.addEventListener('click', () => {
+                    row.remove();
+                    recalcCustomMaterials();
+                });
+            }
+        };
+
+        const getNextCustomIndex = () => {
+            if (!customRowsContainer) return 0;
+            const indexes = Array.from(customRowsContainer.querySelectorAll('[data-custom-row]'))
+                .map((row) => parseInt(row.dataset.customIndex ?? '', 10))
+                .filter((value) => Number.isFinite(value));
+            return indexes.length ? Math.max(...indexes) + 1 : 1;
+        };
+
+        let customIndex = getNextCustomIndex();
+
+        const addCustomRow = () => {
+            if (!customTemplate || !customRowsContainer) return;
+            const html = customTemplate.innerHTML.replace(/__INDEX__/g, customIndex++);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html.trim();
+            const newRow = wrapper.firstElementChild;
+            if (!newRow) return;
+            customRowsContainer.appendChild(newRow);
+            registerCustomRow(newRow);
+            recalcCustomMaterials();
+        };
+
+        if (customRowsContainer) {
+            customRowsContainer.querySelectorAll('[data-custom-row]').forEach(registerCustomRow);
+            recalcCustomMaterials();
         }
-    }
 
+        if (addCustomMaterialButton) {
+            addCustomMaterialButton.addEventListener('click', addCustomRow);
+        }
+    });
+</script>
+@endpush
+@push('scripts')
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         const areaInput = document.querySelector('input[name="area_sqft"]');
+        const strawTypeSelect = document.querySelector('select[name="mulch_type"]');
+        const qtyEl = document.querySelector('[data-material-qty="straw_material"]');
+        const costEl = document.querySelector('[data-material-cost="straw_material"]');
+        const labelEl = document.querySelector('[data-material-label="straw_material"]');
+        const hintEl = document.getElementById('materialPreviewHint');
+        const defaultCost = {{ $defaultStrawCost }};
 
-        areaInput.addEventListener('input', calculateMulchYards);
+        const parseNumber = (value) => {
+            const num = parseFloat(value);
+            return Number.isFinite(num) ? num : null;
+        };
 
-        // Recalculate on load if values are already present
-        calculateMulchYards();
+        const formatQty = (value) => {
+            if (value === null || Number.isNaN(value)) {
+                return '—';
+            }
+            return Math.max(0, Math.round(value)).toLocaleString();
+        };
+
+        const setHint = (hasValue) => {
+            if (!hintEl) return;
+            const emptyText = hintEl.dataset.emptyMessage || '';
+            const filledText = hintEl.dataset.filledMessage || '';
+            hintEl.textContent = hasValue ? filledText : emptyText;
+            hintEl.classList.toggle('text-gray-600', hasValue);
+            hintEl.classList.toggle('text-gray-500', !hasValue);
+        };
+
+        const recalc = () => {
+            const area = parseNumber(areaInput ? areaInput.value : null);
+            const hasValue = area !== null && area > 0;
+            setHint(Boolean(hasValue));
+
+            const bales = hasValue ? Math.ceil(area / 50) : null;
+            if (qtyEl) {
+                qtyEl.textContent = formatQty(bales);
+            }
+            if (costEl) {
+                costEl.textContent = `$${defaultCost.toFixed(2)}`;
+            }
+            if (labelEl && strawTypeSelect) {
+                const selected = strawTypeSelect.value || labelEl.dataset.originalLabel || labelEl.textContent;
+                labelEl.textContent = selected || 'Pine Needles';
+            }
+        };
+
+        if (labelEl) {
+            labelEl.dataset.originalLabel = labelEl.textContent;
+        }
+
+        if (areaInput) {
+            areaInput.addEventListener('input', recalc);
+        }
+
+        if (strawTypeSelect) {
+            strawTypeSelect.addEventListener('change', recalc);
+        }
+
+        recalc();
     });
 </script>
 @endpush
