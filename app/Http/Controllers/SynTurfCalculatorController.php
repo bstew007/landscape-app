@@ -78,6 +78,12 @@ class SynTurfCalculatorController extends Controller
             'override_edging_price' => 'nullable|numeric|min:0',
             'override_weed_barrier_price' => 'nullable|numeric|min:0',
             'materials_override_enabled' => 'nullable|boolean',
+            // New optional fields
+            'excavation_depth_in' => 'nullable|numeric|min:0',
+            'abc_depth_in' => 'nullable|numeric|min:0',
+            'rock_dust_depth_in' => 'nullable|numeric|min:0',
+            'rent_tamper' => 'nullable|boolean',
+            'tamper_days' => 'nullable|integer|min:1',
         ];
         // site_visit_id required unless template mode
         $rules['site_visit_id'] = ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id';
@@ -122,8 +128,6 @@ class SynTurfCalculatorController extends Controller
         // Convert to cubic yards for excavation and base
         $areaCubicFeetExc = $areaSqft * ($excavationDepthIn / 12);
         $excavationCY = $areaCubicFeetExc / 27;
-        $areaCubicFeetBase = $areaSqft * ($baseDepthIn / 12);
-        $baseCY = $areaCubicFeetBase / 27;
 
         $materialService = app(SynTurfMaterialService::class);
         $materialData = $materialService->buildMaterials($areaSqft, $edgingLf, $validated['turf_grade'], [
@@ -132,6 +136,9 @@ class SynTurfCalculatorController extends Controller
             'infill_price' => $validated['override_infill_price'],
             'edging_price' => $validated['override_edging_price'],
             'weed_barrier_price' => $validated['override_weed_barrier_price'],
+            // Pass per-layer base depths
+            'abc_depth_in' => $request->input('abc_depth_in'),
+            'rock_dust_depth_in' => $request->input('rock_dust_depth_in'),
         ]);
 
         $materials = $materialData['materials'];
@@ -139,19 +146,44 @@ class SynTurfCalculatorController extends Controller
         $turfName = $materialData['turf_name'];
         $turfUnitCost = $materialData['turf_unit_cost'];
         $overridesEnabled = $materialData['overrides_enabled'];
+        $abcCY = (float) ($materialData['abc_cy'] ?? 0);
+        $rockDustCY = (float) ($materialData['rock_dust_cy'] ?? 0);
+        $baseCY = $abcCY + $rockDustCY;
 
         // Adjust excavation tasks to use cy-based production if present
         $laborByTask = collect($results)->keyBy(fn($r)=>strtolower(str_replace(' ','_', $r['task'])));
         $excTasks = ['excavation_skid_steer','excavation_mini_skid'];
-        foreach ($excTasks as $t) {
-            if ($laborByTask->has($t)) {
-                // Replace hours using cy unit rate from DB: hours = CY * rate
-                $rate = (float) ($dbRates[$t] ?? 0);
-                $hours = max(0, $excavationCY) * $rate;
-                $idx = $laborByTask[$t]['task'];
+        // If user chose an excavation method, ensure we include hours even without qty
+        $selectedMethod = $request->input('excavation_method');
+        if ($selectedMethod === 'skid') {
+            $key = 'excavation_skid_steer';
+            $rate = (float) ($dbRates[$key] ?? 0);
+            if ($rate > 0) {
+                $laborByTask[$key] = [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ];
+            }
+        } elseif ($selectedMethod === 'mini') {
+            $key = 'excavation_mini_skid';
+            $rate = (float) ($dbRates[$key] ?? 0);
+            if ($rate > 0) {
+                $laborByTask[$key] = [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ];
             }
         }
-        // Rebuild results with corrected excavation, if any
+        // Replace excavation hours using cy-based production for equipment methods
+        foreach ($excTasks as $t) {
+            if (isset($laborByTask[$t])) {
+                $rate = (float) ($dbRates[$t] ?? 0);
+                $laborByTask[$t]['qty'] = $excavationCY;
+                $laborByTask[$t]['rate'] = $rate;
+            }
+        }
+        // Add base_install hours from base CY, if present
+        if ($baseCY > 0) {
+            $baseRate = (float) ($dbRates['base_install'] ?? 0);
+            if ($baseRate > 0) {
+                $laborByTask['base_install'] = [ 'task' => 'base install', 'qty' => $baseCY, 'rate' => $baseRate ];
+            }
+        }
+        // Rebuild results with corrected quantities
         $results = [];
         $totalHours = 0;
         foreach ($laborByTask as $key => $row) {
@@ -189,6 +221,20 @@ class SynTurfCalculatorController extends Controller
             ])
         );
 
+        // Fees (tamper rental)
+        $fees = [];
+        if ($request->boolean('rent_tamper')) {
+            $days = max(1, (int) $request->input('tamper_days', 1));
+            $daily = (float) config('syn_turf.materials.rentals.tamper_daily_cost', 125);
+            $fees[] = [
+                'name' => 'Motorized Hand Tamper (rental)',
+                'quantity' => $days,
+                'unit' => 'day',
+                'unit_cost' => 0,
+                'unit_price' => round($daily, 2),
+            ];
+        }
+
         $data = array_merge(
             $validated,
             [
@@ -200,6 +246,7 @@ class SynTurfCalculatorController extends Controller
                 'labor_hours' => round($totalHours, 2),
                 'materials' => $materials,
                 'material_total' => round($materialTotal, 2),
+                'fees' => $fees,
                 'area_sqft' => round($areaSqft, 2),
                 'edging_linear_ft' => round($edgingLf, 2),
                 'excavation_depth_in' => $excavationDepthIn,
