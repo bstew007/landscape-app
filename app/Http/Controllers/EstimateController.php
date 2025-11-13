@@ -118,7 +118,6 @@ class EstimateController extends Controller
 
         $materials = Material::where('is_active', true)->orderBy('name')->get();
         $laborCatalog = LaborItem::where('is_active', true)->orderBy('name')->get();
-        $availableCalculations = $estimate->siteVisit?->calculations ?? collect();
 
         // Budget default margin for UI defaults
         $budget = app(\App\Services\BudgetService::class)->active();
@@ -167,7 +166,6 @@ class EstimateController extends Controller
             'estimate' => $estimate,
             'materials' => $materials,
             'laborCatalog' => $laborCatalog,
-            'availableCalculations' => $availableCalculations,
             'financialSummary' => $financialSummary,
             'typeBreakdown' => $typeBreakdown,
             'defaultMarginRate' => $defaultMarginRate,
@@ -219,18 +217,6 @@ class EstimateController extends Controller
         return redirect()->route('estimates.index')->with('success', 'Estimate deleted.');
     }
 
-    public function importCalculation(Estimate $estimate, Calculation $calculation)
-    {
-        if ($estimate->site_visit_id && $calculation->site_visit_id !== $estimate->site_visit_id) {
-            abort(404);
-        }
-
-        $replace = (bool) request('replace', false);
-
-        $this->calculationImporter->importCalculation($estimate, $calculation, $replace);
-
-        return back()->with('success', $replace ? 'Calculation re-imported into estimate.' : 'Calculation appended to estimate.');
-    }
 
     public function removeCalculation(Estimate $estimate, Calculation $calculation)
     {

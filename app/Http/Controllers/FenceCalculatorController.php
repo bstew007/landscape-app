@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Calculation;
 use App\Models\SiteVisit;
+use App\Models\Estimate;
 use App\Services\FenceLaborEstimatorService;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
@@ -13,14 +14,24 @@ class FenceCalculatorController extends Controller
 {
 public function showForm(Request $request)
 {
-    $siteVisitId = $request->query('site_visit_id'); // ✅ You need this
-    $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId); // ✅ This line is missing
+    $mode = $request->query('mode');
+    $estimateId = $request->query('estimate_id');
+    $siteVisitId = $request->query('site_visit_id');
+    $siteVisit = null;
+
+    if ($mode === 'template') {
+        $siteVisitId = $siteVisitId ?: null;
+    } else {
+        $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
+    }
 
     return view('calculators.fence.form', [
-        'siteVisitId' => $siteVisit->id,
-        'clientId' => $siteVisit->client->id,
+        'siteVisitId' => $siteVisit?->id ?? $siteVisitId,
+        'clientId' => $siteVisit?->client?->id,
         'editMode' => false,
         'formData' => [],
+        'mode' => $mode,
+        'estimateId' => $estimateId,
     ]);
 }
 
@@ -58,19 +69,22 @@ public function downloadPdf($id)
     }
 
       // ✅ Load the related site visit and client
-    $siteVisit = SiteVisit::with('client')->findOrFail($calculation->site_visit_id);
+    $siteVisit = $calculation->siteVisit()->with('client')->first();
 
     return view('calculators.fence.form', [
-        'siteVisitId' => $siteVisit->id,
-        'clientId' => $siteVisit->client->id,
+        'siteVisitId' => $siteVisit?->id,
+        'clientId' => $siteVisit?->client?->id,
         'existingCalculation' => $calculation,
         'formData' => $data,
         'editMode' => true,
+        'mode' => $calculation->is_template ? 'template' : null,
+        'estimateId' => $calculation->estimate_id,
     ]);
 }
 
    public function calculate(Request $request)
 {
+    $mode = $request->input('mode');
      $validated = $request->validate([
         'fence_type' => 'required|in:wood,vinyl',
         'length' => 'required|numeric|min:1',
@@ -81,7 +95,7 @@ public function downloadPdf($id)
         'shadow_box' => 'nullable|boolean',
         'vinyl_corner_posts' => 'nullable|integer|min:0',
         'vinyl_end_posts' => 'nullable|integer|min:0',
-        'site_visit_id' => 'required|exists:site_visits,id',
+        'site_visit_id' => ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id',
         'labor_rate' => 'nullable|numeric|min:0',
         'crew_size' => 'nullable|integer|min:1',
         'drive_distance' => 'nullable|numeric|min:0',
@@ -291,13 +305,37 @@ public function downloadPdf($id)
     ], $totals);
 
     // Save or update
-    $calc = !empty($validated['calculation_id'])
-        ? tap(Calculation::findOrFail($validated['calculation_id']))->update(['data' => $data])
-        : Calculation::create([
-            'site_visit_id' => $validated['site_visit_id'],
-            'calculation_type' => 'fence',
-            'data' => $data,
-        ]);
+    if (!empty($validated['calculation_id'])) {
+        $calc = Calculation::findOrFail($validated['calculation_id']);
+        $calc->update(['data' => $data]);
+    } else {
+        if ($mode === 'template') {
+            $estimateId = $request->input('estimate_id');
+            $estimate = $estimateId ? Estimate::find($estimateId) : null;
+            $calc = Calculation::create([
+                'site_visit_id' => null,
+                'estimate_id' => $estimateId ?: null,
+                'client_id' => $estimate?->client_id,
+                'property_id' => $estimate?->property_id,
+                'calculation_type' => 'fence',
+                'data' => $data,
+                'is_template' => true,
+                'template_name' => $request->input('template_name') ?: null,
+                'template_scope' => $request->input('template_scope') ?: 'global',
+            ]);
+        } else {
+            $calc = Calculation::create([
+                'site_visit_id' => $validated['site_visit_id'],
+                'calculation_type' => 'fence',
+                'data' => $data,
+            ]);
+        }
+    }
+
+    if ($mode === 'template') {
+        return redirect()->route('estimates.show', $request->input('estimate_id'))
+            ->with('success', 'Fence template saved.');
+    }
 
     return redirect()->route('calculators.fence.showResult', $calc->id);
 }

@@ -241,12 +241,15 @@
         {{-- Submit --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             @if(($mode ?? null) === 'template')
-                <input type="text" name="template_name" class="form-input w-full sm:w-80" placeholder="Template name (e.g., Small front bed)" value="{{ old('template_name') }}">
-                <button type="submit" name="import_now" value="0" class="btn btn-secondary">💾 Save Template</button>
-                @if(!empty($estimateId))
-                    <button type="submit" name="import_now" value="1" class="btn btn-primary">➕ Save & Import to Estimate</button>
-                    <label class="inline-flex items-center ml-2 text-sm"><input type="checkbox" name="replace" value="1" class="form-checkbox"><span class="ml-2">Replace existing mulching items</span></label>
-                @endif
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Small front bed)" value="{{ old('template_name') }}">
+                    <select name="template_scope" class="form-select w-full sm:w-48">
+                        <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
+                        <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
+                        <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
+                    </select>
+                    <button type="submit" name="import_now" value="0" class="btn btn-secondary">💾 Save Template</button>
+                </div>
             @else
                 <button type="submit" class="btn btn-secondary">
                     {{ $editMode ? '🔄 Recalculate Mulching' : '🧮 Calculate Mulching Data' }}

@@ -7,8 +7,6 @@
     <title>{{ config('app.name', 'Landscape Estimator') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <script src="https://unpkg.com/alpinejs" defer></script>
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans antialiased" x-data="{ sidebarOpen: false }">
 

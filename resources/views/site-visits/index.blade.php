@@ -1,11 +1,11 @@
-@extends('layouts.sidebar')
+.@extends('layouts.sidebar')
 
 @section('content')
 <div class="max-w-5xl mx-auto">
     <h1 class="text-3xl font-semibold mb-6">📝 Site Visits for {{ $client->first_name }} {{ $client->last_name }}</h1>
 
     <a href="{{ route('contacts.site-visits.create', $client) }}"
-       class="inline-block mb-4 bg-blue-600 hover:bg-blue-700 text-white text-lg px-4 py-2 rounded-md shadow">
+       class="inline-block mb-4 bg-brand-700 hover:bg-brand-800 text-white text-lg px-4 py-2 rounded-md shadow">
         ➕ Add Site Visit
     </a>
 
@@ -33,7 +33,7 @@
                                 <p class="font-semibold">
                                     {{ optional($visit->property)->name ?? 'Unassigned' }}
                                     @if(optional($visit->property)->is_primary)
-                                        <span class="ml-1 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">Primary</span>
+                                        <span class="ml-1 inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">Primary</span>
                                     @endif
                                 </p>
                                 <p class="text-sm text-gray-500">
@@ -52,7 +52,7 @@
 
                                     {{-- Edit --}}
                                     <a href="{{ route('contacts.site-visits.edit', [$client, $visit]) }}"
-                                       class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                       class="bg-brand-700 hover:bg-brand-800 text-white px-3 py-1 rounded text-sm">
                                         Edit
                                     </a>
 

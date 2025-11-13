@@ -6,6 +6,27 @@
 @endphp
 
 @section('content')
+<script>
+    // Provide minimal globals for the JS module
+    window.__calcRoutes = {
+        mulching: '{{ route('calculators.mulching.form') }}',
+        weeding: '{{ route('calculators.weeding.form') }}',
+        planting: '{{ route('calculators.planting.form') }}',
+        turf_mowing: '{{ route('calculators.turf_mowing.form') }}',
+        retaining_wall: '{{ route('calculators.wall.form') }}',
+        paver_patio: '{{ route('calculators.patio.form') }}',
+        fence: '{{ route('calculators.fence.form') }}',
+        syn_turf: '{{ route('calculators.syn_turf.form') }}',
+        pruning: '{{ route('calculators.pruning.form') }}',
+    };
+    window.__estimateTemplatesUrl = "{{ route('estimates.calculator.templates', $estimate) }}";
+    window.__estimateImportUrl = "{{ route('estimates.calculator.import', $estimate) }}";
+    window.__estimateItemsBaseUrl = "{{ url('estimates/'.$estimate->id.'/items') }}";
+    window.__estimateSetup = {
+        estimateId: {{ (int) $estimate->id }},
+        areas: @json($estimate->areas->map(fn($a)=>['id'=>$a->id,'name'=>$a->name]))
+    };
+</script>
 <div class="space-y-6" x-data="{ tab: 'work', activeArea: 'all', showAddItems: false }">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -26,6 +47,65 @@
                 <button type="submit" class="rounded border border-emerald-300 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">Create Invoice</button>
             </form>
             <a href="{{ route('estimates.print', $estimate) }}" target="_blank" class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Print</a>
+            <button type="button" id="openCalcDrawerBtn" class="rounded bg-brand-700 text-white px-4 py-2 text-sm hover:bg-brand-800">+ Add via Calculator</button>
+        </div>
+    </div>
+
+    <!-- Add via Calculator Slide-over (controlled by JS module) -->
+    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;">
+        <div id="calcDrawerOverlay" class="absolute inset-0 bg-black/30"></div>
+        <div class="absolute right-0 top-0 h-full w-full sm:max-w-2xl bg-white shadow-xl flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 border-b">
+                <h3 class="text-lg font-semibold">Add via Calculator</h3>
+                <button id="calcDrawerCloseBtn" class="text-gray-500 hover:text-gray-700">Close</button>
+            </div>
+            <div class="px-4 pt-3 border-b">
+                <div class="inline-flex rounded border">
+                    <button id="calcTabCreateBtn" class="px-3 py-1 text-sm">Create with Calculator</button>
+                    <button id="calcTabTemplatesBtn" class="px-3 py-1 text-sm">Templates</button>
+                </div>
+            </div>
+            <div id="calcCreatePane" class="p-4 overflow-y-auto space-y-4">
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium">Calculator</label>
+                    <select id="calcTypeSelect" class="form-select w-full sm:w-64">
+                        <option value="mulching">Mulching</option>
+                        <option value="weeding">Weeding</option>
+                        <option value="planting">Planting</option>
+                        <option value="turf_mowing">Turf Mowing</option>
+                        <option value="retaining_wall">Retaining Wall</option>
+                        <option value="paver_patio">Paver Patio</option>
+                        <option value="fence">Fence</option>
+                        <option value="syn_turf">Synthetic Turf</option>
+                        <option value="pruning">Pruning</option>
+                    </select>
+                </div>
+                <div>
+                    <a id="openTemplateModeLink" href="#" class="inline-flex items-center px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">Open in Template Mode</a>
+                    <p class="text-xs text-gray-500 mt-1">Opens the selected calculator with template fields. Save as template and optionally import into this estimate.</p>
+                </div>
+            </div>
+            <div id="calcTemplatesPane" class="p-4 overflow-y-auto space-y-4" style="display:none;">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm">Type:</label>
+                        <select id="calcTypeSelectTpl" class="form-select w-48">
+                            <option value="mulching">Mulching</option>
+                            <option value="weeding">Weeding</option>
+                            <option value="planting">Planting</option>
+                            <option value="turf_mowing">Turf Mowing</option>
+                            <option value="retaining_wall">Retaining Wall</option>
+                            <option value="paver_patio">Paver Patio</option>
+                            <option value="fence">Fence</option>
+                            <option value="syn_turf">Synthetic Turf</option>
+                            <option value="pruning">Pruning</option>
+                        </select>
+                    </div>
+                    <button id="calcTplRefresh" class="text-sm text-gray-600 hover:text-gray-800">Refresh</button>
+                </div>
+                <div id="calcTplLoading" class="text-sm text-gray-500" style="display:none;">Loading templates...</div>
+                <div id="calcTplList" class="space-y-2"></div>
+            </div>
         </div>
     </div>
 
@@ -351,25 +431,6 @@
                 <p class="text-2xl font-semibold text-gray-900"><span id="work-net-profit">${{ number_format($netProfit, 2) }}</span>
                     <span class="text-sm text-gray-500">(<span id="work-net-margin">{{ number_format($netMarginPct, 2) }}</span>%)</span>
                 </p>
-            </div>
-        </div>
-        <div class="mb-4 bg-white border rounded p-4">
-            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h3 class="text-lg font-semibold">Add via Calculator</h3>
-                    <p class="text-sm text-gray-500">Create new with a calculator or import a saved template.</p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <a href="{{ url('/calculators/mulching') }}?mode=template&estimate_id={{ $estimate->id }}" class="btn btn-primary">➕ New Mulching via Calculator</a>
-                    <select id="mulchTemplateSelect" class="form-select text-sm w-64">
-                        <option value="">Select mulching template...</option>
-                    </select>
-                    <button id="importMulchTemplate" class="btn btn-secondary" disabled>Import Template</button>
-                    <label class="inline-flex items-center text-sm text-gray-600 ml-1">
-                        <input type="checkbox" id="mulchReplace" class="form-checkbox">
-                        <span class="ml-2">Replace existing mulching items</span>
-                    </label>
-                </div>
             </div>
         </div>
 
@@ -722,67 +783,15 @@
         @endif
     </section>
 
-    @if ($availableCalculations->isNotEmpty())
-        <section class="bg-white rounded-lg shadow p-6 space-y-4" x-show="tab==='work'">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-lg font-semibold">Calculator Outputs</h3>
-                    <p class="text-sm text-gray-500">Import detailed materials/labor rows directly from saved calculations.</p>
-                </div>
-                <span class="text-sm text-gray-500">{{ $availableCalculations->count() }} available</span>
-            </div>
-
-            <div class="divide-y">
-                @foreach ($availableCalculations as $calc)
-                    @php
-                        $data = $calc->data ?? [];
-                        $materialsTotal = $data['material_total'] ?? 0;
-                        $laborTotal = $data['labor_cost'] ?? 0;
-                        $finalPrice = $data['final_price'] ?? ($materialsTotal + $laborTotal);
-                    @endphp
-                    <div class="py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
-                            <p class="font-semibold text-gray-900">
-                                {{ \Illuminate\Support\Str::headline($calc->calculation_type) }}
-                                <span class="text-xs text-gray-500">Saved {{ optional($calc->created_at)->format('M j, Y') }}</span>
-                            </p>
-                            <p class="text-sm text-gray-600">
-                                Materials: ${{ number_format($materialsTotal, 2) }} · Labor: ${{ number_format($laborTotal, 2) }} · Final: ${{ number_format($finalPrice, 2) }}
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <form method="POST" action="{{ route('estimates.import-calculation', [$estimate, $calc]) }}">
-                                @csrf
-                                <button class="px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-800">
-                                    Import Line Items
-                                </button>
-                            </form>
-                            <form method="POST" action="{{ route('estimates.import-calculation', [$estimate, $calc]) }}">
-                                @csrf
-                                <input type="hidden" name="replace" value="1">
-                                <button class="px-4 py-2 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100">
-                                    Replace Previous Import
-                                </button>
-                            </form>
-                            <form method="POST" action="{{ route('estimates.remove-calculation', [$estimate, $calc]) }}" onsubmit="return confirm('Remove imported items for this calculation?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button" class="px-4 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100" data-action="remove-group" data-calculation-id="{{ $calc->id }}">
-                                    Remove Imported Items
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-    @endif
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // Alpine state factory to avoid huge x-data inline JS
+    window.estimatePage = function(){ return { tab: 'work', activeArea: 'all', showAddItems: false }; };
+
+document.addEventListener('DOMContentLoaded', () => {
         // Build collapsible headers per area with subtotals
         function buildAreaHeaders() {
             const tbody = document.querySelector('table tbody');
@@ -967,6 +976,8 @@
                 setText(`breakdown-${key}-margin`, margin.toFixed(1));
             });
         }
+        // Expose for Alpine handlers
+        window.updateSummary = updateSummary;
 
         function computeManHours() {
             const rows = document.querySelectorAll('tr[data-item-id]');
@@ -1021,58 +1032,6 @@
         wireCatalogForm('#materialCatalogForm', '[data-role="material-select"]', '[data-role="material-unit"]', '[data-role="material-cost"]', '[data-role="material-tax"]');
         wireCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]');
 
-        // Load mulching templates
-        const mulchSelect = document.getElementById('mulchTemplateSelect');
-        const importMulchBtn = document.getElementById('importMulchTemplate');
-        const mulchReplace = document.getElementById('mulchReplace');
-        const templatesUrl = "{{ route('estimates.calculator.templates', $estimate) }}?type=mulching";
-        const importUrl = "{{ route('estimates.calculator.import', $estimate) }}";
-
-        async function loadMulchTemplates() {
-            try {
-                const res = await fetch(templatesUrl, { headers: { 'Accept': 'application/json' } });
-                if (!res.ok) throw await res.json().catch(() => ({}));
-                const json = await res.json();
-                const list = json.templates || [];
-                mulchSelect.innerHTML = '<option value="">Select mulching template...</option>';
-                list.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t.id;
-                    opt.textContent = `#${t.id} · ${t.template_name || 'Untitled'} · ${new Date(t.created_at).toLocaleDateString()}`;
-                    mulchSelect.appendChild(opt);
-                });
-            } catch (e) {
-                // ignore for now
-            }
-        }
-
-        if (mulchSelect) {
-            loadMulchTemplates();
-            mulchSelect.addEventListener('change', () => {
-                importMulchBtn.disabled = !mulchSelect.value;
-            });
-        }
-
-        if (importMulchBtn) {
-            importMulchBtn.addEventListener('click', async () => {
-                if (!mulchSelect.value) return;
-                try {
-                    const body = new FormData();
-                    body.append('template_id', mulchSelect.value);
-                    if (mulchReplace && mulchReplace.checked) body.append('replace', '1');
-                    const res = await fetch(importUrl, {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                        body,
-                    });
-                    if (!res.ok) throw await res.json().catch(() => ({}));
-                    showToast('Template imported', 'success');
-                    window.location.reload();
-                } catch (e) {
-                    showToast('Failed to import template', 'error');
-                }
-            });
-        }
 
         const forms = ['#materialCatalogForm', '#laborCatalogForm', '#customItemForm'].map(sel => document.querySelector(sel)).filter(Boolean);
         forms.forEach(bindForm);
@@ -1694,7 +1653,8 @@
             }
         });
 
-        function showToast(message, type = 'info') {
+
+        window.showToast = function(message, type = 'info') {
             const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-gray-800' };
             const el = document.createElement('div');
             el.className = `${colors[type] || colors.info} text-white px-4 py-2 rounded shadow fixed top-4 right-4 z-50 opacity-0 transition-opacity duration-300`;

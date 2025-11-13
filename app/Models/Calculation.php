@@ -12,11 +12,16 @@ class Calculation extends Model
         'data',
         'is_template',
         'template_name',
+        'template_scope',
+        'client_id',
+        'property_id',
+        'is_active',
     ];
 
     protected $casts = [
         'data' => 'array',
         'is_template' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function siteVisit()

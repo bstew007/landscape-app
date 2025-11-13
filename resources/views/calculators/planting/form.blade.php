@@ -7,16 +7,31 @@
         'subtitle' => 'Estimate labor and materials for planting annuals, containers, and trees.',
     ])
 
-    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
+    @if(($mode ?? null) !== 'template' && ($siteVisit ?? null))
+        @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
+    @else
+        <div class="bg-white p-4 rounded border mb-6">
+            <p class="text-sm text-gray-700">Template Mode — build a Planting template without a site visit.</p>
+            @if(!empty($estimateId))
+                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
+            @endif
+        </div>
+    @endif
 
     <form method="POST" action="{{ route('calculators.planting.calculate') }}">
         @csrf
+        <input type="hidden" name="mode" value="{{ $mode ?? '' }}">
+        @if(!empty($estimateId))
+            <input type="hidden" name="estimate_id" value="{{ $estimateId }}">
+        @endif
 
         @if ($editMode ?? false)
             <input type="hidden" name="calculation_id" value="{{ $calculation->id }}">
         @endif
 
-        <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
+        @if(($mode ?? null) !== 'template')
+            <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
+        @endif
 
         <div class="mb-6">
             @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
@@ -84,13 +99,25 @@
         </div>
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit" class="btn btn-secondary">
-                {{ $editMode ? '🔄 Recalculate Planting' : '🌱 Calculate Planting' }}
-            </button>
+            @if(($mode ?? null) === 'template')
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Seasonal color swap)" value="{{ old('template_name') }}">
+                    <select name="template_scope" class="form-select w-full sm:w-48">
+                        <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
+                        <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
+                        <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary">💾 Save Template</button>
+                </div>
+            @else
+                <button type="submit" class="btn btn-secondary">
+                    {{ $editMode ? '🔄 Recalculate Planting' : '🌱 Calculate Planting' }}
+                </button>
 
-            <a href="{{ route('clients.show', $siteVisit->client->id ?? $clientId) }}" class="btn btn-muted">
-                ⬅️ Back to Client
-            </a>
+                <a href="{{ route('clients.show', $siteVisit->client->id ?? $clientId) }}" class="btn btn-muted">
+                    ⬅️ Back to Client
+                </a>
+            @endif
         </div>
     </form>
 </div>

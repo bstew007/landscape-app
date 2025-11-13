@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Calculation;
 use App\Models\ProductionRate;
 use App\Models\SiteVisit;
+use App\Models\Estimate;
 use App\Services\LaborCostCalculatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -13,15 +14,25 @@ class TurfMowingCalculatorController extends Controller
 {
     public function showForm(Request $request)
     {
+        $mode = $request->query('mode');
+        $estimateId = $request->query('estimate_id');
         $siteVisitId = $request->query('site_visit_id');
-        $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
+        $siteVisit = null;
+
+        if ($mode === 'template') {
+            $siteVisitId = $siteVisitId ?: null;
+        } else {
+            $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
+        }
 
         return view('calculators.turf-mowing.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
-            'clientId' => $siteVisit->client->id,
+            'clientId' => $siteVisit?->client?->id,
             'editMode' => false,
             'formData' => [],
+            'mode' => $mode,
+            'estimateId' => $estimateId,
         ]);
     }
 
@@ -33,12 +44,15 @@ class TurfMowingCalculatorController extends Controller
             'calculation' => $calculation,
             'siteVisitId' => $calculation->site_visit_id,
             'siteVisit' => $calculation->siteVisit()->with('client')->first(),
+            'mode' => $calculation->is_template ? 'template' : null,
+            'estimateId' => $calculation->estimate_id,
         ]);
     }
 
     public function calculate(Request $request)
     {
-        $validated = $request->validate([
+        $mode = $request->input('mode');
+        $rules = [
             'labor_rate' => 'required|numeric|min:1',
             'crew_size' => 'required|integer|min:1',
             'drive_distance' => 'required|numeric|min:0',
@@ -46,12 +60,13 @@ class TurfMowingCalculatorController extends Controller
             'site_conditions' => 'nullable|numeric|min:0',
             'material_pickup' => 'nullable|numeric|min:0',
             'cleanup' => 'nullable|numeric|min:0',
-            'site_visit_id' => 'required|exists:site_visits,id',
             'calculation_id' => 'nullable|exists:calculations,id',
             'job_notes' => 'nullable|string|max:2000',
             'tasks' => 'required|array',
             'tasks.*.qty' => 'nullable|numeric|min:0',
-        ]);
+        ];
+        $rules['site_visit_id'] = ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id';
+        $validated = $request->validate($rules);
 
         $inputTasks = $request->input('tasks', []);
         $laborRate = (float) $validated['labor_rate'];
@@ -105,11 +120,32 @@ class TurfMowingCalculatorController extends Controller
             $calc = Calculation::findOrFail($validated['calculation_id']);
             $calc->update(['data' => $data]);
         } else {
-            $calc = Calculation::create([
-                'site_visit_id' => $validated['site_visit_id'],
-                'calculation_type' => 'turf_mowing',
-                'data' => $data,
-            ]);
+            if ($mode === 'template') {
+                $estimateId = $request->input('estimate_id');
+                $estimate = $estimateId ? Estimate::find($estimateId) : null;
+                $calc = Calculation::create([
+                    'site_visit_id' => null,
+                    'estimate_id' => $estimateId ?: null,
+                    'client_id' => $estimate?->client_id,
+                    'property_id' => $estimate?->property_id,
+                    'calculation_type' => 'turf_mowing',
+                    'data' => $data,
+                    'is_template' => true,
+                    'template_name' => $request->input('template_name') ?: null,
+                    'template_scope' => $request->input('template_scope') ?: 'global',
+                ]);
+            } else {
+                $calc = Calculation::create([
+                    'site_visit_id' => $validated['site_visit_id'],
+                    'calculation_type' => 'turf_mowing',
+                    'data' => $data,
+                ]);
+            }
+        }
+
+        if ($mode === 'template') {
+            return redirect()->route('estimates.show', $request->input('estimate_id'))
+                ->with('success', 'Turf Mowing template saved.');
         }
 
         return redirect()->route('calculators.turf_mowing.showResult', $calc->id);

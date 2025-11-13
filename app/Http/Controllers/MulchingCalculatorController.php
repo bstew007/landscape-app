@@ -187,18 +187,13 @@ class MulchingCalculatorController extends Controller
             'data' => $data,
             'is_template' => $mode === 'template',
             'template_name' => $mode === 'template' ? ($request->input('template_name') ?: null) : null,
+            'template_scope' => $mode === 'template' ? ($request->input('template_scope') ?: 'global') : null,
+            'client_id' => $mode === 'template' ? (Estimate::find($request->input('estimate_id'))?->client_id) : null,
+            'property_id' => $mode === 'template' ? (Estimate::find($request->input('estimate_id'))?->property_id) : null,
         ]);
     }
 
     if ($mode === 'template') {
-        // If estimate_id present and user chose to import immediately
-        if ($request->boolean('import_now') && $calc->estimate_id) {
-            app(\App\Services\CalculationImportService::class)
-                ->importCalculation(Estimate::findOrFail($calc->estimate_id), $calc, (bool) $request->boolean('replace'));
-            return redirect()->route('estimates.show', $calc->estimate_id)
-                ->with('success', $request->boolean('replace') ? 'Mulching template imported (replaced).' : 'Mulching template imported.');
-        }
-
         return redirect()->route('estimates.show', $calc->estimate_id ?: request('estimate_id'))
             ->with('success', 'Mulching template saved.');
     }

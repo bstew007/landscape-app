@@ -277,7 +277,6 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::delete('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'destroy'])->name('areas.destroy');
         Route::post('areas/reorder', [\App\Http\Controllers\EstimateAreaController::class, 'reorder'])->name('areas.reorder');
 
-        Route::post('import-calculation/{calculation}', [EstimateController::class, 'importCalculation'])->name('import-calculation');
         Route::delete('remove-calculation/{calculation}', [EstimateController::class, 'removeCalculation'])->name('remove-calculation');
 
         // Files
