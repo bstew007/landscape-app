@@ -61,6 +61,27 @@
             </div>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="block font-semibold mb-1">ABC Depth (in)</label>
+                <input type="number" name="abc_depth_in" min="0" step="0.25" class="form-input w-full" value="{{ old('abc_depth_in', $formData['abc_depth_in'] ?? '') }}">
+                <p class="text-xs text-gray-500 mt-1">Set depth to include ABC base material (in cubic yards).</p>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Rock Dust Depth (in)</label>
+                <input type="number" name="rock_dust_depth_in" min="0" step="0.25" class="form-input w-full" value="{{ old('rock_dust_depth_in', $formData['rock_dust_depth_in'] ?? '') }}">
+                <p class="text-xs text-gray-500 mt-1">Set depth to include Rock Dust material (in cubic yards).</p>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Tamper Rental</label>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="rent_tamper" id="rent_tamper" value="1" class="form-checkbox" {{ old('rent_tamper') ? 'checked' : '' }}>
+                    <input type="number" name="tamper_days" min="1" step="1" class="form-input w-24" value="{{ old('tamper_days', 1) }}">
+                    <span class="text-xs text-gray-500">days @ $125/day</span>
+                </div>
+            </div>
+        </div>
+
         <div class="mb-6 bg-white rounded border p-4">
             @include('calculators.partials.section_heading', ['title' => 'Synthetic Turf Selection'])
             @php
