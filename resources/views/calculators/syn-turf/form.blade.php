@@ -160,16 +160,50 @@
                     ->get();
             @endphp
 
+            @php
+                $excavationTasks = ['excavation','excavation_skid_steer','excavation_mini_skid'];
+                $methodFromOld = old('excavation_method');
+                $selectedExcavation = $methodFromOld;
+                if (!$selectedExcavation) {
+                    if (!empty($savedQuantities['excavation_skid_steer'])) {
+                        $selectedExcavation = 'skid';
+                    } elseif (!empty($savedQuantities['excavation_mini_skid'])) {
+                        $selectedExcavation = 'mini';
+                    } else {
+                        $selectedExcavation = 'generic';
+                    }
+                }
+            @endphp
+
+            <div class="mb-4 p-4 bg-white rounded border">
+                <label class="block font-semibold mb-2">Excavation Method</label>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+                    <label class="inline-flex items-center gap-2">
+                        <input type="radio" name="excavation_method" value="generic" class="form-radio" {{ $selectedExcavation === 'generic' ? 'checked' : '' }}>
+                        <span>Generic</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2">
+                        <input type="radio" name="excavation_method" value="skid" class="form-radio" {{ $selectedExcavation === 'skid' ? 'checked' : '' }}>
+                        <span>Skid Steer</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2">
+                        <input type="radio" name="excavation_method" value="mini" class="form-radio" {{ $selectedExcavation === 'mini' ? 'checked' : '' }}>
+                        <span>Mini Skid</span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Pick one excavation method. The form will enable only the matching excavation task input.</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach ($rates as $rate)
                     @php
                         $key = $rate->task;
                         $label = ucwords(str_replace('_', ' ', $key));
                         $value = old("tasks.$key.qty", $savedQuantities[$key] ?? '');
-                        $isAdvanced = str_contains($key, 'detail') || str_contains($key, 'edging');
+                        $isAdvanced = str_contains($key, 'detail');
                     @endphp
 
-                    <div class="border p-4 rounded bg-gray-50 {{ $isAdvanced ? 'advanced-task hidden' : '' }}">
+                    <div class="border p-4 rounded bg-gray-50 {{ $isAdvanced ? 'advanced-task hidden' : '' }} {{ in_array($key, ['excavation','excavation_skid_steer','excavation_mini_skid']) ? 'excavation-card' : '' }}" @if(in_array($key, ['excavation','excavation_skid_steer','excavation_mini_skid'])) data-excavation-task="1" data-excavation-key="{{ $key }}" @endif>
                         <label class="block font-semibold mb-1">{{ $label }} ({{ $rate->unit }})</label>
                         <input
                             type="number"
@@ -222,8 +256,57 @@
             advanced.forEach(el => el.classList.toggle('hidden', !toggle.checked));
         }
 
-        toggle.addEventListener('change', updateVisibility);
-        updateVisibility();
+        if (toggle) {
+            toggle.addEventListener('change', updateVisibility);
+            updateVisibility();
+        }
+
+        // Excavation method toggle: only one of excavation, excavation_skid_steer, excavation_mini_skid
+        const methodRadios = document.querySelectorAll('input[name="excavation_method"]');
+        const excavationCards = document.querySelectorAll('.excavation-card');
+        const methodToKey = { generic: 'excavation', skid: 'excavation_skid_steer', mini: 'excavation_mini_skid' };
+
+        function getSelectedMethod() {
+            const checked = Array.from(methodRadios).find(r => r.checked);
+            return checked ? checked.value : 'generic';
+        }
+
+        function applyExcavationVisibility() {
+            const method = getSelectedMethod();
+            const allowedKey = methodToKey[method] || 'excavation';
+            excavationCards.forEach(card => {
+                const key = card.dataset.excavationKey || '';
+                const show = key === allowedKey;
+                card.style.display = show ? '' : 'none';
+                const qtyInput = card.querySelector('input[type="number"][name^="tasks["][name$="][qty]"]');
+                if (qtyInput) {
+                    qtyInput.disabled = !show;
+                    if (!show) {
+                        qtyInput.value = '';
+                    }
+                }
+            });
+        }
+
+        if (methodRadios.length) {
+            methodRadios.forEach(r => r.addEventListener('change', applyExcavationVisibility));
+            applyExcavationVisibility();
+        }
+
+        // Mirror edging linear feet to edging task qty (unless user overrides)
+        const edgingLF = document.querySelector('input[name="edging_linear_ft"]');
+        const edgingQty = document.querySelector('input[name="tasks[edging][qty]"]');
+        if (edgingLF && edgingQty) {
+            function syncEdging() {
+                if (edgingQty.dataset.userEdited === 'true') return;
+                edgingQty.value = edgingLF.value;
+                edgingQty.dataset.synced = 'true';
+            }
+            edgingLF.addEventListener('input', syncEdging);
+            edgingQty.addEventListener('input', () => { edgingQty.dataset.userEdited = 'true'; });
+            // Initial sync if empty
+            if (!edgingQty.value) syncEdging();
+        }
     });
 </script>
 @endpush
