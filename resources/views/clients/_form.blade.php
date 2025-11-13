@@ -26,17 +26,42 @@
     </div>
 
     <div>
-        <label for="email" class="block text-lg font-medium text-gray-700">Email</label>
-        <input type="email" name="email" id="email"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-               value="{{ old('email', $client->email ?? '') }}">
+        <label for="contact_type" class="block text-lg font-medium text-gray-700">Contact Type</label>
+        <select name="contact_type" id="contact_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl" required>
+            @foreach (($types ?? ['lead','client','vendor','owner']) as $t)
+                <option value="{{ $t }}" {{ old('contact_type', $client->contact_type ?? 'client') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+            @endforeach
+        </select>
     </div>
 
-    <div>
-        <label for="phone" class="block text-lg font-medium text-gray-700">Phone</label>
-        <input type="text" name="phone" id="phone"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-               value="{{ old('phone', $client->phone ?? '') }}">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label for="email" class="block text-lg font-medium text-gray-700">Primary Email</label>
+            <input type="email" name="email" id="email"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
+                   value="{{ old('email', $client->email ?? '') }}">
+        </div>
+        <div>
+            <label for="email2" class="block text-lg font-medium text-gray-700">Secondary Email</label>
+            <input type="email" name="email2" id="email2"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
+                   value="{{ old('email2', $client->email2 ?? '') }}">
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label for="phone" class="block text-lg font-medium text-gray-700">Primary Phone</label>
+            <input type="text" name="phone" id="phone"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
+                   value="{{ old('phone', $client->phone ?? '') }}">
+        </div>
+        <div>
+            <label for="phone2" class="block text-lg font-medium text-gray-700">Secondary Phone</label>
+            <input type="text" name="phone2" id="phone2"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
+                   value="{{ old('phone2', $client->phone2 ?? '') }}">
+        </div>
     </div>
 
     <div>

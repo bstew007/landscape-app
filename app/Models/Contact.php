@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Client extends Model
+class Contact extends Model
 {
     use HasFactory;
+
+    protected $table = 'clients';
 
     protected $fillable = [
         'first_name',
@@ -23,17 +25,17 @@ class Client extends Model
 
     public function siteVisits()
     {
-        return $this->hasMany(SiteVisit::class);
+        return $this->hasMany(SiteVisit::class, 'client_id');
     }
 
     public function properties()
     {
-        return $this->hasMany(Property::class);
+        return $this->hasMany(Property::class, 'client_id');
     }
 
     public function primaryProperty()
     {
-        return $this->hasOne(Property::class)->where('is_primary', true);
+        return $this->hasOne(Property::class, 'client_id')->where('is_primary', true);
     }
 
     public function getNameAttribute(): string

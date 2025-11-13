@@ -41,13 +41,13 @@
 
     {{--  Edit and  Delete Site Visit --}}
     <div class="flex gap-4 mb-8">
-        <a href="{{ route('clients.site-visits.edit', [$client, $siteVisit]) }}"
-           class="px-5 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-semibold">
+                  <a href="{{ route('contacts.site-visits.edit', [$client, $siteVisit]) }}"
+             class="px-5 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-semibold">
              Edit Site Visit
         </a>
 
-        <form method="POST" action="{{ route('clients.site-visits.destroy', [$client, $siteVisit]) }}"
-              onsubmit="return confirm('Are you sure you want to delete this site visit?');">
+                  <form method="POST" action="{{ route('contacts.site-visits.destroy', [$client, $siteVisit]) }}"
+                onsubmit="return confirm('Are you sure you want to delete this site visit?');">
             @csrf
             @method('DELETE')
             <button type="submit"
@@ -220,7 +220,7 @@
         <h2 class="text-2xl font-semibold mb-4"> Site Visit Photos</h2>
 
         <form method="POST"
-              action="{{ route('clients.site-visits.photos.store', [$client, $siteVisit]) }}"
+              action="{{ route('contacts.site-visits.photos.store', [$client, $siteVisit]) }}"
               enctype="multipart/form-data"
               class="mb-6 bg-white p-4 rounded shadow">
             @csrf
@@ -262,7 +262,7 @@
                         <div class="p-3">
                             <p class="text-sm text-gray-700 mb-2">{{ $photo->caption ?? '' }}</p>
                             <form method="POST"
-                                  action="{{ route('clients.site-visits.photos.destroy', [$client, $siteVisit, $photo]) }}"
+                                                                      action="{{ route('contacts.site-visits.photos.destroy', [$client, $siteVisit, $photo]) }}"
                                   onsubmit="return confirm('Delete this photo?');">
                                 @csrf
                                 @method('DELETE')

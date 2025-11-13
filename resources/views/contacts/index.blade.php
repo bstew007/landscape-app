@@ -9,9 +9,9 @@
             <p class="text-gray-500 text-sm">Search by contact or company name.</p>
         </div>
         <div class="flex flex-col gap-3 md:flex-row md:items-center">
-            <form method="GET" action="{{ route('clients.index') }}" class="flex flex-1 items-center gap-2">
+            <form method="GET" action="{{ route('contacts.index') }}" class="flex flex-1 items-center gap-2">
+                @php $types = ['lead','client','vendor','owner']; @endphp
                 <select name="type" class="form-select border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                    @php $types = ['lead','client','vendor','owner']; @endphp
                     @foreach ($types as $t)
                         <option value="{{ $t }}" {{ ($type ?? 'client') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
                     @endforeach
@@ -22,17 +22,17 @@
                        placeholder="Search contacts..."
                        class="flex-1 form-input border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
                 @if(!empty($search))
-                    <a href="{{ route('clients.index') }}"
+                    <a href="{{ route('contacts.index') }}"
                        class="px-3 py-2 border-t border-b border-gray-300 text-gray-600 bg-gray-100 hover:bg-gray-200">
                         ✕
                     </a>
                 @endif
                 <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700">
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     🔍
                 </button>
             </form>
-            <a href="{{ route('clients.create') }}"
+            <a href="{{ route('contacts.create') }}"
                class="inline-flex items-center justify-center px-4 py-2 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow">
                 ➕ Add Contact
             </a>
@@ -51,7 +51,7 @@
         <button class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50" data-action="bulk-delete" disabled>Delete</button>
     </div>
 
-    @if ($clients->count())
+    @if ($contacts->count())
         <div class="overflow-x-auto bg-white rounded-lg shadow-md">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50 text-gray-700 text-left text-sm uppercase tracking-wider">
@@ -65,38 +65,39 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-gray-800 text-lg">
-                    @foreach ($clients as $client)
+                    @foreach ($contacts as $contact)
                         <tr>
-                            <td class="px-6 py-4"><input type="checkbox" value="{{ $client->id }}" data-role="row-check"></td>
+                            <td class="px-6 py-4"><input type="checkbox" value="{{ $contact->id }}" data-role="row-check"></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                {{ $client->first_name }} {{ $client->last_name }}
+                                {{ $contact->first_name }} {{ $contact->last_name }}
                             </td>
                             <td class="px-6 py-4">
-                                {{ $client->company_name ?? '—' }}
+                                {{ $contact->company_name ?? '—' }}
                             </td>
                             <td class="px-6 py-4">
-                                {{ $client->email }}
-                                @if($client->email2)
-                                    <div class="text-xs text-gray-500">{{ $client->email2 }}</div>
+                                {{ $contact->email }}
+                                @if($contact->email2)
+                                    <div class="text-xs text-gray-500">{{ $contact->email2 }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                {{ $client->phone }}
-                                @if($client->phone2)
-                                    <div class="text-xs text-gray-500">{{ $client->phone2 }}</div>
+                                {{ $contact->phone }}
+                                @if($contact->phone2)
+                                    <div class="text-xs text-gray-500">{{ $contact->phone2 }}</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 capitalize">{{ $client->contact_type ?? 'client' }}</td>
+                            <td class="px-6 py-4 capitalize">{{ $contact->contact_type ?? 'client' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     @else
-        <p class="text-gray-600 text-lg mt-4">No clients yet. Click “Add Client” to get started.</p>
+        <p class="text-gray-600 text-lg mt-4">No contacts yet. Click “Add Contact” to get started.</p>
     @endif
 
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -128,15 +129,14 @@
             toolbarBtns.view.addEventListener('click', () => {
                 const ids = selectedIds();
                 if (!ids.length) return;
-                // Open the first one (multi-view not implemented)
-                window.location.href = `{{ url('clients') }}/${ids[0]}`;
+                window.location.href = `{{ url('contacts') }}/${ids[0]}`;
             });
         }
         if (toolbarBtns.edit) {
             toolbarBtns.edit.addEventListener('click', () => {
                 const ids = selectedIds();
                 if (!ids.length) return;
-                window.location.href = `{{ url('clients') }}/${ids[0]}/edit`;
+                window.location.href = `{{ url('contacts') }}/${ids[0]}/edit`;
             });
         }
         if (toolbarBtns.del) {
@@ -144,10 +144,9 @@
                 const ids = selectedIds();
                 if (!ids.length) return;
                 if (!confirm(`Delete ${ids.length} contact(s)?`)) return;
-                // Submit delete for each id sequentially (could be optimized to bulk endpoint)
                 (async () => {
                     for (const id of ids) {
-                        await fetch(`{{ url('clients') }}/${id}`, {
+                        await fetch(`{{ url('contacts') }}/${id}`, {
                             method: 'POST',
                             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                             body: new URLSearchParams({ '_method': 'DELETE' })
@@ -160,4 +159,3 @@
     });
 </script>
 @endpush
-@endsection

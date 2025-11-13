@@ -6,6 +6,8 @@
         {{ $editMode ? '✏️ Edit Pruning Data' : '🌿 Pruning Calculator' }}
     </h1>
 
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
+
     <form method="POST" action="{{ route('calculators.pruning.calculate') }}">
         @csrf
 
@@ -75,13 +77,11 @@
 
         {{-- Submit --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? '🔄 Recalculate Pruning' : '🧮 Calculate Pruning Estimate' }}
             </button>
 
-            <a href="{{ route('clients.show', $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $siteVisitId) }}" class="btn btn-muted">
                 🔙 Back to Client
             </a>
         </div>

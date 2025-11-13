@@ -2,12 +2,12 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto py-10 space-y-6">
-    <div>
-        <h1 class="text-3xl font-bold">
-            {{ $editMode ? '✏️ Edit Planting Data' : '🌱 Planting Calculator' }}
-        </h1>
-        <p class="text-gray-600">Estimate labor and materials for planting annuals, containers, and trees.</p>
-    </div>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? '✏️ Edit Planting Data' : '🌱 Planting Calculator',
+        'subtitle' => 'Estimate labor and materials for planting annuals, containers, and trees.',
+    ])
+
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
     <form method="POST" action="{{ route('calculators.planting.calculate') }}">
         @csrf
@@ -19,15 +19,15 @@
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
             @include('calculators.partials.overhead_inputs')
         </div>
 
         <div class="mb-6">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-xl font-semibold">Planting Quantities & Pricing</h2>
-                <span class="text-sm text-gray-500">Labor rates already include facing + watering</span>
-            </div>
+            @include('calculators.partials.section_heading', [
+                'title' => 'Planting Quantities & Pricing',
+                'hint' => 'Labor rates already include facing + watering',
+            ])
 
             @php
                 $rates = \App\Models\ProductionRate::where('calculator', 'planting')
@@ -84,12 +84,11 @@
         </div>
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? '🔄 Recalculate Planting' : '🌱 Calculate Planting' }}
             </button>
 
-            <a href="{{ route('clients.show', $siteVisit->client->id ?? $clientId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $siteVisit->client->id ?? $clientId) }}" class="btn btn-muted">
                 ⬅️ Back to Client
             </a>
         </div>

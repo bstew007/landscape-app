@@ -9,11 +9,15 @@
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route('materials.importForm') }}"
-               class="inline-flex items-center px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800">
-                ⬆ Import JSON
+               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                ⬆ Import (JSON/CSV)
+            </a>
+            <a href="{{ route('materials.export') }}"
+               class="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
+                ⬇ Export CSV
             </a>
             <a href="{{ route('materials.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800">
+               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 + Add Material
             </a>
         </div>

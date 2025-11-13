@@ -192,9 +192,9 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Fence Estimate' : '🪵 Fence Calculator' }}
-    </h1>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? '✏️ Edit Fence Estimate' : '🪵 Fence Calculator',
+    ])
 
     <form method="POST" action="{{ route('calculators.fence.calculate') }}">
 
@@ -210,7 +210,7 @@
 
         {{-- Crew & Logistics --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
             @include('calculators.partials.overhead_inputs')
         </div>
 
@@ -288,20 +288,11 @@
 
         {{-- Materials Preview --}}
         <div class="mb-6">
-            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Materials & Pricing Preview</h2>
-                    <p class="text-gray-500 text-sm">Matches the retaining wall cards—instantly shows posts, panels, rails, and costs.</p>
-                </div>
-                <span
-                    id="materialPreviewHint"
-                    class="text-sm {{ $fenceTypeValue ? 'text-gray-600' : 'text-gray-500' }}"
-                    data-empty-message="Select a fence type + length to unlock quantities."
-                    data-filled-message="Quantities update automatically while you type."
-                >
-                    {{ $fenceTypeValue ? 'Quantities update automatically while you type.' : 'Select a fence type + length to unlock quantities.' }}
-                </span>
-            </div>
+            @include('calculators.partials.section_heading', [
+                'title' => 'Materials & Pricing Preview',
+                'hint' => 'Matches the retaining wall cards—instantly shows posts, panels, rails, and costs.',
+                'right' => '<span id="materialPreviewHint" class="text-sm '.($fenceTypeValue ? 'text-gray-600' : 'text-gray-500').'" data-empty-message="Select a fence type + length to unlock quantities." data-filled-message="Quantities update automatically while you type.">'.($fenceTypeValue ? 'Quantities update automatically while you type.' : 'Select a fence type + length to unlock quantities.').'</span>',
+            ])
 
             <div id="fenceMaterialPreview" class="{{ $fenceTypeValue ? '' : 'hidden' }}">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -402,11 +393,10 @@
 
         {{-- Submit Button --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? '🔄 Recalculate' : '➕ Calculate Fence Estimate' }}
             </button>
-            <a href="{{ route('clients.show', $clientId ?? $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $clientId ?? $siteVisitId) }}" class="btn btn-muted">
                 🔙 Back to Client
             </a>
         </div>

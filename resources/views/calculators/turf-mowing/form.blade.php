@@ -2,14 +2,12 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Turf Maintenance Estimate' : '🌱 Turf Mowing Calculator' }}
-    </h1>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? '✏️ Edit Turf Maintenance Estimate' : '🌱 Turf Mowing Calculator',
+        'subtitle' => 'Enter the square footage and linear footage covered by each task. Mowing, trimming, edging, and blowing quantities feed directly into labor hours using your production rates.',
+    ])
 
-    <p class="text-gray-600 mb-6">
-        Enter the square footage and linear footage covered by each task. Mowing, trimming, edging, and blowing
-        quantities feed directly into labor hours using your production rates.
-    </p>
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
     <form method="POST" action="{{ route('calculators.turf_mowing.calculate') }}">
         @csrf
@@ -21,12 +19,12 @@
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
             @include('calculators.partials.overhead_inputs')
         </div>
 
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Turf Tasks</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Turf Tasks'])
             @php
                 $savedTasks = $formData['tasks'] ?? [];
                 $savedQuantities = [];
@@ -65,13 +63,11 @@
         </div>
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? '🔄 Recalculate Turf Maintenance' : '🧮 Calculate Turf Maintenance' }}
             </button>
 
-            <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}" class="btn btn-muted">
                 🔙 Back to Client
             </a>
         </div>

@@ -131,8 +131,8 @@
            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
             Back to Client
         </a>
-        <a href="{{ route('clients.site-visits.show', [$siteVisit->client_id, $siteVisit->id]) }}"
-           class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                  <a href="{{ route('contacts.site-visits.show', [$siteVisit->client_id, $siteVisit->id]) }}"
+             class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
             View Site Visit
         </a>
     </div>

@@ -15,7 +15,7 @@
         @endif
 
         @include('properties._form', [
-            'route' => route('clients.properties.update', [$client, $property]),
+            'route' => route('contacts.properties.update', [$client, $property]),
             'method' => 'PUT',
             'property' => $property,
         ])

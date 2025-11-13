@@ -18,6 +18,7 @@ class RetainingWallCalculatorController extends Controller
         $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
 
         return view('calculators.retaining-wall.form', [
+            'siteVisit' => $siteVisit,
             'siteVisitId' => $siteVisit->id,
             'clientId' => $siteVisit->client->id,
             'editMode' => false,
@@ -30,6 +31,7 @@ class RetainingWallCalculatorController extends Controller
         $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail();
 
         return view('calculators.retaining-wall.form', [
+            'siteVisit' => $siteVisit,
             'siteVisitId' => $siteVisit->id,
             'clientId' => $siteVisit->client->id,
             'editMode' => true,

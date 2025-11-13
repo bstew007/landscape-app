@@ -353,6 +353,26 @@
                 </p>
             </div>
         </div>
+        <div class="mb-4 bg-white border rounded p-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold">Add via Calculator</h3>
+                    <p class="text-sm text-gray-500">Create new with a calculator or import a saved template.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ url('/calculators/mulching') }}?mode=template&estimate_id={{ $estimate->id }}" class="btn btn-primary">➕ New Mulching via Calculator</a>
+                    <select id="mulchTemplateSelect" class="form-select text-sm w-64">
+                        <option value="">Select mulching template...</option>
+                    </select>
+                    <button id="importMulchTemplate" class="btn btn-secondary" disabled>Import Template</button>
+                    <label class="inline-flex items-center text-sm text-gray-600 ml-1">
+                        <input type="checkbox" id="mulchReplace" class="form-checkbox">
+                        <span class="ml-2">Replace existing mulching items</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <div>
             <h2 class="text-lg font-semibold text-gray-900">Line Items</h2>
             <p class="text-sm text-gray-500">Includes calculator imports + manual catalog additions.</p>
@@ -1000,6 +1020,59 @@
 
         wireCatalogForm('#materialCatalogForm', '[data-role="material-select"]', '[data-role="material-unit"]', '[data-role="material-cost"]', '[data-role="material-tax"]');
         wireCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]');
+
+        // Load mulching templates
+        const mulchSelect = document.getElementById('mulchTemplateSelect');
+        const importMulchBtn = document.getElementById('importMulchTemplate');
+        const mulchReplace = document.getElementById('mulchReplace');
+        const templatesUrl = "{{ route('estimates.calculator.templates', $estimate) }}?type=mulching";
+        const importUrl = "{{ route('estimates.calculator.import', $estimate) }}";
+
+        async function loadMulchTemplates() {
+            try {
+                const res = await fetch(templatesUrl, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw await res.json().catch(() => ({}));
+                const json = await res.json();
+                const list = json.templates || [];
+                mulchSelect.innerHTML = '<option value="">Select mulching template...</option>';
+                list.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = `#${t.id} · ${t.template_name || 'Untitled'} · ${new Date(t.created_at).toLocaleDateString()}`;
+                    mulchSelect.appendChild(opt);
+                });
+            } catch (e) {
+                // ignore for now
+            }
+        }
+
+        if (mulchSelect) {
+            loadMulchTemplates();
+            mulchSelect.addEventListener('change', () => {
+                importMulchBtn.disabled = !mulchSelect.value;
+            });
+        }
+
+        if (importMulchBtn) {
+            importMulchBtn.addEventListener('click', async () => {
+                if (!mulchSelect.value) return;
+                try {
+                    const body = new FormData();
+                    body.append('template_id', mulchSelect.value);
+                    if (mulchReplace && mulchReplace.checked) body.append('replace', '1');
+                    const res = await fetch(importUrl, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                        body,
+                    });
+                    if (!res.ok) throw await res.json().catch(() => ({}));
+                    showToast('Template imported', 'success');
+                    window.location.reload();
+                } catch (e) {
+                    showToast('Failed to import template', 'error');
+                }
+            });
+        }
 
         const forms = ['#materialCatalogForm', '#laborCatalogForm', '#customItemForm'].map(sel => document.querySelector(sel)).filter(Boolean);
         forms.forEach(bindForm);

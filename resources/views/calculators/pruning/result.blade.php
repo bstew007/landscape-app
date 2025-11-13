@@ -97,36 +97,14 @@
         </div>
     @endif
 
-    {{-- Save Calculation and Import --}}
-    <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
-        @csrf
-        <input type="hidden" name="calculation_type" value="pruning">
-        <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
-        <input type="hidden" name="data" value="{{ json_encode($data) }}">
-        @if (!empty($siteVisit->estimate_id))
-            <input type="hidden" name="estimate_id" value="{{ $siteVisit->estimate_id }}">
-        @endif
-
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold mb-4">
-            💾 Save to Site Visit @if(!empty($siteVisit->estimate_id)) & Import to Estimate @endif
-        </button>
-    </form>
-
-    {{-- PDF Download --}}
-    @isset($calculation)
-        <a href="{{ route('calculators.pruning.downloadPdf', $calculation->id) }}"
-           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mb-4 ml-4">
-            📄 Download PDF
-        </a>
-    @endisset
-
-    {{-- Back to Client --}}
-    <div class="mt-6">
-        <a href="{{ route('clients.show', $siteVisit->client_id) }}"
-           class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
-            🔙 Back to Client
-        </a>
-    </div>
+    {{-- Actions --}}
+    @php $downloadUrl = isset($calculation) ? route('calculators.pruning.downloadPdf', $calculation->id) : null; @endphp
+    @include('calculators.partials.actions', [
+        'calculationType' => 'pruning',
+        'siteVisit' => $siteVisit,
+        'data' => $data,
+        'calculation' => $calculation ?? null,
+        'downloadPdfUrl' => $downloadUrl,
+    ])
 </div>
 @endsection

@@ -27,9 +27,11 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Pine Needle Data' : '🌿 Pine Needle Calculator' }}
-    </h1>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? '✏️ Edit Pine Needle Data' : '🌿 Pine Needle Calculator',
+    ])
+
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
     <form method="POST" action="{{ route('calculators.pine_needles.calculate') }}">
         @csrf
@@ -44,13 +46,13 @@
 
         {{-- Crew & Logistics --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
             @include('calculators.partials.overhead_inputs')
         </div>
 
         {{-- Straw Area --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Straw Coverage</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Straw Coverage'])
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -209,13 +211,11 @@
 
         {{-- Submit --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? '🔄 Recalculate Pine Needle Data' : '🧮 Calculate Pine Needle Data' }}
             </button>
 
-            <a href="{{ route('clients.show', $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $siteVisitId) }}" class="btn btn-muted">
                 🔙 Back to Client
             </a>
         </div>

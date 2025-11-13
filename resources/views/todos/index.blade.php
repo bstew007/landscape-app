@@ -157,6 +157,9 @@
                                             · {{ $todo->property->name }}
                                         @endif
                                     </p>
+                                    @if(!empty($todo->description))
+                                        <p class="text-xs text-gray-700 mt-1">{{ \Illuminate\Support\Str::limit($todo->description, 120) }}</p>
+                                    @endif
                                     <p class="text-xs text-gray-500 mt-1">
                                         Due {{ optional($todo->due_date)->format('M j') ?? 'TBD' }}
                                     </p>

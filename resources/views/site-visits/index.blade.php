@@ -4,7 +4,7 @@
 <div class="max-w-5xl mx-auto">
     <h1 class="text-3xl font-semibold mb-6">📝 Site Visits for {{ $client->first_name }} {{ $client->last_name }}</h1>
 
-    <a href="{{ route('clients.site-visits.create', $client) }}"
+    <a href="{{ route('contacts.site-visits.create', $client) }}"
        class="inline-block mb-4 bg-blue-600 hover:bg-blue-700 text-white text-lg px-4 py-2 rounded-md shadow">
         ➕ Add Site Visit
     </a>
@@ -45,19 +45,19 @@
                             <td class="px-6 py-4">
                                 <div class="flex gap-2">
                                     {{-- View --}}
-                                    <a href="{{ route('clients.site-visits.show', [$client, $visit]) }}"
+                                    <a href="{{ route('contacts.site-visits.show', [$client, $visit]) }}"
                                        class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
                                         View
                                     </a>
 
                                     {{-- Edit --}}
-                                    <a href="{{ route('clients.site-visits.edit', [$client, $visit]) }}"
+                                    <a href="{{ route('contacts.site-visits.edit', [$client, $visit]) }}"
                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
                                         Edit
                                     </a>
 
                                     {{-- Delete --}}
-                                    <form action="{{ route('clients.site-visits.destroy', [$client, $visit]) }}"
+                                    <form action="{{ route('contacts.site-visits.destroy', [$client, $visit]) }}"
                                           method="POST"
                                           onsubmit="return confirm('Are you sure you want to delete this site visit?');">
                                         @csrf

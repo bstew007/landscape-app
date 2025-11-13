@@ -22,7 +22,7 @@
         @if ($propertyOptions->isEmpty())
             <div class="mt-2 p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-900 text-lg">
                 No properties found for this client. Please
-                <a href="{{ route('clients.properties.create', $client) }}" class="underline font-semibold">add a property</a>
+                                  <a href="{{ route('contacts.properties.create', $client) }}" class="underline font-semibold">add a property</a>
                 before scheduling a site visit.
             </div>
         @else
@@ -61,8 +61,8 @@
             Save
         </button>
 
-        <a href="{{ route('clients.site-visits.index', $siteVisit->client_id ?? $client->id) }}"
-           class="text-gray-600 hover:text-gray-800 text-lg underline">
+                  <a href="{{ route('contacts.site-visits.index', $siteVisit->client_id ?? $client->id) }}"
+             class="text-gray-600 hover:text-gray-800 text-lg underline">
             Back to Visits
         </a>
     </div>

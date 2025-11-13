@@ -2,9 +2,11 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Synthetic Turf Estimate' : '🏟️ Synthetic Turf Calculator' }}
-    </h1>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? '✏️ Edit Synthetic Turf Estimate' : '🏟️ Synthetic Turf Calculator',
+    ])
+
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
     <form method="POST" action="{{ route('calculators.syn_turf.calculate') }}">
         @csrf
@@ -16,7 +18,7 @@
         <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
 
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
             @include('calculators.partials.overhead_inputs')
         </div>
 
@@ -45,7 +47,7 @@
         </div>
 
         <div class="mb-6 bg-white rounded border p-4">
-            <h2 class="text-xl font-semibold mb-3">Synthetic Turf Selection</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Synthetic Turf Selection'])
             @php
                 $turfOptions = config('syn_turf.materials.turf_tiers', []);
                 $turfGrade = old('turf_grade', $formData['turf_grade'] ?? 'better');
@@ -172,13 +174,11 @@
         </div>
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? '🔄 Recalculate Synthetic Turf' : '🧮 Calculate Synthetic Turf' }}
             </button>
 
-            <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}" class="btn btn-muted">
                 🔙 Back to Client
             </a>
         </div>

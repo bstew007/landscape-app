@@ -9,19 +9,23 @@
     @endif
 
     <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2">
-        <h1 class="text-3xl font-bold mb-2">Client Details</h1>
+        <h1 class="text-3xl font-bold mb-2">Contact Details</h1>
         <p><strong>Name:</strong> {{ $client->first_name }} {{ $client->last_name }}</p>
         <p><strong>Company:</strong> {{ $client->company_name ?? 'N/A' }}</p>
-        <p><strong>Email:</strong> {{ $client->email ?? 'N/A' }}</p>
-        <p><strong>Phone:</strong> {{ $client->phone ?? 'N/A' }}</p>
+        <p><strong>Email:</strong> {{ $client->email ?? 'N/A' }}
+            @if(!empty($client->email2))<span class="text-gray-600"> • {{ $client->email2 }}</span>@endif
+        </p>
+        <p><strong>Phone:</strong> {{ $client->phone ?? 'N/A' }}
+            @if(!empty($client->phone2))<span class="text-gray-600"> • {{ $client->phone2 }}</span>@endif
+        </p>
         <p><strong>Billing Address:</strong> {{ $client->address ?? 'N/A' }}</p>
     </div>
 
     <div class="bg-white p-6 rounded-lg shadow text-gray-800">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-semibold">Properties</h2>
-            <a href="{{ route('clients.properties.create', $client) }}"
-               class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+                          <a href="{{ route('contacts.properties.create', $client) }}"
+                 class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
                 Add Property
             </a>
         </div>
@@ -64,16 +68,16 @@
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <a href="{{ route('clients.site-visits.create', ['client' => $client->id, 'property_id' => $property->id]) }}"
-                       class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
+                          <a href="{{ route('contacts.site-visits.create', ['client' => $client->id, 'property_id' => $property->id]) }}"
+         class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
                         Schedule Visit
                     </a>
-                    <a href="{{ route('clients.properties.edit', [$client, $property]) }}"
-                       class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                          <a href="{{ route('contacts.properties.edit', [$client, $property]) }}"
+         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
                         Edit Property
                     </a>
-                    <form method="POST" action="{{ route('clients.properties.destroy', [$client, $property]) }}"
-                          onsubmit="return confirm('Deleting this property will remove all of its site visits. Continue?');">
+                          <form method="POST" action="{{ route('contacts.properties.destroy', [$client, $property]) }}"
+            onsubmit="return confirm('Deleting this property will remove all of its site visits. Continue?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
@@ -92,8 +96,8 @@
     <div class="bg-white p-6 rounded-lg shadow text-gray-800">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-semibold">Recent Site Visits</h2>
-            <a href="{{ route('clients.site-visits.index', $client) }}"
-               class="text-blue-600 hover:underline">
+                  <a href="{{ route('contacts.site-visits.index', $client) }}"
+         class="text-blue-600 hover:underline">
                 View All
             </a>
         </div>
@@ -121,8 +125,8 @@
                             </td>
                             <td class="px-4 py-2">{{ \Illuminate\Support\Str::limit($visit->notes, 80) ?? 'N/A' }}</td>
                             <td class="px-4 py-2">
-                                <a href="{{ route('clients.site-visits.show', [$client, $visit]) }}"
-                                   class="text-blue-600 hover:underline">View</a>
+                                      <a href="{{ route('contacts.site-visits.show', [$client, $visit]) }}"
+         class="text-blue-600 hover:underline">View</a>
                             </td>
                         </tr>
                     @endforeach

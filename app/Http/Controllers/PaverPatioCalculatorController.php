@@ -19,7 +19,7 @@ class PaverPatioCalculatorController extends Controller
 
         return view('calculators.paver-patio.form', [
             'siteVisit' => $siteVisit,
-             'siteVisitId' => $siteVisit->id, // add this line
+            'siteVisitId' => $siteVisit->id,
             'clientId' => $siteVisit->client->id,
             'editMode' => false,
             'formData' => [],
@@ -31,12 +31,11 @@ class PaverPatioCalculatorController extends Controller
         $siteVisit = $calculation->siteVisit()->with('client')->firstOrFail();
 
         return view('calculators.paver-patio.form', [
-            //'siteVisit' => $siteVisit,
-            //'clientId' => $siteVisit->client->id,
+            'siteVisit' => $calculation->siteVisit()->with('client')->first(),
             'editMode' => true,
             'formData' => $calculation->data,
             'calculation' => $calculation,
-            'siteVisitId' => $calculation->site_visit_id, // ✅ Add this
+            'siteVisitId' => $calculation->site_visit_id,
         ]);
     }
 

@@ -14,10 +14,10 @@
         </div>
     @endif
 
-    @include('site-visits._form', [
-        'route' => route('clients.site-visits.update', [$client, $siteVisit]),
-        'method' => 'PUT',
-        'siteVisit' => $siteVisit,
+          @include('site-visits._form', [
+          'route' => route('contacts.site-visits.update', [$client, $siteVisit]),
+          'method' => 'PUT',
+          'siteVisit' => $siteVisit,
         'properties' => $properties,
         'preferredPropertyId' => $preferredPropertyId ?? null,
     ])

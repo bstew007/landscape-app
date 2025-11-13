@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 
-class ClientController extends Controller
+class ContactController extends Controller
 {
     public function index(Request $request)
     {
         $search = $request->query('search');
         $type = $request->query('type', 'client');
 
-        $clients = Client::query()
+        $contacts = Contact::query()
             ->when($type, fn($q) => $q->where('contact_type', $type))
             ->when($search, function ($query, $term) {
                 $query->where(function ($q) use ($term) {
@@ -25,12 +25,12 @@ class ClientController extends Controller
             ->orderBy('last_name')
             ->get();
 
-        return view('clients.index', ['clients' => $clients, 'search' => $search, 'type' => $type]);
+        return view('contacts.index', ['contacts' => $contacts, 'search' => $search, 'type' => $type]);
     }
 
     public function create()
     {
-        return view('clients.create', ['types' => Client::types()]);
+        return view('clients.create', ['types' => Contact::types()]);
     }
 
     public function store(Request $request)
@@ -39,29 +39,28 @@ class ClientController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
-            'contact_type' => ['required', 'in:'.implode(',', Client::types())],
+            'contact_type' => ['required', 'in:'.implode(',', Contact::types())],
             'email'      => 'nullable|email',
-            'phone'      => 'nullable|string|max:20',
+            'email2'     => 'nullable|email',
+            'phone'      => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
+            'phone2'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'address'    => 'nullable|string',
         ]);
 
-        Client::create($validated);
+        Contact::create($validated);
 
-        return redirect()->route('clients.index')->with('success', 'Client added successfully.');
+        return redirect()->route('contacts.index')->with('success', 'Contact added successfully.');
     }
 
-    /**
-     * Show a single client with related actions like site visits.
-     */
-    public function show(Client $client)
+    public function show(Contact $contact)
     {
-        $properties = $client->properties()
+        $properties = $contact->properties()
             ->withCount('siteVisits')
             ->orderByDesc('is_primary')
             ->orderBy('name')
             ->get();
 
-        $siteVisitOptions = $client->siteVisits()
+        $siteVisitOptions = $contact->siteVisits()
             ->with('property')
             ->orderByDesc('visit_date')
             ->orderByDesc('id')
@@ -81,7 +80,8 @@ class ClientController extends Controller
         $recentVisits = $siteVisitOptions->take(5);
 
         return view('clients.show', [
-            'client' => $client,
+            'client' => $contact,
+            'contact' => $contact,
             'siteVisit' => $selectedSiteVisit,
             'siteVisitOptions' => $siteVisitOptions,
             'siteVisitSummaries' => $siteVisitSummaries,
@@ -90,32 +90,34 @@ class ClientController extends Controller
         ]);
     }
 
-    public function edit(Client $client)
+    public function edit(Contact $contact)
     {
-        return view('clients.edit', ['client' => $client, 'types' => Client::types()]);
+        return view('clients.edit', ['client' => $contact, 'types' => Contact::types()]);
     }
 
-    public function update(Request $request, Client $client)
+    public function update(Request $request, Contact $contact)
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
-            'contact_type' => ['required', 'in:'.implode(',', Client::types())],
+            'contact_type' => ['required', 'in:'.implode(',', Contact::types())],
             'email'      => 'nullable|email',
-            'phone'      => 'nullable|string|max:20',
+            'email2'     => 'nullable|email',
+            'phone'      => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
+            'phone2'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'address'    => 'nullable|string',
         ]);
 
-        $client->update($validated);
+        $contact->update($validated);
 
-        return redirect()->route('clients.index')->with('success', 'Client updated successfully.');
+        return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
     }
 
-    public function destroy(Client $client)
+    public function destroy(Contact $contact)
     {
-        $client->delete();
+        $contact->delete();
 
-        return redirect()->route('clients.index')->with('success', 'Client deleted successfully.');
+        return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully.');
     }
 }

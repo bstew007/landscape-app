@@ -143,12 +143,12 @@
 @endif
 
 <div class="max-w-4xl mx-auto py-10 space-y-8">
-    <div>
-        <h1 class="text-3xl font-bold">
-            {{ $editMode ? 'Edit Retaining Wall Calculation' : 'Retaining Wall Calculator' }}
-        </h1>
-        <p class="text-gray-600 mt-2">Matches the planting/paver workflow: enter inputs, preview materials instantly, add overrides, then calculate.</p>
-    </div>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? 'Edit Retaining Wall Calculation' : 'Retaining Wall Calculator',
+        'subtitle' => 'Matches the planting/paver workflow: enter inputs, preview materials instantly, add overrides, then calculate.',
+    ])
+
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
     <form method="POST" action="{{ route('calculators.wall.calculate') }}" class="space-y-8">
         @csrf
@@ -167,17 +167,11 @@
 
         {{-- Wall Inputs --}}
         <div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <h2 class="text-xl font-semibold">Wall Inputs</h2>
-                <span
-                    id="wallAreaBadge"
-                    class="text-sm font-medium {{ $areaSqft ? 'text-gray-700' : 'text-gray-500' }}"
-                    data-empty-message="Enter length + height to unlock wall area."
-                    data-prefix="Wall Area: "
-                >
-                    {{ $areaSqft ? 'Wall Area: ' . number_format($areaSqft, 2) . ' sqft' : 'Enter length + height to unlock wall area.' }}
-                </span>
-            </div>
+            @php($wallBadge = \Illuminate\Support\HtmlString('<span id="wallAreaBadge" class="text-sm font-medium '.($areaSqft ? 'text-gray-700' : 'text-gray-500').'" data-empty-message="Enter length + height to unlock wall area." data-prefix="Wall Area: ">'.($areaSqft ? 'Wall Area: '.number_format($areaSqft, 2).' sqft' : 'Enter length + height to unlock wall area.').'</span>'))
+            @include('calculators.partials.section_heading', [
+                'title' => 'Wall Inputs',
+                'right' => $wallBadge,
+            ])
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="border rounded-lg p-4 bg-white shadow-sm">
@@ -449,11 +443,10 @@
 
         {{-- Submit --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+            <button type="submit" class="btn btn-secondary">
                 {{ $editMode ? 'Recalculate Wall' : 'Calculate Wall Estimate' }}
             </button>
-            <a href="{{ route('clients.show', $siteVisit->client_id ?? $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
+            <a href="{{ route('clients.show', $siteVisit->client_id) }}" class="btn btn-muted">
                 Back to Client
             </a>
         </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Calculation;
 use App\Models\ProductionRate;
+use App\Models\Estimate;
 use App\Models\SiteVisit;
 use App\Services\LaborCostCalculatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -12,15 +13,19 @@ class MulchingCalculatorController extends Controller
 {
     public function showForm(Request $request)
     {
+        $mode = $request->query('mode');
+        $estimateId = $request->query('estimate_id');
         $siteVisitId = $request->query('site_visit_id');
-        $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
+        $siteVisit = $siteVisitId ? SiteVisit::with('client')->findOrFail($siteVisitId) : null;
 
         return view('calculators.mulching.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
-            'clientId' => $siteVisit->client->id,
+            'clientId' => $siteVisit?->client?->id,
             'editMode' => false,
             'formData' => [],
+            'mode' => $mode,
+            'estimateId' => $estimateId,
         ]);
     }
 
@@ -31,11 +36,15 @@ class MulchingCalculatorController extends Controller
             'formData' => $calculation->data,
             'calculation' => $calculation,
             'siteVisitId' => $calculation->site_visit_id,
+            'siteVisit' => $calculation->siteVisit()->with('client')->first(),
+            'mode' => $calculation->is_template ? 'template' : null,
+            'estimateId' => $calculation->estimate_id,
         ]);
     }
 
  public function calculate(Request $request)
 {
+    $mode = $request->input('mode');
     $validated = $request->validate([
         'labor_rate' => 'required|numeric|min:1',
         'crew_size' => 'required|integer|min:1',
@@ -44,7 +53,7 @@ class MulchingCalculatorController extends Controller
         'site_conditions' => 'nullable|numeric|min:0',
         'material_pickup' => 'nullable|numeric|min:0',
         'cleanup' => 'nullable|numeric|min:0',
-        'site_visit_id' => 'required|exists:site_visits,id',
+        'site_visit_id' => ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
         'tasks' => 'required|array',
@@ -167,15 +176,34 @@ class MulchingCalculatorController extends Controller
     );
 
     // ✅ Save or update calculation
-    $calc = !empty($validated['calculation_id'])
-        ? tap(Calculation::find($validated['calculation_id']))->update(['data' => $data])
-        : Calculation::create([
-            'site_visit_id' => $validated['site_visit_id'],
+    if (!empty($validated['calculation_id'])) {
+        $calc = Calculation::find($validated['calculation_id']);
+        $calc->update(['data' => $data]);
+    } else {
+        $calc = Calculation::create([
+            'site_visit_id' => $mode === 'template' ? null : $validated['site_visit_id'],
+            'estimate_id' => $mode === 'template' ? ($request->input('estimate_id') ?: null) : null,
             'calculation_type' => 'mulching',
             'data' => $data,
+            'is_template' => $mode === 'template',
+            'template_name' => $mode === 'template' ? ($request->input('template_name') ?: null) : null,
         ]);
+    }
 
-    // ✅ Redirect to results
+    if ($mode === 'template') {
+        // If estimate_id present and user chose to import immediately
+        if ($request->boolean('import_now') && $calc->estimate_id) {
+            app(\App\Services\CalculationImportService::class)
+                ->importCalculation(Estimate::findOrFail($calc->estimate_id), $calc, (bool) $request->boolean('replace'));
+            return redirect()->route('estimates.show', $calc->estimate_id)
+                ->with('success', $request->boolean('replace') ? 'Mulching template imported (replaced).' : 'Mulching template imported.');
+        }
+
+        return redirect()->route('estimates.show', $calc->estimate_id ?: request('estimate_id'))
+            ->with('success', 'Mulching template saved.');
+    }
+
+    // ✅ Redirect to results in site-visit mode
     return redirect()->route('calculators.mulching.showResult', $calc->id);
 }
 

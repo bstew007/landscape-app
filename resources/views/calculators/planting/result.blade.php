@@ -8,6 +8,8 @@
         <p class="text-gray-600">Labor includes facing and watering each plant.</p>
     </div>
 
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
+
     <div class="bg-white rounded-lg shadow p-6">
         <p class="text-xl font-semibold mb-2">Final Price</p>
         <p class="text-3xl font-bold text-green-700">${{ number_format($data['final_price'], 2) }}</p>
@@ -83,36 +85,14 @@
         </section>
     @endif
 
-    <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
-        @csrf
-        <input type="hidden" name="calculation_type" value="planting">
-        <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
-        <input type="hidden" name="data" value="{{ json_encode($data) }}">
-        @if (!empty($siteVisit->estimate_id))
-            <input type="hidden" name="estimate_id" value="{{ $siteVisit->estimate_id }}">
-        @endif
-        <div class="flex flex-wrap gap-3">
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-                💾 Save to Site Visit
-            </button>
-            <button type="submit" name="replace" value="1" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold">
-                💾 Save & Replace on Estimate
-            </button>
-        </div>
-    </form>
-
-    @isset($calculation)
-        <a href="{{ route('calculators.planting.downloadPdf', $calculation->id) }}"
-           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold">
-            ⬇️ Download PDF
-        </a>
-    @endisset
-
-    <div>
-        <a href="{{ route('clients.show', $siteVisit->client_id) }}"
-           class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
-            ⬅️ Back to Client
-        </a>
-    </div>
+    {{-- Actions --}}
+    @php $downloadUrl = isset($calculation) ? route('calculators.planting.downloadPdf', $calculation->id) : null; @endphp
+    @include('calculators.partials.actions', [
+        'calculationType' => 'planting',
+        'siteVisit' => $siteVisit,
+        'data' => $data,
+        'calculation' => $calculation ?? null,
+        'downloadPdfUrl' => $downloadUrl,
+    ])
 </div>
 @endsection

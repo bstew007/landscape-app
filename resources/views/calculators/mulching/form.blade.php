@@ -31,12 +31,28 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">
-        {{ $editMode ? '✏️ Edit Mulching Data' : '🌿 Mulching Calculator' }}
-    </h1>
+    @include('calculators.partials.form_header', [
+        'title' => $editMode ? '✏️ Edit Mulching Data' : '🌿 Mulching Calculator',
+        'subtitle' => null,
+    ])
+
+    @if(($mode ?? null) !== 'template' && $siteVisit)
+        @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
+    @else
+        <div class="bg-white p-4 rounded border mb-6">
+            <p class="text-sm text-gray-700">Template Mode — build a mulching estimate without a site visit.</p>
+            @if(!empty($estimateId))
+                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
+            @endif
+        </div>
+    @endif
 
     <form method="POST" action="{{ route('calculators.mulching.calculate') }}">
         @csrf
+        <input type="hidden" name="mode" value="{{ $mode ?? '' }}">
+        @if(!empty($estimateId))
+            <input type="hidden" name="estimate_id" value="{{ $estimateId }}">
+        @endif
 
         {{-- Edit Mode: Calculation ID --}}
         @if ($editMode && isset($calculation))
@@ -48,13 +64,13 @@
 
         {{-- Crew & Logistics --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
             @include('calculators.partials.overhead_inputs')
         </div>
 
         {{-- Mulch Area & Depth --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Mulch Coverage</h2>
+            @include('calculators.partials.section_heading', ['title' => 'Mulch Coverage'])
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -224,17 +240,22 @@
 
         {{-- Submit --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-                {{ $editMode ? '🔄 Recalculate Mulching' : '🧮 Calculate Mulching Data' }}
-            </button>
-
-            <a href="{{ route('clients.show', $siteVisitId) }}"
-               class="inline-flex items-center px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold">
-                🔙 Back to Client
-            </a>
+            @if(($mode ?? null) === 'template')
+                <input type="text" name="template_name" class="form-input w-full sm:w-80" placeholder="Template name (e.g., Small front bed)" value="{{ old('template_name') }}">
+                <button type="submit" name="import_now" value="0" class="btn btn-secondary">💾 Save Template</button>
+                @if(!empty($estimateId))
+                    <button type="submit" name="import_now" value="1" class="btn btn-primary">➕ Save & Import to Estimate</button>
+                    <label class="inline-flex items-center ml-2 text-sm"><input type="checkbox" name="replace" value="1" class="form-checkbox"><span class="ml-2">Replace existing mulching items</span></label>
+                @endif
+            @else
+                <button type="submit" class="btn btn-secondary">
+                    {{ $editMode ? '🔄 Recalculate Mulching' : '🧮 Calculate Mulching Data' }}
+                </button>
+                <a href="{{ route('clients.show', $siteVisitId) }}" class="btn btn-muted">🔙 Back to Client</a>
+            @endif
         </div>
     </form>
+
 </div>
 @endsection
 

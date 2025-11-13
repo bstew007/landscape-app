@@ -12,10 +12,20 @@
                class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
                 ⬆ Import JSON
             </a>
+                    <div class="flex items-center gap-3">
+            <a href="{{ route('labor.importForm') }}"
+               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                ⬆ Import (JSON/CSV)
+            </a>
+            <a href="{{ route('labor.export') }}"
+               class="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
+                ⬇ Export CSV
+            </a>
             <a href="{{ route('labor.create') }}"
                class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 + Add Labor Entry
             </a>
+        </div>
         </div>
     </div>
 

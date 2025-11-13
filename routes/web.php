@@ -50,16 +50,22 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ✅ Production Rates (Admin)
-    Route::resource('production-rates', ProductionRateController::class)->except(['show']);
+    // ✅ Production Rates (moved into Admin-only group above)
 
-    // ✅ Catalogs
-    Route::get('materials/import', [MaterialController::class, 'importForm'])->name('materials.importForm');
-    Route::post('materials/import', [MaterialController::class, 'import'])->name('materials.import');
-    Route::resource('materials', MaterialController::class)->except(['show']);
-    Route::get('labor/import', [LaborController::class, 'importForm'])->name('labor.importForm');
-    Route::post('labor/import', [LaborController::class, 'import'])->name('labor.import');
-    Route::resource('labor', LaborController::class)->except(['show']);
+    // ✅ Catalogs (Admin Only)
+    Route::middleware(['can:manage-catalogs'])->group(function () {
+        Route::get('materials/import', [MaterialController::class, 'importForm'])->name('materials.importForm');
+        Route::post('materials/import', [MaterialController::class, 'import'])->name('materials.import');
+        Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
+        Route::resource('materials', MaterialController::class)->except(['show']);
+        Route::get('labor/import', [LaborController::class, 'importForm'])->name('labor.importForm');
+        Route::post('labor/import', [LaborController::class, 'import'])->name('labor.import');
+        Route::get('labor/export', [LaborController::class, 'export'])->name('labor.export');
+        Route::resource('labor', LaborController::class)->except(['show']);
+        Route::resource('production-rates', ProductionRateController::class)->except(['show']);
+    });
+
+    // Read-only catalogs for non-admin users could be added here if desired
 
     // ✅ Save calculation to site visit
     Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
@@ -213,9 +219,32 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
 
 
     // ================================
-    // ✅ Clients & Site Visits
+    // ✅ Contacts & Site Visits (with legacy redirects)
     // ================================
-    Route::resource('clients', ClientController::class);
+    Route::resource('contacts', \App\Http\Controllers\ContactController::class);
+
+    // Legacy clients -> contacts redirects
+    Route::get('clients', function () { return redirect()->route('contacts.index'); })->name('clients.index');
+    Route::get('clients/create', function () { return redirect()->route('contacts.create'); })->name('clients.create');
+    Route::get('clients/{client}', function ($id) { return redirect('/contacts/'.$id); })->name('clients.show');
+    Route::get('clients/{client}/edit', function ($id) { return redirect('/contacts/'.$id.'/edit'); })->name('clients.edit');
+
+    // Legacy write routes to support old clients.* names
+    Route::post('clients', [\App\Http\Controllers\ContactController::class, 'store'])->name('clients.store');
+    Route::match(['put','patch'], 'clients/{client}', [\App\Http\Controllers\ContactController::class, 'update'])->name('clients.update');
+    Route::delete('clients/{client}', [\App\Http\Controllers\ContactController::class, 'destroy'])->name('clients.destroy');
+
+    // Contacts nested resources
+    Route::resource('contacts.properties', PropertyController::class)
+        ->except(['show'])
+        ->parameters(['contacts' => 'client']);
+    Route::resource('contacts.site-visits', SiteVisitController::class)
+        ->parameters(['contacts' => 'client']);
+
+    Route::post('contacts/{client}/site-visits/{site_visit}/photos', [SiteVisitController::class, 'storePhoto'])->name('contacts.site-visits.photos.store');
+    Route::delete('contacts/{client}/site-visits/{site_visit}/photos/{photo}', [SiteVisitController::class, 'destroyPhoto'])->name('contacts.site-visits.photos.destroy');
+
+    // Legacy nested client routes kept for backward comp (can be removed later)
     Route::resource('clients.properties', PropertyController::class)->except(['show']);
     Route::resource('clients.site-visits', SiteVisitController::class);
     Route::post('clients/{client}/site-visits/{site_visit}/photos', [SiteVisitController::class, 'storePhoto'])->name('clients.site-visits.photos.store');
@@ -254,7 +283,15 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         // Files
         Route::post('files', [\App\Http\Controllers\EstimateFileController::class, 'store'])->name('files.store');
         Route::delete('files/{file}', [\App\Http\Controllers\EstimateFileController::class, 'destroy'])->name('files.destroy');
+
+        // Calculator Template APIs
+        Route::get('calculator/templates', [\App\Http\Controllers\EstimateCalculatorController::class, 'templates'])->name('calculator.templates');
+        Route::post('calculator/import', [\App\Http\Controllers\EstimateCalculatorController::class, 'import'])->name('calculator.import');
     });
+
+    // Calculator Templates - Global endpoints
+    Route::post('calculator/templates', [\App\Http\Controllers\EstimateCalculatorController::class, 'saveTemplate'])->name('calculator.templates.save');
+
     Route::post('estimates/{estimate}/email', [EstimateController::class, 'sendEmail'])->name('estimates.email');
     Route::post('estimates/{estimate}/invoice', [EstimateController::class, 'createInvoice'])->name('estimates.invoice');
 

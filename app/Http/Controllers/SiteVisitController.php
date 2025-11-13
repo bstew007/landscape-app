@@ -117,7 +117,7 @@ class SiteVisitController extends Controller
             'estimate_id' => 'nullable|exists:estimates,id',
         ]);
 
-        $calculationData = json_decode($validated['data'], true); // Already a JSON string, validated as string
+        $calculationData = json_decode($validated['data'], true);
 
         $siteVisit = SiteVisit::findOrFail($validated['site_visit_id']);
 
@@ -143,7 +143,18 @@ class SiteVisitController extends Controller
             ]);
         }
 
-        // Optionally import into a linked estimate automatically
+        // Determine import action
+        $noImport = (bool) $request->boolean('no_import');
+        $replace = (bool) $request->boolean('replace');
+        $append  = (bool) $request->boolean('append');
+
+        if ($noImport) {
+            return redirect()
+                ->route('clients.show', $siteVisit->client_id)
+                ->with('success', 'Calculation saved to site visit.');
+        }
+
+        // Optionally import into a linked estimate
         $estimate = null;
         if (!empty($validated['estimate_id'])) {
             $estimate = Estimate::find($validated['estimate_id']);
@@ -154,16 +165,23 @@ class SiteVisitController extends Controller
                 ->first();
         }
 
-        if ($estimate) {
-            $this->importer->importCalculation($estimate, $calc);
-            $message = 'Calculation saved to site visit and imported to estimate #' . $estimate->id . '.';
-        } else {
-            $message = 'Calculation saved to site visit.';
+        if ($estimate && ($append || $replace)) {
+            $this->importer->importCalculation($estimate, $calc, $replace);
+            $message = $replace
+                ? 'Calculation saved and replaced on estimate #'.$estimate->id.'.'
+                : 'Calculation saved and appended to estimate #'.$estimate->id.'.';
+
+            return redirect()
+                ->route('clients.show', $siteVisit->client_id)
+                ->with('success', $message);
         }
 
+        // Default: saved but no import performed (or no estimate available)
         return redirect()
             ->route('clients.show', $siteVisit->client_id)
-            ->with('success', $message);
+            ->with('success', $estimate
+                ? 'Calculation saved. Use the buttons to import into the estimate.'
+                : 'Calculation saved to site visit.');
     }
 
 

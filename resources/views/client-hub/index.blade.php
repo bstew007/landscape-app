@@ -13,9 +13,9 @@
             <p class="text-gray-600">Manage clients, visits, and estimates from one place.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('clients.create') }}" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Add Client</a>
-            <a href="{{ route('clients.index') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Manage Clients</a>
-            <a href="{{ route('clients.index') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Create Site Visit</a>
+            <a href="{{ route('contacts.create') }}" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Add Contact</a>
+            <a href="{{ route('contacts.index') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Manage Contacts</a>
+            <a href="{{ route('contacts.index') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Create Site Visit</a>
             <a href="{{ route('estimates.create') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Create Estimate</a>
         </div>
     </div>
@@ -43,7 +43,7 @@
         <section class="bg-white rounded-lg shadow p-4 space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Recent Clients</h2>
-                <a href="{{ route('clients.index') }}" class="text-sm text-blue-600 hover:text-blue-800">View all</a>
+                <a href="{{ route('contacts.index') }}" class="text-sm text-blue-600 hover:text-blue-800">View all</a>
             </div>
             <div class="space-y-3">
                 @foreach ($recentClients as $client)
@@ -64,7 +64,7 @@
         <section class="bg-white rounded-lg shadow p-4 space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Upcoming Site Visits</h2>
-                <a href="{{ route('clients.index') }}" class="text-sm text-blue-600 hover:text-blue-800">Schedule</a>
+                <a href="{{ route('contacts.index') }}" class="text-sm text-blue-600 hover:text-blue-800">Schedule</a>
             </div>
             <div class="space-y-3">
                 @forelse ($upcomingVisits as $visit)
@@ -75,7 +75,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-semibold text-gray-900">{{ optional($visit->visit_date)->format('M j, g:ia') }}</p>
-                            <a href="{{ route('clients.site-visits.show', [$visit->client_id, $visit->id]) }}" class="text-xs text-blue-600">Open</a>
+                            <a href="{{ route('contacts.site-visits.show', [$visit->client_id, $visit->id]) }}" class="text-xs text-blue-600">Open</a>
                         </div>
                     </div>
                 @empty

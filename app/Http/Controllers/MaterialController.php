@@ -30,6 +30,39 @@ class MaterialController extends Controller
         return view('materials.import');
     }
 
+    public function export(Request $request)
+    {
+        $filename = 'materials-' . now()->format('Ymd-His') . '.csv';
+        $materials = \App\Models\Material::orderBy('name')->get();
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+        $columns = ['name','sku','category','unit','unit_cost','tax_rate','vendor_name','vendor_sku','description','is_taxable','is_active'];
+
+        $callback = function () use ($materials, $columns) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $columns);
+            foreach ($materials as $m) {
+                fputcsv($out, [
+                    $m->name,
+                    $m->sku,
+                    $m->category,
+                    $m->unit,
+                    $m->unit_cost,
+                    $m->tax_rate,
+                    $m->vendor_name,
+                    $m->vendor_sku,
+                    $m->description,
+                    $m->is_taxable ? 'true' : 'false',
+                    $m->is_active ? 'true' : 'false',
+                ]);
+            }
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function import(Request $request)
     {
         $request->validate([

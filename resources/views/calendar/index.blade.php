@@ -51,8 +51,8 @@
 
                         <div class="mt-2 space-y-1">
                             @forelse ($day['visits'] as $visit)
-                                <a href="{{ route('clients.site-visits.show', [$visit->client_id, $visit->id]) }}"
-                                   class="block rounded border border-blue-100 bg-blue-50 px-2 py-1 text-xs text-blue-900 hover:bg-blue-100">
+                                                                  <a href="{{ route('contacts.site-visits.show', [$visit->client_id, $visit->id]) }}"
+                                     class="block rounded border border-blue-100 bg-blue-50 px-2 py-1 text-xs text-blue-900 hover:bg-blue-100">
                                     <p class="font-semibold">
                                         {{ $visit->client->name }}
                                     </p>

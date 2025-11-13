@@ -28,6 +28,36 @@ class LaborController extends Controller
         return view('labor.import');
     }
 
+    public function export(Request $request)
+    {
+        $filename = 'labor-' . now()->format('Ymd-His') . '.csv';
+        $rows = \App\Models\LaborItem::orderBy('name')->get();
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+        $columns = ['name','type','unit','base_rate','overtime_rate','burden_percentage','is_billable','is_active','notes'];
+        $callback = function () use ($rows, $columns) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $columns);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r->name,
+                    $r->type,
+                    $r->unit,
+                    $r->base_rate,
+                    $r->overtime_rate,
+                    $r->burden_percentage,
+                    $r->is_billable ? 'true' : 'false',
+                    $r->is_active ? 'true' : 'false',
+                    $r->notes,
+                ]);
+            }
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function import(Request $request)
     {
         $request->validate([

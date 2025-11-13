@@ -4,16 +4,7 @@
 <div class="max-w-5xl mx-auto py-10">
     <h1 class="text-3xl font-bold mb-6">🌱 Turf Maintenance Summary</h1>
 
-    <div class="bg-white p-6 rounded-lg shadow mb-8 mt-10">
-        <hr class="my-4">
-        <h2 class="text-2xl font-semibold mb-4">👤 Client: {{ $siteVisit->client->name }}</h2>
-        <table class="mb-6">
-            <tr><td class="font-semibold pr-4">Email:</td><td>{{ $siteVisit->client->email ?? '—' }}</td></tr>
-            <tr><td class="font-semibold pr-4">Phone:</td><td>{{ $siteVisit->client->phone ?? '—' }}</td></tr>
-            <tr><td class="font-semibold pr-4">Address:</td><td>{{ $siteVisit->client->address ?? '—' }}</td></tr>
-            <tr><td class="font-semibold pr-4">Site Visit Date:</td><td>{{ $siteVisit->created_at->format('F j, Y') }}</td></tr>
-        </table>
-    </div>
+    @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
     <div class="bg-white p-6 rounded-lg shadow mb-8">
         <p class="text-xl font-semibold mb-2">Final Price:</p>
@@ -79,37 +70,14 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('site-visits.storeCalculation') }}">
-        @csrf
-        <input type="hidden" name="calculation_type" value="turf_mowing">
-        <input type="hidden" name="site_visit_id" value="{{ $siteVisit->id }}">
-        <input type="hidden" name="data" value="{{ json_encode($data) }}">
-        @if (!empty($siteVisit->estimate_id))
-            <input type="hidden" name="estimate_id" value="{{ $siteVisit->estimate_id }}">
-        @endif
-
-        <div class="flex flex-wrap gap-3">
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
-                💾 Save to Site Visit
-            </button>
-            <button type="submit" name="replace" value="1" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold">
-                💾 Save & Replace on Estimate
-            </button>
-        </div>
-    </form>
-
-    @isset($calculation)
-        <a href="{{ route('calculators.turf_mowing.downloadPdf', $calculation->id) }}"
-           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mb-4 ml-4">
-            📄 Download PDF
-        </a>
-    @endisset
-
-    <div class="mt-6">
-        <a href="{{ route('clients.show', $siteVisit->client_id) }}"
-           class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-semibold">
-            🔙 Back to Client
-        </a>
-    </div>
+    {{-- Actions --}}
+    @php $downloadUrl = isset($calculation) ? route('calculators.turf_mowing.downloadPdf', $calculation->id) : null; @endphp
+    @include('calculators.partials.actions', [
+        'calculationType' => 'turf_mowing',
+        'siteVisit' => $siteVisit,
+        'data' => $data,
+        'calculation' => $calculation ?? null,
+        'downloadPdfUrl' => $downloadUrl,
+    ])
 </div>
 @endsection
