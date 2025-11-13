@@ -27,6 +27,14 @@
         areas: @json($estimate->areas->map(fn($a)=>['id'=>$a->id,'name'=>$a->name]))
     };
 </script>
+<!-- Page loading overlay -->
+<div id="pageLoadingOverlay" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-white/70 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex items-center justify-center">
+        <div class="h-10 w-10 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent"></div>
+    </div>
+</div>
+
 <div class="space-y-6" x-data="{ tab: 'work', activeArea: 'all', showAddItems: false }">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -35,6 +43,7 @@
             <p class="text-gray-600">{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}</p>
         </div>
             <div class="flex flex-wrap gap-2">
+            <button type="button" id="estimateRefreshBtn" class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Refresh</button>
             <a href="{{ route('estimates.edit', $estimate) }}" class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Edit</a>
             <form action="{{ route('estimates.destroy', $estimate) }}" method="POST" onsubmit="return confirm('Delete this estimate?');">
                 @csrf
@@ -792,6 +801,15 @@
     window.estimatePage = function(){ return { tab: 'work', activeArea: 'all', showAddItems: false }; };
 
 document.addEventListener('DOMContentLoaded', () => {
+        // Spinner + auto-refresh helpers
+        const overlay = document.getElementById('pageLoadingOverlay');
+        function showPageSpinner(){ if (overlay) overlay.classList.remove('hidden'); }
+        function hidePageSpinner(){ if (overlay) overlay.classList.add('hidden'); }
+        function autoRefresh(delay = 150){ showPageSpinner(); setTimeout(() => window.location.reload(), delay); }
+
+        // Refresh button to reload the page and pick up any changes
+        const refreshBtn = document.getElementById('estimateRefreshBtn');
+        if (refreshBtn) refreshBtn.addEventListener('click', () => autoRefresh());
         // Build collapsible headers per area with subtotals
         function buildAreaHeaders() {
             const tbody = document.querySelector('table tbody');
@@ -805,6 +823,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!groups.has(aid)) groups.set(aid, []);
                 groups.get(aid).push(r);
             });
+            // Build area id -> name map from bootstrap data
+            const areaMap = new Map((window.__estimateSetup?.areas || []).map(a => [String(a.id), a.name]));
             groups.forEach((list, aid) => {
                 if (!list || !list.length) return;
                 let subtotal = 0;
@@ -812,6 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const cell = row.querySelector('[data-col="line_total"]');
                     if (cell) subtotal += parseFloat((cell.textContent || '').replace(/[^0-9.\-]/g,'')) || 0;
                 });
+                const label = (aid === '0') ? 'Unassigned' : (areaMap.get(String(aid)) || `Area ${aid}`);
                 const header = document.createElement('tr');
                 header.className = 'bg-gray-100';
                 header.setAttribute('data-role','area-header');
@@ -819,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 header.innerHTML = `
                     <td colspan="7" class="px-3 py-2 text-gray-700 font-semibold">
                         <button data-action="toggle-area" data-area-id="${aid}" class="mr-2 text-xs px-2 py-0.5 rounded border">Toggle</button>
-                        ${aid === '0' ? 'Unassigned' : 'Area ' + aid}
+                        ${label}
                     </td>
                     <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="area-subtotal">$${subtotal.toFixed(2)}</td>
                     <td class="px-3 py-2 text-right text-sm">
@@ -1193,16 +1214,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const data = await response.json();
                 if (data.totals) updateSummary(data.totals);
-
-                if (data.item) {
-                    insertOrUpdateRow(data.item);
-                    showToast('Line item added', 'success');
-                } else {
-                    showToast('Line item added', 'success');
-                    return window.location.reload();
-                }
-
-                resetForm(form);
+                showToast('Line item added', 'success');
+                return autoRefresh();
             } catch (error) {
                 if (error && error.errors) {
                     renderFormErrors(form, error.errors);
@@ -1378,6 +1391,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const json = await response.json();
                     if (json.totals) updateSummary(json.totals);
                     showToast('Item order updated', 'success');
+                    autoRefresh();
                 }).catch(() => window.location.reload());
             });
 
@@ -1437,6 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     row.replaceWith(updatedRow);
                     if (data.totals) updateSummary(data.totals);
                     showToast('Item updated', 'success');
+                    autoRefresh();
                 } catch (error) {
                     showToast('Failed to update item', 'error');
                 }
@@ -1461,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelectorAll(`tr[data-calculation-id="${calcId}"]`).forEach(row => row.remove());
                     if (data.totals) updateSummary(data.totals);
                     showToast('Removed items for calculation', 'success');
+                    autoRefresh();
                 } catch (error) {
                     window.location.reload();
                 }
@@ -1644,10 +1660,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (!response.ok) throw await response.json().catch(()=>({}));
                 const data = await response.json();
-                // Move row visually by updating its data-area-id; for now, refresh to sync group subtotals
-                const row = document.querySelector(`tr[data-item-id="${id}"]`);
-                if (row) row.setAttribute('data-area-id', areaId || '0');
                 showToast('Area updated', 'success');
+                autoRefresh();
             } catch (e) {
                 showToast('Failed to set area', 'error');
             }
