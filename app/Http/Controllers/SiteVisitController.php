@@ -172,7 +172,7 @@ class SiteVisitController extends Controller
                 : 'Calculation saved and appended to estimate #'.$estimate->id.'.';
 
             return redirect()
-                ->route('clients.show', $siteVisit->client_id)
+                ->route('estimates.show', $estimate)
                 ->with('success', $message);
         }
 
