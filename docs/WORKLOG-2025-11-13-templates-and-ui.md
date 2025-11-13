@@ -5,7 +5,13 @@ This document captures what we implemented today and the next steps to continue 
 ## Summary
 We added a “Template Mode” for the Mulching calculator so line items can be created directly in an Estimate without a Site Visit. We also standardized calculator UI (buttons, headings, client info) and added an in-estimate panel for templates.
 
+Additionally, we extended Template Mode and the shared result actions to Paver Patio, Retaining Wall, Weeding, Turf Mowing, Planting, Fence, Pruning, and Pine Needles. On the estimate page, we added a Refresh button and wired auto-refresh with a spinner for common actions.
+
 ## Changes Implemented
+
+0) Estimate page quality-of-life
+- Refresh button added; auto-refresh with a spinner after common actions (add/edit/remove/reorder items).
+- Work area headers now use the area names instead of “Area {id}”.
 
 1) Contacts
 - Added secondary email/phone
@@ -35,7 +41,11 @@ We added a “Template Mode” for the Mulching calculator so line items can be 
 4) Retained/Fixed route structure
 - Fixed unmatched brace in `routes/web.php` by consolidating estimate subroutes inside the `Route::prefix('estimates/{estimate}')` group
 
-5) Mulching Calculator: Template Mode (MVP)
+5) Template Mode across calculators + Mulching (MVP pattern)
+- Extended to: Syn-Turf, Paver Patio, Retaining Wall, Weeding, Turf Mowing, Planting, Fence, Pruning, Pine Needles
+- Pages accept `?mode=template&estimate_id={id}` (site_visit optional), save template rows, and import from estimate drawer
+
+5a) Mulching Calculator: Template Mode (MVP)
 - DB migrations:
   - `2025_11_13_010000_add_template_fields_to_calculations_table.php` adds `is_template`, `template_name`, `estimate_id`
   - `2025_11_13_011000_make_site_visit_id_nullable_in_calculations_table.php` makes `site_visit_id` nullable
@@ -59,12 +69,25 @@ We added a “Template Mode” for the Mulching calculator so line items can be 
 - Resolved Blade parsing issue by wrapping inline HTML in HtmlString in a couple of form views (retaining-wall, paver-patio)
 - Fixed parse error in routes/web.php by rebalancing group braces
 
+6) Syn-Turf Enhancements
+- Production rates:
+  - Faster infill (0.0025 hr/sqft)
+  - Excavation by cubic yards for equipment methods (skid/mini)
+  - Added base_install (0.20 hr/cy)
+- Form:
+  - Excavation Method toggle (Generic/Skid/Mini), Excavation Depth (in)
+  - ABC Depth (in), Rock Dust Depth (in) → material lines (cy) without defaults
+  - Tamper rental as a fee $125/day with Rental Days field
+- Controller/service:
+  - Convert sqft+depth to CY for excavation/base; add materials, labor, fee as appropriate
+
 ## How to Test (Quick)
 1) Install/Update
 - Run migrations:
   - `php artisan migrate`
 - Clear caches:
   - `php artisan optimize:clear`
+  - `php artisan view:clear`
 - Rebuild assets (for new Tailwind components):
   - `npm run dev` (or `npm run build`)
 
@@ -76,22 +99,31 @@ We added a “Template Mode” for the Mulching calculator so line items can be 
   - Save Template (keeps it) or Save & Import to Estimate (appends or replaces)
 - Back on the estimate page, use the “Select mulching template…” dropdown to import a saved template
 
-3) UI Standardization
+3) UI Standardization + Syn-Turf
 - Open several calculator forms and results pages to confirm:
+  - Syn-Turf now shows the Excavation Method toggle and new ABC/Rock Dust/Tamper fields on the form
+  - Results include ABC/Rock Dust material lines (when depths provided) and tamper fee when selected
   - Consistent header, section headings, and client info
   - Standardized buttons on forms and results (Save/Append/Replace/PDF/Back)
 
 ## Known Issues / Notes
-- If you saved a mulching template before the `Calculation` model update (missing is_template in $fillable), it won’t appear in the dropdown. Either re-save a new template or manually flag the row in DB:
+- If you saved a template before the `Calculation` model update (missing is_template in $fillable), it won’t appear in the drawer. Either re-save a new template or manually flag the row in DB:
   ```sql
   UPDATE calculations
-  SET is_template = 1, template_name = 'My Mulch Template'
+  SET is_template = 1, template_name = 'My Template'
   WHERE id = X;
   ```
 - Ensure `site_visit_id` is nullable in the calculations table; otherwise, template mode will fail.
+- Seed updated production rates after pulling:
+  - `php artisan db:seed --class=ProductionRateSeeder`
 
 ## Next Steps (Proposed for Tomorrow)
-1) UX: Add modal workflow to estimates.show
+1) Syn-Turf
+- Consider moving the Excavation Method toggle higher on the form for visibility
+- Optional: auto-calc tamper rental days (ceil(total hours / 8)) with a manual override
+- Optional: allow selecting Work Area from the Syn-Turf result footer and pass area_id to import
+
+2) UX: Add modal workflow to estimates.show
 - “Add via Calculator” opens a modal (or side drawer) with:
   - Tabs: “Create with Calculator” | “Templates”
   - Create with Calculator: Inline Mulching mini-form (Template Mode) or deep link to full page
