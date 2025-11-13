@@ -6,7 +6,7 @@ use Illuminate\Support\Arr;
 
 class SynTurfMaterialService
 {
-    public function buildMaterials(float $areaSqft, float $edgingLf, string $grade, array $overrides = []): array
+    public function buildMaterials(float $areaSqft, float $edgingLf, string $grade, array $overrides = [], ?float $baseDepthIn = null): array
     {
         $config = config('syn_turf.materials', []);
 
@@ -30,6 +30,19 @@ class SynTurfMaterialService
         $weedCoverage = Arr::get($config, 'weed_barrier.coverage_sqft_per_roll', 1800);
         $weedUnitCost = $overrides['weed_barrier_price'] ?? Arr::get($config, 'weed_barrier.unit_cost', 75);
         $weedBarrierRolls = $areaSqft > 0 ? (int) ceil($areaSqft / max($weedCoverage, 1)) : 0;
+
+        // Base materials (ABC and Rock Dust) based on per-layer depths (supplied by user; no defaults)
+        $abcUnitCost = Arr::get($config, 'base.abc.unit_cost', 38.00);
+        $rockDustUnitCost = Arr::get($config, 'base.rock_dust.unit_cost', 42.00);
+        $abcDepthIn = isset($overrides['abc_depth_in']) ? (float) $overrides['abc_depth_in'] : 0.0;
+        $rockDepthIn = isset($overrides['rock_dust_depth_in']) ? (float) $overrides['rock_dust_depth_in'] : 0.0;
+        $abcCY = 0.0; $rockDustCY = 0.0;
+        if ($abcDepthIn > 0) {
+            $abcCY = round(($areaSqft * ($abcDepthIn / 12)) / 27, 2);
+        }
+        if ($rockDepthIn > 0) {
+            $rockDustCY = round(($areaSqft * ($rockDepthIn / 12)) / 27, 2);
+        }
 
         $materials = [
             $turfName => [
@@ -57,6 +70,23 @@ class SynTurfMaterialService
             ],
         ];
 
+        if ($abcCY > 0) {
+            $materials['ABC Base (cy)'] = [
+                'qty' => $abcCY,
+                'unit_cost' => $abcUnitCost,
+                'total' => round($abcCY * $abcUnitCost, 2),
+                'meta' => $abcDepthIn ? sprintf('Depth %.2f in', $abcDepthIn) : null,
+            ];
+        }
+        if ($rockDustCY > 0) {
+            $materials['Rock Dust (cy)'] = [
+                'qty' => $rockDustCY,
+                'unit_cost' => $rockDustUnitCost,
+                'total' => round($rockDustCY * $rockDustUnitCost, 2),
+                'meta' => $rockDepthIn ? sprintf('Depth %.2f in', $rockDepthIn) : null,
+            ];
+        }
+
         $materials = array_filter($materials, fn ($item) => $item['qty'] > 0);
         $materialTotal = array_sum(array_column($materials, 'total'));
 
@@ -74,6 +104,8 @@ class SynTurfMaterialService
             'edging_boards' => $edgingBoards,
             'weed_barrier_rolls' => $weedBarrierRolls,
             'overrides_enabled' => $overridesEnabled,
+            'abc_cy' => $abcCY,
+            'rock_dust_cy' => $rockDustCY,
         ];
     }
 }
