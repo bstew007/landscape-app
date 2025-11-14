@@ -47,46 +47,75 @@ class ContactController extends Controller
             'address'    => 'nullable|string',
         ]);
 
-        Contact::create($validated);
+        // Normalize phone mask to (XXX) XXX-XXXX
+        foreach (['phone','phone2'] as $p) {
+            if (!empty($validated[$p])) {
+                $digits = preg_replace('/[^0-9]/', '', (string) $validated[$p]);
+                if (strlen($digits) === 11 && str_starts_with($digits, '1')) { $digits = substr($digits, 1); }
+                if (strlen($digits) === 10) {
+                    $validated[$p] = sprintf('(%s) %s-%s', substr($digits,0,3), substr($digits,3,3), substr($digits,6));
+                }
+            }
+        }
 
-        return redirect()->route('contacts.index')->with('success', 'Contact added successfully.');
+        $contact = Contact::create($validated);
+
+        return redirect(url('contacts/'.$contact->getKey()))->with('success', 'Contact added successfully.');
     }
 
     public function show(Contact $contact)
     {
+        $tab = request('tab', 'info');
+
         $properties = $contact->properties()
             ->withCount('siteVisits')
             ->orderByDesc('is_primary')
             ->orderBy('name')
             ->get();
 
-        $siteVisitOptions = $contact->siteVisits()
+        // Estimates & Invoices
+        $estimates = $contact->hasMany(\App\Models\Estimate::class, 'client_id')
             ->with('property')
-            ->orderByDesc('visit_date')
-            ->orderByDesc('id')
+            ->latest('created_at')
+            ->take(50)
             ->get();
 
-        $siteVisitSummaries = $siteVisitOptions->map(function ($visit) {
-            return [
-                'id' => $visit->id,
-                'date' => optional($visit->visit_date)->format('F j, Y'),
-                'property' => optional($visit->property)->name,
-            ];
-        });
+        $invoices = \App\Models\Invoice::with('estimate')
+            ->whereHas('estimate', function($q) use ($contact) {
+                $q->where('client_id', $contact->id);
+            })
+            ->latest('created_at')
+            ->take(50)
+            ->get();
 
-        $selectedSiteVisit = $siteVisitOptions->firstWhere('id', (int) request('site_visit_id'))
-            ?? $siteVisitOptions->first();
+        // Communications data
+        $todos = \App\Models\Todo::with('property')
+            ->where('client_id', $contact->id)
+            ->orderByDesc('updated_at')
+            ->take(200)
+            ->get();
 
-        $recentVisits = $siteVisitOptions->take(5);
+        $emailEvents = \App\Models\Estimate::with(['property','emailSender'])
+            ->where('client_id', $contact->id)
+            ->whereNotNull('email_last_sent_at')
+            ->orderByDesc('email_last_sent_at')
+            ->take(100)
+            ->get();
+
+        $siteVisits = $contact->siteVisits()->with('property')
+            ->latest('visit_date')
+            ->take(100)
+            ->get();
 
         return view('clients.show', [
-            'client' => $contact,
             'contact' => $contact,
-            'siteVisit' => $selectedSiteVisit,
-            'siteVisitOptions' => $siteVisitOptions,
-            'siteVisitSummaries' => $siteVisitSummaries,
+            'tab' => $tab,
             'properties' => $properties,
-            'recentVisits' => $recentVisits,
+            'estimates' => $estimates,
+            'invoices' => $invoices,
+            'todos' => $todos,
+            'emailEvents' => $emailEvents,
+            'siteVisits' => $siteVisits,
         ]);
     }
 
@@ -109,9 +138,20 @@ class ContactController extends Controller
             'address'    => 'nullable|string',
         ]);
 
+        // Normalize phone mask to (XXX) XXX-XXXX
+        foreach (['phone','phone2'] as $p) {
+            if (!empty($validated[$p])) {
+                $digits = preg_replace('/[^0-9]/', '', (string) $validated[$p]);
+                if (strlen($digits) === 11 && str_starts_with($digits, '1')) { $digits = substr($digits, 1); }
+                if (strlen($digits) === 10) {
+                    $validated[$p] = sprintf('(%s) %s-%s', substr($digits,0,3), substr($digits,3,3), substr($digits,6));
+                }
+            }
+        }
+
         $contact->update($validated);
 
-        return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
+        return redirect(url('contacts/'.$contact->getKey()))->with('success', 'Contact updated successfully.');
     }
 
     public function destroy(Contact $contact)

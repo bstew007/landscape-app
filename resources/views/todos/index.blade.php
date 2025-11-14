@@ -3,11 +3,13 @@
 @php
     use App\Models\Todo;
     $statusLabels = [
+        'future' => 'Future',
         'pending' => 'Pending',
         'in_progress' => 'In Progress',
         'completed' => 'Completed',
     ];
     $statusColors = [
+        'future' => 'border-violet-200 bg-violet-50',
         'pending' => 'border-yellow-200 bg-yellow-50',
         'in_progress' => 'border-blue-200 bg-blue-50',
         'completed' => 'border-green-200 bg-green-50',
@@ -43,7 +45,7 @@
             </div>
         </div>
 
-        <form method="GET" class="bg-white rounded-lg shadow p-4 grid gap-4 md:grid-cols-3">
+        <form method="GET" action="{{ route('todos.index') }}" class="bg-white rounded-lg shadow p-4 grid gap-4 md:grid-cols-4" id="todoFilters">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Priority</label>
                 <select name="priority" class="form-select w-full mt-1">
@@ -62,10 +64,34 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Visibility</label>
+                <div class="mt-2 flex flex-col gap-2">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="hide_future" value="1" class="form-checkbox" {{ request()->boolean('hide_future') ? 'checked' : '' }}>
+                        Hide Future
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="hide_completed" value="1" class="form-checkbox" {{ request()->boolean('hide_completed') ? 'checked' : '' }}>
+                        Hide Completed
+                    </label>
+                </div>
+            </div>
             <div class="flex items-end">
                 <button type="submit" class="w-full bg-gray-900 text-white rounded py-2 hover:bg-black">
-                    Filter
+                    Apply Filters
                 </button>
+                <script>
+                    // Auto-submit on toggle for the two checkboxes
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const form = document.getElementById('todoFilters');
+                        if (!form) return;
+                        ['hide_future','hide_completed'].forEach(name => {
+                            const el = form.querySelector(`input[name="${name}"]`);
+                            if (el) el.addEventListener('change', () => form.submit());
+                        });
+                    });
+                </script>
             </div>
         </form>
 
@@ -126,15 +152,21 @@
                 </div>
             </div>
         @else
-            <div class="grid gap-4 lg:grid-cols-3" id="kanban-board">
-                @foreach (Todo::STATUSES as $status)
+            <div class="grid gap-4 lg:grid-cols-4" id="kanban-board">
+                @php
+                    // Reordered columns: Future, Pending, In Progress, Completed
+                    $columns = ['future','pending','in_progress','completed'];
+                @endphp
+                @foreach ($columns as $status)
                     @php
                         $cards = $todos->get($status, collect());
                     @endphp
                     <div class="rounded-lg border bg-gray-50" data-status="{{ $status }}">
                         <div class="flex items-center justify-between px-4 py-3 border-b">
                             <h2 class="text-sm font-semibold text-gray-600">{{ $statusLabels[$status] }}</h2>
-                            <span class="text-xs text-gray-500">{{ $cards->count() }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">{{ $cards->count() }}</span>
+                            </div>
                         </div>
                         <div class="p-3 space-y-3 min-h-[200px] kanban-column" data-status="{{ $status }}">
                             @forelse ($cards as $todo)
@@ -214,6 +246,10 @@
                                     if (!response.ok) {
                                         throw new Error('Unable to update status');
                                     }
+                                }).then(() => {
+                                    // After moving into a hidden column (e.g., completed when hide_completed is on), reload to respect filters
+                                    const form = document.getElementById('todoFilters');
+                                    if (form) form.submit();
                                 }).catch(() => {
                                     alert('Failed to update task status. Please refresh.');
                                     window.location.reload();

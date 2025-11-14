@@ -242,13 +242,23 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             @if(($mode ?? null) === 'template')
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
-                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Small front bed)" value="{{ old('template_name') }}">
+                    <input id="templateName" type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Front Beds – 2.5 yd)" value="{{ old('template_name') }}" required>
                     <select name="template_scope" class="form-select w-full sm:w-48">
                         <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
                         <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
                         <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
                     </select>
                     <button type="submit" name="import_now" value="0" class="btn btn-secondary">💾 Save Template</button>
+                </div>
+                {{-- Inline totals preview for Template Mode --}}
+                <div id="mulchTotalsPreview" class="w-full bg-white border rounded p-3 text-sm text-gray-700">
+                    <div class="flex flex-wrap gap-4">
+                        <div><span class="text-gray-500">Mulch Yards:</span> <span id="pv-yards">—</span></div>
+                        <div><span class="text-gray-500">Materials:</span> <span id="pv-materials">—</span></div>
+                        <div><span class="text-gray-500">Labor Hours:</span> <span id="pv-hours">—</span></div>
+                        <div><span class="text-gray-500">Labor Cost:</span> <span id="pv-labor">—</span></div>
+                        <div class="ml-auto font-semibold"><span class="text-gray-600">Final Price:</span> <span id="pv-final">—</span></div>
+                    </div>
                 </div>
             @else
                 <button type="submit" class="btn btn-secondary">
@@ -453,22 +463,113 @@
 
         if (!isNaN(area) && area > 0 && !isNaN(depth) && depth > 0) {
            const mulchYards = Math.ceil((area * (depth / 12)) / 27);
-            outputValue.textContent = mulchYards;
-            outputDiv.classList.remove('hidden');
+            if (outputValue) outputValue.textContent = mulchYards;
+            if (outputDiv) outputDiv.classList.remove('hidden');
         } else {
-            outputDiv.classList.add('hidden');
+            if (outputDiv) outputDiv.classList.add('hidden');
         }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         const areaInput = document.querySelector('input[name="area_sqft"]');
         const depthInput = document.querySelector('input[name="depth_inches"]');
+        const mulchTypeSelect = document.querySelector('select[name="mulch_type"]');
+        const laborRateInput = document.querySelector('input[name="labor_rate"]');
+        const crewSizeInput = document.querySelector('input[name="crew_size"]');
+        const driveDistanceInput = document.querySelector('input[name="drive_distance"]');
+        const driveSpeedInput = document.querySelector('input[name="drive_speed"]');
+        const siteCondInput = document.querySelector('input[name="site_conditions"]');
+        const pickupInput = document.querySelector('input[name="material_pickup"]');
+        const cleanupInput = document.querySelector('input[name="cleanup"]');
+        const templateNameInput = document.getElementById('templateName');
 
-        areaInput.addEventListener('input', calculateMulchYards);
-        depthInput.addEventListener('input', calculateMulchYards);
+        const pvYards = document.getElementById('pv-yards');
+        const pvMaterials = document.getElementById('pv-materials');
+        const pvHours = document.getElementById('pv-hours');
+        const pvLabor = document.getElementById('pv-labor');
+        const pvFinal = document.getElementById('pv-final');
 
-        // Recalculate on load if values are already present
+        const defaultMulchCost = {{ $defaultMulchCost }};
+        const taskRates = @json(\App\Models\ProductionRate::where('calculator','mulching')->pluck('rate','task'));
+
+        let templateEdited = false;
+        if (templateNameInput) {
+            templateNameInput.addEventListener('input', () => { templateEdited = true; });
+        }
+
+        function parseNum(v, d=0){ const n = parseFloat(v); return Number.isFinite(n) ? n : d; }
+        function money(n){ return `$${parseNum(n).toFixed(2)}`; }
+        function fixed(n){ const x=parseNum(n); return Number.isFinite(x) ? x.toFixed(2) : '—'; }
+
+        function currentMulchYards(){
+            const a = parseNum(areaInput?.value, 0);
+            const d = parseNum(depthInput?.value, 0);
+            if (a>0 && d>0) return (a*(d/12))/27;
+            return 0;
+        }
+
+        function sumCustomMaterials(){
+            let total = 0;
+            document.querySelectorAll('[data-custom-row]').forEach(row => {
+                const q = parseNum(row.querySelector('[data-custom-qty]')?.value, 0);
+                const c = parseNum(row.querySelector('[data-custom-cost]')?.value, 0);
+                if (q>0 && c>=0) total += q*c;
+            });
+            return total;
+        }
+
+        function baseHours(){
+            let hours = 0;
+            Object.entries(taskRates||{}).forEach(([task, rate]) => {
+                const input = document.querySelector(`input[name="tasks[${task}][qty]"]`);
+                const qty = parseNum(input?.value, 0);
+                if (qty>0) hours += qty * parseNum(rate, 0);
+            });
+            return hours;
+        }
+
+        function recalcPreview(){
+            const yards = currentMulchYards();
+            const materials = (yards * defaultMulchCost) + sumCustomMaterials();
+            const baseH = baseHours();
+            const laborRate = parseNum(laborRateInput?.value, 0);
+            const crew = Math.max(1, parseInt(crewSizeInput?.value || '1', 10));
+            const dist = parseNum(driveDistanceInput?.value, 0);
+            const speed = Math.max(1, parseNum(driveSpeedInput?.value, 30));
+            const overheadPct = parseNum(siteCondInput?.value, 0) + parseNum(pickupInput?.value, 0) + parseNum(cleanupInput?.value, 0);
+            const hoursPerPersonPerDay = 10;
+            const visits = Math.ceil(baseH / (hoursPerPersonPerDay * crew || 1));
+            const roundTripDrivePerPerson = dist / speed * 2;
+            const adjustedDrive = roundTripDrivePerPerson * crew * visits;
+            const overheadTime = baseH * (overheadPct/100);
+            const totalHours = baseH + overheadTime + adjustedDrive;
+            const laborCost = totalHours * laborRate;
+            const finalPrice = laborCost + materials; // markup is 0 in form
+
+            if (pvYards) pvYards.textContent = fixed(yards);
+            if (pvMaterials) pvMaterials.textContent = money(materials);
+            if (pvHours) pvHours.textContent = fixed(totalHours);
+            if (pvLabor) pvLabor.textContent = money(laborCost);
+            if (pvFinal) pvFinal.textContent = money(finalPrice);
+
+            // Auto-suggest template name if user hasn't typed one
+            if (templateNameInput && !templateEdited) {
+                const type = mulchTypeSelect?.value || 'Mulch';
+                const suggested = `${type} – ${fixed(yards)} yd`;
+                templateNameInput.value = suggested;
+            }
+        }
+
+        // Wire inputs
+        [areaInput, depthInput, mulchTypeSelect, laborRateInput, crewSizeInput, driveDistanceInput, driveSpeedInput, siteCondInput, pickupInput, cleanupInput].forEach(el => {
+            if (el) el.addEventListener('input', recalcPreview);
+            if (el) el.addEventListener('change', recalcPreview);
+        });
+        document.getElementById('customMaterialRows')?.addEventListener('input', recalcPreview);
+
+        // Initial
         calculateMulchYards();
+        recalcPreview();
     });
 </script>
 @endpush

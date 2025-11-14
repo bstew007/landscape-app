@@ -25,19 +25,19 @@
         <li>
             <a href="{{ route('production-rates.index') }}"
                class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-800">
-                ⚙️ Production Rates
+                <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3v4M6 7l-2-2M18 7l2-2M4 13h16M5 17h14M7 10h10"/></svg><span>Production Rates</span></span>
             </a>
         </li>
         <li>
             <a href="{{ route('admin.budgets.index') }}"
                class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-800">
-                💼 Company Budget
+                <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg><span>Company Budget</span></span>
             </a>
         </li>
         <li>
             <a href="{{ route('materials.index') }}"
                class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-800">
-                🧱 Materials Catalog
+                <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg><span>Materials Catalog</span></span>
             </a>
         </li>
     </ul>
@@ -141,6 +141,26 @@
         </main>
     </div>
 </div>
+
+<!-- Toasts -->
+<div id="toastRoot" class="fixed bottom-4 right-4 z-[200] space-y-2"></div>
+<script>
+(function(){
+  if (window.showToast) return; // don't redefine
+  function el(tag, cls){ const e = document.createElement(tag); if(cls) e.className = cls; return e; }
+  function makeToast(msg, type){
+    const root = document.getElementById('toastRoot'); if (!root) return;
+    const wrap = el('div', 'pointer-events-auto min-w-[220px] max-w-sm rounded shadow-lg border p-3 text-sm flex items-start gap-2 transition-all duration-300');
+    const colors = type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : type === 'error' ? 'bg-red-50 border-red-200 text-red-900' : 'bg-gray-50 border-gray-200 text-gray-900';
+    wrap.className += ' ' + colors;
+    const text = el('div'); text.textContent = String(msg || '');
+    const btn = el('button','ml-auto text-xs opacity-60 hover:opacity-100'); btn.textContent = 'Dismiss'; btn.onclick = ()=>{ wrap.style.opacity='0'; setTimeout(()=>wrap.remove(), 200); };
+    wrap.appendChild(text); wrap.appendChild(btn); root.appendChild(wrap);
+    setTimeout(()=>{ wrap.style.opacity='0'; setTimeout(()=>wrap.remove(), 250); }, 3500);
+  }
+  window.showToast = makeToast;
+})();
+</script>
  @stack('scripts')
 </body>
 </html>

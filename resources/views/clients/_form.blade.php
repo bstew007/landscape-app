@@ -54,13 +54,13 @@
             <label for="phone" class="block text-lg font-medium text-gray-700">Primary Phone</label>
             <input type="text" name="phone" id="phone"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-                   value="{{ old('phone', $client->phone ?? '') }}">
+                   value="{{ old('phone', $client->phone ?? '') }}" placeholder="(555) 555-1234">
         </div>
         <div>
             <label for="phone2" class="block text-lg font-medium text-gray-700">Secondary Phone</label>
             <input type="text" name="phone2" id="phone2"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-                   value="{{ old('phone2', $client->phone2 ?? '') }}">
+                   value="{{ old('phone2', $client->phone2 ?? '') }}" placeholder="(555) 555-1234">
         </div>
     </div>
 
@@ -81,4 +81,28 @@
             ← Back to Clients
         </a>
     </div>
+<script>
+    // Lightweight input mask: formats as (XXX) XXX-XXXX while typing
+    document.addEventListener('DOMContentLoaded', function(){
+        function maskPhone(e){
+            const input = e.target;
+            let digits = (input.value || '').replace(/\D/g,'');
+            if (digits.length > 11) digits = digits.slice(0,11);
+            if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+            if (digits.length > 6){
+                input.value = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6,10)}`;
+            } else if (digits.length > 3){
+                input.value = `(${digits.slice(0,3)}) ${digits.slice(3,6)}`;
+            } else if (digits.length > 0){
+                input.value = `(${digits.slice(0,3)}`;
+            } else {
+                input.value = '';
+            }
+        }
+        const p1 = document.getElementById('phone');
+        const p2 = document.getElementById('phone2');
+        if (p1) p1.addEventListener('input', maskPhone);
+        if (p2) p2.addEventListener('input', maskPhone);
+    });
+</script>
 </form>

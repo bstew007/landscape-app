@@ -52,6 +52,7 @@
                     </option>
                 @endforeach
             </select>
+            <p class="text-xs text-gray-500 mt-1">Use “Future” for tasks not due for a while.</p>
         </div>
         <div>
             <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>

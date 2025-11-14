@@ -25,7 +25,7 @@ class Todo extends Model
         'completed_at' => 'datetime',
     ];
 
-    public const STATUSES = ['pending', 'in_progress', 'completed'];
+    public const STATUSES = ['future', 'pending', 'in_progress', 'completed'];
     public const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
 
     public function client()
