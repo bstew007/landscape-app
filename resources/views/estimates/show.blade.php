@@ -807,6 +807,154 @@ document.addEventListener('DOMContentLoaded', () => {
         function hidePageSpinner(){ if (overlay) overlay.classList.add('hidden'); }
         function autoRefresh(delay = 150){ showPageSpinner(); setTimeout(() => window.location.reload(), delay); }
 
+        // ===============
+        // Add via Calculator Drawer wiring
+        // ===============
+        (function initCalcDrawer(){
+            const drawer = document.getElementById('calcDrawer');
+            const overlayEl = document.getElementById('calcDrawerOverlay');
+            const openBtn = document.getElementById('openCalcDrawerBtn');
+            const closeBtn = document.getElementById('calcDrawerCloseBtn');
+            const createPane = document.getElementById('calcCreatePane');
+            const templatesPane = document.getElementById('calcTemplatesPane');
+            const tabCreate = document.getElementById('calcTabCreateBtn');
+            const tabTemplates = document.getElementById('calcTabTemplatesBtn');
+            const typeSelectCreate = document.getElementById('calcTypeSelect');
+            const typeSelectTpl = document.getElementById('calcTypeSelectTpl');
+            const openTemplateModeLink = document.getElementById('openTemplateModeLink');
+            const listEl = document.getElementById('calcTplList');
+            const loadingEl = document.getElementById('calcTplLoading');
+            const refreshBtnTpl = document.getElementById('calcTplRefresh');
+
+            const estimateId = window.__estimateSetup?.estimateId;
+            const routes = window.__calcRoutes || {};
+
+            function setTab(which){
+                if (!drawer) return;
+                const activeCreate = which === 'create';
+                const activeTemplates = which === 'templates';
+                if (createPane) createPane.style.display = activeCreate ? '' : 'none';
+                if (templatesPane) templatesPane.style.display = activeTemplates ? '' : 'none';
+                if (tabCreate) tabCreate.classList.toggle('bg-gray-100', activeCreate);
+                if (tabTemplates) tabTemplates.classList.toggle('bg-gray-100', activeTemplates);
+                if (activeTemplates) {
+                    loadTemplates();
+                }
+            }
+
+            function openDrawer(defaultTab = 'templates'){
+                if (!drawer) return;
+                drawer.style.display = 'block';
+                setTab(defaultTab);
+                updateOpenTemplateLink();
+                document.addEventListener('keydown', onKeydown);
+            }
+
+            function closeDrawer(){
+                if (!drawer) return;
+                drawer.style.display = 'none';
+                document.removeEventListener('keydown', onKeydown);
+            }
+
+            function onKeydown(e){ if (e.key === 'Escape') closeDrawer(); }
+
+            function updateOpenTemplateLink(){
+                const type = (typeSelectCreate?.value || 'mulching');
+                const base = routes[type];
+                if (openTemplateModeLink) {
+                    if (base) {
+                        const sep = base.includes('?') ? '&' : '?';
+                        openTemplateModeLink.href = `${base}${sep}mode=template&estimate_id=${encodeURIComponent(estimateId)}`;
+                        openTemplateModeLink.classList.remove('opacity-50','pointer-events-none');
+                        openTemplateModeLink.setAttribute('aria-disabled','false');
+                    } else {
+                        openTemplateModeLink.href = '#';
+                        openTemplateModeLink.classList.add('opacity-50','pointer-events-none');
+                        openTemplateModeLink.setAttribute('aria-disabled','true');
+                    }
+                }
+            }
+
+            async function loadTemplates(){
+                if (!listEl || !loadingEl) return;
+                const type = (typeSelectTpl?.value || 'mulching');
+                listEl.innerHTML = '';
+                loadingEl.style.display = '';
+                try {
+                    const url = `${window.__estimateTemplatesUrl}?type=${encodeURIComponent(type)}`;
+                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) throw new Error('Failed to load templates');
+                    const json = await res.json();
+                    const templates = json.templates || [];
+                    if (!templates.length) {
+                        listEl.innerHTML = '<p class="text-sm text-gray-500">No templates yet for this type.</p>';
+                    } else {
+                        templates.forEach(t => listEl.appendChild(renderTemplateRow(t)));
+                    }
+                } catch (e) {
+                    listEl.innerHTML = '<p class="text-sm text-red-600">Error loading templates.</p>';
+                } finally {
+                    loadingEl.style.display = 'none';
+                }
+            }
+
+            function renderTemplateRow(t){
+                const wrap = document.createElement('div');
+                wrap.className = 'flex items-center justify-between border rounded p-2';
+                const dt = t.created_at ? new Date(t.created_at) : null;
+                const dateTxt = dt ? dt.toLocaleString() : '';
+                wrap.innerHTML = `
+                    <div>
+                        <div class="font-medium">${escapeHtml(t.template_name || '(Untitled)')}</div>
+                        <div class="text-xs text-gray-500">${dateTxt}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="px-2 py-1 text-xs rounded border hover:bg-gray-50" data-role="tpl-append" data-id="${t.id}">Import (Append)</button>
+                        <button class="px-2 py-1 text-xs rounded border hover:bg-gray-50" data-role="tpl-replace" data-id="${t.id}">Import (Replace)</button>
+                    </div>
+                `;
+                wrap.querySelector('[data-role="tpl-append"]').addEventListener('click', () => importTemplate(t.id, false));
+                wrap.querySelector('[data-role="tpl-replace"]').addEventListener('click', () => importTemplate(t.id, true));
+                return wrap;
+            }
+
+            async function importTemplate(templateId, replaceFlag){
+                try {
+                    showPageSpinner();
+                    const res = await fetch(window.__estimateImportUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ template_id: templateId, replace: !!replaceFlag })
+                    });
+                    if (!res.ok) throw await res.json().catch(()=>({ message: 'Import failed' }));
+                    const data = await res.json();
+                    if (data?.totals) window.updateSummary?.(data.totals);
+                    showToast('Template imported', 'success');
+                    closeDrawer();
+                    autoRefresh(200);
+                } catch(err){
+                    showToast('Failed to import template', 'error');
+                    hidePageSpinner();
+                }
+            }
+
+            if (openBtn) openBtn.addEventListener('click', () => openDrawer('templates'));
+            if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+            if (overlayEl) overlayEl.addEventListener('click', closeDrawer);
+            if (tabCreate) tabCreate.addEventListener('click', () => setTab('create'));
+            if (tabTemplates) tabTemplates.addEventListener('click', () => setTab('templates'));
+            if (typeSelectTpl) typeSelectTpl.addEventListener('change', () => loadTemplates());
+            if (refreshBtnTpl) refreshBtnTpl.addEventListener('click', () => loadTemplates());
+            if (typeSelectCreate) typeSelectCreate.addEventListener('change', updateOpenTemplateLink);
+
+            // Initialize default state
+            updateOpenTemplateLink();
+        })();
+
         // Refresh button to reload the page and pick up any changes
         const refreshBtn = document.getElementById('estimateRefreshBtn');
         if (refreshBtn) refreshBtn.addEventListener('click', () => autoRefresh());
