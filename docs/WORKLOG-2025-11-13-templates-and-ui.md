@@ -91,13 +91,15 @@ Additionally, we extended Template Mode and the shared result actions to Paver P
 - Rebuild assets (for new Tailwind components):
   - `npm run dev` (or `npm run build`)
 
-2) Templates Flow (Mulching)
+2) Templates Flow (Mulching + Gallery)
 - Open any Estimate (e.g. /estimates/{id})
-- In “Work & Pricing”, use the new “Add via Calculator” panel:
-  - Click “➕ New Mulching via Calculator” (opens Template Mode)
-  - Fill in inputs, set a Template Name
-  - Save Template (keeps it) or Save & Import to Estimate (appends or replaces)
-- Back on the estimate page, use the “Select mulching template…” dropdown to import a saved template
+- Use “Add via Calculator” > Templates tab
+  - Refresh templates, Import (Append/Replace), or Go to Gallery (pre-filtered by type)
+- Gallery (/calculator/templates)
+  - Filter by type/scope/date, search by name
+  - Rename, Delete, Duplicate templates
+  - Import modal: search estimates (by # or title), select Work Area, Replace toggle, Import and redirect to estimate
+  - Sidebar includes a “Calculator Templates” link
 
 3) UI Standardization + Syn-Turf
 - Open several calculator forms and results pages to confirm:
@@ -117,39 +119,28 @@ Additionally, we extended Template Mode and the shared result actions to Paver P
 - Seed updated production rates after pulling:
   - `php artisan db:seed --class=ProductionRateSeeder`
 
-## Next Steps (Proposed for Tomorrow)
-1) Syn-Turf
-- Consider moving the Excavation Method toggle higher on the form for visibility
-- Optional: auto-calc tamper rental days (ceil(total hours / 8)) with a manual override
-- Optional: allow selecting Work Area from the Syn-Turf result footer and pass area_id to import
+## Next Steps
+1) Import modal enhancements
+- Add validation message if typed estimate id is invalid
+- Show recent estimates on focus (empty search)
+- Save last used and remember Replace toggle per user
 
-2) UX: Add modal workflow to estimates.show
-- “Add via Calculator” opens a modal (or side drawer) with:
-  - Tabs: “Create with Calculator” | “Templates”
-  - Create with Calculator: Inline Mulching mini-form (Template Mode) or deep link to full page
-  - Templates: List mulching templates with preview and Import (Append/Replace)
-  - Small “Refresh templates” icon next to dropdown
+2) Gallery polish
+- Admin-only “Make Global” toggle with badge on cards
+- AJAX rename/delete/duplicate + toasts
+- Details drawer with material/labor preview
 
-2) Extend Template Mode to other calculators
-- Candidate next: Planting, Retaining Wall
-- Repeat the Mulching pattern: `mode=template`, saving structure, import flow
+3) Estimates integration
+- “Go to Gallery” links implemented; add “Back to Estimate” crumb after import (optional)
+- Pre-fill scope/search from estimate context
 
-3) Template Management UI
-- Templates Gallery page (list by type, filter by tags/date)
-- Rename/Delete templates (owner/global visibility)
+4) Syn-Turf mode polish
+- Tons preview (read-only) with configurable conversion factors
+- Small UI refinements across sections
 
-4) Defaults & smarts
-- Auto-suggest template_name from inputs, e.g., “Front Beds – 2 yd”
-- Remember last-used labor rate and overhead inputs per user/calculator
-
-5) Estimate-side polish
-- “Add via Calculator” button in the top action bar
-- Inline preview of template totals (Materials/Labor/Final) before import
-- Optionally select a Work Area for imported rows
-
-6) Tech Debt / Maintenance
-- Convert any remaining inline Blade HTML strings in includes to HtmlString or dedicated partials
-- Confirm all controllers pass `$siteVisit` to views (done for known cases)
+5) Docs / GIFs
+- Add a short GIF for the Import modal and Gallery filters
+- README: update Template Mode + Gallery section
 
 ## Rollback / Reference
 - New and edited files are summarized above. Key ones:

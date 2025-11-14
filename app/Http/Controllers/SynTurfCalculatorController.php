@@ -43,13 +43,16 @@ class SynTurfCalculatorController extends Controller
     public function edit(Calculation $calculation)
     {
         $siteVisit = $calculation->siteVisit()->with('client')->first();
+        // Treat calculations without a site visit (e.g., created via Estimate import) as template-mode edits
+        $isTemplateMode = $calculation->is_template || (empty($calculation->site_visit_id) && !empty($calculation->estimate_id));
+
         return view('calculators.syn-turf.form', [
             'editMode' => true,
             'formData' => $calculation->data,
             'calculation' => $calculation,
             'siteVisitId' => $calculation->site_visit_id,
             'siteVisit' => $siteVisit,
-            'mode' => $calculation->is_template ? 'template' : null,
+            'mode' => $isTemplateMode ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
         ]);
     }
@@ -131,11 +134,11 @@ class SynTurfCalculatorController extends Controller
 
         $materialService = app(SynTurfMaterialService::class);
         $materialData = $materialService->buildMaterials($areaSqft, $edgingLf, $validated['turf_grade'], [
-            'turf_price' => $validated['override_turf_price'],
-            'turf_name' => $validated['turf_custom_name'],
-            'infill_price' => $validated['override_infill_price'],
-            'edging_price' => $validated['override_edging_price'],
-            'weed_barrier_price' => $validated['override_weed_barrier_price'],
+            'turf_price' => $request->input('override_turf_price'),
+            'turf_name' => $request->input('turf_custom_name'),
+            'infill_price' => $request->input('override_infill_price'),
+            'edging_price' => $request->input('override_edging_price'),
+            'weed_barrier_price' => $request->input('override_weed_barrier_price'),
             // Pass per-layer base depths
             'abc_depth_in' => $request->input('abc_depth_in'),
             'rock_dust_depth_in' => $request->input('rock_dust_depth_in'),
@@ -150,6 +153,41 @@ class SynTurfCalculatorController extends Controller
         $rockDustCY = (float) ($materialData['rock_dust_cy'] ?? 0);
         $baseCY = $abcCY + $rockDustCY;
 
+        // Apply editable materials if provided
+        $materialsEdit = $request->input('materials_edit', []);
+        if (is_array($materialsEdit) && !empty($materialsEdit)) {
+            $labelMap = [
+                'turf' => $turfName,
+                'infill_bags' => 'Infill Bags',
+                'edging_boards' => 'Composite Edging Boards',
+                'weed_barrier_rolls' => 'Weed Barrier Rolls',
+                'abc_cy' => 'ABC Base (cy)',
+                'rock_dust_cy' => 'Rock Dust (cy)',
+            ];
+
+            foreach ($materialsEdit as $key => $row) {
+                if (!array_key_exists($key, $labelMap)) continue;
+                $label = $labelMap[$key];
+                $qty = (float) ($row['qty'] ?? 0);
+                $unitCost = (float) ($row['unit_cost'] ?? 0);
+                if ($qty > 0) {
+                    $materials[$label] = [
+                        'qty' => round($qty, 2),
+                        'unit_cost' => round($unitCost, 2),
+                        'total' => round($qty * $unitCost, 2),
+                    ];
+                    if ($key === 'turf') {
+                        $turfUnitCost = round($unitCost, 2);
+                    }
+                } else {
+                    unset($materials[$label]);
+                }
+            }
+            // Recalculate material total
+            $materialTotal = array_sum(array_map(fn($m) => (float) ($m['total'] ?? 0), $materials));
+            $materialTotal = round($materialTotal, 2);
+        }
+
         // Adjust excavation tasks to use cy-based production if present
         $laborByTask = collect($results)->keyBy(fn($r)=>strtolower(str_replace(' ','_', $r['task'])));
         $excTasks = ['excavation_skid_steer','excavation_mini_skid'];
@@ -159,28 +197,30 @@ class SynTurfCalculatorController extends Controller
             $key = 'excavation_skid_steer';
             $rate = (float) ($dbRates[$key] ?? 0);
             if ($rate > 0) {
-                $laborByTask[$key] = [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ];
+                $laborByTask->put($key, [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ]);
             }
         } elseif ($selectedMethod === 'mini') {
             $key = 'excavation_mini_skid';
             $rate = (float) ($dbRates[$key] ?? 0);
             if ($rate > 0) {
-                $laborByTask[$key] = [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ];
+                $laborByTask->put($key, [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ]);
             }
         }
         // Replace excavation hours using cy-based production for equipment methods
         foreach ($excTasks as $t) {
-            if (isset($laborByTask[$t])) {
+            if ($laborByTask->has($t)) {
                 $rate = (float) ($dbRates[$t] ?? 0);
-                $laborByTask[$t]['qty'] = $excavationCY;
-                $laborByTask[$t]['rate'] = $rate;
+                $row = $laborByTask->get($t);
+                $row['qty'] = $excavationCY;
+                $row['rate'] = $rate;
+                $laborByTask->put($t, $row);
             }
         }
         // Add base_install hours from base CY, if present
         if ($baseCY > 0) {
             $baseRate = (float) ($dbRates['base_install'] ?? 0);
             if ($baseRate > 0) {
-                $laborByTask['base_install'] = [ 'task' => 'base install', 'qty' => $baseCY, 'rate' => $baseRate ];
+                $laborByTask->put('base_install', [ 'task' => 'base install', 'qty' => $baseCY, 'rate' => $baseRate ]);
             }
         }
         // Rebuild results with corrected quantities
@@ -254,11 +294,11 @@ class SynTurfCalculatorController extends Controller
                 'turf_grade' => $validated['turf_grade'],
                 'turf_unit_cost' => $turfUnitCost,
                 'turf_name' => $turfName,
-                'override_turf_price' => $validated['override_turf_price'],
-                'override_infill_price' => $validated['override_infill_price'],
-                'override_edging_price' => $validated['override_edging_price'],
-                'override_weed_barrier_price' => $validated['override_weed_barrier_price'],
-                'turf_custom_name' => $validated['turf_custom_name'],
+                'override_turf_price' => $request->input('override_turf_price'),
+                'override_infill_price' => $request->input('override_infill_price'),
+                'override_edging_price' => $request->input('override_edging_price'),
+                'override_weed_barrier_price' => $request->input('override_weed_barrier_price'),
+                'turf_custom_name' => $request->input('turf_custom_name'),
                 'materials_override_enabled' => $overridesEnabled,
             ],
             $totals

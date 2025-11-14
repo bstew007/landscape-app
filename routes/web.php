@@ -289,6 +289,14 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     });
 
     // Calculator Templates - Global endpoints
+    Route::get('calculator/templates', [\App\Http\Controllers\CalculatorTemplateController::class, 'index'])->name('calculator.templates.gallery');
+    Route::get('calculator/templates/estimates/search', [\App\Http\Controllers\CalculatorTemplateController::class, 'estimateSearch'])->name('calculator.templates.estimates.search');
+    Route::get('calculator/templates/estimates/{estimate}/areas', [\App\Http\Controllers\CalculatorTemplateController::class, 'estimateAreas'])->name('calculator.templates.estimates.areas');
+    Route::patch('calculator/templates/{calculation}', [\App\Http\Controllers\CalculatorTemplateController::class, 'update'])->name('calculator.templates.update');
+    Route::delete('calculator/templates/{calculation}', [\App\Http\Controllers\CalculatorTemplateController::class, 'destroy'])->name('calculator.templates.destroy');
+    Route::post('calculator/templates/{calculation}/duplicate', [\App\Http\Controllers\CalculatorTemplateController::class, 'duplicate'])->name('calculator.templates.duplicate');
+    Route::post('calculator/templates/{calculation}/import', [\App\Http\Controllers\CalculatorTemplateController::class, 'import'])->name('calculator.templates.import');
+
     Route::post('calculator/templates', [\App\Http\Controllers\EstimateCalculatorController::class, 'saveTemplate'])->name('calculator.templates.save');
 
     Route::post('estimates/{estimate}/email', [EstimateController::class, 'sendEmail'])->name('estimates.email');

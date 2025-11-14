@@ -50,6 +50,7 @@ class EstimateItemService
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'unit' => $data['unit'] ?? null,
+            'area_id' => $data['area_id'] ?? null,
             'quantity' => $financials['quantity'],
             'unit_cost' => $financials['unit_cost'],
             'unit_price' => $financials['unit_price'],

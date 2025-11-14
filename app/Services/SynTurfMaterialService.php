@@ -17,7 +17,7 @@ class SynTurfMaterialService
         ];
 
         $turfUnitCost = $overrides['turf_price'] ?? $defaultTier['unit_cost'];
-        $turfName = $overrides['turf_name'] ?: "{$defaultTier['label']} Synthetic Turf";
+        $turfName = $overrides['turf_name'] ?? ("{$defaultTier['label']} Synthetic Turf");
 
         $infillCoverage = Arr::get($config, 'infill.coverage_sqft_per_bag', 50);
         $infillUnitCost = $overrides['infill_price'] ?? Arr::get($config, 'infill.unit_cost', 25);

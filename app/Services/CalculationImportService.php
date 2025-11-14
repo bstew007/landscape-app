@@ -19,7 +19,7 @@ class CalculationImportService
         }
     }
 
-    public function importCalculation(Estimate $estimate, Calculation $calculation, bool $replace = true): void
+    public function importCalculation(Estimate $estimate, Calculation $calculation, bool $replace = true, ?int $areaId = null): void
     {
         $data = $calculation->data ?? [];
         $calcLabel = Str::headline($calculation->calculation_type);
@@ -30,8 +30,8 @@ class CalculationImportService
             $this->items->removeCalculationItems($estimate, $calculation->id);
         }
 
-        $materialsCreated = $this->importMaterials($estimate, $data, $calcLabel, $calculation, $marginRate);
-        $laborTotal = $this->importLabor($estimate, $data, $calcLabel, $calculation, $marginRate);
+        $materialsCreated = $this->importMaterials($estimate, $data, $calcLabel, $calculation, $marginRate, $areaId);
+        $laborTotal = $this->importLabor($estimate, $data, $calcLabel, $calculation, $marginRate, $areaId);
 
         $materialTotal = array_reduce($materialsCreated, fn ($carry, $item) => $carry + $item, 0);
         // If a budget margin is set (> 0), we distribute profit in line items and skip fee markup
@@ -40,7 +40,7 @@ class CalculationImportService
         }
     }
 
-    protected function importMaterials(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation, float $marginRate = 0): array
+    protected function importMaterials(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation, float $marginRate = 0, ?int $areaId = null): array
     {
         $materials = $data['materials'] ?? [];
         $totals = [];
@@ -57,6 +57,7 @@ class CalculationImportService
 
                 $this->items->createManualItem($estimate, [
                     'item_type' => 'material',
+                    'area_id' => $areaId,
                     'name' => is_string($name) ? $name : $calcLabel . ' Material',
                     'description' => $material['description'] ?? null,
                     'unit' => $material['unit'] ?? null,
@@ -83,6 +84,7 @@ class CalculationImportService
         if ($materialTotal > 0) {
             $this->items->createManualItem($estimate, [
                 'item_type' => 'material',
+                'area_id' => $areaId,
                 'name' => "{$calcLabel} Materials",
                 'quantity' => 1,
                 'unit' => 'lot',
@@ -104,7 +106,7 @@ class CalculationImportService
         return [];
     }
 
-    protected function importLabor(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation, float $marginRate = 0): float
+    protected function importLabor(Estimate $estimate, array $data, string $calcLabel, Calculation $calculation, float $marginRate = 0, ?int $areaId = null): float
     {
         $laborCost = (float) ($data['labor_cost'] ?? 0);
 
@@ -121,6 +123,7 @@ class CalculationImportService
 
         $this->items->createManualItem($estimate, [
             'item_type' => 'labor',
+            'area_id' => $areaId,
             'name' => "{$calcLabel} Labor",
             'unit' => 'hr',
             'quantity' => $hours,

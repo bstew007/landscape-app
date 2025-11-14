@@ -15,6 +15,8 @@ class Calculation extends Model
         'template_scope',
         'client_id',
         'property_id',
+        'created_by',
+        'is_global',
         'is_active',
     ];
 
@@ -22,6 +24,7 @@ class Calculation extends Model
         'data' => 'array',
         'is_template' => 'boolean',
         'is_active' => 'boolean',
+        'is_global' => 'boolean',
     ];
 
     public function siteVisit()

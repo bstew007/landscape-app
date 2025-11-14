@@ -30,6 +30,10 @@ class ProductionRateSeeder extends Seeder
                 $this->command?->warn("Skipping invalid item at index {$index}: " . json_encode($item));
                 continue;
             }
+            // Skip legacy syn_turf base (sqft) task to avoid re-inserting it
+            if (($item['calculator'] ?? null) === 'syn_turf' && ($item['task'] ?? null) === 'base') {
+                continue;
+            }
 
             ProductionRate::updateOrCreate(
                 ['task' => $item['task'], 'calculator' => $item['calculator']],

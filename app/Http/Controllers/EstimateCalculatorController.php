@@ -64,6 +64,9 @@ class EstimateCalculatorController extends Controller
             'property_id' => $data['property_id'] ?? null,
             'data' => $data['data'],
             'estimate_id' => $data['estimate_id'] ?? null,
+            'created_by' => optional($request->user())->id,
+            'is_global' => ($data['template_scope'] === 'global'),
+            'is_active' => true,
         ]);
 
         return response()->json(['status' => 'ok', 'template' => $template], 201);

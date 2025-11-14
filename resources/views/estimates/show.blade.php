@@ -22,6 +22,7 @@
     window.__estimateTemplatesUrl = "{{ route('estimates.calculator.templates', $estimate) }}";
     window.__estimateImportUrl = "{{ route('estimates.calculator.import', $estimate) }}";
     window.__estimateItemsBaseUrl = "{{ url('estimates/'.$estimate->id.'/items') }}";
+    window.__galleryUrl = "{{ route('calculator.templates.gallery') }}";
     window.__estimateSetup = {
         estimateId: {{ (int) $estimate->id }},
         areas: @json($estimate->areas->map(fn($a)=>['id'=>$a->id,'name'=>$a->name]))
@@ -110,7 +111,10 @@
                             <option value="pruning">Pruning</option>
                         </select>
                     </div>
-                    <button id="calcTplRefresh" class="text-sm text-gray-600 hover:text-gray-800">Refresh</button>
+                    <div class="flex items-center gap-3">
+                        <a id="calcTplOpenGallery" href="#" target="_blank" class="text-sm px-2 py-1 rounded border border-gray-300 hover:bg-gray-50">Go to Gallery</a>
+                        <button id="calcTplRefresh" class="text-sm text-gray-600 hover:text-gray-800">Refresh</button>
+                    </div>
                 </div>
                 <div id="calcTplLoading" class="text-sm text-gray-500" style="display:none;">Loading templates...</div>
                 <div id="calcTplList" class="space-y-2"></div>
@@ -825,6 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const listEl = document.getElementById('calcTplList');
             const loadingEl = document.getElementById('calcTplLoading');
             const refreshBtnTpl = document.getElementById('calcTplRefresh');
+            const openGalleryLink = document.getElementById('calcTplOpenGallery');
 
             const estimateId = window.__estimateSetup?.estimateId;
             const routes = window.__calcRoutes || {};
@@ -838,6 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tabCreate) tabCreate.classList.toggle('bg-gray-100', activeCreate);
                 if (tabTemplates) tabTemplates.classList.toggle('bg-gray-100', activeTemplates);
                 if (activeTemplates) {
+                    updateGalleryLink();
                     loadTemplates();
                 }
             }
@@ -875,11 +881,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            function updateGalleryLink(){
+                const type = (typeSelectTpl?.value || '').trim();
+                if (openGalleryLink) {
+                    const base = window.__galleryUrl || '#';
+                    openGalleryLink.href = type ? `${base}?type=${encodeURIComponent(type)}` : base;
+                }
+            }
+
             async function loadTemplates(){
                 if (!listEl || !loadingEl) return;
                 const type = (typeSelectTpl?.value || 'mulching');
                 listEl.innerHTML = '';
                 loadingEl.style.display = '';
+                updateGalleryLink();
                 try {
                     const url = `${window.__estimateTemplatesUrl}?type=${encodeURIComponent(type)}`;
                     const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -947,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (overlayEl) overlayEl.addEventListener('click', closeDrawer);
             if (tabCreate) tabCreate.addEventListener('click', () => setTab('create'));
             if (tabTemplates) tabTemplates.addEventListener('click', () => setTab('templates'));
-            if (typeSelectTpl) typeSelectTpl.addEventListener('change', () => loadTemplates());
+            if (typeSelectTpl) typeSelectTpl.addEventListener('change', () => { updateGalleryLink(); loadTemplates(); });
             if (refreshBtnTpl) refreshBtnTpl.addEventListener('click', () => loadTemplates());
             if (typeSelectCreate) typeSelectCreate.addEventListener('change', updateOpenTemplateLink);
 
