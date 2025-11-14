@@ -33,7 +33,7 @@
         <button class="px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">Search</button>
     </form>
 
-    <form method="POST" action="{{ route('materials.bulk') }}">
+    <form method="POST" action="{{ request()->getSchemeAndHttpHost() . request()->getBaseUrl() . '/catalog/materials/bulk' }}">
         @csrf
         <div class="bg-white rounded shadow overflow-x-auto">
             <div id="bulkBar" class="hidden px-4 py-3 border-b flex flex-col sm:flex-row sm:items-center gap-3">

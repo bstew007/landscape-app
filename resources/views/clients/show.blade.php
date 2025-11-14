@@ -17,6 +17,28 @@
             <a href="{{ route('contacts.edit', $contact) }}" class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Edit Contact</a>
             <a href="{{ route('estimates.create', ['client_id' => $contact->id, 'property_id' => optional($contact->primaryProperty)->id]) }}" class="rounded bg-brand-700 text-white px-4 py-2 text-sm hover:bg-brand-800">+ New Estimate</a>
             <a href="{{ route('todos.create', ['client_id' => $contact->id]) }}" class="rounded border border-emerald-300 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">+ New To‑Do</a>
+
+            <a href="{{ route('contacts.site-visits.index', $contact) }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Site Visits</a>
+            <a href="{{ route('contacts.site-visits.create', ['client' => $contact->id, 'property_id' => optional($contact->primaryProperty)->id]) }}" class="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700">+ New Site Visit</a>
+
+            <details class="relative">
+                <summary class="list-none rounded border px-4 py-2 text-sm cursor-pointer select-none">+ Add via Calculator</summary>
+                <div class="absolute right-0 mt-2 w-64 bg-white border rounded shadow z-10 p-1">
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}">Mulching</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.syn_turf.form')]) }}">Synthetic Turf</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}">Paver Patio</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}">Retaining Wall</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.weeding.form')]) }}">Weeding</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}">Mulching</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.turf_mowing.form')]) }}">Turf Mowing</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.planting.form')]) }}">Planting</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}">Fence</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pruning.form')]) }}">Pruning</a>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.pine_needles.form')]) }}">Pine Needles</a>
+                    <div class="border-t my-1"></div>
+                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.index') }}">All Calculators…</a>
+                </div>
+            </details>
         </div>
     </div>
 

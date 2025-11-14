@@ -57,7 +57,12 @@ Route::middleware('auth')->group(function () {
         Route::get('materials/import', [MaterialController::class, 'importForm'])->name('materials.importForm');
         Route::post('materials/import', [MaterialController::class, 'import'])->name('materials.import');
         Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
+        // Temporary ping route to help diagnose 404s on POST /materials/bulk
+        Route::get('materials/bulk', function() { return response('bulk ping', 200); })->name('materials.bulk.ping');
         Route::post('materials/bulk', [MaterialController::class, 'bulk'])->name('materials.bulk');
+        // Alternate path to avoid any web server collisions with /materials/*
+        Route::get('catalog/materials/bulk', function() { return response('bulk alt ping', 200); })->name('materials.bulk.alt.ping');
+        Route::post('catalog/materials/bulk', [MaterialController::class, 'bulk'])->name('materials.bulk.alt');
         Route::resource('materials', MaterialController::class)->except(['show']);
         Route::get('labor/import', [LaborController::class, 'importForm'])->name('labor.importForm');
         Route::post('labor/import', [LaborController::class, 'import'])->name('labor.import');
