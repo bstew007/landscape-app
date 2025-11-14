@@ -206,6 +206,44 @@ class MaterialController extends Controller
             ->with('success', 'Material deleted.');
     }
 
+    public function bulk(Request $request)
+    {
+        $data = $request->validate([
+            'ids' => ['required','array'],
+            'ids.*' => ['integer','exists:materials,id'],
+            'action' => ['required','in:delete,set_active,set_inactive,set_category'],
+            'category' => ['nullable','string','max:255'],
+        ]);
+
+        $ids = $data['ids'];
+        $action = $data['action'];
+        $count = 0;
+
+        if ($action === 'delete') {
+            $count = Material::whereIn('id', $ids)->delete();
+            return back()->with('success', "Deleted {$count} material(s).");
+        }
+
+        if ($action === 'set_active') {
+            $count = Material::whereIn('id', $ids)->update(['is_active' => true]);
+            return back()->with('success', "Updated {$count} material(s) to Active.");
+        }
+
+        if ($action === 'set_inactive') {
+            $count = Material::whereIn('id', $ids)->update(['is_active' => false]);
+            return back()->with('success', "Updated {$count} material(s) to Inactive.");
+        }
+
+        if ($action === 'set_category') {
+            $cat = $data['category'] ?? null;
+            if (!$cat) return back()->withErrors(['category' => 'Category is required for this action.']);
+            $count = Material::whereIn('id', $ids)->update(['category' => $cat]);
+            return back()->with('success', "Updated category for {$count} material(s).");
+        }
+
+        return back()->with('success', 'No changes applied.');
+    }
+
     protected function validateMaterial(Request $request, ?int $materialId = null): array
     {
         return $request->validate([

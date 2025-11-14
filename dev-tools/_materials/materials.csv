@@ -1,0 +1,26 @@
+﻿name,category,unit,unit_cost,tax_rate,vendor_name,vendor_sku,description,is_taxable,is_active
+#57 Granite,Aggregate,tn,58,0.07,Martin Marietta,LMN45528881,#57 Granite,TRUE,TRUE
+#57 Speckled Granite,Aggregate,tn,85,0.07,Hoffman Eco Works,LMN46541710,#57 Speckled Granite,TRUE,TRUE
+#78 Base,Aggregate,tn,85,0.07,Seaside,LMN46620542,#78 Base,TRUE,TRUE
+#78 Blue Slate,Aggregate,tn,68,0.07,Martin Marietta,LMN45528669,#78 Blue Slate,TRUE,TRUE
+ABC,Aggregate,tn,51,0.07,Martin Marietta,LMN45569831,ABC base,TRUE,TRUE
+Allegheny Concrete Retaining wall block,Aggregate,ea,2.88,0.07,Lowes,477091,Allegheny Concrete Retaining wall block,TRUE,TRUE
+Annual Rye Grass,Aggregate,BG,37.49,0.07,Lowes,93069,Annual Rye Grass,TRUE,TRUE
+Ashland Concrete Retaining wall block,Aggregate,ea,1.97,0.07,Lowes,477118,Ashland Concrete Retaining wall block,TRUE,TRUE
+Belgard Turfstone GridPaver,Aggregate,pallet,520,0.07,Adams Supply,LMN45528645,Belgard Turfstone GridPaver,TRUE,TRUE
+Carolina Creekstone,Aggregate,tns,153.84,0.07,Stone Garden,410220276,"Carolina Creekstone (1/2"" - 3/4"")",TRUE,TRUE
+Cinder Block,Aggregate,ea,2.63,0.07,Lowes,10335,"Cinder Block 4"" x 8"" x 16""",TRUE,TRUE
+Drainage Rock,Aggregate,bag,5.98,0.07,Lowes,745400,Drainage Rock,TRUE,TRUE
+Jasmine - Estrella,Aggregate,g,24.98,0.07,Lowes,17979,Jasmine - Estrella,TRUE,TRUE
+MAPEI Ultracolor Plus FA Grout (Warm Gray),Aggregate,bag,19.98,0.07,Lowes,778316,MAPEI Ultracolor Plus FA Grout Warm Gray,TRUE,TRUE
+Palm-Sago,Aggregate,2g,29.98,0.07,Lowes,4661426,Sago Palm,TRUE,TRUE
+Pea Gravel,Aggregate,tns,180.29,0.07,Stone Garden,LMN45601911,Pea Gravel,TRUE,TRUE
+QUIKRETE High strength Concrete mix,Aggregate,bags,5.98,0.07,Lowes,10385,QUIKRETE High strength Concrete mix,TRUE,TRUE
+River Jacks Multi-color,Aggregate,tn,188,0.07,Outdoor Living Supply,410220279,Multi-colored river jacks,TRUE,TRUE
+Rock Dust,Aggregate,tn,49.25,0.07,Martin Marietta,0965-SCGS,Rock Dust,TRUE,TRUE
+Silver Alabaster Shadow Stone Corners,Aggregate,ea,27.27,0.07,Outdoor Living Supply,LMN45643160,Silver Alabaster Shadow Stone Corners,TRUE,TRUE
+Square Red Concrete Patio stone,Aggregate,ea,5.48,0.07,Lowes,54329,Square Red Concrete Patio stone,TRUE,TRUE
+Steel #4 Rebar,Aggregate,ea,8.3,0.07,Lowes,12166,1/2-in x 10-ft Steel #4 Rebar,TRUE,TRUE
+Sticky Stone Adhesive,Aggregate,tube,23,0.07,Outdoor Living Supply,LMN45652766,Sticky Stone Adhesive,TRUE,TRUE
+"3/4"" White River Rock",Aggregate,tn,145.76,0.07,Outdoor Living,410220283,"3/4"" White River Rock",TRUE,TRUE
+"1-2"" White River Rock",Aggregate,tn,167.85,0.07,Seaside Mulch,LMN46176398,"1-2"" White River Rock",TRUE,TRUE
