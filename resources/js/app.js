@@ -73,9 +73,11 @@ Alpine.start();
       if (input && place.formattedAddress) input.value = place.formattedAddress;
       if (input && place.formatted_address && !place.formattedAddress) input.value = place.formatted_address;
 
-      const cityEl = document.getElementById('city');
-      const stateEl = document.getElementById('state');
-      const zipEl = document.getElementById('postal_code');
+      // Allow alternate IDs via data-attributes on the original input for flexibility
+      const inputId = input?.id || '';
+      const cityEl = document.getElementById(input?.dataset.cityId || 'city');
+      const stateEl = document.getElementById(input?.dataset.stateId || 'state');
+      const zipEl = document.getElementById(input?.dataset.zipId || 'postal_code');
 
       const cityVal = getLong('locality') || getLong('sublocality') || getLong('postal_town');
       const stateVal = getShort('administrative_area_level_1') || getLong('administrative_area_level_1');
@@ -106,31 +108,50 @@ Alpine.start();
       const wrapper = document.createElement('div');
       wrapper.className = 'mb-2';
       const el = new google.maps.places.PlaceAutocompleteElement();
+      // Match app font sizing
+      el.style.width = '100%';
+      el.style.minHeight = '48px';
+      el.style.fontSize = '1rem'; // ~16px
+      el.style.fontFamily = 'Figtree, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"';
       el.className = 'w-full';
       el.setAttribute('placeholder', input.getAttribute('placeholder') || 'Start typing an address...');
       const countries = (window.PLACES_COUNTRIES || ['us']);
       el.componentRestrictions = { country: countries };
       parent.insertBefore(wrapper, input);
       wrapper.appendChild(el);
-      // Hide original input, keep for form submission
-      input.type = 'hidden';
       input.dataset.placesElementBound = '1';
+      // Hide original input only if element is connected/rendered
+      setTimeout(() => {
+        if (el.isConnected) {
+          input.type = 'hidden';
+        }
+      }, 0);
       el.addEventListener('gmp-placeselect', async (e) => {
-        const place = e.detail.place;
-        if (!place) return;
+        // New API provides placePrediction; convert to Place
+        let place;
         try {
+          const pp = e.detail?.placePrediction;
+          if (pp && typeof pp.toPlace === 'function') {
+            place = pp.toPlace();
+          } else if (e.detail?.place) {
+            place = e.detail.place;
+          }
+          if (!place) return;
           await place.fetchFields({ fields: ['addressComponents','formattedAddress'] });
-        } catch(_) {}
+        } catch(err) { console.warn('fetchFields failed', err); return; }
         fillFromAddressComponents(place, extra);
-        // Also set the original input to formatted address text
-        if (input && (place.formattedAddress || place.formatted_address)) {
-          input.value = place.formattedAddress || place.formatted_address;
+        if (input) {
+          input.value = place.formattedAddress || place.formatted_address || input.value;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
         }
       });
     } catch(e) { /* ignore */ }
   }
 
   function attachIfPresent(){
+    // If using Extended Component Library place pickers, skip classic/new element init to avoid conflicts
+    if (document.querySelector('gmpx-place-picker')) return;
     if (!window.google?.maps?.places) return; // wait for callback
     const hasContact = document.getElementById('address') && document.getElementById('city') && document.getElementById('state') && document.getElementById('postal_code');
     const hasProperty = document.getElementById('address_line1') && document.getElementById('city') && document.getElementById('state') && document.getElementById('postal_code');
@@ -151,19 +172,66 @@ Alpine.start();
       if (supportsNew) attachElementAutocomplete(input, extra); else attachClassicAutocomplete(input, extra);
     }
   }
-  // Expose callback for script tag
+  // Expose callback for script tag: simply attach now that Places is loaded via importLibrary in layout
   window.__initPlaces = function(){
-    if (!window.__gmapsLoader && !window.google?.maps?.places && !window.google?.maps?.importLibrary) return;
-    ensurePlacesLibrary()
-      .then(() => { try { attachIfPresent(); } catch(e) { console.error(e); } })
-      .catch((err) => console.error('Places loader error', err));
+    try { attachIfPresent(); } catch(e) { console.error(e); }
   };
 
-  // If maps already present (cached), attach on DOM ready
-  window.addEventListener('DOMContentLoaded', () => { if (window.__initPlaces) window.__initPlaces(); });
+  // If maps already present (hot reload/cached), attach on DOM ready
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.google?.maps?.places) {
+      try { attachIfPresent(); } catch(e) { console.error(e); }
+    }
+  });
 })();
 
-// Initialize Estimate Calculator drawer once DOM is ready
+  // Wire Extended Component Library place pickers
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      const cp = document.getElementById('contact_place_picker');
+      const addr = document.getElementById('address');
+      if (cp && addr) {
+        cp.addEventListener('gmpx-placechange', async (ev) => {
+          try {
+            const place = cp.value?.place || cp.value?.toPlace?.();
+            if (!place) return;
+            // fetch fields for UI kit Place objects
+            if (place.fetchFields) {
+              await place.fetchFields({ fields: ['addressComponents','formattedAddress'] });
+            }
+            fillFromAddressComponents(place, { input: addr });
+            if (addr && (place.formattedAddress || place.formatted_address)) {
+              addr.value = place.formattedAddress || place.formatted_address;
+              addr.dispatchEvent(new Event('input', { bubbles: true }));
+              addr.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          } catch(e) { console.warn('contact picker fill failed', e); }
+        });
+      }
+      const pp = document.getElementById('property_place_picker');
+      const line1 = document.getElementById('address_line1');
+      const line2 = document.getElementById('address_line2');
+      if (pp && line1) {
+        pp.addEventListener('gmpx-placechange', async (ev) => {
+          try {
+            const place = pp.value?.place || pp.value?.toPlace?.();
+            if (!place) return;
+            if (place.fetchFields) {
+              await place.fetchFields({ fields: ['addressComponents','formattedAddress'] });
+            }
+            fillFromAddressComponents(place, { input: line1, line2 });
+            if (line1 && (place.formattedAddress || place.formatted_address)) {
+              line1.value = place.formattedAddress || place.formatted_address;
+              line1.dispatchEvent(new Event('input', { bubbles: true }));
+              line1.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          } catch(e) { console.warn('property picker fill failed', e); }
+        });
+      }
+    } catch(e) { /* ignore */ }
+  });
+
+  // Initialize Estimate Calculator drawer once DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
   try {
     const setup = window.__estimateSetup || {};

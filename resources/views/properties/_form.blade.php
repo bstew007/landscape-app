@@ -27,35 +27,38 @@
     <div class="grid gap-4 md:grid-cols-3">
         <div>
             <label for="contact_name" class="block text-lg font-medium text-gray-700">On-site Contact</label>
-            <input type="text" name="contact_name" id="contact_name"
+            <input type="text" name="contact_name" id="contact_name" autocomplete="name"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('contact_name', $property->contact_name) }}">
         </div>
         <div>
             <label for="contact_email" class="block text-lg font-medium text-gray-700">Contact Email</label>
-            <input type="email" name="contact_email" id="contact_email"
+            <input type="email" name="contact_email" id="contact_email" autocomplete="email"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('contact_email', $property->contact_email) }}">
         </div>
         <div>
             <label for="contact_phone" class="block text-lg font-medium text-gray-700">Contact Phone</label>
-            <input type="text" name="contact_phone" id="contact_phone"
+            <input type="text" name="contact_phone" id="contact_phone" autocomplete="tel"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('contact_phone', $property->contact_phone) }}">
         </div>
     </div>
 
     <div>
-        <label for="address_line1" class="block text-lg font-medium text-gray-700">Address Line 1</label>
-        <input type="text" name="address_line1" id="address_line1"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
-               value="{{ old('address_line1', $property->address_line1) }}" placeholder="Start typing an address...">
-        <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places (optional).</p>
+        <label for="address_line1" class="block text-lg font-medium text-gray-700">Address</label>
+        <div class="mt-1">
+            <gmpx-place-picker id="property_place_picker" style="display:block;width:100%;min-height:48px;font-size:1rem;"></gmpx-place-picker>
+        </div>
+        <input type="text" name="address_line1" id="address_line1" autocomplete="address-line1" data-city-id="city" data-state-id="state" data-zip-id="postal_code"
+               class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
+               value="{{ old('address_line1', $property->address_line1) }}" placeholder="Street address" />
+        <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places.</p>
     </div>
 
     <div>
         <label for="address_line2" class="block text-lg font-medium text-gray-700">Address Line 2</label>
-        <input type="text" name="address_line2" id="address_line2"
+        <input type="text" name="address_line2" id="address_line2" autocomplete="address-line2"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                value="{{ old('address_line2', $property->address_line2) }}">
     </div>
@@ -63,19 +66,19 @@
     <div class="grid gap-4 md:grid-cols-3">
         <div>
             <label for="city" class="block text-lg font-medium text-gray-700">City</label>
-            <input type="text" name="city" id="city"
+            <input type="text" name="city" id="city" autocomplete="address-level2"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('city', $property->city) }}">
         </div>
         <div>
             <label for="state" class="block text-lg font-medium text-gray-700">State / Province</label>
-            <input type="text" name="state" id="state"
+            <input type="text" name="state" id="state" autocomplete="address-level1"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('state', $property->state) }}">
         </div>
         <div>
             <label for="postal_code" class="block text-lg font-medium text-gray-700">Postal Code</label>
-            <input type="text" name="postal_code" id="postal_code"
+            <input type="text" name="postal_code" id="postal_code" autocomplete="postal-code"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('postal_code', $property->postal_code) }}">
         </div>

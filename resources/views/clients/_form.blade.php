@@ -6,21 +6,21 @@
 
     <div>
         <label for="first_name" class="block text-lg font-medium text-gray-700">First Name</label>
-        <input type="text" name="first_name" id="first_name"
+        <input type="text" name="first_name" id="first_name" autocomplete="given-name"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                value="{{ old('first_name', $client->first_name ?? '') }}" required>
     </div>
 
     <div>
         <label for="last_name" class="block text-lg font-medium text-gray-700">Last Name</label>
-        <input type="text" name="last_name" id="last_name"
+        <input type="text" name="last_name" id="last_name" autocomplete="family-name"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                value="{{ old('last_name', $client->last_name ?? '') }}" required>
     </div>
 
     <div>
         <label for="company_name" class="block text-lg font-medium text-gray-700">Company Name (optional)</label>
-        <input type="text" name="company_name" id="company_name"
+        <input type="text" name="company_name" id="company_name" autocomplete="organization"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                value="{{ old('company_name', $client->company_name ?? '') }}">
     </div>
@@ -37,13 +37,13 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
             <label for="email" class="block text-lg font-medium text-gray-700">Primary Email</label>
-            <input type="email" name="email" id="email"
+            <input type="email" name="email" id="email" autocomplete="email"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('email', $client->email ?? '') }}">
         </div>
         <div>
             <label for="email2" class="block text-lg font-medium text-gray-700">Secondary Email</label>
-            <input type="email" name="email2" id="email2"
+            <input type="email" name="email2" id="email2" autocomplete="email"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('email2', $client->email2 ?? '') }}">
         </div>
@@ -52,13 +52,13 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
             <label for="phone" class="block text-lg font-medium text-gray-700">Primary Phone</label>
-            <input type="text" name="phone" id="phone"
+            <input type="text" name="phone" id="phone" autocomplete="tel"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('phone', $client->phone ?? '') }}" placeholder="(555) 555-1234">
         </div>
         <div>
             <label for="phone2" class="block text-lg font-medium text-gray-700">Secondary Phone</label>
-            <input type="text" name="phone2" id="phone2"
+            <input type="text" name="phone2" id="phone2" autocomplete="tel"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('phone2', $client->phone2 ?? '') }}" placeholder="(555) 555-1234">
         </div>
@@ -66,21 +66,24 @@
 
     <div>
         <label for="address" class="block text-lg font-medium text-gray-700">Address</label>
-        <input type="text" name="address" id="address"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
-               value="{{ old('address', $client->address ?? '') }}" placeholder="Start typing an address...">
+        <div class="mt-1">
+            <gmpx-place-picker id="contact_place_picker" style="display:block;width:100%;min-height:48px;font-size:1rem;"></gmpx-place-picker>
+        </div>
+        <input type="text" name="address" id="address" autocomplete="address-line1" data-city-id="city" data-state-id="state" data-zip-id="postal_code"
+               class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
+               value="{{ old('address', $client->address ?? '') }}" placeholder="Street address" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
             <div>
                 <label class="block text-sm text-gray-600">City</label>
-                <input type="text" name="city" id="city" value="{{ old('city', $client->city ?? '') }}" class="form-input w-full">
+                <input type="text" name="city" id="city" autocomplete="address-level2" value="{{ old('city', $client->city ?? '') }}" class="form-input w-full">
             </div>
             <div>
                 <label class="block text-sm text-gray-600">State</label>
-                <input type="text" name="state" id="state" value="{{ old('state', $client->state ?? '') }}" class="form-input w-full">
+                <input type="text" name="state" id="state" autocomplete="address-level1" value="{{ old('state', $client->state ?? '') }}" class="form-input w-full">
             </div>
             <div>
                 <label class="block text-sm text-gray-600">Postal Code</label>
-                <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code', $client->postal_code ?? '') }}" class="form-input w-full">
+                <input type="text" name="postal_code" id="postal_code" autocomplete="postal-code" value="{{ old('postal_code', $client->postal_code ?? '') }}" class="form-input w-full">
             </div>
         </div>
         <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places (optional). Start typing, then pick a result.</p>

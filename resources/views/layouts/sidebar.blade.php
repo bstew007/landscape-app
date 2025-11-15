@@ -169,40 +169,11 @@
 })();
 </script>
 
-{{-- Google Places (via .env key) --}}
+{{-- Google Places – Extended Component Library (Place Picker) --}}
 @if (config('services.google_places.key'))
-<script>
-  window.PLACES_COUNTRIES = "{{ config('services.google_places.country', 'us') }}".split(',');
-  (function loadGoogleMapsPlaces(){
-    if (window.__gmapsLoader) {
-      window.__gmapsLoader.then(() => { if (window.__initPlaces) window.__initPlaces(); });
-      return;
-    }
-    const params = new URLSearchParams({
-      key: "{{ config('services.google_places.key') }}",
-      v: 'weekly',
-      libraries: 'places',
-      loading: 'async',
-    });
-    window.__gmapsLoader = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
-      script.async = true;
-      script.defer = true;
-      script.addEventListener('load', resolve, { once: true });
-      script.addEventListener('error', reject, { once: true });
-      document.head.appendChild(script);
-    })
-    .then(() => {
-      if (window.google?.maps?.importLibrary) {
-        return window.google.maps.importLibrary('places');
-      }
-      return null;
-    })
-    .then(() => { if (window.__initPlaces) window.__initPlaces(); })
-    .catch((err) => console.error('Google Maps JS failed to load', err));
-  })();
-</script>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/@googlemaps/extended-component-library/0.6.11/index.min.js"></script>
+  <gmpx-api-loader key="{{ config('services.google_places.key') }}" solution-channel="GMP_GE_placepicker_v2"></gmpx-api-loader>
+  <script>window.PLACES_COUNTRIES = "{{ config('services.google_places.country', 'us') }}".split(',');</script>
 @endif
 
  @stack('scripts')
