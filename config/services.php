@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // Optional: Google Places API for address autocomplete
+    'google_places' => [
+        'key' => env('GOOGLE_PLACES_KEY'),
+        'country' => env('GOOGLE_PLACES_COUNTRY', 'us'), // comma-separated list if multiple
+    ],
+
 ];

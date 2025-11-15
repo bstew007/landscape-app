@@ -21,6 +21,9 @@ class Contact extends Model
         'phone',
         'phone2',
         'address',
+        'city',
+        'state',
+        'postal_code',
     ];
 
     public function siteVisits()

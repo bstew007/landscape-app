@@ -44,7 +44,10 @@ class ContactController extends Controller
             'email2'     => 'nullable|email',
             'phone'      => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'phone2'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
-            'address'    => 'nullable|string',
+            'address'    => 'nullable|string|max:255',
+            'city'       => 'nullable|string|max:120',
+            'state'      => 'nullable|string|max:80',
+            'postal_code'=> 'nullable|string|max:20',
         ]);
 
         // Normalize phone mask to (XXX) XXX-XXXX
@@ -135,7 +138,10 @@ class ContactController extends Controller
             'email2'     => 'nullable|email',
             'phone'      => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'phone2'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
-            'address'    => 'nullable|string',
+            'address'    => 'nullable|string|max:255',
+            'city'       => 'nullable|string|max:120',
+            'state'      => 'nullable|string|max:80',
+            'postal_code'=> 'nullable|string|max:20',
         ]);
 
         // Normalize phone mask to (XXX) XXX-XXXX

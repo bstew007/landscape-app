@@ -66,8 +66,24 @@
 
     <div>
         <label for="address" class="block text-lg font-medium text-gray-700">Address</label>
-        <textarea name="address" id="address" rows="3"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl">{{ old('address', $client->address ?? '') }}</textarea>
+        <input type="text" name="address" id="address"
+               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
+               value="{{ old('address', $client->address ?? '') }}" placeholder="Start typing an address...">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            <div>
+                <label class="block text-sm text-gray-600">City</label>
+                <input type="text" name="city" id="city" value="{{ old('city', $client->city ?? '') }}" class="form-input w-full">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600">State</label>
+                <input type="text" name="state" id="state" value="{{ old('state', $client->state ?? '') }}" class="form-input w-full">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600">Postal Code</label>
+                <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code', $client->postal_code ?? '') }}" class="form-input w-full">
+            </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places (optional). Start typing, then pick a result.</p>
     </div>
 
     <div class="flex items-center justify-between">
@@ -104,5 +120,7 @@
         if (p1) p1.addEventListener('input', maskPhone);
         if (p2) p2.addEventListener('input', maskPhone);
     });
+    // Address Autocomplete handled globally from app.js (initPlacesAutocomplete)
+    // This page only keeps phone masks locally.
 </script>
 </form>

@@ -48,8 +48,9 @@
     <div>
         <label for="address_line1" class="block text-lg font-medium text-gray-700">Address Line 1</label>
         <input type="text" name="address_line1" id="address_line1"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-               value="{{ old('address_line1', $property->address_line1) }}">
+               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
+               value="{{ old('address_line1', $property->address_line1) }}" placeholder="Start typing an address...">
+        <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places (optional).</p>
     </div>
 
     <div>
