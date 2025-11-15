@@ -98,10 +98,7 @@
             💾 Save
         </button>
 
-        <a href="{{ route('clients.index') }}"
-           class="text-gray-600 hover:text-gray-800 text-lg underline">
-            ← Back to Clients
-        </a>
+        <!-- Back link removed — header provides navigation -->
     </div>
 <script>
     // Lightweight input mask: formats as (XXX) XXX-XXXX while typing

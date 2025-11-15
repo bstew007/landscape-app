@@ -15,7 +15,7 @@
     @endif
 
     @if ($estimate->email_send_count)
-        <div class="p-4 rounded border border-blue-200 bg-blue-50 text-sm text-blue-900">
+        <div class="p-4 rounded border border-brand-200 bg-brand-50 text-sm text-brand-900">
             This estimate was last emailed on
             <strong>{{ $estimate->email_last_sent_at?->timezone(config('app.timezone'))->format('M j, Y g:i A') ?? 'unknown' }}</strong>
             ({{ $estimate->email_send_count }} {{ \Illuminate\Support\Str::plural('send', $estimate->email_send_count) }}).
@@ -29,17 +29,14 @@
     </section>
 
     <div class="flex flex-wrap gap-2">
-        <form action="{{ route('estimates.email', $estimate) }}" method="POST">
+        <form action="{{ route('estimates.email', $estimate) }}" method="POST" class="inline">
             @csrf
-            <button
-                type="submit"
-                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                data-email-confirm="{{ $estimate->email_send_count ? 'true' : 'false' }}"
-            >
+            <x-brand-button type="submit" size="md" data-email-confirm="{{ $estimate->email_send_count ? 'true' : 'false' }}">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7Z"/></svg>
                 {{ $estimate->email_send_count ? 'Resend Email' : 'Send Email' }}
-            </button>
+            </x-brand-button>
         </form>
-        <a href="{{ route('estimates.index') }}" class="inline-flex items-center px-4 py-2 border rounded text-gray-700 hover:bg-gray-50">Done</a>
+        <x-secondary-button as="a" href="{{ route('estimates.index') }}">Done</x-secondary-button>
     </div>
 </div>
 @endsection

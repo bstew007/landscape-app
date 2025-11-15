@@ -1,3 +1,17 @@
-<button {{ $attributes->merge(['type' => 'button', 'class' => 'inline-flex items-center px-4 py-2 bg-white border border-brand-300 rounded-md font-semibold text-xs text-brand-700 uppercase tracking-widest shadow-sm hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150']) }}>
-    {{ $slot }}
-</button>
+@props(['size' => 'md', 'href' => null, 'as' => null, 'type' => 'button'])
+@php
+  $sizeClass = [
+    'sm' => 'h-9 px-3 text-sm',
+    'md' => 'h-10 px-4 text-sm',
+  ][$size] ?? 'h-10 px-4 text-sm';
+  $baseClass = 'inline-flex items-center '.$sizeClass.' bg-white border border-brand-300 rounded font-medium text-brand-700 shadow-sm hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-25 transition-colors';
+@endphp
+@if ($href || $as === 'a')
+  <a href="{{ $href ?? '#' }}" {{ $attributes->merge(['class' => $baseClass]) }}>
+      {{ $slot }}
+  </a>
+@else
+  <button type="{{ $type }}" {{ $attributes->merge(['class' => $baseClass]) }}>
+      {{ $slot }}
+  </button>
+@endif

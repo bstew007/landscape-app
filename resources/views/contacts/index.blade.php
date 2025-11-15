@@ -23,10 +23,7 @@
                    placeholder="Search contacts..."
                    class="flex-1 form-input border-brand-300 rounded focus:ring-brand-500 focus:border-brand-500">
             @if(!empty($search))
-                <a href="{{ route('contacts.index') }}"
-                   class="px-3 py-2 border-t border-b border-gray-300 text-gray-600 bg-gray-100 hover:bg-gray-200">
-                    ✕
-                </a>
+                <x-brand-button href="{{ route('contacts.index') }}" variant="ghost" aria-label="Clear search">✕</x-brand-button>
             @endif
             <x-brand-button type="submit">🔍</x-brand-button>
         </form>
@@ -38,10 +35,19 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-lg shadow-md mb-3 p-3 flex items-center gap-2">
-        <button class="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50" data-action="bulk-view" disabled>View</button>
-        <button class="px-3 py-2 bg-green-600 text-white rounded disabled:opacity-50" data-action="bulk-edit" disabled>Edit</button>
-        <button class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50" data-action="bulk-delete" disabled>Delete</button>
+    <div class="bg-white rounded-lg shadow-md mb-3 p-3 flex items-center gap-2" data-role="bulk-toolbar">
+        <x-secondary-button data-action="bulk-view" size="sm" disabled>
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            View
+        </x-secondary-button>
+        <x-brand-button variant="outline" data-action="bulk-edit" size="sm" disabled>
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Edit
+        </x-brand-button>
+        <x-danger-button data-action="bulk-delete" size="sm" disabled>
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Delete
+        </x-danger-button>
     </div>
 
     @if ($contacts->count())
@@ -59,10 +65,10 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-gray-800 text-lg">
                     @foreach ($contacts as $contact)
-                        <tr>
+                        <tr class="hover:bg-brand-50/50 data-[selected=true]:bg-brand-50">
                             <td class="px-6 py-4"><input type="checkbox" value="{{ $contact->id }}" data-role="row-check"></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <a href="{{ route('contacts.show', $contact) }}" class="text-blue-700 hover:text-blue-900 hover:underline">
+                                <a href="{{ route('contacts.show', $contact) }}" class="text-brand-700 hover:text-brand-900 hover:underline">
                                     {{ $contact->first_name }} {{ $contact->last_name }}
                                 </a>
                             </td>
@@ -108,15 +114,28 @@
         function updateToolbar() {
             const any = checks().some(c => c.checked);
             Object.values(toolbarBtns).forEach(btn => { if (btn) btn.disabled = !any; });
+            document.querySelector('[data-role="selected-count"]')?.remove();
+            if (any) {
+                const count = checks().filter(c => c.checked).length;
+                const badge = document.createElement('span');
+                badge.setAttribute('data-role','selected-count');
+                badge.className = 'ml-auto inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-brand-100 text-brand-800';
+                badge.textContent = `${count} selected`;
+                document.querySelector('[data-role="bulk-toolbar"]').appendChild(badge);
+            }
         }
 
         if (toggleAll) {
             toggleAll.addEventListener('change', () => {
                 checks().forEach(c => c.checked = toggleAll.checked);
+                checks().forEach(c => c.closest('tr')?.setAttribute('data-selected', toggleAll.checked ? 'true' : 'false'));
                 updateToolbar();
             });
         }
-        checks().forEach(c => c.addEventListener('change', updateToolbar));
+        checks().forEach(c => c.addEventListener('change', () => {
+            c.closest('tr')?.setAttribute('data-selected', c.checked ? 'true' : 'false');
+            updateToolbar();
+        }));
 
         function selectedIds() { return checks().filter(c => c.checked).map(c => c.value); }
 

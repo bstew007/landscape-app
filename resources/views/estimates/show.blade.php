@@ -32,7 +32,7 @@
 <div id="pageLoadingOverlay" class="fixed inset-0 z-[100] hidden">
     <div class="absolute inset-0 bg-white/70 backdrop-blur-sm"></div>
     <div class="absolute inset-0 flex items-center justify-center">
-        <div class="h-10 w-10 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent"></div>
+        <div class="h-10 w-10 animate-spin rounded-full border-4 border-brand-600 border-t-transparent"></div>
     </div>
 </div>
 
@@ -78,7 +78,7 @@
             <div id="calcCreatePane" class="p-4 overflow-y-auto space-y-4">
                 <div class="space-y-2">
                     <label class="block text-sm font-medium">Calculator</label>
-                    <select id="calcTypeSelect" class="form-select w-full sm:w-64">
+                    <select id="calcTypeSelect" class="form-select w-full sm:w-64 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                         <option value="mulching">Mulching</option>
                         <option value="weeding">Weeding</option>
                         <option value="planting">Planting</option>
@@ -91,7 +91,7 @@
                     </select>
                 </div>
                 <div>
-                    <a id="openTemplateModeLink" href="#" class="inline-flex items-center px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">Open in Template Mode</a>
+                    <x-brand-button href="#" id="openTemplateModeLink">Open in Template Mode</x-brand-button>
                     <p class="text-xs text-gray-500 mt-1">Opens the selected calculator with template fields. Save as template and optionally import into this estimate.</p>
                 </div>
             </div>
@@ -99,7 +99,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <label class="text-sm">Type:</label>
-                        <select id="calcTypeSelectTpl" class="form-select w-48">
+                        <select id="calcTypeSelectTpl" class="form-select w-48 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                             <option value="mulching">Mulching</option>
                             <option value="weeding">Weeding</option>
                             <option value="planting">Planting</option>
@@ -112,8 +112,8 @@
                         </select>
                     </div>
                     <div class="flex items-center gap-3">
-                        <a id="calcTplOpenGallery" href="#" target="_blank" class="text-sm px-2 py-1 rounded border border-gray-300 hover:bg-gray-50">Go to Gallery</a>
-                        <button id="calcTplRefresh" class="text-sm text-gray-600 hover:text-gray-800">Refresh</button>
+                        <x-brand-button id="calcTplOpenGallery" href="#" target="_blank" variant="outline" size="sm">Go to Gallery</x-brand-button>
+                        <x-secondary-button id="calcTplRefresh" size="sm">Refresh</x-secondary-button>
                     </div>
                 </div>
                 <div id="calcTplLoading" class="text-sm text-gray-500" style="display:none;">Loading templates...</div>
@@ -124,12 +124,12 @@
 
     <!-- Tabs Bar -->
     <div class="bg-white rounded shadow p-2 flex flex-wrap gap-2">
-        <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-blue-600 text-white' : tab==='overview' }" @click="tab='overview'">Customer Info</button>
-        <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-blue-600 text-white' : tab==='work' }" @click="tab='work'">Work & Pricing</button>
-        <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-blue-600 text-white' : tab==='notes' }" @click="tab='notes'">Client Notes</button>
-        <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-blue-600 text-white' : tab==='crew' }" @click="tab='crew'">Crew Notes</button>
-        <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-blue-600 text-white' : tab==='analysis' }" @click="tab='analysis'">Analysis</button>
-        <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-blue-600 text-white' : tab==='files' }" @click="tab='files'">Files</button>
+        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='overview' }" @click="tab='overview'">Customer Info</button>
+        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='work' }" @click="tab='work'">Work & Pricing</button>
+        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='notes' }" @click="tab='notes'">Client Notes</button>
+        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='crew' }" @click="tab='crew'">Crew Notes</button>
+        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='analysis' }" @click="tab='analysis'">Analysis</button>
+        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='files' }" @click="tab='files'">Files</button>
     </div>
 
     <section class="bg-white rounded-lg shadow p-6 space-y-4" x-show="tab==='overview'">
@@ -150,7 +150,7 @@
                           @class([
                               'bg-gray-100 text-gray-700' => $estimate->status === 'draft',
                               'bg-amber-100 text-amber-700' => $estimate->status === 'pending',
-                              'bg-blue-100 text-blue-700' => $estimate->status === 'sent',
+                              'bg-brand-100 text-brand-700' => $estimate->status === 'sent',
                               'bg-green-100 text-green-700' => $estimate->status === 'approved',
                               'bg-red-100 text-red-700' => $estimate->status === 'rejected',
                           ])>
@@ -172,7 +172,7 @@
                 @if (!empty($siteVisitDate))
                     <p class="text-[11px] text-gray-500 mt-1">Visit date</p>
                     @if ($estimate->siteVisit)
-                        <a href="{{ route('clients.site-visits.show', [$estimate->client, $estimate->siteVisit]) }}" class="inline-block mt-2 text-xs text-blue-600 hover:text-blue-800">Open Visit</a>
+                        <a href="{{ route('clients.site-visits.show', [$estimate->client, $estimate->siteVisit]) }}" class="inline-block mt-2 text-xs text-brand-700 hover:text-brand-900">Open Visit</a>
                     @endif
                 @else
                     <p class="text-[11px] text-gray-500 mt-1">No site visit linked</p>
@@ -190,7 +190,7 @@
                         @method('PUT')
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Project Name</label>
-                            <input type="text" name="title" class="form-input w-full" value="{{ old('title', $estimate->title) }}" required>
+                            <input type="text" name="title" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ old('title', $estimate->title) }}" required>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -205,7 +205,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Estimate Status</label>
-                                <select name="status" class="form-select w-full">
+                                <select name="status" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                                     @foreach ($statuses as $status)
                                         <option value="{{ $status }}" @selected(old('status', $estimate->status ?? 'draft') === $status)>{{ ucfirst($status) }}</option>
                                     @endforeach
@@ -213,11 +213,11 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Expires On</label>
-                                <input type="date" name="expires_at" class="form-input w-full" value="{{ old('expires_at', optional($estimate->expires_at ?? null)->format('Y-m-d')) }}">
+                                <input type="date" name="expires_at" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ old('expires_at', optional($estimate->expires_at ?? null)->format('Y-m-d')) }}">
                             </div>
                         </div>
                         <div class="flex justify-end">
-                            <button class="px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-800">Save</button>
+                            <x-brand-button type="submit">Save</x-brand-button>
                         </div>
                 </form>
                 </div>
@@ -340,10 +340,10 @@
                     </span>
                 </div>
                 <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                    <div class="h-full bg-emerald-500 transition-all duration-500" style="width: {{ $grossSnapshotPercent }}%" id="snapshot-gross-bar"></div>
+                    <div class="h-full bg-brand-500 transition-all duration-500" style="width: {{ $grossSnapshotPercent }}%" id="snapshot-gross-bar"></div>
                 </div>
-                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-emerald-200">
-                    <div class="h-full bg-emerald-600 transition-all duration-500" style="width: {{ $netSnapshotPercent }}%" id="snapshot-net-bar"></div>
+                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-brand-200">
+                    <div class="h-full bg-brand-600 transition-all duration-500" style="width: {{ $netSnapshotPercent }}%" id="snapshot-net-bar"></div>
                 </div>
             </div>
         </div>
@@ -386,16 +386,16 @@
             @method('PUT')
             <div>
                 <label class="block text-sm font-medium text-gray-700">Client Notes</label>
-                <textarea name="notes" rows="6" class="form-textarea w-full">{{ old('notes', $estimate->notes) }}</textarea>
+                <textarea name="notes" rows="6" class="form-textarea w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">{{ old('notes', $estimate->notes) }}</textarea>
                 @error('notes')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Terms & Conditions</label>
-                <textarea name="terms" rows="6" class="form-textarea w-full">{{ old('terms', $estimate->terms) }}</textarea>
+                <textarea name="terms" rows="6" class="form-textarea w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">{{ old('terms', $estimate->terms) }}</textarea>
                 @error('terms')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div class="flex justify-end">
-                <button class="px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-800">Save</button>
+                <x-brand-button type="submit">Save</x-brand-button>
             </div>
         </form>
     </section>
@@ -453,7 +453,7 @@
             <form method="POST" action="{{ route('estimates.areas.store', $estimate) }}" class="mt-2 flex flex-wrap items-center gap-2" id="createAreaForm">
                 @csrf
                 <input type="text" name="name" placeholder="New work area name" class="form-input text-sm" required>
-                <button class="px-3 py-1 text-sm rounded bg-emerald-700 text-white hover:bg-emerald-800">Add Work Area</button>
+                <x-brand-button size="sm" type="submit">Add Work Area</x-brand-button>
             </form>
         </div>
 
@@ -472,7 +472,7 @@
                         </form>
                     </div>
                 @endforeach
-                <button type="button" class="ml-auto px-3 py-1 text-sm rounded bg-emerald-700 text-white hover:bg-emerald-800" @click="showAddItems = true">+ Add Items</button>
+                <x-brand-button type="button" size="sm" class="ml-auto" @click="showAddItems = true">+ Add Items</x-brand-button>
             </div>
         </div>
 
@@ -507,7 +507,7 @@
                                 <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="group-subtotal">${{ number_format($groupSubtotal, 2) }}</td>
                                 <td class="px-3 py-2 text-right space-x-2">
                                     @if ($calc)
-                                        <button type="button" class="text-red-600 hover:underline text-sm" data-action="remove-group" data-calculation-id="{{ $calc->id }}">Remove Items</button>
+                                        <x-danger-button type="button" size="sm" data-action="remove-group" data-calculation-id="{{ $calc->id }}">Remove Items</x-danger-button>
                                     @endif
                                 </td>
                             </tr>
@@ -559,12 +559,12 @@
                                                 <option value="{{ $area->id }}" @selected($item->area_id === $area->id)>{{ $area->name }}</option>
                                             @endforeach
                                         </select>
-                                        <button type="button" class="text-blue-600 hover:underline text-sm ml-2" data-action="edit-item" data-item-id="{{ $item->id }}">Edit</button>
+                                        <x-brand-button variant="outline" size="sm" type="button" data-action="edit-item" data-item-id="{{ $item->id }}">Edit</x-brand-button>
                                         <form action="{{ route('estimates.items.destroy', [$estimate, $item]) }}" method="POST"
                                               onsubmit="return confirm('Remove this line item?')" class="inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button class="text-red-600 hover:underline text-sm">Delete</button>
+                                            <x-danger-button size="sm" type="submit">Delete</x-danger-button>
                                         </form>
                                     </td>
                                 </tr>
@@ -596,8 +596,8 @@
                 <input type="hidden" name="catalog_type" value="material">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Material</label>
-                    <input type="text" class="form-input w-full mb-2 text-sm" placeholder="Search materials..." data-role="filter">
-                    <select name="catalog_id" class="form-select w-full" data-role="material-select">
+                    <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search materials..." data-role="filter">
+                    <select name="catalog_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" data-role="material-select">
                         <option value="">Select material</option>
                         @foreach ($materials as $material)
                             <option value="{{ $material->id }}"
@@ -612,32 +612,32 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Quantity</label>
-                        <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full" value="1" required>
+                        <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="1" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Cost ($)</label>
-                        <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full" value="0" required data-role="material-cost">
+                        <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" required data-role="material-cost">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Margin %</label>
-                        <input type="number" step="0.1" min="-99" class="form-input w-full" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                        <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
                         <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Price ($)</label>
-                        <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full" value="0" data-role="unit-price">
+                        <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" data-role="unit-price">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Label</label>
-                        <input type="text" name="unit" class="form-input w-full" value="" data-role="material-unit">
+                        <input type="text" name="unit" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="" data-role="material-unit">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Tax Rate</label>
-                        <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full" value="0" data-role="material-tax">
+                        <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" data-role="material-tax">
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
@@ -659,8 +659,8 @@
                 <input type="hidden" name="catalog_type" value="labor">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Labor</label>
-                    <input type="text" class="form-input w-full mb-2 text-sm" placeholder="Search labor..." data-role="filter">
-                    <select name="catalog_id" class="form-select w-full" data-role="labor-select">
+                    <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search labor..." data-role="filter">
+                    <select name="catalog_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" data-role="labor-select">
                         <option value="">Select labor</option>
                         @foreach ($laborCatalog as $labor)
                             <option value="{{ $labor->id }}"
@@ -674,32 +674,32 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Quantity</label>
-                        <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full" value="1" required>
+                        <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="1" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Cost ($)</label>
-                        <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full" value="0" required data-role="labor-cost">
+                        <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" required data-role="labor-cost">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Margin %</label>
-                        <input type="number" step="0.1" min="-99" class="form-input w-full" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                        <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
                         <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Price ($)</label>
-                        <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full" value="0" data-role="unit-price">
+                        <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" data-role="unit-price">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Label</label>
-                        <input type="text" name="unit" class="form-input w-full" value="" data-role="labor-unit">
+                        <input type="text" name="unit" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="" data-role="labor-unit">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Tax Rate</label>
-                        <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full" value="0">
+                        <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0">
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
@@ -719,7 +719,7 @@
                 @csrf
                 <div>
                     <label class="block text-sm font-semibold mb-1">Type</label>
-                    <select name="item_type" class="form-select w-full">
+                    <select name="item_type" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                         <option value="material">Material</option>
                         <option value="labor">Labor</option>
                         <option value="fee">Fee</option>
@@ -728,41 +728,41 @@
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Name</label>
-                    <input type="text" name="name" class="form-input w-full" required>
+                    <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Description</label>
-                    <textarea name="description" rows="2" class="form-textarea w-full"></textarea>
+                    <textarea name="description" rows="2" class="form-textarea w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Quantity</label>
-                        <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full" value="1" required>
+                        <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="1" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Cost ($)</label>
-                        <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full" value="0" required>
+                        <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" required>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Margin %</label>
-                        <input type="number" step="0.1" min="-99" class="form-input w-full" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                        <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
                         <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Price ($)</label>
-                        <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full" value="0" data-role="unit-price">
+                        <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" data-role="unit-price">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Unit Label</label>
-                        <input type="text" name="unit" class="form-input w-full">
+                        <input type="text" name="unit" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Tax Rate</label>
-                        <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full" value="0">
+                        <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0">
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
@@ -789,7 +789,7 @@
             <p class="text-sm text-gray-700"><strong>Amount:</strong> ${{ number_format($estimate->invoice->amount ?? 0, 2) }}</p>
             <p class="text-sm text-gray-700"><strong>Due:</strong> {{ optional($estimate->invoice->due_date)->format('M j, Y') ?? 'N/A' }}</p>
             @if ($estimate->invoice->pdf_path)
-                <a href="{{ Storage::disk('public')->url($estimate->invoice->pdf_path) }}" class="text-blue-600 hover:text-blue-800 text-sm">Download Invoice</a>
+                <a href="{{ Storage::disk('public')->url($estimate->invoice->pdf_path) }}" class="text-brand-700 hover:text-brand-900 text-sm">Download Invoice</a>
             @endif
         @else
             <p class="text-sm text-gray-500">No invoice generated yet. Use the button above to create one.</p>
@@ -1429,8 +1429,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             insertAfter.insertAdjacentElement('afterend', newRow);
-            newRow.classList.add('bg-green-50');
-            setTimeout(() => newRow.classList.remove('bg-green-50'), 1200);
+            newRow.classList.add('bg-brand-50');
+            setTimeout(() => newRow.classList.remove('bg-brand-50'), 1200);
             updateGroupSubtotal(manualHeader);
         }
 
@@ -1490,11 +1490,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="px-3 py-2 text-center text-gray-700" data-col="tax_rate">${taxDisplay}</td>
                 <td class="px-3 py-2 text-right font-semibold text-gray-900" data-col="line_total">${formatMoney(item.line_total ?? 0)}</td>
                 <td class="px-3 py-2 text-right space-x-3" data-col="actions">
-                    <button type="button" class="text-blue-600 hover:underline text-sm" data-action="edit-item" data-item-id="${item.id}">Edit</button>
+                    <button type="button" class="text-brand-700 hover:underline text-sm" data-action="edit-item" data-item-id="${item.id}">Edit</button>
                     <form action="{{ url('estimates/'.$estimate->id.'/items') }}/${item.id}" method="POST" class="inline" onsubmit="return confirm('Remove this line item?')">
                         <input type="hidden" name="_token" value="${csrfToken}">
                         <input type="hidden" name="_method" value="DELETE">
-                        <button class="text-red-600 hover:underline text-sm">Delete</button>
+                        <x-danger-button size="sm" type="submit">Delete</x-danger-button>
                     </form>
                 </td>
             `;
@@ -1727,7 +1727,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cells[6].innerHTML = `<input type="number" step="0.001" min="0" class="form-input w-24 text-sm text-center" data-edit-tax value="${taxRate.toFixed(3)}">`;
             cells[7].innerHTML = `
                 <div class="text-right space-x-2">
-                    <button type="button" class="text-sm text-blue-600 hover:underline" data-action="save-item" data-item-id="${row.dataset.itemId}">Save</button>
+                    <button type="button" class="text-sm text-brand-700 hover:underline" data-action="save-item" data-item-id="${row.dataset.itemId}">Save</button>
                     <button type="button" class="text-sm text-gray-600 hover:underline" data-action="cancel-edit" data-item-id="${row.dataset.itemId}">Cancel</button>
                 </div>
             `;
