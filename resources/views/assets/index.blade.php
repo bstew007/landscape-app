@@ -2,16 +2,11 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold">Assets & Equipment</h1>
-            <p class="text-gray-600">Track vehicles, trailers, and landscape equipment.</p>
-        </div>
-        <a href="{{ route('assets.create') }}"
-           class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-            + Add Asset
-        </a>
-    </div>
+    <x-page-header title="Assets & Equipment" eyebrow="Operations" subtitle="Track vehicles, trailers, and landscape equipment.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('assets.create') }}">+ Add Asset</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="grid gap-4 md:grid-cols-4">
         <div class="rounded-lg bg-white shadow p-4">
@@ -32,7 +27,7 @@
         </div>
     </div>
 
-    <form method="GET" class="bg-white rounded-lg shadow p-4 grid md:grid-cols-4 gap-4">
+    <form method="GET" class="bg-white rounded-lg shadow p-4 grid md:grid-cols-4 gap-4 mt-6">
         <div>
             <label class="block text-sm font-medium text-gray-700">Search</label>
             <input type="text" name="search" placeholder="Asset name, VIN, assignment"
@@ -74,7 +69,7 @@
             </select>
         </div>
         <div class="flex items-end md:col-span-2">
-            <button type="submit" class="w-full bg-gray-900 text-white rounded py-2 hover:bg-black">Apply Filters</button>
+            <x-brand-button type="submit" class="w-full justify-center">Apply Filters</x-brand-button>
         </div>
     </form>
 
@@ -103,14 +98,8 @@
                     <p><strong>Next Service:</strong> {{ optional($asset->next_service_date)->format('M j, Y') ?? 'N/A' }}</p>
                 </div>
                 <div class="mt-4 flex gap-2">
-                    <a href="{{ route('assets.show', $asset) }}"
-                       class="flex-1 text-center rounded border border-blue-600 text-blue-700 py-2 hover:bg-blue-50">
-                        View
-                    </a>
-                    <a href="{{ route('assets.edit', $asset) }}"
-                       class="flex-1 text-center rounded border border-gray-300 py-2 hover:bg-gray-50">
-                        Edit
-                    </a>
+                    <x-brand-button href="{{ route('assets.show', $asset) }}" variant="outline" class="flex-1 justify-center">View</x-brand-button>
+                    <x-brand-button href="{{ route('assets.edit', $asset) }}" variant="ghost" class="flex-1 justify-center">Edit</x-brand-button>
                 </div>
             </div>
         @empty

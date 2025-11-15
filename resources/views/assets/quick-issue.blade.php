@@ -2,10 +2,7 @@
 
 @section('content')
     <div class="max-w-3xl mx-auto space-y-6">
-        <div>
-            <h1 class="text-3xl font-bold">Log Asset Issue</h1>
-            <p class="text-gray-600">Quickly capture breakdowns, damage, or maintenance requests.</p>
-        </div>
+        <x-page-header title="Log Asset Issue" eyebrow="Assets" subtitle="Quickly capture breakdowns, damage, or maintenance requests." />
 
         @if (session('success'))
             <div class="p-3 bg-green-100 text-green-800 rounded">
@@ -23,7 +20,7 @@
             </div>
         @endif
 
-        <form action="{{ route('assets.issues.quickStore') }}" method="POST" class="space-y-4 bg-white rounded shadow p-6">
+        <form action="{{ route('assets.issues.quickStore') }}" method="POST" class="space-y-4 bg-white rounded shadow p-6 mt-2">
             @csrf
             <div>
                 <label class="block text-sm font-medium text-gray-700">Asset</label>
@@ -67,8 +64,8 @@
                 </div>
             </div>
             <div class="flex justify-end gap-2">
-                <a href="{{ route('assets.index') }}" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Log Issue</button>
+                <x-brand-button href="{{ route('assets.index') }}" variant="outline">Cancel</x-brand-button>
+                <x-brand-button type="submit">Log Issue</x-brand-button>
             </div>
         </form>
     </div>

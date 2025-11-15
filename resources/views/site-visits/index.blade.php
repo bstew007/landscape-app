@@ -1,13 +1,12 @@
-.@extends('layouts.sidebar')
+@extends('layouts.sidebar')
 
 @section('content')
-<div class="max-w-5xl mx-auto">
-    <h1 class="text-3xl font-semibold mb-6">📝 Site Visits for {{ $client->first_name }} {{ $client->last_name }}</h1>
-
-    <a href="{{ route('contacts.site-visits.create', $client) }}"
-       class="inline-block mb-4 bg-brand-700 hover:bg-brand-800 text-white text-lg px-4 py-2 rounded-md shadow">
-        ➕ Add Site Visit
-    </a>
+<div class="max-w-5xl mx-auto space-y-6">
+    <x-page-header title="Site Visits" eyebrow="Client" subtitle="For {{ $client->first_name }} {{ $client->last_name }}">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('contacts.site-visits.create', $client) }}">➕ Add Site Visit</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     @if(session('success'))
         <div class="mb-4 p-4 bg-green-100 text-green-800 border border-green-300 rounded">

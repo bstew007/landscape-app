@@ -2,21 +2,16 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <p class="text-sm text-gray-500 uppercase tracking-wide">Asset</p>
-            <h1 class="text-3xl font-bold">{{ $asset->name }}</h1>
-            <p class="text-gray-600">{{ ucwords(str_replace('_', ' ', $asset->type)) }} · {{ $asset->identifier ?: 'No ID' }}</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('assets.edit', $asset) }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Edit</a>
+    <x-page-header title="{{ $asset->name }}" eyebrow="Asset" subtitle="{{ ucwords(str_replace('_', ' ', $asset->type)) }} · {{ $asset->identifier ?: 'No ID' }}">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('assets.edit', $asset) }}" variant="outline">Edit</x-brand-button>
             <form action="{{ route('assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Remove this asset?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50">Delete</button>
+                <x-brand-button type="submit" variant="outline" class="border-red-300 text-red-700 hover:bg-red-50">Delete</x-brand-button>
             </form>
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="grid gap-4 md:grid-cols-3">
         <div class="bg-white rounded-lg shadow p-4">
@@ -77,7 +72,7 @@
                         <textarea name="notes" rows="3" class="form-textarea w-full mt-1"></textarea>
                     </div>
                     <div class="md:col-span-2 flex justify-end">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Maintenance</button>
+                        <x-brand-button type="submit">Add Maintenance</x-brand-button>
                     </div>
                 </form>
             </section>
@@ -141,7 +136,7 @@
                         <textarea name="description" rows="3" class="form-textarea w-full mt-1"></textarea>
                     </div>
                     <div class="md:col-span-2 flex justify-end">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Log Issue</button>
+                        <x-brand-button type="submit">Log Issue</x-brand-button>
                     </div>
                 </form>
             </section>
@@ -180,7 +175,7 @@
                     <div>
                         <input type="file" name="file" required class="form-input w-full">
                     </div>
-                    <button type="submit" class="w-full py-2 rounded bg-gray-900 text-white hover:bg-black">Upload File</button>
+                    <x-brand-button type="submit" class="w-full justify-center">Upload File</x-brand-button>
                 </form>
             </section>
         </div>

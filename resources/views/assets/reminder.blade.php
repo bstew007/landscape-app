@@ -2,10 +2,7 @@
 
 @section('content')
     <div class="max-w-3xl mx-auto space-y-6">
-        <div>
-            <h1 class="text-3xl font-bold">Schedule Service Reminder</h1>
-            <p class="text-gray-600">Pick an asset, set the next service date, and configure the reminder window.</p>
-        </div>
+        <x-page-header title="Schedule Service Reminder" eyebrow="Assets" subtitle="Pick an asset, set the next service date, and configure the reminder window." />
 
         @if (session('success'))
             <div class="p-3 bg-green-100 text-green-800 rounded">
@@ -53,8 +50,8 @@
                 <label for="reminder_enabled" class="text-sm text-gray-700">Enable reminder notifications</label>
             </div>
             <div class="flex justify-end gap-2">
-                <a href="{{ route('assets.index') }}" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save Reminder</button>
+                <x-brand-button href="{{ route('assets.index') }}" variant="outline">Cancel</x-brand-button>
+                <x-brand-button type="submit">Save Reminder</x-brand-button>
             </div>
         </form>
     </div>

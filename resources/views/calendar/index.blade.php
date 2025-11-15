@@ -2,26 +2,13 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Calendar</h1>
-            <p class="text-gray-600">{{ $currentMonth->format('F Y') }}</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('calendar.index', ['month' => $previousMonth->month, 'year' => $previousMonth->year]) }}"
-               class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                &larr; {{ $previousMonth->format('M Y') }}
-            </a>
-            <a href="{{ route('calendar.index') }}"
-               class="inline-flex items-center rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                Today
-            </a>
-            <a href="{{ route('calendar.index', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}"
-               class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                {{ $nextMonth->format('M Y') }} &rarr;
-            </a>
-        </div>
-    </div>
+    <x-page-header title="Calendar" eyebrow="Schedule" subtitle="{{ $currentMonth->format('F Y') }}">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('calendar.index', ['month' => $previousMonth->month, 'year' => $previousMonth->year]) }}" variant="outline">&larr; {{ $previousMonth->format('M Y') }}</x-brand-button>
+            <x-brand-button href="{{ route('calendar.index') }}">Today</x-brand-button>
+            <x-brand-button href="{{ route('calendar.index', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" variant="outline">{{ $nextMonth->format('M Y') }} &rarr;</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         @php

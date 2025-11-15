@@ -65,9 +65,7 @@
     </div>
 
     <div class="flex items-center justify-between">
-        <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
-            Save Asset
-        </button>
-        <a href="{{ route('assets.index') }}" class="text-gray-600 hover:text-gray-900">Cancel</a>
+        <x-brand-button type="submit">Save Asset</x-brand-button>
+        <x-brand-button href="{{ route('assets.index') }}" variant="outline">Cancel</x-brand-button>
     </div>
 </form>

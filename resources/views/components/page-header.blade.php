@@ -1,0 +1,35 @@
+@props([
+    'title' => '',
+    'subtitle' => null,
+    'eyebrow' => null,
+    'variant' => 'primary', // primary | compact
+])
+@php
+    $isCompact = $variant === 'compact' || $variant === 'secondary';
+    $wrapPad = $isCompact ? 'p-3' : 'p-4';
+    $titleCls = $isCompact ? 'text-2xl font-semibold' : 'text-3xl font-bold';
+    $subtitleCls = $isCompact ? 'text-sm' : '';
+@endphp
+<div {{ $attributes->merge(['class' => "rounded-lg shadow $wrapPad ring-1 ring-brand-100 border-t-4 border-brand-600 bg-gradient-to-r from-brand-50/70 to-white"]) }}>
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex items-start gap-3">
+            @isset($leading)
+                <div class="shrink-0">
+                    {{ $leading }}
+                </div>
+            @endisset
+            <div>
+                @if($eyebrow)
+                    <p class="text-sm uppercase tracking-wide text-brand-700">{{ $eyebrow }}</p>
+                @endif
+                <h1 class="{{ $titleCls }} text-gray-900">{{ $title }}</h1>
+                @if($subtitle)
+                    <p class="text-gray-600 {{ $subtitleCls }}">{{ $subtitle }}</p>
+                @endif
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {{ $actions ?? '' }}
+        </div>
+    </div>
+</div>

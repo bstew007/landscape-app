@@ -37,29 +37,29 @@
 </div>
 
 <div class="space-y-6" x-data="{ tab: 'work', activeArea: 'all', showAddItems: false }">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <p class="text-sm text-gray-500 uppercase tracking-wide">Estimate</p>
-            <h1 class="text-3xl font-bold">{{ $estimate->title }}</h1>
-            <p class="text-gray-600">{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}</p>
-        </div>
-            <div class="flex flex-wrap gap-2">
-            <button type="button" id="estimateRefreshBtn" class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Refresh</button>
-            <a href="{{ route('estimates.edit', $estimate) }}" class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Edit</a>
+    <x-page-header title="{{ $estimate->title }}" eyebrow="Estimate" subtitle="{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}" variant="compact">
+        <x-slot:leading>
+            <div class="h-12 w-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-semibold shadow-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg>
+            </div>
+        </x-slot:leading>
+        <x-slot:actions>
+            <x-brand-button type="button" id="estimateRefreshBtn" variant="outline">Refresh</x-brand-button>
+            <x-brand-button href="{{ route('estimates.edit', $estimate) }}" variant="outline">Edit</x-brand-button>
             <form action="{{ route('estimates.destroy', $estimate) }}" method="POST" onsubmit="return confirm('Delete this estimate?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50">Delete</button>
+                <x-brand-button type="submit" variant="outline" class="border-red-300 text-red-700 hover:bg-red-50">Delete</x-brand-button>
             </form>
-            <a href="{{ route('estimates.preview-email', $estimate) }}" class="rounded border border-emerald-300 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">Preview Email</a>
+            <x-brand-button href="{{ route('estimates.preview-email', $estimate) }}" variant="outline">Preview Email</x-brand-button>
             <form action="{{ route('estimates.invoice', $estimate) }}" method="POST">
                 @csrf
-                <button type="submit" class="rounded border border-emerald-300 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">Create Invoice</button>
+                <x-brand-button type="submit" variant="outline">Create Invoice</x-brand-button>
             </form>
-            <a href="{{ route('estimates.print', $estimate) }}" target="_blank" class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Print</a>
-            <button type="button" id="openCalcDrawerBtn" class="rounded bg-brand-700 text-white px-4 py-2 text-sm hover:bg-brand-800">+ Add via Calculator</button>
-        </div>
-    </div>
+            <x-brand-button href="{{ route('estimates.print', $estimate) }}" target="_blank" variant="outline">Print</x-brand-button>
+            <x-brand-button type="button" id="openCalcDrawerBtn" class="ml-2">+ Add via Calculator</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     <!-- Add via Calculator Slide-over (controlled by JS module) -->
     <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;">
@@ -1723,126 +1723,4 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="number" step="0.1" min="-99" class="form-input w-24 text-sm text-center" data-edit-margin value="${marginPercent.toFixed(2)}">
                     <span class="text-xs text-gray-500" data-edit-margin-preview>${formatMoney((unitPrice - unitCost) * quantity)} total</span>
                 </div>
-            `;
-            cells[6].innerHTML = `<input type="number" step="0.001" min="0" class="form-input w-20 text-sm text-center" data-edit-tax value="${taxRate.toFixed(3)}">`;
-            cells[7].innerHTML = `<span class="text-sm text-gray-500">Will update on save</span>`;
-            cells[8].innerHTML = `
-                <button class="text-green-700 hover:underline text-sm" data-action="save-item" data-item-id="${row.dataset.itemId}">Save</button>
-                <button class="text-gray-600 hover:underline text-sm ml-2" data-action="cancel-edit" data-item-id="${row.dataset.itemId}">Cancel</button>
-            `;
-
-            bindRowFinancialInputs(row);
-        }
-
-        function bindRowFinancialInputs(row) {
-            const qtyInput = row.querySelector('[data-edit-qty]');
-            const costInput = row.querySelector('[data-edit-unit-cost]');
-            const priceInput = row.querySelector('[data-edit-unit-price]');
-            const marginInput = row.querySelector('[data-edit-margin]');
-            const preview = row.querySelector('[data-edit-margin-preview]');
-
-            if (priceInput && !priceInput.dataset.manualOverride) {
-                priceInput.dataset.manualOverride = '0';
-            }
-
-            const sync = () => {
-                const qty = parseNumber(qtyInput?.value, 0);
-                const unitCost = parseNumber(costInput?.value, 0);
-                let unitPrice = parseNumber(priceInput?.value, unitCost);
-                let marginPercent = parseNumber(marginInput?.value, 0);
-                const manualOverride = priceInput?.dataset.manualOverride === '1';
-
-                if (!manualOverride) {
-                    marginPercent = clamp(parseNumber(marginInput.value, 0), -99, 1000);
-                    unitPrice = unitCost * (1 + (marginPercent / 100));
-                    if (priceInput) priceInput.value = unitPrice.toFixed(2);
-                } else {
-                    unitPrice = parseNumber(priceInput.value, unitCost);
-                    marginPercent = unitCost !== 0 ? clamp(((unitPrice - unitCost) / unitCost) * 100, -99, 1000) : 0;
-                    if (marginInput) marginInput.value = marginPercent.toFixed(2);
-                }
-
-                if (preview) {
-                    const marginTotal = qty * (unitPrice - unitCost);
-                    preview.textContent = `${formatMoney(marginTotal)} total`;
-                }
-            };
-
-            [qtyInput, costInput, marginInput].forEach(input => {
-                if (!input) return;
-                input.addEventListener('input', () => {
-                    if (input === marginInput) {
-                        if (priceInput) priceInput.dataset.manualOverride = '0';
-                    }
-                    sync();
-                });
-            });
-
-            if (priceInput) {
-                priceInput.addEventListener('input', () => {
-                    priceInput.dataset.manualOverride = '1';
-                    sync();
-                });
-            }
-
-            sync();
-        }
-
-        // Area filtering chips
-        (function initAreaChips(){
-            const chips = document.querySelectorAll('[data-area-chip]');
-            const tbody = document.querySelector('table tbody');
-            function applyAreaFilter(val){
-                chips.forEach(c=>c.classList.toggle('bg-blue-100', c.getAttribute('data-area-chip')===val));
-                const rows = tbody ? tbody.querySelectorAll('tr[data-item-id]') : [];
-                rows.forEach(row => {
-                    const areaId = String(row.getAttribute('data-area-id') || '0');
-                    const show = (val === 'all') || (areaId === val);
-                    row.style.display = show ? '' : 'none';
-                });
-            }
-            chips.forEach(chip => chip.addEventListener('click', () => applyAreaFilter(chip.getAttribute('data-area-chip'))));
-            applyAreaFilter('all');
-        })();
-
-        // Set area via select
-        document.addEventListener('change', async (event) => {
-            const select = event.target.closest('select[data-action="set-area"]');
-            if (!select) return;
-            const id = select.getAttribute('data-item-id');
-            const areaId = select.value || null;
-            try {
-                const response = await fetch("{{ url('estimates/'.$estimate->id.'/items') }}/" + id, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ area_id: areaId }),
-                });
-                if (!response.ok) throw await response.json().catch(()=>({}));
-                const data = await response.json();
-                showToast('Area updated', 'success');
-                autoRefresh();
-            } catch (e) {
-                showToast('Failed to set area', 'error');
-            }
-        });
-
-
-        window.showToast = function(message, type = 'info') {
-            const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-gray-800' };
-            const el = document.createElement('div');
-            el.className = `${colors[type] || colors.info} text-white px-4 py-2 rounded shadow fixed top-4 right-4 z-50 opacity-0 transition-opacity duration-300`;
-            el.textContent = message;
-            document.body.appendChild(el);
-            requestAnimationFrame(() => el.classList.remove('opacity-0'));
-            setTimeout(() => {
-                el.classList.add('opacity-0');
-                setTimeout(() => el.remove(), 300);
-            }, 2500);
-        }
-    });
-</script>
-@endpush
+           

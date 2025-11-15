@@ -2,12 +2,13 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto" x-data="templateGallery()">
-    <div class="flex items-center justify-between mb-4">
-        <h1 class="text-2xl font-semibold">Calculator Templates</h1>
-        <a href="{{ route('estimates.index') }}" class="text-sm text-blue-600">Back to Estimates</a>
-    </div>
+    <x-page-header title="Calculator Templates" eyebrow="Tools" subtitle="Save, manage, and import calculation templates.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('estimates.index') }}" variant="outline">Back to Estimates</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
-    <form method="GET" class="bg-white border rounded p-4 mb-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+    <form method="GET" class="bg-white border rounded p-4 mb-4 grid grid-cols-1 md:grid-cols-5 gap-3 mt-6">
         <div>
             <label class="block text-xs text-gray-500 mb-1">Type</label>
             <select name="type" class="form-select w-full">
@@ -40,7 +41,7 @@
             <input type="date" name="to" class="form-input w-full" value="{{ request('to') }}">
         </div>
         <div class="md:col-span-5 text-right">
-            <button class="px-3 py-2 bg-emerald-700 text-white rounded">Filter</button>
+            <x-brand-button type="submit">Filter</x-brand-button>
         </div>
     </form>
 
@@ -76,12 +77,12 @@
             </div>
             <div class="mt-auto pt-2 border-t">
                 <div class="flex flex-wrap items-center gap-2">
-                    <a class="text-sm px-3 py-2 rounded border border-gray-300 hover:bg-gray-50" href="{{ url('/calculators/'.str_replace('_','-',$tpl->calculation_type).'/'.$tpl->id.'/edit') }}">Open in Calculator</a>
+                    <x-brand-button href="{{ url('/calculators/'.str_replace('_','-',$tpl->calculation_type).'/'.$tpl->id.'/edit') }}" variant="outline">Open in Calculator</x-brand-button>
                     <form method="POST" action="{{ route('calculator.templates.duplicate', $tpl) }}">
                         @csrf
-                        <button class="text-sm px-3 py-2 rounded border border-gray-300 hover:bg-gray-50">Duplicate</button>
+                        <x-brand-button type="submit" variant="outline">Duplicate</x-brand-button>
                     </form>
-                    <button type="button" class="text-sm px-3 py-2 rounded bg-emerald-700 text-white hover:bg-emerald-800 ml-auto" @click="openImport({ id: {{ $tpl->id }}, name: '{{ addslashes($tpl->template_name) }}' })">Import</button>
+                    <x-brand-button type="button" class="ml-auto" @click="openImport({ id: {{ $tpl->id }}, name: '{{ addslashes($tpl->template_name) }}' })">Import</x-brand-button>
                 </div>
             </div>
         </div>

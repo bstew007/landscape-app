@@ -2,41 +2,22 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto py-10 space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="text-3xl font-bold">Labor Catalog</h1>
-            <p class="text-sm text-gray-600">Crew, subcontractor, and equipment rates for estimates.</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="{{ route('labor.importForm') }}"
-               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                ⬆ Import JSON
-            </a>
-                    <div class="flex items-center gap-3">
-            <a href="{{ route('labor.importForm') }}"
-               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                ⬆ Import (JSON/CSV)
-            </a>
-            <a href="{{ route('labor.export') }}"
-               class="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
-                ⬇ Export CSV
-            </a>
-            <a href="{{ route('labor.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                + Add Labor Entry
-            </a>
-        </div>
-        </div>
-    </div>
+    <x-page-header title="Labor Catalog" eyebrow="Catalogs" subtitle="Crew, subcontractor, and equipment rates for estimates.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('labor.importForm') }}">⬆ Import (JSON/CSV)</x-brand-button>
+            <x-brand-button href="{{ route('labor.export') }}" variant="outline">⬇ Export CSV</x-brand-button>
+            <x-brand-button href="{{ route('labor.create') }}">+ Add Labor Entry</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     @if (session('success'))
         <div class="bg-green-100 text-green-800 px-4 py-3 rounded">{{ session('success') }}</div>
     @endif
 
-    <form method="GET" class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded shadow">
+    <form method="GET" class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded shadow mt-6">
         <input type="text" name="search" value="{{ $search }}" placeholder="Search by name or type"
                class="form-input flex-1">
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
+        <x-brand-button type="submit">Search</x-brand-button>
     </form>
 
     <div class="bg-white rounded shadow overflow-x-auto">

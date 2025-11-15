@@ -48,6 +48,30 @@ class ProductionRateController extends Controller
         return redirect()->route('production-rates.index')->with('success', 'Production rate added.');
     }
 
+    // Bulk update multiple rates
+    public function bulkUpdate(Request $request)
+    {
+        $data = $request->validate([
+            'rates' => ['required','array'],
+            'rates.*.id' => ['required','integer','exists:production_rates,id'],
+            'rates.*.task' => ['required','string','max:255'],
+            'rates.*.unit' => ['required','string','max:50'],
+            'rates.*.rate' => ['required','numeric','min:0'],
+            'rates.*.calculator' => ['nullable','string','max:255'],
+            'rates.*.note' => ['nullable','string','max:255'],
+        ]);
+
+        $count = 0;
+        foreach ($data['rates'] as $row) {
+            $id = (int) $row['id'];
+            unset($row['id']);
+            ProductionRate::where('id', $id)->update($row);
+            $count++;
+        }
+
+        return response()->json(['ok' => true, 'updated' => $count]);
+    }
+
     // Update existing production rate
     public function update(Request $request, ProductionRate $productionRate)
     {

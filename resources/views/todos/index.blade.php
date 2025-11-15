@@ -24,28 +24,15 @@
 
 @section('content')
     <div class="space-y-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h1 class="text-3xl font-bold">To-Do Board</h1>
-                <p class="text-gray-600">Track landscaping tasks by client/property.</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('todos.create') }}"
-                   class="inline-flex items-center rounded-md bg-brand-700 px-4 py-2 text-white hover:bg-brand-800">
-                    + Add To-Do
-                </a>
-                <a href="{{ route('todos.index', array_merge(request()->except('view'), ['view' => 'kanban'])) }}"
-                   class="inline-flex items-center rounded-md border px-4 py-2 text-sm {{ $viewMode === 'kanban' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300' }}">
-                    Kanban
-                </a>
-                <a href="{{ route('todos.index', array_merge(request()->except('view'), ['view' => 'list'])) }}"
-                   class="inline-flex items-center rounded-md border px-4 py-2 text-sm {{ $viewMode === 'list' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300' }}">
-                    List
-                </a>
-            </div>
-        </div>
+        <x-page-header title="To-Do Board" eyebrow="Operations" subtitle="Track landscaping tasks by client/property.">
+            <x-slot:actions>
+                <x-brand-button href="{{ route('todos.create') }}">+ Add To-Do</x-brand-button>
+                <x-brand-button href="{{ route('todos.index', array_merge(request()->except('view'), ['view' => 'kanban'])) }}" variant="outline">Kanban</x-brand-button>
+                <x-brand-button href="{{ route('todos.index', array_merge(request()->except('view'), ['view' => 'list'])) }}" variant="outline">List</x-brand-button>
+            </x-slot:actions>
+        </x-page-header>
 
-        <form method="GET" action="{{ route('todos.index') }}" class="bg-white rounded-lg shadow p-4 grid gap-4 md:grid-cols-4" id="todoFilters">
+        <form method="GET" action="{{ route('todos.index') }}" class="bg-white rounded-lg shadow p-4 grid gap-4 md:grid-cols-4 mt-6" id="todoFilters">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Priority</label>
                 <select name="priority" class="form-select w-full mt-1">
@@ -78,9 +65,7 @@
                 </div>
             </div>
             <div class="flex items-end">
-                <button type="submit" class="w-full bg-gray-900 text-white rounded py-2 hover:bg-black">
-                    Apply Filters
-                </button>
+                <x-brand-button type="submit" class="w-full justify-center">Apply Filters</x-brand-button>
                 <script>
                     // Auto-submit on toggle for the two checkboxes
                     document.addEventListener('DOMContentLoaded', () => {

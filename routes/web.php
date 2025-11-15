@@ -59,15 +59,17 @@ Route::middleware('auth')->group(function () {
         Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
         // Temporary ping route to help diagnose 404s on POST /materials/bulk
         Route::get('materials/bulk', function() { return response('bulk ping', 200); })->name('materials.bulk.ping');
-        Route::post('materials/bulk', [MaterialController::class, 'bulk'])->name('materials.bulk');
+        Route::match(['post','delete'], 'materials/bulk', [MaterialController::class, 'bulk'])->name('materials.bulk');
         // Alternate path to avoid any web server collisions with /materials/*
         Route::get('catalog/materials/bulk', function() { return response('bulk alt ping', 200); })->name('materials.bulk.alt.ping');
-        Route::post('catalog/materials/bulk', [MaterialController::class, 'bulk'])->name('materials.bulk.alt');
+        Route::match(['post','delete'], 'catalog/materials/bulk', [MaterialController::class, 'bulk'])->name('materials.bulk.alt');
         Route::resource('materials', MaterialController::class)->except(['show']);
         Route::get('labor/import', [LaborController::class, 'importForm'])->name('labor.importForm');
         Route::post('labor/import', [LaborController::class, 'import'])->name('labor.import');
         Route::get('labor/export', [LaborController::class, 'export'])->name('labor.export');
         Route::resource('labor', LaborController::class)->except(['show']);
+        // Bulk update for production rates
+        Route::patch('production-rates/bulk', [ProductionRateController::class, 'bulkUpdate'])->name('production-rates.bulkUpdate');
         Route::resource('production-rates', ProductionRateController::class)->except(['show']);
     });
 
@@ -269,6 +271,8 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // Admin budgets (protect with auth/ability middleware in your app)
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('budgets', CompanyBudgetController::class)->except(['destroy', 'show']);
+        // Users management
+        Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['show']);
     });
 
     Route::prefix('estimates/{estimate}')->name('estimates.')->group(function () {

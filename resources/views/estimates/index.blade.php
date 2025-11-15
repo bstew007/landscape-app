@@ -2,17 +2,13 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold">Estimates</h1>
-            <p class="text-gray-600">Draft, send, and track pricing packages.</p>
-        </div>
-        <a href="{{ route('estimates.create') }}" class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-            + New Estimate
-        </a>
-    </div>
+    <x-page-header title="Estimates" eyebrow="Sales" subtitle="Draft, send, and track pricing packages.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('estimates.create') }}">+ New Estimate</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
-    <form method="GET" class="bg-white rounded-lg shadow p-4 grid md:grid-cols-3 gap-4">
+    <form method="GET" class="bg-white rounded-lg shadow p-4 grid md:grid-cols-3 gap-4 mt-6">
         <div>
             <label class="block text-sm font-medium text-gray-700">Status</label>
             <select name="status" class="form-select w-full mt-1">
@@ -32,7 +28,7 @@
             </select>
         </div>
         <div class="flex items-end">
-            <button type="submit" class="w-full bg-gray-900 text-white rounded py-2 hover:bg-black">Filter</button>
+            <x-brand-button type="submit" class="w-full justify-center">Filter</x-brand-button>
         </div>
     </form>
 

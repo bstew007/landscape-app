@@ -2,35 +2,22 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto py-10 space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="text-3xl font-bold">Materials Catalog</h1>
-            <p class="text-sm text-gray-600">Centralized pricing + SKU data for estimates and calculators.</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="{{ route('materials.importForm') }}"
-               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                ⬆ Import (JSON/CSV)
-            </a>
-            <a href="{{ route('materials.export') }}"
-               class="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
-                ⬇ Export CSV
-            </a>
-            <a href="{{ route('materials.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                + Add Material
-            </a>
-        </div>
-    </div>
+    <x-page-header title="Materials Catalog" eyebrow="Catalogs" subtitle="Centralized pricing + SKU data for estimates and calculators.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('materials.importForm') }}">⬆ Import (JSON/CSV)</x-brand-button>
+            <x-brand-button href="{{ route('materials.export') }}" variant="outline">⬇ Export CSV</x-brand-button>
+            <x-brand-button href="{{ route('materials.create') }}">+ Add Material</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     @if (session('success'))
         <div class="bg-green-100 text-green-800 px-4 py-3 rounded">{{ session('success') }}</div>
     @endif
 
-    <form method="GET" class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded shadow">
+    <form method="GET" class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded shadow mt-6">
         <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, SKU, category"
                class="form-input flex-1">
-        <button class="px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">Search</button>
+        <x-brand-button type="submit">Search</x-brand-button>
     </form>
 
     <form method="POST" action="{{ request()->getSchemeAndHttpHost() . request()->getBaseUrl() . '/catalog/materials/bulk' }}">
@@ -84,12 +71,7 @@
                         </td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('materials.edit', $material) }}" class="text-blue-600 hover:underline mr-3">Edit</a>
-                            <form action="{{ route('materials.destroy', $material) }}" method="POST" class="inline"
-                                  onsubmit="return confirm('Delete this material?')">
-                                @csrf
-                                @method('DELETE')
-                                <button class="text-red-600 hover:underline">Delete</button>
-                            </form>
+                            <button type="button" class="text-red-600 hover:underline" onclick="if(confirm('Delete this material?')) deleteMaterial('{{ route('materials.destroy', $material) }}')">Delete</button>
                         </td>
                     </tr>
                 @empty
@@ -106,6 +88,19 @@
 
     @push('scripts')
     <script>
+        function deleteMaterial(url){
+            try{
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ _method: 'DELETE', _token: token }).toString(),
+                }).then(res => {
+                    if (res.ok) { window.location.reload(); }
+                    else { res.text().then(t => alert('Delete failed: ' + t)); }
+                });
+            } catch (e) { alert('Delete failed'); }
+        }
         document.addEventListener('DOMContentLoaded', function () {
             const checkAll = document.getElementById('checkAll');
             const checks = document.querySelectorAll('.rowCheck');

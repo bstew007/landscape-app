@@ -7,22 +7,25 @@
 @endphp
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="text-sm text-gray-500 uppercase tracking-wide">Contact</p>
-            <h1 class="text-3xl font-bold">{{ $contact->name }}</h1>
-            <p class="text-gray-600">{{ $contact->email ?? '—' }} @if($contact->phone) · {{ $contact->phone }} @endif</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('contacts.edit', $contact) }}" class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Edit Contact</a>
-            <a href="{{ route('estimates.create', ['client_id' => $contact->id, 'property_id' => optional($contact->primaryProperty)->id]) }}" class="rounded bg-brand-700 text-white px-4 py-2 text-sm hover:bg-brand-800">+ New Estimate</a>
-            <a href="{{ route('todos.create', ['client_id' => $contact->id]) }}" class="rounded border border-emerald-300 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">+ New To‑Do</a>
-
-            <a href="{{ route('contacts.site-visits.index', $contact) }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Site Visits</a>
-            <a href="{{ route('contacts.site-visits.create', ['client' => $contact->id, 'property_id' => optional($contact->primaryProperty)->id]) }}" class="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700">+ New Site Visit</a>
-
+    <x-page-header title="{{ $contact->name }}" eyebrow="Contact" subtitle="{{ $contact->email ?? '—' }} @if($contact->phone) · {{ $contact->phone }} @endif" variant="compact">
+        <x-slot:leading>
+            @php
+                $initials = collect(explode(' ', trim($contact->name)))->map(fn($p)=>strtoupper(mb_substr($p,0,1)))->take(2)->implode('');
+            @endphp
+            <div class="h-12 w-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-semibold shadow-sm">
+                {{ $initials ?: 'C' }}
+            </div>
+        </x-slot:leading>
+        <x-slot:actions>
+            <x-brand-button href="{{ route('contacts.edit', $contact) }}" variant="outline">Edit Contact</x-brand-button>
+            <x-brand-button href="{{ route('estimates.create', ['client_id' => $contact->id, 'property_id' => optional($contact->primaryProperty)->id]) }}">+ New Estimate</x-brand-button>
+            <x-brand-button href="{{ route('todos.create', ['client_id' => $contact->id]) }}" variant="outline">+ New To‑Do</x-brand-button>
+            <x-brand-button href="{{ route('contacts.site-visits.index', $contact) }}" variant="outline">Site Visits</x-brand-button>
+            <x-brand-button href="{{ route('contacts.site-visits.create', ['client' => $contact->id, 'property_id' => optional($contact->primaryProperty)->id]) }}">+ New Site Visit</x-brand-button>
             <details class="relative">
-                <summary class="list-none rounded border px-4 py-2 text-sm cursor-pointer select-none">+ Add via Calculator</summary>
+                <summary class="list-none inline-flex items-center h-10 px-4 rounded font-medium text-sm whitespace-nowrap border border-brand-600 text-brand-700 cursor-pointer select-none hover:bg-brand-50">
+                    + Add via Calculator
+                </summary>
                 <div class="absolute right-0 mt-2 w-64 bg-white border rounded shadow z-10 p-1">
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}">Mulching</a>
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.syn_turf.form')]) }}">Synthetic Turf</a>
@@ -39,8 +42,8 @@
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.index') }}">All Calculators…</a>
                 </div>
             </details>
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <!-- Tabs -->
     <div class="bg-white rounded shadow p-2 flex flex-wrap gap-2">

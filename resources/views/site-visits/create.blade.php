@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto">
-    <h1 class="text-3xl font-semibold mb-6">New Site Visit for {{ $client->first_name }}</h1>
+    <x-page-header title="New Site Visit" eyebrow="Client" subtitle="For {{ $client->first_name }}" />
 
           @include('site-visits._form', [
           'route' => route('contacts.site-visits.store', $client),

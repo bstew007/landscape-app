@@ -3,40 +3,33 @@
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <div class="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="text-3xl font-semibold text-gray-800">Contacts</h1>
-            <p class="text-gray-500 text-sm">Search by contact or company name.</p>
-        </div>
-        <div class="flex flex-col gap-3 md:flex-row md:items-center">
-            <form method="GET" action="{{ route('clients.index') }}" class="flex flex-1 items-center gap-2">
-                <select name="type" class="form-select border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                    @php $types = ['lead','client','vendor','owner']; @endphp
-                    @foreach ($types as $t)
-                        <option value="{{ $t }}" {{ ($type ?? 'client') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
-                    @endforeach
-                </select>
-                <input type="text"
-                       name="search"
-                       value="{{ $search ?? '' }}"
-                       placeholder="Search contacts..."
-                       class="flex-1 form-input border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                @if(!empty($search))
-                    <a href="{{ route('clients.index') }}"
-                       class="px-3 py-2 border-t border-b border-gray-300 text-gray-600 bg-gray-100 hover:bg-gray-200">
-                        ✕
-                    </a>
-                @endif
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700">
-                    🔍
-                </button>
-            </form>
-            <a href="{{ route('clients.create') }}"
-               class="inline-flex items-center justify-center px-4 py-2 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow">
-                ➕ Add Contact
-            </a>
-        </div>
+    <x-page-header title="Contacts" eyebrow="CRM" subtitle="Search by contact or company name.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('clients.create') }}">➕ Add Contact</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="mt-6 flex flex-col gap-3 md:flex-row md:items-center">
+        <form method="GET" action="{{ route('clients.index') }}" class="flex flex-1 items-center gap-2">
+            <select name="type" class="form-select border-gray-300 rounded focus:ring-brand-500 focus:border-brand-500">
+                @php $types = ['lead','client','vendor','owner']; @endphp
+                @foreach ($types as $t)
+                    <option value="{{ $t }}" {{ ($type ?? 'client') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+                @endforeach
+            </select>
+            <input type="text"
+                   name="search"
+                   value="{{ $search ?? '' }}"
+                   placeholder="Search contacts..."
+                   class="flex-1 form-input border-gray-300 rounded focus:ring-brand-500 focus:border-brand-500">
+            @if(!empty($search))
+                <a href="{{ route('clients.index') }}"
+                   class="px-3 py-2 border-t border-b border-gray-300 text-gray-600 bg-gray-100 hover:bg-gray-200">
+                    ✕
+                </a>
+            @endif
+            <x-brand-button type="submit">🔍</x-brand-button>
+        </form>
     </div>
 
     @if (session('success'))

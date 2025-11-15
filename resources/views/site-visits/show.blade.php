@@ -6,19 +6,17 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto py-10">
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-        <h1 class="text-3xl font-bold"> Site Visit Details</h1>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('site-visits.report', $siteVisit) }}"
-               class="px-4 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">
-                 View Report
-            </a>
-            <a href="{{ route('site-visits.report.pdf', $siteVisit) }}"
-               class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">
-                 Download Report PDF
-            </a>
-        </div>
-    </div>
+    <x-page-header title="Site Visit Details" eyebrow="Site Visit" subtitle="Client: {{ $client->first_name }} {{ $client->last_name }}" variant="compact">
+        <x-slot:leading>
+            <div class="h-12 w-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-semibold shadow-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+        </x-slot:leading>
+        <x-slot:actions>
+            <x-brand-button href="{{ route('site-visits.report', $siteVisit) }}">View Report</x-brand-button>
+            <x-brand-button href="{{ route('site-visits.report.pdf', $siteVisit) }}" variant="outline">Download Report PDF</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     {{-- Site Visit Info --}}
     <div class="bg-white p-6 rounded-lg shadow text-gray-800 space-y-2 mb-6">
@@ -41,19 +39,11 @@
 
     {{--  Edit and  Delete Site Visit --}}
     <div class="flex gap-4 mb-8">
-                  <a href="{{ route('contacts.site-visits.edit', [$client, $siteVisit]) }}"
-             class="px-5 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-semibold">
-             Edit Site Visit
-        </a>
-
-                  <form method="POST" action="{{ route('contacts.site-visits.destroy', [$client, $siteVisit]) }}"
-                onsubmit="return confirm('Are you sure you want to delete this site visit?');">
+        <x-brand-button href="{{ route('contacts.site-visits.edit', [$client, $siteVisit]) }}">Edit Site Visit</x-brand-button>
+        <form method="POST" action="{{ route('contacts.site-visits.destroy', [$client, $siteVisit]) }}" onsubmit="return confirm('Are you sure you want to delete this site visit?');">
             @csrf
             @method('DELETE')
-            <button type="submit"
-                    class="px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold">
-                 Delete Site Visit
-            </button>
+            <x-brand-button type="submit" variant="outline" class="border-red-300 text-red-700 hover:bg-red-50">Delete Site Visit</x-brand-button>
         </form>
     </div>
 
@@ -246,10 +236,7 @@
                            placeholder="e.g. Front lawn before service">
                 </div>
             </div>
-            <button type="submit"
-                    class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-                 Upload Photo
-            </button>
+            <x-brand-button type="submit" class="mt-4">Upload Photo</x-brand-button>
         </form>
 
         @if ($siteVisit->photos->count())
@@ -282,10 +269,7 @@
 
     {{--  Back to Client --}}
     <div class="mt-8">
-        <a href="{{ route('clients.show', $client) }}"
-           class="inline-block px-5 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-lg">
-             Back to Client
-        </a>
+        <x-brand-button href="{{ route('clients.show', $client) }}" variant="outline">Back to Client</x-brand-button>
     </div>
 </div>
 @endsection

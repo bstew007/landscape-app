@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">Edit Site Visit</h1>
+    <x-page-header title="Edit Site Visit" eyebrow="Client" subtitle="Update visit details" />
 
     @if ($errors->any())
         <div class="mb-4 p-4 bg-red-100 text-red-800 border border-red-300 rounded">

@@ -6,19 +6,14 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <p class="text-sm uppercase tracking-wide text-gray-500">Client Hub</p>
-            <h1 class="text-3xl font-bold text-gray-900">Pipeline Overview</h1>
-            <p class="text-gray-600">Manage clients, visits, and estimates from one place.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('contacts.create') }}" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Add Contact</a>
-            <a href="{{ route('contacts.index') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Manage Contacts</a>
-            <a href="{{ route('contacts.index') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Create Site Visit</a>
-            <a href="{{ route('estimates.create') }}" class="rounded border px-4 py-2 text-sm hover:bg-gray-50">Create Estimate</a>
-        </div>
-    </div>
+    <x-page-header title="Home Dashboard" eyebrow="Client Hub" subtitle="Manage clients, visits, and estimates from one place.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('contacts.create') }}">Add Contact</x-brand-button>
+            <x-brand-button href="{{ route('contacts.index') }}" variant="outline">Manage Contacts</x-brand-button>
+            <x-brand-button href="{{ route('contacts.index') }}" variant="outline">Create Site Visit</x-brand-button>
+            <x-brand-button href="{{ route('estimates.create') }}" variant="outline">Create Estimate</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="grid gap-4 md:grid-cols-4">
         <div class="rounded-lg bg-white shadow p-4">
@@ -85,27 +80,49 @@
         </section>
     </div>
 
-    <section class="bg-white rounded-lg shadow p-4 space-y-4">
-        <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">Recent Estimates</h2>
-            <a href="{{ route('estimates.index') }}" class="text-sm text-blue-600 hover:text-blue-800">View estimates</a>
-        </div>
-        <div class="space-y-3">
-            @forelse ($recentEstimates as $estimate)
-                <div class="border rounded px-3 py-2 flex items-center justify-between">
+    <div class="grid gap-6 lg:grid-cols-2 mt-6">
+        <section class="bg-white rounded-lg shadow p-4 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Estimates</h2>
+                <a href="{{ route('estimates.index') }}" class="text-sm text-blue-600 hover:text-blue-800">View estimates</a>
+            </div>
+            <div class="space-y-3">
+                @forelse ($recentEstimates as $estimate)
+                    <div class="border rounded px-3 py-2 flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-gray-900">{{ $estimate->title }}</p>
+                            <p class="text-xs text-gray-500">{{ $estimate->client->name }}</p>
+                        </div>
+                        <div class="text-right text-sm">
+                            <p class="font-semibold">{{ $estimate->total ? '$' . number_format($estimate->total, 2) : 'Pending' }}</p>
+                            <p class="text-xs text-gray-500">{{ ucfirst($estimate->status) }}</p>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500">No estimates yet.</p>
+                @endforelse
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">Your To‑Dos</h2>
+                <a href="{{ route('todos.index') }}" class="text-sm text-blue-600 hover:text-blue-800">Open Board</a>
+            </div>
+            @forelse ($todos as $todo)
+                <div class="border rounded px-3 py-2 flex items-start justify-between">
                     <div>
-                        <p class="font-semibold text-gray-900">{{ $estimate->title }}</p>
-                        <p class="text-xs text-gray-500">{{ $estimate->client->name }}</p>
+                        <p class="font-medium text-gray-900">{{ $todo->title }}</p>
+                        <p class="text-xs text-gray-500">Status: {{ Str::headline($todo->status) }} @if($todo->due_date) • Due {{ $todo->due_date->format('M j') }} @endif</p>
                     </div>
-                    <div class="text-right text-sm">
-                        <p class="font-semibold">{{ $estimate->total ? '$' . number_format($estimate->total, 2) : 'Pending' }}</p>
-                        <p class="text-xs text-gray-500">{{ ucfirst($estimate->status) }}</p>
-                    </div>
+                    @if($todo->priority)
+                        <span class="text-xs px-2 py-1 rounded {{ $todo->priority === 'urgent' ? 'bg-red-100 text-red-800' : ($todo->priority === 'high' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-700') }}">{{ Str::headline($todo->priority) }}</span>
+                    @endif
                 </div>
             @empty
-                <p class="text-sm text-gray-500">No estimates yet.</p>
+                <p class="text-sm text-gray-500">No current to‑dos. Enjoy the day!</p>
             @endforelse
-        </div>
     </section>
+    </div>
 </div>
 @endsection

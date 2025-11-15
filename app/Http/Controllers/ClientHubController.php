@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Estimate;
 use App\Models\SiteVisit;
+use App\Models\Todo;
 use Illuminate\Http\Request;
 
 class ClientHubController extends Controller
@@ -18,6 +19,10 @@ class ClientHubController extends Controller
             ->limit(5)
             ->get();
         $recentEstimates = Estimate::with('client')->latest()->limit(5)->get();
+        $todos = Todo::whereIn('status', ['pending','in_progress'])
+            ->orderByRaw("CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC")
+            ->limit(8)
+            ->get();
 
         $metrics = [
             'clients' => Client::count(),
@@ -30,7 +35,8 @@ class ClientHubController extends Controller
             'recentClients',
             'upcomingVisits',
             'recentEstimates',
-            'metrics'
+            'metrics',
+            'todos'
         ));
     }
 }

@@ -2,12 +2,13 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Company Budgets</h1>
-        <a href="{{ route('admin.budgets.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">New Budget</a>
-    </div>
+    <x-page-header title="Company Budgets" eyebrow="Admin" subtitle="Define desired margins and global financial settings.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('admin.budgets.create') }}">New Budget</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
                 <tr>

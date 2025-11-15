@@ -1,8 +1,12 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-10">
-    <h1 class="text-3xl font-bold mb-6">🧮 CFL Calculators</h1>
+<div class="max-w-4xl mx-auto py-10 space-y-6">
+    <x-page-header title="CFL Calculators" eyebrow="Tools" subtitle="Choose a calculator to start or attach to a site visit.">
+        <x-slot:actions>
+            <x-brand-button href="{{ route('calculator.templates.gallery') }}" variant="outline">Open Template Gallery</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {{-- Retaining Wall --}}
@@ -48,7 +52,7 @@
         </a>
 
          {{-- Fence Construction --}}
-        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('fence.form')]) }}"
+        <a href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}"
            class="bg-white p-6 rounded-lg shadow hover:bg-green-50 transition">
             <h2 class="text-xl font-semibold text-green-700">Fence Construction</h2>
             <p class="text-gray-600 mt-2">Estimate installing wood or vinyl fencing with labor and materials.</p>
@@ -58,10 +62,7 @@
     {{-- 🔙 Back to Client if returning from site visit --}}
     @if (session('last_client_id'))
         <div class="mt-6">
-            <a href="{{ route('clients.show', session('last_client_id')) }}"
-               class="inline-block bg-gray-600 text-white px-5 py-3 rounded hover:bg-gray-700">
-                🔙 Back to Client Hub
-            </a>
+            <x-brand-button href="{{ route('clients.show', session('last_client_id')) }}" variant="outline">🔙 Back to Client Hub</x-brand-button>
         </div>
     @endif
 </div>
