@@ -36,7 +36,7 @@
     </div>
 </div>
 
-<div class="space-y-6" x-data="{ tab: 'work', activeArea: 'all', showAddItems: false }">
+<div class="space-y-6" x-data="{ tab: 'work', activeArea: 'all', showAddItems: false, addItemsTab: 'materials' }">
     <x-page-header title="{{ $estimate->title }}" eyebrow="Estimate" subtitle="{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}" variant="compact">
         <x-slot:leading>
             <div class="h-12 w-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-semibold shadow-sm">
@@ -587,7 +587,139 @@
                 <button class="text-gray-500 hover:text-gray-700" @click="showAddItems = false">Close</button>
             </div>
             <div class="p-4 overflow-y-auto space-y-6">
-                <div class="bg-white rounded-lg border p-4 space-y-4">
+                <!-- Add Items Tabs -->
+                <div class="mb-3">
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='labor' }" @click="addItemsTab='labor'">Labor</button>
+                        <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='equipment' }" @click="addItemsTab='equipment'">Equipment</button>
+                        <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='materials' }" @click="addItemsTab='materials'">Materials</button>
+                        <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='subs' }" @click="addItemsTab='subs'">Subs</button>
+                        <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='other' }" @click="addItemsTab='other'">Other</button>
+                        <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='templates' }" @click="addItemsTab='templates'">Templates</button>
+                    </div>
+                </div>
+
+                <!-- Equipment tab -->
+                <div x-show="addItemsTab==='equipment'" class="bg-white rounded-lg border p-4 space-y-4">
+                    <h4 class="text-md font-semibold">Add Equipment</h4>
+                    <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="equipmentCatalogForm" data-form-type="custom">
+                        @csrf
+                        <input type="hidden" name="item_type" value="fee">
+                        <input type="hidden" name="catalog_type" value="equipment">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Equipment</label>
+                            <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search equipment..." data-role="filter">
+                            <select name="catalog_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" data-role="equipment-select">
+                                <option value="">Select equipment</option>
+                                @foreach ($equipment ?? \App\Models\Asset::orderBy('name')->get() as $equip)
+                                    <option value="{{ $equip->id }}" data-unit="day" data-cost="0">{{ $equip->name }} ({{ $equip->type }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Days</label>
+                                <input type="number" step="0.1" min="0" name="quantity" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="1" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Daily Cost ($)</label>
+                                <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Margin %</label>
+                                <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                                <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Daily Price ($)</label>
+                                <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" data-role="unit-price">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Unit Label</label>
+                                <input type="text" name="unit" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="day">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Tax Rate</label>
+                                <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <x-brand-button type="submit" disabled>Add Equipment</x-brand-button>
+                            <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Subs tab -->
+                <div x-show="addItemsTab==='subs'" class="bg-white rounded-lg border p-4 space-y-4">
+                    <h4 class="text-md font-semibold">Add Subcontractor</h4>
+                    <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="subsCatalogForm" data-form-type="custom">
+                        @csrf
+                        <input type="hidden" name="item_type" value="fee">
+                        <input type="hidden" name="catalog_type" value="subcontractor">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Vendor</label>
+                            <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search vendors..." data-role="filter">
+                            <select name="catalog_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" data-role="subs-select">
+                                <option value="">Select vendor</option>
+                                @foreach (($vendors ?? collect()) as $vendor)
+                                    <option value="{{ $vendor->id }}" data-unit="job" data-cost="0">{{ $vendor->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Description (optional)</label>
+                            <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="e.g., Hauling and disposal">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Quantity</label>
+                                <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="1" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Unit Cost ($)</label>
+                                <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Margin %</label>
+                                <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                                <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Unit Price ($)</label>
+                                <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0" data-role="unit-price">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Unit Label</label>
+                                <input type="text" name="unit" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="job">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Tax Rate</label>
+                                <input type="number" step="0.001" min="0" name="tax_rate" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="0">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <x-brand-button type="submit" disabled>Add Subcontractor Fee</x-brand-button>
+                            <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Templates redirect -->
+                <div x-show="addItemsTab==='templates'" class="bg-white rounded-lg border p-4 space-y-3">
+                    <h4 class="text-md font-semibold">Templates</h4>
+                    <p class="text-sm text-gray-600">Open the Templates drawer to import saved calculator templates into this estimate.</p>
+                    <x-brand-button type="button" size="sm" @click="showAddItems=false; document.getElementById('openCalcDrawerBtn')?.click();">Open Templates Drawer</x-brand-button>
+                </div>
+                <div x-show="addItemsTab==='materials'" class="bg-white rounded-lg border p-4 space-y-4">
                     <h4 class="text-md font-semibold">Add Material from Catalog</h4>
             <h3 class="text-lg font-semibold">Add Material from Catalog</h3>
             <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="materialCatalogForm" data-form-type="material">
@@ -641,9 +773,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
-                    <button class="inline-flex justify-center px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
-                        Add Material
-                    </button>
+                    <x-brand-button type="submit" disabled>Add Material</x-brand-button>
                     <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
                 </div>
                 @error('name')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
@@ -651,7 +781,7 @@
             </form>
         </div>
 
-                <div class="bg-white rounded-lg border p-4 space-y-4">
+                <div x-show="addItemsTab==='labor'" class="bg-white rounded-lg border p-4 space-y-4">
                     <h4 class="text-md font-semibold">Add Labor from Catalog</h4>
             <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="laborCatalogForm" data-form-type="labor">
                 @csrf
@@ -703,9 +833,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
-                    <button class="inline-flex justify-center px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
-                        Add Labor
-                    </button>
+                    <x-brand-button type="submit" disabled>Add Labor</x-brand-button>
                     <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
                 </div>
                 @error('name')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
@@ -713,7 +841,7 @@
             </form>
         </div>
 
-                <div class="bg-white rounded-lg border p-4 space-y-4">
+                <div x-show="addItemsTab==='other'" class="bg-white rounded-lg border p-4 space-y-4">
                     <h4 class="text-md font-semibold">Add Custom Line Item</h4>
             <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="customItemForm" data-form-type="custom">
                 @csrf
@@ -766,9 +894,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
-                    <button class="inline-flex justify-center px-4 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed" type="submit" disabled>
-                        Add Custom Item
-                    </button>
+                    <x-brand-button type="submit" disabled>Add Custom Item</x-brand-button>
                     <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
                 </div>
                 @error('name')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror

@@ -35,6 +35,11 @@ Route::get('/dashboard', fn () => view('dashboard'))
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// Public legal pages (for integrations like QBO)
+Route::view('/legal/eula', 'legal.eula')->name('legal.eula');
+Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
+Route::view('/legal/terms', 'legal.terms')->name('legal.terms');
+
 Route::middleware('auth')->group(function () {
      // ✅ Calculator Index Route
     Route::get('/calculators', function () {
@@ -252,6 +257,9 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('contacts/{client}/site-visits/{site_visit}/photos', [SiteVisitController::class, 'storePhoto'])->name('contacts.site-visits.photos.store');
     Route::delete('contacts/{client}/site-visits/{site_visit}/photos/{photo}', [SiteVisitController::class, 'destroyPhoto'])->name('contacts.site-visits.photos.destroy');
 
+    // QBO: sync a single contact
+    Route::post('contacts/{client}/qbo-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'sync'])->name('contacts.qbo.sync');
+
     // Legacy nested client routes kept for backward comp (can be removed later)
     Route::resource('clients.properties', PropertyController::class)->except(['show']);
     Route::resource('clients.site-visits', SiteVisitController::class);
@@ -274,6 +282,11 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         // Users management
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['show']);
     });
+
+    // Integrations: QuickBooks Online
+    Route::get('integrations/qbo', [\App\Http\Controllers\Integrations\QboController::class, 'settings'])->name('integrations.qbo.settings');
+    Route::get('integrations/qbo/connect', [\App\Http\Controllers\Integrations\QboController::class, 'connect'])->name('integrations.qbo.connect');
+    Route::get('integrations/qbo/callback', [\App\Http\Controllers\Integrations\QboController::class, 'callback'])->name('integrations.qbo.callback');
 
     Route::prefix('estimates/{estimate}')->name('estimates.')->group(function () {
         Route::post('items', [EstimateItemController::class, 'store'])->name('items.store');
