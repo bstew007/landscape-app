@@ -1723,4 +1723,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="number" step="0.1" min="-99" class="form-input w-24 text-sm text-center" data-edit-margin value="${marginPercent.toFixed(2)}">
                     <span class="text-xs text-gray-500" data-edit-margin-preview>${formatMoney((unitPrice - unitCost) * quantity)} total</span>
                 </div>
-           
+            `;
+            cells[6].innerHTML = `<input type="number" step="0.001" min="0" class="form-input w-24 text-sm text-center" data-edit-tax value="${taxRate.toFixed(3)}">`;
+            cells[7].innerHTML = `
+                <div class="text-right space-x-2">
+                    <button type="button" class="text-sm text-blue-600 hover:underline" data-action="save-item" data-item-id="${row.dataset.itemId}">Save</button>
+                    <button type="button" class="text-sm text-gray-600 hover:underline" data-action="cancel-edit" data-item-id="${row.dataset.itemId}">Cancel</button>
+                </div>
+            `;
+
+            // Live preview of margin total while editing
+            const qtyInput = row.querySelector('[data-edit-qty]');
+            const unitCostInput = row.querySelector('[data-edit-unit-cost]');
+            const unitPriceInput = row.querySelector('[data-edit-unit-price]');
+            const marginInput = row.querySelector('[data-edit-margin]');
+            const previewEl = row.querySelector('[data-edit-margin-preview]');
+            function recomputePreview(){
+                const q = parseFloat(qtyInput?.value || '0') || 0;
+                const uc = parseFloat(unitCostInput?.value || '0') || 0;
+                const up = parseFloat(unitPriceInput?.value || '0') || 0;
+                const total = (up - uc) * q;
+                if (previewEl) previewEl.textContent = `${formatMoney(total)} total`;
+            }
+            [qtyInput, unitCostInput, unitPriceInput, marginInput].forEach(el => {
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    if (el === marginInput && unitCostInput && unitPriceInput) {
+                        const m = parseFloat(marginInput.value || '0');
+                        const rate = isFinite(m) ? m / 100 : 0;
+                        const uc = parseFloat(unitCostInput.value || '0') || 0;
+                        unitPriceInput.value = (uc * (1 + rate)).toFixed(2);
+                    }
+                    recomputePreview();
+                });
+            });
+        }
+
+        // Close DOMContentLoaded handler
+});
+</script>
+@endpush
+
