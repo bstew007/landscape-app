@@ -7,7 +7,7 @@
 @endphp
 <div class="space-y-6">
     <!-- Header -->
-    <x-page-header title="{{ $contact->name }}" eyebrow="Contact" subtitle="{{ $contact->email ?? '—' }} @if($contact->phone) · {{ $contact->phone }} @endif" variant="compact">
+    <x-page-header title="{{ $contact->name }}" eyebrow="Contact" subtitle="{{ trim(($contact->email ?? '—') . ($contact->phone ? ' · ' . $contact->phone : '')) }}" variant="compact">
         <x-slot:leading>
             @php
                 $initials = collect(explode(' ', trim($contact->name)))->map(fn($p)=>strtoupper(mb_substr($p,0,1)))->take(2)->implode('');
@@ -32,7 +32,6 @@
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.patio.form')]) }}">Paver Patio</a>
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.wall.form')]) }}">Retaining Wall</a>
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.weeding.form')]) }}">Weeding</a>
-                    <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.mulching.form')]) }}">Mulching</a>
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.turf_mowing.form')]) }}">Turf Mowing</a>
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.planting.form')]) }}">Planting</a>
                     <a class="block px-3 py-2 hover:bg-gray-50" href="{{ route('calculators.selectSiteVisit', ['redirect_to' => route('calculators.fence.form')]) }}">Fence</a>

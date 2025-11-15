@@ -67,23 +67,26 @@
     <div>
         <label for="address" class="block text-lg font-medium text-gray-700">Address</label>
         <div class="mt-1">
-            <gmpx-place-picker id="contact_place_picker" style="display:block;width:100%;min-height:48px;font-size:1rem;"></gmpx-place-picker>
+            <gmpx-place-picker id="contact_place_picker" style="display:block;width:100%;min-height:56px;font-size:1.25rem;"></gmpx-place-picker>
         </div>
         <input type="text" name="address" id="address" autocomplete="address-line1" data-city-id="city" data-state-id="state" data-zip-id="postal_code"
                class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
                value="{{ old('address', $client->address ?? '') }}" placeholder="Street address" />
+        @if(!empty($client->address))
+            <p class="text-xs text-gray-500 mt-1">Current: {{ $client->address }}</p>
+        @endif
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
             <div>
-                <label class="block text-sm text-gray-600">City</label>
-                <input type="text" name="city" id="city" autocomplete="address-level2" value="{{ old('city', $client->city ?? '') }}" class="form-input w-full">
+                <label class="block text-lg font-medium text-gray-700">City</label>
+                <input type="text" name="city" id="city" autocomplete="address-level2" value="{{ old('city', $client->city ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl">
             </div>
             <div>
-                <label class="block text-sm text-gray-600">State</label>
-                <input type="text" name="state" id="state" autocomplete="address-level1" value="{{ old('state', $client->state ?? '') }}" class="form-input w-full">
+                <label class="block text-lg font-medium text-gray-700">State</label>
+                <input type="text" name="state" id="state" autocomplete="address-level1" value="{{ old('state', $client->state ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl">
             </div>
             <div>
-                <label class="block text-sm text-gray-600">Postal Code</label>
-                <input type="text" name="postal_code" id="postal_code" autocomplete="postal-code" value="{{ old('postal_code', $client->postal_code ?? '') }}" class="form-input w-full">
+                <label class="block text-lg font-medium text-gray-700">Postal Code</label>
+                <input type="text" name="postal_code" id="postal_code" autocomplete="postal-code" value="{{ old('postal_code', $client->postal_code ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl">
             </div>
         </div>
         <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places (optional). Start typing, then pick a result.</p>

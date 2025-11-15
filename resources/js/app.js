@@ -183,6 +183,7 @@ Alpine.start();
       try { attachIfPresent(); } catch(e) { console.error(e); }
     }
   });
+  window.__fillFromAddressComponents = fillFromAddressComponents;
 })();
 
   // Wire Extended Component Library place pickers
@@ -191,19 +192,31 @@ Alpine.start();
       const cp = document.getElementById('contact_place_picker');
       const addr = document.getElementById('address');
       if (cp && addr) {
+        // On edit forms, show existing address; hide only when there's no current value
+        try {
+          if (!addr.value) {
+            addr.type = 'hidden';
+          } else {
+            addr.readOnly = true;
+          }
+        } catch(_) {}
         cp.addEventListener('gmpx-placechange', async (ev) => {
           try {
-            const place = cp.value?.place || cp.value?.toPlace?.();
-            if (!place) return;
+            let place = ev?.detail?.place || ev?.target?.value?.place || ev?.target?.value || cp.value?.place || cp.value;
+            if (place && typeof place.toPlace === 'function') {
+              place = place.toPlace();
+            }
             // fetch fields for UI kit Place objects
-            if (place.fetchFields) {
+            if (place && typeof place.fetchFields === 'function') {
               await place.fetchFields({ fields: ['addressComponents','formattedAddress'] });
             }
-            fillFromAddressComponents(place, { input: addr });
-            if (addr && (place.formattedAddress || place.formatted_address)) {
-              addr.value = place.formattedAddress || place.formatted_address;
-              addr.dispatchEvent(new Event('input', { bubbles: true }));
-              addr.dispatchEvent(new Event('change', { bubbles: true }));
+            if (place) {
+              window.__fillFromAddressComponents && window.__fillFromAddressComponents(place, { input: addr });
+              if (addr && (place.formattedAddress || place.formatted_address)) {
+                addr.value = place.formattedAddress || place.formatted_address;
+                addr.dispatchEvent(new Event('input', { bubbles: true }));
+                addr.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             }
           } catch(e) { console.warn('contact picker fill failed', e); }
         });
@@ -212,18 +225,30 @@ Alpine.start();
       const line1 = document.getElementById('address_line1');
       const line2 = document.getElementById('address_line2');
       if (pp && line1) {
+        // On edit forms, show existing address; hide only when there's no current value
+        try {
+          if (!line1.value) {
+            line1.type = 'hidden';
+          } else {
+            line1.readOnly = true;
+          }
+        } catch(_) {}
         pp.addEventListener('gmpx-placechange', async (ev) => {
           try {
-            const place = pp.value?.place || pp.value?.toPlace?.();
-            if (!place) return;
-            if (place.fetchFields) {
+            let place = ev?.detail?.place || ev?.target?.value?.place || ev?.target?.value || pp.value?.place || pp.value;
+            if (place && typeof place.toPlace === 'function') {
+              place = place.toPlace();
+            }
+            if (place && typeof place.fetchFields === 'function') {
               await place.fetchFields({ fields: ['addressComponents','formattedAddress'] });
             }
-            fillFromAddressComponents(place, { input: line1, line2 });
-            if (line1 && (place.formattedAddress || place.formatted_address)) {
-              line1.value = place.formattedAddress || place.formatted_address;
-              line1.dispatchEvent(new Event('input', { bubbles: true }));
-              line1.dispatchEvent(new Event('change', { bubbles: true }));
+            if (place) {
+              window.__fillFromAddressComponents && window.__fillFromAddressComponents(place, { input: line1, line2 });
+              if (line1 && (place.formattedAddress || place.formatted_address)) {
+                line1.value = place.formattedAddress || place.formatted_address;
+                line1.dispatchEvent(new Event('input', { bubbles: true }));
+                line1.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             }
           } catch(e) { console.warn('property picker fill failed', e); }
         });

@@ -48,11 +48,14 @@
     <div>
         <label for="address_line1" class="block text-lg font-medium text-gray-700">Address</label>
         <div class="mt-1">
-            <gmpx-place-picker id="property_place_picker" style="display:block;width:100%;min-height:48px;font-size:1rem;"></gmpx-place-picker>
+            <gmpx-place-picker id="property_place_picker" style="display:block;width:100%;min-height:56px;font-size:1.25rem;"></gmpx-place-picker>
         </div>
         <input type="text" name="address_line1" id="address_line1" autocomplete="address-line1" data-city-id="city" data-state-id="state" data-zip-id="postal_code"
                class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500 text-xl"
                value="{{ old('address_line1', $property->address_line1) }}" placeholder="Street address" />
+        @if(!empty($property->address_line1))
+            <p class="text-xs text-gray-500 mt-1">Current: {{ $property->address_line1 }}</p>
+        @endif
         <p class="text-xs text-gray-500 mt-1">Autocomplete powered by Google Places.</p>
     </div>
 
