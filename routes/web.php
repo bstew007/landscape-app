@@ -285,8 +285,10 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
 
     // Integrations: QuickBooks Online
     Route::get('integrations/qbo', [\App\Http\Controllers\Integrations\QboController::class, 'settings'])->name('integrations.qbo.settings');
+    Route::get('integrations/qbo/launch', [\App\Http\Controllers\Integrations\QboController::class, 'launch'])->name('integrations.qbo.launch');
     Route::get('integrations/qbo/connect', [\App\Http\Controllers\Integrations\QboController::class, 'connect'])->name('integrations.qbo.connect');
     Route::get('integrations/qbo/callback', [\App\Http\Controllers\Integrations\QboController::class, 'callback'])->name('integrations.qbo.callback');
+    Route::post('integrations/qbo/disconnect', [\App\Http\Controllers\Integrations\QboController::class, 'disconnect'])->name('integrations.qbo.disconnect');
 
     Route::prefix('estimates/{estimate}')->name('estimates.')->group(function () {
         Route::post('items', [EstimateItemController::class, 'store'])->name('items.store');

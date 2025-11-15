@@ -10,6 +10,15 @@ use Illuminate\Support\Str;
 
 class QboController extends Controller
 {
+    public function launch()
+    {
+        // Entry point from Intuit AppCenter. Route user to settings or kick off connect.
+        if (!QboToken::latest('updated_at')->first()) {
+            return redirect()->route('integrations.qbo.connect');
+        }
+        return redirect()->route('integrations.qbo.settings');
+    }
+
     public function connect()
     {
         $conf = config('qbo');
@@ -65,5 +74,26 @@ class QboController extends Controller
     {
         $token = QboToken::latest('updated_at')->first();
         return view('integrations.qbo', ['token' => $token]);
+    }
+
+    public function disconnect(Request $request)
+    {
+        $realmId = $request->get('realmId');
+        $token = $realmId ? QboToken::where('realm_id', $realmId)->first() : QboToken::latest('updated_at')->first();
+        if ($token) {
+            // Revoke refresh token per Intuit docs
+            $conf = config('qbo');
+            try {
+                Http::asForm()
+                    ->withBasicAuth($conf['client_id'], $conf['client_secret'])
+                    ->post('https://developer.api.intuit.com/v2/oauth2/tokens/revoke', [
+                        'token' => $token->refresh_token,
+                    ]);
+            } catch (\Throwable $e) {
+                // swallow errors; we're disconnecting regardless
+            }
+            $token->delete();
+        }
+        return redirect()->route('integrations.qbo.settings')->with('success', 'QuickBooks disconnected');
     }
 }
