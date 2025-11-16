@@ -62,6 +62,7 @@
                         <th class="px-6 py-4">Email</th>
                         <th class="px-6 py-4">Phone</th>
                         <th class="px-6 py-4">Type</th>
+                        <th class="px-6 py-4">QBO</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-gray-800 text-lg">
@@ -89,6 +90,18 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 capitalize">{{ $contact->contact_type ?? 'client' }}</td>
+                            <td class="px-6 py-4">
+                                @if($contact->qbo_customer_id)
+                                    @php $needsSync = $contact->qbo_last_synced_at && $contact->updated_at && $contact->updated_at->gt($contact->qbo_last_synced_at); @endphp
+                                    @if($needsSync)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-xs">Needs Sync</span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">Synced</span>
+                                    @endif
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-200 text-xs">Not Linked</span>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
