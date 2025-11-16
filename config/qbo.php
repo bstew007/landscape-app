@@ -7,6 +7,7 @@ return [
     'environment' => env('QBO_ENV', 'sandbox'), // sandbox|production
     'webhook_token' => env('QBO_WEBHOOK_TOKEN'),
     'auto_sync' => env('QBO_AUTO_SYNC', true),
+    'debug' => (bool) env('QBO_DEBUG', false),
     'scopes' => [
         'com.intuit.quickbooks.accounting',
         'openid',

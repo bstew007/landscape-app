@@ -88,11 +88,26 @@ class QboCustomerService
         $res = Http::withHeaders($this->authHeaders())
             ->withOptions(['query' => $query])
             ->post($url, [ 'Customer' => $payload ]);
+        if (config('qbo.debug')) {
+            \Log::info('QBO upsert response', [
+                'status' => $res->status(),
+                'tid' => $res->header('intuit_tid'),
+                'body' => $res->body(),
+                'query' => $query,
+            ]);
+        }
         if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
             $this->refreshTokenIfNeeded();
             $res = Http::withHeaders($this->authHeaders())
                 ->withOptions(['query' => $query])
                 ->post($url, [ 'Customer' => $payload ]);
+            if (config('qbo.debug')) {
+                \Log::warning('QBO upsert retry after refresh', [
+                    'status' => $res->status(),
+                    'tid' => $res->header('intuit_tid'),
+                    'body' => $res->body(),
+                ]);
+            }
         }
         if (!$res->ok()) {
             throw new \RuntimeException('QBO Customer upsert failed: '.$res->body());
