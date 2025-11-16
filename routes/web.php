@@ -40,6 +40,11 @@ Route::view('/legal/eula', 'legal.eula')->name('legal.eula');
 Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
 Route::view('/legal/terms', 'legal.terms')->name('legal.terms');
 
+// QBO Webhook (must be public, no auth, and exempt from CSRF)
+Route::post('integrations/qbo/webhook', [\App\Http\Controllers\Integrations\QboWebhookController::class, 'handle'])
+    ->name('integrations.qbo.webhook')
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
 Route::middleware('auth')->group(function () {
      // ✅ Calculator Index Route
     Route::get('/calculators', function () {
@@ -295,8 +300,6 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('integrations/qbo/connect', [\App\Http\Controllers\Integrations\QboController::class, 'connect'])->name('integrations.qbo.connect');
     Route::get('integrations/qbo/callback', [\App\Http\Controllers\Integrations\QboController::class, 'callback'])->name('integrations.qbo.callback');
     Route::post('integrations/qbo/disconnect', [\App\Http\Controllers\Integrations\QboController::class, 'disconnect'])->name('integrations.qbo.disconnect');
-    // QBO Webhook (no auth middleware; Intuit signs via HMAC)
-    Route::post('integrations/qbo/webhook', [\App\Http\Controllers\Integrations\QboWebhookController::class, 'handle'])->name('integrations.qbo.webhook');
 
     Route::prefix('estimates/{estimate}')->name('estimates.')->group(function () {
         Route::post('items', [EstimateItemController::class, 'store'])->name('items.store');
