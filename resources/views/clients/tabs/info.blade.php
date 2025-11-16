@@ -17,6 +17,20 @@
                     @csrf
                     <x-brand-button type="submit" variant="outline" size="sm">Refresh from QBO</x-brand-button>
                 </form>
+                <details class="relative">
+                    <summary class="list-none inline-flex items-center h-8 px-3 rounded font-medium text-xs whitespace-nowrap border border-brand-600 text-brand-700 cursor-pointer select-none hover:bg-brand-50">Advanced QBO Update</summary>
+                    <div class="absolute right-0 mt-2 w-[280px] bg-white border rounded shadow z-10 p-2 space-y-2">
+                        <form method="POST" action="{{ route('contacts.qbo.push-names', $contact) }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-3 py-2 rounded hover:bg-gray-50 text-sm">Update Names in QBO</button>
+                        </form>
+                        <form method="POST" action="{{ route('contacts.qbo.push-mobile', $contact) }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-3 py-2 rounded hover:bg-gray-50 text-sm">Update Mobile in QBO</button>
+                        </form>
+                        <p class="text-xs text-gray-500 px-3">Use with care. QBO may reject some updates (e.g., duplicate DisplayName).</p>
+                    </div>
+                </details>
             @else
                 <details class="relative">
                     <summary class="list-none inline-flex items-center h-8 px-3 rounded font-medium text-xs whitespace-nowrap border border-brand-600 text-brand-700 cursor-pointer select-none hover:bg-brand-50">Link to QBO</summary>

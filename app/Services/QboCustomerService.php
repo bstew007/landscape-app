@@ -275,4 +275,127 @@ class QboCustomerService
 
         return $res->json();
     }
+
+    public function updateMobile(Contact $c): array
+    {
+        if (!$c->qbo_customer_id) throw new \RuntimeException('Contact is not linked to QBO');
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) throw new \RuntimeException('QBO not connected');
+        $realmId = $token->realm_id;
+
+        // Fetch existing to get SyncToken
+        $get = Http::withHeaders($this->authHeaders())
+            ->get($this->baseUrl($realmId).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
+        if ($get->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $get = Http::withHeaders($this->authHeaders())
+                ->get($this->baseUrl($realmId).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
+        }
+        if (!$get->ok()) throw new \RuntimeException('QBO fetch failed: '.$get->body());
+        $existing = $get->json()['Customer'] ?? [];
+
+        $newMobile = $this->phonePayload($c->mobile);
+        if ($newMobile === null) throw new \RuntimeException('Mobile is empty or invalid.');
+        $oldMobile = $existing['Mobile']['FreeFormNumber'] ?? null;
+        if ($oldMobile === ($newMobile['FreeFormNumber'] ?? null)) {
+            $origTimestamps = $c->timestamps; $c->timestamps = false; $c->qbo_last_synced_at = now(); $c->save(); $c->timestamps = $origTimestamps;
+            return ['Customer' => $existing];
+        }
+
+        $payload = (object) [
+            'Id' => $c->qbo_customer_id,
+            'SyncToken' => $existing['SyncToken'] ?? $c->qbo_sync_token ?? '0',
+            'sparse' => true,
+            'Mobile' => $newMobile,
+        ];
+        $query = ['minorversion' => 65, 'operation' => 'update'];
+        $url = $this->baseUrl($realmId).'/customer';
+        $res = Http::withHeaders($this->authHeaders())
+            ->withOptions(['query' => $query])
+            ->post($url, $payload);
+        if ($res->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())
+                ->withOptions(['query' => $query])
+                ->post($url, $payload);
+        }
+        if (!$res->ok()) throw new \RuntimeException('QBO Mobile update failed: '.$res->body());
+        $customer = $res->json()['Customer'] ?? null;
+        if ($customer) {
+            $c->qbo_sync_token = $customer['SyncToken'] ?? $c->qbo_sync_token;
+            $c->qbo_last_synced_at = now();
+            $origTimestamps = $c->timestamps; $c->timestamps = false; $c->save(); $c->timestamps = $origTimestamps;
+        }
+        return $res->json();
+    }
+
+    public function updateNames(Contact $c): array
+    {
+        if (!$c->qbo_customer_id) throw new \RuntimeException('Contact is not linked to QBO');
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) throw new \RuntimeException('QBO not connected');
+        $realmId = $token->realm_id;
+
+        $get = Http::withHeaders($this->authHeaders())
+            ->get($this->baseUrl($realmId).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
+        if ($get->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $get = Http::withHeaders($this->authHeaders())
+                ->get($this->baseUrl($realmId).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
+        }
+        if (!$get->ok()) throw new \RuntimeException('QBO fetch failed: '.$get->body());
+        $existing = $get->json()['Customer'] ?? [];
+
+        $desired = $this->clean([
+            'DisplayName' => $c->company_name ?: trim(($c->first_name ?? '').' '.($c->last_name ?? '')) ?: ($c->email ?: 'Customer '.($c->id)),
+            'CompanyName' => $c->company_name ?: null,
+            'GivenName' => $c->first_name ?: null,
+            'FamilyName' => $c->last_name ?: null,
+        ]);
+
+        $updateBody = [];
+        foreach (['DisplayName','CompanyName','GivenName','FamilyName'] as $k) {
+            $newVal = $desired[$k] ?? null;
+            $oldVal = $existing[$k] ?? null;
+            if ($newVal === null) continue;
+            if ($newVal !== $oldVal) $updateBody[$k] = $newVal;
+        }
+        if (empty($updateBody)) {
+            $origTimestamps = $c->timestamps; $c->timestamps = false; $c->qbo_last_synced_at = now(); $c->save(); $c->timestamps = $origTimestamps;
+            return ['Customer' => $existing];
+        }
+
+        $payload = (object) array_merge($updateBody, [
+            'Id' => $c->qbo_customer_id,
+            'SyncToken' => $existing['SyncToken'] ?? $c->qbo_sync_token ?? '0',
+            'sparse' => true,
+        ]);
+
+        $query = ['minorversion' => 65, 'operation' => 'update'];
+        $url = $this->baseUrl($realmId).'/customer';
+        $res = Http::withHeaders($this->authHeaders())
+            ->withOptions(['query' => $query])
+            ->post($url, $payload);
+        if ($res->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())
+                ->withOptions(['query' => $query])
+                ->post($url, $payload);
+        }
+        if (!$res->ok()) {
+            $body = $res->json();
+            $code = $body['Fault']['Error'][0]['code'] ?? null;
+            if ($code === '6240') { // Duplicate name exists
+                throw new \RuntimeException('QBO rejected the name: duplicate DisplayName exists. Please choose a unique name.');
+            }
+            throw new \RuntimeException('QBO name update failed: '.$res->body());
+        }
+        $customer = $res->json()['Customer'] ?? null;
+        if ($customer) {
+            $c->qbo_sync_token = $customer['SyncToken'] ?? $c->qbo_sync_token;
+            $c->qbo_last_synced_at = now();
+            $origTimestamps = $c->timestamps; $c->timestamps = false; $c->save(); $c->timestamps = $origTimestamps;
+        }
+        return $res->json();
+    }
 }

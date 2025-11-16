@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Contact;
 use App\Models\QboToken;
 use App\Services\QboCustomerService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -17,6 +18,26 @@ class ContactQboSyncController extends Controller
             return back()->with('success', 'Synced to QuickBooks');
         } catch (\Throwable $e) {
             return back()->with('error', 'QBO sync failed: '.$e->getMessage());
+        }
+    }
+
+    public function pushNames(Contact $client, QboCustomerService $svc)
+    {
+        try {
+            $svc->updateNames($client);
+            return back()->with('success', 'Names updated in QuickBooks');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'QBO name update failed: '.$e->getMessage());
+        }
+    }
+
+    public function pushMobile(Contact $client, QboCustomerService $svc)
+    {
+        try {
+            $svc->updateMobile($client);
+            return back()->with('success', 'Mobile updated in QuickBooks');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'QBO mobile update failed: '.$e->getMessage());
         }
     }
 
