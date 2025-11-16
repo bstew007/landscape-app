@@ -169,9 +169,25 @@ class QboCustomerService
                 }
             }
 
-            // If nothing to update, short-circuit and pretend success
+            // If nothing to update in allowed fields
             if (empty($updateBody)) {
-                // Touch qbo_last_synced_at so UI shows Synced
+                // If excluded fields (names or Mobile) changed, do NOT mark as synced so UI shows Needs Sync
+                $excludedChanged = false;
+                $nameKeys = ['DisplayName','CompanyName','GivenName','FamilyName'];
+                foreach ($nameKeys as $nk) {
+                    $newVal = $base[$nk] ?? null;
+                    $oldVal = $existing[$nk] ?? null;
+                    if ($newVal !== null && $newVal !== $oldVal) { $excludedChanged = true; break; }
+                }
+                if (!$excludedChanged) {
+                    $newMobile = $base['Mobile'] ?? null;
+                    $oldMobile = $existing['Mobile'] ?? null;
+                    if (!$valuesEqual($newMobile, $oldMobile)) { $excludedChanged = true; }
+                }
+                if ($excludedChanged) {
+                    return ['Customer' => $existing ?: ['Id' => $c->qbo_customer_id], 'skipped' => 'excluded_fields_changed'];
+                }
+                // Otherwise, there truly is nothing to sync; mark synced timestamp
                 $origTimestamps = $c->timestamps;
                 $c->timestamps = false;
                 $c->qbo_last_synced_at = now();
