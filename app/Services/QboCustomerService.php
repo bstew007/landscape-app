@@ -21,6 +21,26 @@ class QboCustomerService
         return ['Authorization' => 'Bearer '.$token->access_token, 'Accept' => 'application/json', 'Content-Type' => 'application/json'];
     }
 
+    protected function clean($value)
+    {
+        if (is_array($value)) {
+            $out = [];
+            foreach ($value as $k => $v) {
+                $cv = $this->clean($v);
+                if ($cv === null) continue;
+                if (is_array($cv) && empty($cv)) continue;
+                $out[$k] = $cv;
+            }
+            return $out;
+        }
+        if (is_object($value)) {
+            $vars = get_object_vars($value);
+            $cleaned = $this->clean($vars);
+            return (object) $cleaned;
+        }
+        return $value;
+    }
+
     protected function refreshTokenIfNeeded(): void
     {
         $token = QboToken::latest('updated_at')->first();
@@ -61,7 +81,8 @@ class QboCustomerService
                 'PostalCode' => $c->postal_code ?: null,
             ],
         ];
-        // Remove nulls
+        // Remove nulls/empties thoroughly
+        $payload = $this->clean($payload);
         $payload = json_decode(json_encode($payload));
 
         $url = $this->baseUrl($token->realm_id).'/customer';
@@ -72,6 +93,13 @@ class QboCustomerService
             // Update requires SyncToken; try fetch first
             $get = Http::withHeaders($this->authHeaders())
                 ->get($this->baseUrl($token->realm_id).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
+            if (config('qbo.debug')) {
+                \Log::info('QBO fetch before update', [
+                    'status' => $get->status(),
+                    'tid' => $get->header('intuit_tid'),
+                    'body' => $get->body(),
+                ]);
+            }
             if ($get->ok()) {
                 $cust = $get->json()['Customer'] ?? null;
                 $payload->Id = $c->qbo_customer_id;
