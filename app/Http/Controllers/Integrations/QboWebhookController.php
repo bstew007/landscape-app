@@ -83,12 +83,17 @@ class QboWebhookController extends Controller
         $company = trim($c['CompanyName'] ?? '');
         $first = trim($c['GivenName'] ?? '');
         $last = trim($c['FamilyName'] ?? '');
-        if ($company !== '') return ['first' => $first ?: null, 'last' => $last ?: null, 'company' => $company];
-        if ($first !== '' || $last !== '') return ['first' => $first ?: null, 'last' => $last ?: null, 'company' => null];
+        if ($company !== '') {
+            // Company record: ensure non-null first/last for DB constraints
+            $outFirst = $first !== '' ? $first : ($display !== '' ? $display : 'Customer');
+            $outLast = $last !== '' ? $last : ((string) ($c['Id'] ?? ''));
+            return ['first' => $outFirst, 'last' => $outLast, 'company' => $company];
+        }
+        if ($first !== '' || $last !== '') return ['first' => $first ?: 'Customer', 'last' => $last ?: ((string) ($c['Id'] ?? '')), 'company' => null];
         if ($display !== '') {
-            if (str_contains($display, ',')) { [$l,$f] = array_map('trim', explode(',', $display, 2)); return ['first'=>$f?:null,'last'=>$l?:null,'company'=>null]; }
-            $parts = preg_split('/\s+/', $display); if (count($parts)>=2){ $f=array_shift($parts); $l=implode(' ', $parts); return ['first'=>$f?:null,'last'=>$l?:null,'company'=>null]; }
-            return ['first'=>$display,'last'=>null,'company'=>null];
+            if (str_contains($display, ',')) { [$l,$f] = array_map('trim', explode(',', $display, 2)); return ['first'=>$f?:'Customer','last'=>$l?:((string) ($c['Id'] ?? '')),'company'=>null]; }
+            $parts = preg_split('/\s+/', $display); if (count($parts)>=2){ $f=array_shift($parts); $l=implode(' ', $parts); return ['first'=>$f?:'Customer','last'=>$l?:((string) ($c['Id'] ?? '')),'company'=>null]; }
+            return ['first'=>$display,'last'=>((string) ($c['Id'] ?? '')),'company'=>null];
         }
         return ['first'=>'Customer','last'=>(string)($c['Id']??''),'company'=>null];
     }
@@ -109,12 +114,15 @@ class QboWebhookController extends Controller
         $phone = $c['PrimaryPhone']['FreeFormNumber'] ?? null;
         $mobile = $c['Mobile']['FreeFormNumber'] ?? null;
         $names = $this->mapNames($c);
+        // Ensure non-null required fields
+        if (empty($names['first'])) $names['first'] = 'Customer';
+        if (!array_key_exists('last', $names) || $names['last'] === null) $names['last'] = (string) ($c['Id'] ?? '');
 
         $contact = Contact::firstOrNew(['qbo_customer_id' => $c['Id']]);
         $contact->fill([
             'first_name' => $names['first'],
             'last_name' => $names['last'],
-            'company_name' => $names['company'],
+            'company_name' => $names['company'] ?? null,
             'contact_type' => $contact->contact_type ?: 'client',
             'email' => $email,
             'phone' => $phone,
