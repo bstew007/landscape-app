@@ -46,21 +46,26 @@ class QboInvoiceService
         // Try to find Item by name
         $q = [ 'query' => "select Id,Name,Type,IncomeAccountRef from Item where Name = '{$itemName}' and Type = 'Service'" ];
         $res = Http::withHeaders($this->authHeaders())
-            ->get($this->baseUrl($realmId).'/query', $q);
+            ->get($this->baseUrl($realmId).'/query', array_merge($q, ['minorversion' => 65]));
         if (config('qbo.debug')) { \Log::info('QBO query item (Services)', ['status'=>$res->status(),'body'=>$res->body()]); }
-        if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', $q); }
+        if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', array_merge($q, ['minorversion' => 65])); }
         if ($res->ok() && !empty($res->json()['QueryResponse']['Item'][0])) {
             return $res->json()['QueryResponse']['Item'][0];
         }
         // Find an Income account to attach to the Service item
         $accQ = [ 'query' => "select Id,Name,AccountType from Account where AccountType in ('Income','OtherIncome') order by Id" ];
         $accRes = Http::withHeaders($this->authHeaders())
-            ->get($this->baseUrl($realmId).'/query', $accQ);
-        if ($accRes->status() === 401) { $this->refreshTokenIfNeeded(); $accRes = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', $accQ); }
-        if (!$accRes->ok() || empty($accRes->json()['QueryResponse']['Account'][0])) {
+            ->get($this->baseUrl($realmId).'/query', array_merge($accQ, ['minorversion' => 65]));
+        if ($accRes->status() === 401) { $this->refreshTokenIfNeeded(); $accRes = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', array_merge($accQ, ['minorversion' => 65])); }
+        if (config('qbo.debug')) { \Log::info('QBO query income accounts', ['status'=>$accRes->status(),'body'=>$accRes->body()]); }
+        if (!$accRes->ok() || empty($accRes->json()['QueryResponse']['Account'])) {
             throw new \RuntimeException('Unable to locate an Income account in QBO for Service item.');
         }
-        $incomeAccount = $accRes->json()['QueryResponse']['Account'][0];
+        $accounts = $accRes->json()['QueryResponse']['Account'];
+        // Prefer an Income account with subtype ServiceFeeIncome if available
+        $incomeAccount = collect($accounts)->first(function($a){ return ($a['AccountType'] ?? '') === 'Income' && (($a['AccountSubType'] ?? '') === 'ServiceFeeIncome'); })
+            ?? collect($accounts)->first(function($a){ return in_array(($a['AccountType'] ?? ''), ['Income','OtherIncome']); })
+            ?? $accounts[0];
 
         // Create Services item with the found Income account
         $payload = [
@@ -70,8 +75,10 @@ class QboInvoiceService
         ];
         if (config('qbo.debug')) { \Log::info('QBO create item (Services) payload', ['payload'=>$payload]); }
         $res = Http::withHeaders($this->authHeaders())
+            ->withOptions(['query' => ['minorversion' => 65]])
             ->post($this->baseUrl($realmId).'/item', $payload);
-        if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->post($this->baseUrl($realmId).'/item', $payload); }
+        if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->withOptions(['query' => ['minorversion' => 65]])->post($this->baseUrl($realmId).'/item', $payload); }
+        if (config('qbo.debug')) { \Log::info('QBO create item (Services) response', ['status'=>$res->status(),'tid'=>$res->header('intuit_tid'),'body'=>$res->body()]); }
         if (!$res->ok()) throw new \RuntimeException('Failed to ensure Services item: '.$res->body());
         return $res->json()['Item'] ?? [];
     }
