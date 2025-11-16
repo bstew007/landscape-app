@@ -259,6 +259,8 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
 
     // QBO: sync a single contact
     Route::post('contacts/{client}/qbo-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'sync'])->name('contacts.qbo.sync');
+    Route::get('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'search'])->name('contacts.qbo.search');
+    Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
 
     // Legacy nested client routes kept for backward comp (can be removed later)
     Route::resource('clients.properties', PropertyController::class)->except(['show']);

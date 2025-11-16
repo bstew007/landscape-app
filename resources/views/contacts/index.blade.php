@@ -6,6 +6,7 @@
     <x-page-header title="Contacts" eyebrow="Client Hub" subtitle="Search by contact or company name.">
         <x-slot:actions>
             <x-brand-button href="{{ route('contacts.create') }}">➕ Add Contact</x-brand-button>
+            <x-brand-button href="{{ route('contacts.qbo.search') }}" variant="outline">Import from QBO</x-brand-button>
         </x-slot:actions>
     </x-page-header>
 

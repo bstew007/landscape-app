@@ -5,6 +5,10 @@
   <x-page-header title="QuickBooks Online" eyebrow="Integrations" subtitle="Connect your QuickBooks company to sync contacts as customers.">
     <x-slot:actions>
       @if($token)
+        <form action="{{ route('integrations.qbo.disconnect') }}" method="POST" class="inline">
+          @csrf
+          <x-danger-button type="submit" size="sm">Disconnect</x-danger-button>
+        </form>
         <x-secondary-button as="a" href="{{ route('integrations.qbo.connect') }}">Reconnect</x-secondary-button>
       @else
         <x-brand-button href="{{ route('integrations.qbo.connect') }}">Connect QBO</x-brand-button>
