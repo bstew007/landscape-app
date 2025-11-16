@@ -4,8 +4,8 @@
 <div class="max-w-5xl mx-auto space-y-6">
   <x-page-header title="Import from QuickBooks" eyebrow="Contacts" subtitle="Search your QuickBooks Sandbox customers and import them as contacts." />
 
-  @if(session('error'))
-    <div class="p-3 rounded border border-red-200 bg-red-50 text-red-900">{{ session('error') }}</div>
+  @if(session('error') || !empty($error))
+    <div class="p-3 rounded border border-red-200 bg-red-50 text-red-900">{{ session('error') ?? $error }}</div>
   @endif
   @if(session('success'))
     <div class="p-3 rounded border border-brand-200 bg-brand-50 text-brand-900">{{ session('success') }}</div>
@@ -15,6 +15,7 @@
     <form method="GET" action="{{ route('contacts.qbo.search') }}" class="flex flex-wrap gap-2 items-center">
       <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by display name..." class="form-input flex-1 min-w-[240px] border-brand-300 focus:ring-brand-500 focus:border-brand-500" />
       <input type="number" name="max" value="{{ $max ?? 25 }}" min="1" max="100" class="form-input w-24 border-brand-300 focus:ring-brand-500 focus:border-brand-500" title="Max results" />
+      <input type="hidden" name="list" value="1" />
       <x-brand-button type="submit">Search / List</x-brand-button>
       <a href="{{ route('contacts.qbo.search') }}" class="text-sm text-gray-600 hover:underline">Clear</a>
     </form>
@@ -42,7 +43,11 @@
                 <td class="px-3 py-2">{{ $c['PrimaryPhone']['FreeFormNumber'] ?? '—' }}</td>
                 <td class="px-3 py-2">
                   @php($addr = $c['BillAddr'] ?? [])
-                  {{ ($addr['Line1'] ?? '') }} {{ ($addr['City'] ?? '') }} {{ ($addr['CountrySubDivisionCode'] ?? '') }} {{ ($addr['PostalCode'] ?? '') }}
+                  @if(!empty($addr))
+                    {{ ($addr['Line1'] ?? '') }} {{ ($addr['City'] ?? '') }} {{ ($addr['CountrySubDivisionCode'] ?? '') }} {{ ($addr['PostalCode'] ?? '') }}
+                  @else
+                    <span class="text-gray-400">—</span>
+                  @endif
                 </td>
                 <td class="px-3 py-2 text-right">
                   <form method="POST" action="{{ route('contacts.qbo.import') }}" class="inline">

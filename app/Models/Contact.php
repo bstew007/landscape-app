@@ -24,6 +24,10 @@ class Contact extends Model
         'city',
         'state',
         'postal_code',
+        // QBO linkage
+        'qbo_customer_id',
+        'qbo_sync_token',
+        'qbo_last_synced_at',
     ];
 
     public function siteVisits()

@@ -31,31 +31,44 @@ class ContactQboImportController extends Controller
         $results = [];
         $start = max(1, (int) $request->get('start', 1));
         $max = min(100, max(1, (int) $request->get('max', 25)));
+        $error = null;
 
-        if ($q !== '') {
-            // Fallback: keep it simple — search by DisplayName only to avoid QBO parser quirks
-            $term = str_replace("'", "''", $q);
-            $fields = 'Id, DisplayName, CompanyName, GivenName, FamilyName, PrimaryEmailAddr, PrimaryPhone, BillAddr';
-            $query = "SELECT {$fields} FROM Customer WHERE DisplayName LIKE '%{$term}%' ORDERBY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
-            $res = Http::withHeaders($this->authHeaders())
-                ->get($this->baseUrl($token->realm_id).'/query', [ 'query' => $query, 'minorversion' => 65 ]);
-            if ($res->ok()) {
-                $customers = $res->json()['QueryResponse']['Customer'] ?? [];
-                $results = is_array($customers) ? $customers : [];
+        $doFetch = $request->boolean('list') || $q !== '';
+
+        if ($doFetch) {
+            $fieldsFull = 'Id, DisplayName, CompanyName, GivenName, FamilyName, PrimaryEmailAddr, PrimaryPhone, BillAddr';
+            $fieldsLite = 'Id, DisplayName, CompanyName, GivenName, FamilyName, PrimaryEmailAddr, PrimaryPhone';
+            if ($q !== '') {
+                // Fallback: keep it simple — search by DisplayName only to avoid QBO parser quirks
+                $term = str_replace("'", "''", $q);
+                $queryFull = "SELECT {$fieldsFull} FROM Customer WHERE DisplayName LIKE '%{$term}%' ORDER BY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
+                $queryLite = "SELECT {$fieldsLite} FROM Customer WHERE DisplayName LIKE '%{$term}%' ORDER BY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
             } else {
-                return back()->with('error', 'QBO search failed: '.$res->body());
+                // List mode: no WHERE, just page through all customers
+                $queryFull = "SELECT {$fieldsFull} FROM Customer ORDER BY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
+                $queryLite = "SELECT {$fieldsLite} FROM Customer ORDER BY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
             }
-        } else {
-            // List mode: no WHERE, just page through all customers
-            $fields = 'Id, DisplayName, CompanyName, GivenName, FamilyName, PrimaryEmailAddr, PrimaryPhone, BillAddr';
-            $query = "SELECT {$fields} FROM Customer ORDERBY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
+
             $res = Http::withHeaders($this->authHeaders())
-                ->get($this->baseUrl($token->realm_id).'/query', [ 'query' => $query, 'minorversion' => 65 ]);
+                ->get($this->baseUrl($token->realm_id).'/query', [ 'query' => $queryFull, 'minorversion' => 65 ]);
+
+            if (!$res->ok()) {
+                // If invalid query due to field selection (e.g., BillAddr not supported), retry with a lite field list
+                $body = $res->body();
+                $res = Http::withHeaders($this->authHeaders())
+                    ->get($this->baseUrl($token->realm_id).'/query', [ 'query' => $queryLite, 'minorversion' => 65 ]);
+                if (!$res->ok()) {
+                    $error = 'QBO search failed: '.$body; // report first error which explains the query issue
+                }
+            }
+
             if ($res->ok()) {
                 $customers = $res->json()['QueryResponse']['Customer'] ?? [];
                 $results = is_array($customers) ? $customers : [];
             } else {
-                return back()->with('error', 'QBO search failed: '.$res->body());
+                // Do not redirect back to Contacts — render the import page with an inline error
+                $results = [];
+                if (!$error) $error = 'QBO search failed: '.$res->body();
             }
         }
 
@@ -69,8 +82,8 @@ class ContactQboImportController extends Controller
             'max' => $max,
             'prevStart' => $prevStart,
             'nextStart' => $nextStart,
+            'error' => $error,
         ]);
-        return view('contacts.qbo-import', compact('results'));
     }
 
     public function import(Request $request)

@@ -234,6 +234,11 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // ================================
     // ✅ Contacts & Site Visits (with legacy redirects)
     // ================================
+    // QBO: sync a single contact and import (place before resource to avoid route conflicts)
+    Route::post('contacts/{client}/qbo-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'sync'])->name('contacts.qbo.sync');
+    Route::get('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'search'])->name('contacts.qbo.search');
+    Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
+
     Route::resource('contacts', \App\Http\Controllers\ContactController::class);
 
     // Legacy clients -> contacts redirects
@@ -257,10 +262,6 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('contacts/{client}/site-visits/{site_visit}/photos', [SiteVisitController::class, 'storePhoto'])->name('contacts.site-visits.photos.store');
     Route::delete('contacts/{client}/site-visits/{site_visit}/photos/{photo}', [SiteVisitController::class, 'destroyPhoto'])->name('contacts.site-visits.photos.destroy');
 
-    // QBO: sync a single contact
-    Route::post('contacts/{client}/qbo-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'sync'])->name('contacts.qbo.sync');
-    Route::get('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'search'])->name('contacts.qbo.search');
-    Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
 
     // Legacy nested client routes kept for backward comp (can be removed later)
     Route::resource('clients.properties', PropertyController::class)->except(['show']);
