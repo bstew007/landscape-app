@@ -241,6 +241,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // ================================
     // QBO: sync a single contact and import (place before resource to avoid route conflicts)
     Route::post('contacts/{client}/qbo-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'sync'])->name('contacts.qbo.sync');
+    Route::post('contacts/{client}/qbo-refresh', [\App\Http\Controllers\ContactQboSyncController::class, 'refresh'])->name('contacts.qbo.refresh');
     Route::get('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'search'])->name('contacts.qbo.search');
     Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
     Route::post('contacts/qbo/import/selected', [\App\Http\Controllers\ContactQboImportController::class, 'importSelected'])->name('contacts.qbo.import.selected');

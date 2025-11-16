@@ -11,7 +11,11 @@
                 @endif
                 <form method="POST" action="{{ route('contacts.qbo.sync', $contact) }}">
                     @csrf
-                    <x-brand-button type="submit" variant="outline" size="sm">Sync Now</x-brand-button>
+                    <x-brand-button type="submit" variant="outline" size="sm">Sync to QBO</x-brand-button>
+                </form>
+                <form method="POST" action="{{ route('contacts.qbo.refresh', $contact) }}">
+                    @csrf
+                    <x-brand-button type="submit" variant="outline" size="sm">Refresh from QBO</x-brand-button>
                 </form>
             @else
                 <details class="relative">
