@@ -5,6 +5,7 @@ return [
     'client_secret' => env('QBO_CLIENT_SECRET'),
     'redirect_uri' => env('QBO_REDIRECT_URI', env('APP_URL').'/integrations/qbo/callback'),
     'environment' => env('QBO_ENV', 'sandbox'), // sandbox|production
+    'webhook_token' => env('QBO_WEBHOOK_TOKEN'),
     'scopes' => [
         'com.intuit.quickbooks.accounting',
         'openid',

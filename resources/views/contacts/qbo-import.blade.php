@@ -97,4 +97,27 @@
     @endif
   </div>
 </div>
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggleAll = document.getElementById('toggleAll');
+    const rowChecks = () => Array.from(document.querySelectorAll('input[type="checkbox"][data-role="row-check"]'));
+    const importSelectedBtn = document.getElementById('importSelectedBtn');
+
+    function syncButton() {
+      const any = rowChecks().some(c => c.checked);
+      if (importSelectedBtn) importSelectedBtn.disabled = !any;
+    }
+
+    if (toggleAll) {
+      toggleAll.addEventListener('change', () => {
+        rowChecks().forEach(c => { c.checked = toggleAll.checked; });
+        syncButton();
+      });
+    }
+    rowChecks().forEach(c => c.addEventListener('change', syncButton));
+    syncButton();
+  });
+</script>
+@endpush
 @endsection
