@@ -66,13 +66,15 @@ class QboCustomerService
         $token = QboToken::latest('updated_at')->first();
         if (!$token) throw new \RuntimeException('QBO not connected');
 
-        $payload = [
+        // Build a base payload for create operations (full set)
+        $base = [
             'DisplayName' => $c->company_name ?: trim($c->first_name.' '.$c->last_name) ?: ($c->email ?: 'Customer '.($c->id)),
             'CompanyName' => $c->company_name ?: null,
             'GivenName' => $c->first_name ?: null,
             'FamilyName' => $c->last_name ?: null,
             'PrimaryEmailAddr' => $c->email ? ['Address' => $c->email] : null,
             'PrimaryPhone' => $c->phone ? ['FreeFormNumber' => $c->phone] : null,
+            // Note: Mobile has been a frequent cause of 2010 ValidationFaults on update; only send on create
             'Mobile' => $c->mobile ? ['FreeFormNumber' => $c->mobile] : null,
             'BillAddr' => [
                 'Line1' => $c->address ?: null,
@@ -81,16 +83,26 @@ class QboCustomerService
                 'PostalCode' => $c->postal_code ?: null,
             ],
         ];
-        // Remove nulls/empties thoroughly
-        $payload = $this->clean($payload);
-        $payload = json_decode(json_encode($payload));
+        $base = $this->clean($base);
 
         $url = $this->baseUrl($token->realm_id).'/customer';
 
-        $isUpdate = false;
-        if ($c->qbo_customer_id) {
-            $isUpdate = true;
-            // Update requires SyncToken; try fetch first
+        $isUpdate = (bool) $c->qbo_customer_id;
+        $query = ['minorversion' => 65] + ($isUpdate ? ['operation' => 'update'] : []);
+
+        // Helper to deep-compare QBO structures after cleaning
+        $valuesEqual = function ($a, $b): bool {
+            $cleanA = $this->clean($a);
+            $cleanB = $this->clean($b);
+            return json_encode($cleanA) === json_encode($cleanB);
+        };
+
+        // Prepare payload depending on create vs update
+        $payload = null;
+        $existing = null;
+
+        if ($isUpdate) {
+            // Fetch to get fresh SyncToken and existing values
             $get = Http::withHeaders($this->authHeaders())
                 ->get($this->baseUrl($token->realm_id).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
             if (config('qbo.debug')) {
@@ -101,21 +113,47 @@ class QboCustomerService
                 ]);
             }
             if ($get->ok()) {
-                $cust = $get->json()['Customer'] ?? null;
-                $payload->Id = $c->qbo_customer_id;
-                $payload->SyncToken = $cust['SyncToken'] ?? $c->qbo_sync_token ?? '0';
-                // Use sparse update to avoid unintended overwrites
-                $payload->sparse = true;
+                $existing = $get->json()['Customer'] ?? null;
             }
-        }
 
-        // Include minorversion and operation=update on POST when updating
-        $query = ['minorversion' => 65];
-        if ($isUpdate) { $query['operation'] = 'update'; }
+            // Minimal sparse update: only include allowed, changed fields
+            $allowedUpdateKeys = ['PrimaryEmailAddr', 'PrimaryPhone', 'BillAddr']; // exclude names and Mobile on update
+            $updateBody = [];
+            foreach ($allowedUpdateKeys as $key) {
+                if (!array_key_exists($key, $base)) continue;
+                $newVal = $base[$key] ?? null;
+                $oldVal = $existing[$key] ?? null;
+                if ($newVal === null) continue; // don't send nulls in sparse updates
+                if ($existing === null || !$valuesEqual($newVal, $oldVal)) {
+                    $updateBody[$key] = $newVal;
+                }
+            }
+
+            // If nothing to update, short-circuit and pretend success
+            if (empty($updateBody)) {
+                // Touch qbo_last_synced_at so UI shows Synced
+                $origTimestamps = $c->timestamps;
+                $c->timestamps = false;
+                $c->qbo_last_synced_at = now();
+                $c->save();
+                $c->timestamps = $origTimestamps;
+                return ['Customer' => $existing ?: ['Id' => $c->qbo_customer_id]];
+            }
+
+            $payload = (object) array_merge($updateBody, [
+                'Id' => $c->qbo_customer_id,
+                'SyncToken' => $existing['SyncToken'] ?? $c->qbo_sync_token ?? '0',
+                'sparse' => true,
+            ]);
+        } else {
+            // Create with the full base payload
+            $payload = json_decode(json_encode($base));
+        }
 
         $res = Http::withHeaders($this->authHeaders())
             ->withOptions(['query' => $query])
-            ->post($url, [ 'Customer' => $payload ]);
+            ->post($url, ['Customer' => $payload]);
+
         if (config('qbo.debug')) {
             \Log::info('QBO upsert response', [
                 'status' => $res->status(),
@@ -124,11 +162,12 @@ class QboCustomerService
                 'query' => $query,
             ]);
         }
+
         if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
             $this->refreshTokenIfNeeded();
             $res = Http::withHeaders($this->authHeaders())
                 ->withOptions(['query' => $query])
-                ->post($url, [ 'Customer' => $payload ]);
+                ->post($url, ['Customer' => $payload]);
             if (config('qbo.debug')) {
                 \Log::warning('QBO upsert retry after refresh', [
                     'status' => $res->status(),
@@ -137,9 +176,11 @@ class QboCustomerService
                 ]);
             }
         }
+
         if (!$res->ok()) {
             throw new \RuntimeException('QBO Customer upsert failed: '.$res->body());
         }
+
         $customer = $res->json()['Customer'] ?? null;
         if ($customer) {
             $c->qbo_customer_id = $customer['Id'] ?? $c->qbo_customer_id;
@@ -151,6 +192,7 @@ class QboCustomerService
             $c->save();
             $c->timestamps = $origTimestamps;
         }
+
         return $res->json();
     }
 }
