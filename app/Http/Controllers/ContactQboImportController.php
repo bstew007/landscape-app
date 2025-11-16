@@ -186,6 +186,7 @@ class ContactQboImportController extends Controller
         $addr = $c['BillAddr'] ?? [];
         $email = $c['PrimaryEmailAddr']['Address'] ?? null;
         $phone = $c['PrimaryPhone']['FreeFormNumber'] ?? null;
+        $mobile = $c['Mobile']['FreeFormNumber'] ?? null;
 
         $names = $this->mapNames($c);
 
@@ -199,6 +200,7 @@ class ContactQboImportController extends Controller
                     'contact_type' => 'client',
                     'email' => $email,
                     'phone' => $phone,
+                    'mobile' => $mobile,
                     'address' => $addr['Line1'] ?? null,
                     'city' => $addr['City'] ?? null,
                     'state' => $addr['CountrySubDivisionCode'] ?? null,
@@ -262,6 +264,7 @@ class ContactQboImportController extends Controller
                     $addr = $c['BillAddr'] ?? [];
                     $email = $c['PrimaryEmailAddr']['Address'] ?? null;
                     $phone = $c['PrimaryPhone']['FreeFormNumber'] ?? null;
+                    $mobile = $c['Mobile']['FreeFormNumber'] ?? null;
 
                     $names = $this->mapNames($c);
 
@@ -274,6 +277,7 @@ class ContactQboImportController extends Controller
                             'contact_type' => 'client',
                             'email' => $email,
                             'phone' => $phone,
+                            'mobile' => $mobile,
                             'address' => $addr['Line1'] ?? null,
                             'city' => $addr['City'] ?? null,
                             'state' => $addr['CountrySubDivisionCode'] ?? null,

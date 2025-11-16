@@ -49,12 +49,18 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
             <label for="phone" class="block text-lg font-medium text-gray-700">Primary Phone</label>
             <input type="text" name="phone" id="phone" autocomplete="tel"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                    value="{{ old('phone', $client->phone ?? '') }}" placeholder="(555) 555-1234">
+        </div>
+        <div>
+            <label for="mobile" class="block text-lg font-medium text-gray-700">Mobile</label>
+            <input type="text" name="mobile" id="mobile" autocomplete="tel"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
+                   value="{{ old('mobile', $client->mobile ?? '') }}" placeholder="(555) 555-1234">
         </div>
         <div>
             <label for="phone2" class="block text-lg font-medium text-gray-700">Secondary Phone</label>
@@ -120,7 +126,9 @@
         }
         const p1 = document.getElementById('phone');
         const p2 = document.getElementById('phone2');
+        const m1 = document.getElementById('mobile');
         if (p1) p1.addEventListener('input', maskPhone);
+        if (m1) m1.addEventListener('input', maskPhone);
         if (p2) p2.addEventListener('input', maskPhone);
     });
     // Address Autocomplete handled globally from app.js (initPlacesAutocomplete)
