@@ -68,7 +68,8 @@ class QboCustomerService
 
         if ($c->qbo_customer_id) {
             // Update requires SyncToken; try fetch first
-            $get = Http::withHeaders($this->authHeaders())->get($this->baseUrl($token->realm_id).'/customer/'.$c->qbo_customer_id);
+            $get = Http::withHeaders($this->authHeaders())
+                ->get($this->baseUrl($token->realm_id).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
             if ($get->ok()) {
                 $cust = $get->json()['Customer'] ?? null;
                 $payload->Id = $c->qbo_customer_id;
@@ -76,10 +77,15 @@ class QboCustomerService
             }
         }
 
-        $res = Http::withHeaders($this->authHeaders())->post($url, [ 'Customer' => $payload ]);
+        // Include minorversion on POST as query param
+        $res = Http::withHeaders($this->authHeaders())
+            ->withOptions(['query' => ['minorversion' => 65]])
+            ->post($url, [ 'Customer' => $payload ]);
         if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
             $this->refreshTokenIfNeeded();
-            $res = Http::withHeaders($this->authHeaders())->post($url, [ 'Customer' => $payload ]);
+            $res = Http::withHeaders($this->authHeaders())
+                ->withOptions(['query' => ['minorversion' => 65]])
+                ->post($url, [ 'Customer' => $payload ]);
         }
         if (!$res->ok()) {
             throw new \RuntimeException('QBO Customer upsert failed: '.$res->body());
@@ -89,7 +95,11 @@ class QboCustomerService
             $c->qbo_customer_id = $customer['Id'] ?? $c->qbo_customer_id;
             $c->qbo_sync_token = $customer['SyncToken'] ?? $c->qbo_sync_token;
             $c->qbo_last_synced_at = now();
+            // Do not bump updated_at when only changing qbo_* fields so status shows Synced
+            $origTimestamps = $c->timestamps;
+            $c->timestamps = false;
             $c->save();
+            $c->timestamps = $origTimestamps;
         }
         return $res->json();
     }
