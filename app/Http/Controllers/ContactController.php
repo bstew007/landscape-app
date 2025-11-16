@@ -43,6 +43,7 @@ class ContactController extends Controller
             'email'      => 'nullable|email',
             'email2'     => 'nullable|email',
             'phone'      => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
+            'mobile'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'phone2'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'address'    => 'nullable|string|max:255',
             'city'       => 'nullable|string|max:120',
@@ -51,7 +52,7 @@ class ContactController extends Controller
         ]);
 
         // Normalize phone mask to (XXX) XXX-XXXX
-        foreach (['phone','phone2'] as $p) {
+        foreach (['phone','mobile','phone2'] as $p) {
             if (!empty($validated[$p])) {
                 $digits = preg_replace('/[^0-9]/', '', (string) $validated[$p]);
                 if (strlen($digits) === 11 && str_starts_with($digits, '1')) { $digits = substr($digits, 1); }
@@ -137,6 +138,7 @@ class ContactController extends Controller
             'email'      => 'nullable|email',
             'email2'     => 'nullable|email',
             'phone'      => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
+            'mobile'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'phone2'     => ['nullable','regex:/^(\\+1\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$/'],
             'address'    => 'nullable|string|max:255',
             'city'       => 'nullable|string|max:120',
@@ -145,7 +147,7 @@ class ContactController extends Controller
         ]);
 
         // Normalize phone mask to (XXX) XXX-XXXX
-        foreach (['phone','phone2'] as $p) {
+        foreach (['phone','mobile','phone2'] as $p) {
             if (!empty($validated[$p])) {
                 $digits = preg_replace('/[^0-9]/', '', (string) $validated[$p]);
                 if (strlen($digits) === 11 && str_starts_with($digits, '1')) { $digits = substr($digits, 1); }
