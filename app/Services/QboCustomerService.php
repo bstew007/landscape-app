@@ -61,6 +61,20 @@ class QboCustomerService
         }
     }
 
+    protected function phonePayload(?string $number): ?array
+    {
+        if (!$number) return null;
+        $digits = preg_replace('/[^0-9]/', '', $number);
+        if (strlen($digits) >= 11 && str_starts_with($digits, '1')) {
+            $digits = substr($digits, 1);
+        }
+        if (strlen($digits) > 10) {
+            $digits = substr($digits, 0, 10);
+        }
+        if (strlen($digits) < 7) return null; // avoid junk numbers
+        return ['FreeFormNumber' => $digits];
+    }
+
     public function upsert(Contact $c): array
     {
         $token = QboToken::latest('updated_at')->first();
@@ -73,9 +87,9 @@ class QboCustomerService
             'GivenName' => $c->first_name ?: null,
             'FamilyName' => $c->last_name ?: null,
             'PrimaryEmailAddr' => $c->email ? ['Address' => $c->email] : null,
-            'PrimaryPhone' => $c->phone ? ['FreeFormNumber' => $c->phone] : null,
+            'PrimaryPhone' => $this->phonePayload($c->phone),
             // Note: Mobile has been a frequent cause of 2010 ValidationFaults on update; only send on create
-            'Mobile' => $c->mobile ? ['FreeFormNumber' => $c->mobile] : null,
+            'Mobile' => $this->phonePayload($c->mobile),
             'BillAddr' => [
                 'Line1' => $c->address ?: null,
                 'City' => $c->city ?: null,
@@ -122,7 +136,18 @@ class QboCustomerService
             foreach ($allowedUpdateKeys as $key) {
                 if (!array_key_exists($key, $base)) continue;
                 $newVal = $base[$key] ?? null;
-                $oldVal = $existing[$key] ?? null;
+                // Normalize comparison for BillAddr to the keys we actually send
+                if ($key === 'BillAddr') {
+                    $oldAddr = $existing['BillAddr'] ?? [];
+                    $oldVal = [
+                        'Line1' => $oldAddr['Line1'] ?? null,
+                        'City' => $oldAddr['City'] ?? null,
+                        'CountrySubDivisionCode' => $oldAddr['CountrySubDivisionCode'] ?? null,
+                        'PostalCode' => $oldAddr['PostalCode'] ?? null,
+                    ];
+                } else {
+                    $oldVal = $existing[$key] ?? null;
+                }
                 if ($newVal === null) continue; // don't send nulls in sparse updates
                 if ($existing === null || !$valuesEqual($newVal, $oldVal)) {
                     $updateBody[$key] = $newVal;
@@ -150,6 +175,26 @@ class QboCustomerService
             $payload = json_decode(json_encode($base));
         }
 
+        if (config('qbo.debug')) {
+            try {
+                $pp = is_object($payload) && property_exists($payload, 'PrimaryPhone') ? $payload->PrimaryPhone : (is_array($payload) && isset($payload['PrimaryPhone']) ? $payload['PrimaryPhone'] : null);
+                \Log::info('QBO upsert request (payload keys)', [
+                    'is_update' => $isUpdate,
+                    'keys' => is_object($payload) ? array_keys(get_object_vars($payload)) : (is_array($payload) ? array_keys($payload) : []),
+                    'primary_phone' => $pp,
+                ]);
+            } catch (\Throwable $e) {}
+        }
+        if (config('qbo.debug')) {
+            try {
+                $pp = is_object($payload) && property_exists($payload, 'PrimaryPhone') ? $payload->PrimaryPhone : (is_array($payload) && isset($payload['PrimaryPhone']) ? $payload['PrimaryPhone'] : null);
+                \Log::info('QBO upsert request (payload keys)', [
+                    'is_update' => $isUpdate,
+                    'keys' => is_object($payload) ? array_keys(get_object_vars($payload)) : (is_array($payload) ? array_keys($payload) : []),
+                    'PrimaryPhone' => $pp,
+                ]);
+            } catch (\Throwable $e) {}
+        }
         $res = Http::withHeaders($this->authHeaders())
             ->withOptions(['query' => $query])
             ->post($url, ['Customer' => $payload]);
@@ -165,9 +210,29 @@ class QboCustomerService
 
         if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
             $this->refreshTokenIfNeeded();
-            $res = Http::withHeaders($this->authHeaders())
-                ->withOptions(['query' => $query])
-                ->post($url, ['Customer' => $payload]);
+                    if (config('qbo.debug')) {
+            try {
+                $pp = is_object($payload) && property_exists($payload, 'PrimaryPhone') ? $payload->PrimaryPhone : (is_array($payload) && isset($payload['PrimaryPhone']) ? $payload['PrimaryPhone'] : null);
+                \Log::info('QBO upsert request (payload keys)', [
+                    'is_update' => $isUpdate,
+                    'keys' => is_object($payload) ? array_keys(get_object_vars($payload)) : (is_array($payload) ? array_keys($payload) : []),
+                    'primary_phone' => $pp,
+                ]);
+            } catch (\Throwable $e) {}
+        }
+        if (config('qbo.debug')) {
+            try {
+                $pp = is_object($payload) && property_exists($payload, 'PrimaryPhone') ? $payload->PrimaryPhone : (is_array($payload) && isset($payload['PrimaryPhone']) ? $payload['PrimaryPhone'] : null);
+                \Log::info('QBO upsert request (payload keys)', [
+                    'is_update' => $isUpdate,
+                    'keys' => is_object($payload) ? array_keys(get_object_vars($payload)) : (is_array($payload) ? array_keys($payload) : []),
+                    'PrimaryPhone' => $pp,
+                ]);
+            } catch (\Throwable $e) {}
+        }
+        $res = Http::withHeaders($this->authHeaders())
+            ->withOptions(['query' => $query])
+            ->post($url, ['Customer' => $payload]);
             if (config('qbo.debug')) {
                 \Log::warning('QBO upsert retry after refresh', [
                     'status' => $res->status(),
