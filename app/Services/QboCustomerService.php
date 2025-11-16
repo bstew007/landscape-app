@@ -66,7 +66,9 @@ class QboCustomerService
 
         $url = $this->baseUrl($token->realm_id).'/customer';
 
+        $isUpdate = false;
         if ($c->qbo_customer_id) {
+            $isUpdate = true;
             // Update requires SyncToken; try fetch first
             $get = Http::withHeaders($this->authHeaders())
                 ->get($this->baseUrl($token->realm_id).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
@@ -74,17 +76,22 @@ class QboCustomerService
                 $cust = $get->json()['Customer'] ?? null;
                 $payload->Id = $c->qbo_customer_id;
                 $payload->SyncToken = $cust['SyncToken'] ?? $c->qbo_sync_token ?? '0';
+                // Use sparse update to avoid unintended overwrites
+                $payload->sparse = true;
             }
         }
 
-        // Include minorversion on POST as query param
+        // Include minorversion and operation=update on POST when updating
+        $query = ['minorversion' => 65];
+        if ($isUpdate) { $query['operation'] = 'update'; }
+
         $res = Http::withHeaders($this->authHeaders())
-            ->withOptions(['query' => ['minorversion' => 65]])
+            ->withOptions(['query' => $query])
             ->post($url, [ 'Customer' => $payload ]);
         if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
             $this->refreshTokenIfNeeded();
             $res = Http::withHeaders($this->authHeaders())
-                ->withOptions(['query' => ['minorversion' => 65]])
+                ->withOptions(['query' => $query])
                 ->post($url, [ 'Customer' => $payload ]);
         }
         if (!$res->ok()) {
