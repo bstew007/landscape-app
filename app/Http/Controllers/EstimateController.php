@@ -380,7 +380,7 @@ class EstimateController extends Controller
             ['estimate_id' => $estimate->id],
             [
                 'status' => 'issued',
-                'amount' => $estimate->total,
+                'amount' => ($estimate->grand_total ?? $estimate->total ?? 0),
                 'due_date' => now()->addDays(30),
                 'pdf_path' => $path,
             ]

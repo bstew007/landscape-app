@@ -44,15 +44,31 @@ class QboInvoiceService
     protected function ensureServiceItem(string $realmId, string $itemName = 'Services'): array
     {
         // Try to find Item by name
-        $q = [ 'query' => "select * from Item where Name = '{$itemName}' and Type = 'Service'" ];
+        $q = [ 'query' => "select Id,Name,Type,IncomeAccountRef from Item where Name = '{$itemName}' and Type = 'Service'" ];
         $res = Http::withHeaders($this->authHeaders())
             ->get($this->baseUrl($realmId).'/query', $q);
+        if (config('qbo.debug')) { \Log::info('QBO query item (Services)', ['status'=>$res->status(),'body'=>$res->body()]); }
         if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', $q); }
         if ($res->ok() && !empty($res->json()['QueryResponse']['Item'][0])) {
             return $res->json()['QueryResponse']['Item'][0];
         }
-        // Create if not found
-        $payload = [ 'Name' => $itemName, 'Type' => 'Service', 'IncomeAccountRef' => ['name' => 'Services', 'value' => '1'] ];
+        // Find an Income account to attach to the Service item
+        $accQ = [ 'query' => "select Id,Name,AccountType from Account where AccountType in ('Income','OtherIncome') order by Id" ];
+        $accRes = Http::withHeaders($this->authHeaders())
+            ->get($this->baseUrl($realmId).'/query', $accQ);
+        if ($accRes->status() === 401) { $this->refreshTokenIfNeeded(); $accRes = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', $accQ); }
+        if (!$accRes->ok() || empty($accRes->json()['QueryResponse']['Account'][0])) {
+            throw new \RuntimeException('Unable to locate an Income account in QBO for Service item.');
+        }
+        $incomeAccount = $accRes->json()['QueryResponse']['Account'][0];
+
+        // Create Services item with the found Income account
+        $payload = [
+            'Name' => $itemName,
+            'Type' => 'Service',
+            'IncomeAccountRef' => ['value' => (string) $incomeAccount['Id'], 'name' => $incomeAccount['Name'] ?? 'Income']
+        ];
+        if (config('qbo.debug')) { \Log::info('QBO create item (Services) payload', ['payload'=>$payload]); }
         $res = Http::withHeaders($this->authHeaders())
             ->post($this->baseUrl($realmId).'/item', $payload);
         if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->post($this->baseUrl($realmId).'/item', $payload); }
@@ -97,10 +113,34 @@ class QboInvoiceService
         $realmId = $token->realm_id;
         $serviceItem = $this->ensureServiceItem($realmId, 'Services');
         $payload = $this->mapInvoiceToQbo($invoice, $serviceItem);
+        $amount = $payload['Line'][0]['Amount'] ?? 0;
+        if ($amount <= 0) {
+            throw new \RuntimeException('Invoice total is zero. QBO requires a positive amount to create an invoice.');
+        }
+        if (config('qbo.debug')) { \Log::info('QBO create invoice payload', ['payload'=>$payload]); }
+        $url = $this->baseUrl($realmId).'/invoice';
         $res = Http::withHeaders($this->authHeaders())
-            ->post($this->baseUrl($realmId).'/invoice', $payload);
-        if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->post($this->baseUrl($realmId).'/invoice', $payload); }
-        if (!$res->ok()) throw new \RuntimeException('QBO Invoice create failed: '.$res->body());
+            ->withOptions(['query' => ['minorversion' => 65]])
+            ->post($url, $payload);
+        if ($res->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())
+                ->withOptions(['query' => ['minorversion' => 65]])
+                ->post($url, $payload);
+        }
+        if (config('qbo.debug')) { \Log::info('QBO create invoice response', ['status'=>$res->status(),'tid'=>$res->header('intuit_tid'),'body'=>$res->body()]); }
+        if (!$res->ok()) {
+            // Retry with wrapped payload in case this tenant requires {"Invoice": {...}}
+            $wrapped = ['Invoice' => $payload];
+            $retry = Http::withHeaders($this->authHeaders())
+                ->withOptions(['query' => ['minorversion' => 65]])
+                ->post($url, $wrapped);
+            if (config('qbo.debug')) { \Log::warning('QBO create invoice retry (wrapped)', ['status'=>$retry->status(),'tid'=>$retry->header('intuit_tid'),'body'=>$retry->body()]); }
+            if (!$retry->ok()) {
+                throw new \RuntimeException('QBO Invoice create failed: '.$retry->body());
+            }
+            $res = $retry;
+        }
         $inv = $res->json()['Invoice'] ?? [];
         if ($inv) {
             $invoice->qbo_invoice_id = $inv['Id'] ?? null;
@@ -124,6 +164,7 @@ class QboInvoiceService
         $res = Http::withHeaders($this->authHeaders())
             ->get($this->baseUrl($realmId).'/invoice/'.$invoice->qbo_invoice_id, ['minorversion' => 65]);
         if ($res->status() === 401) { $this->refreshTokenIfNeeded(); $res = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/invoice/'.$invoice->qbo_invoice_id, ['minorversion' => 65]); }
+        if (config('qbo.debug')) { \Log::info('QBO refresh invoice response', ['status'=>$res->status(),'tid'=>$res->header('intuit_tid'),'body'=>$res->body()]); }
         if (!$res->ok()) throw new \RuntimeException('QBO Invoice fetch failed: '.$res->body());
         $inv = $res->json()['Invoice'] ?? [];
         if ($inv) {
