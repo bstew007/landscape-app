@@ -240,6 +240,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
     Route::post('contacts/qbo/import/selected', [\App\Http\Controllers\ContactQboImportController::class, 'importSelected'])->name('contacts.qbo.import.selected');
     Route::post('contacts/qbo/import/bulk', [\App\Http\Controllers\ContactQboImportController::class, 'importBulk'])->name('contacts.qbo.import.bulk');
+    Route::post('contacts/{client}/qbo-link', [\App\Http\Controllers\ContactQboImportController::class, 'link'])->name('contacts.qbo.link');
 
     Route::resource('contacts', \App\Http\Controllers\ContactController::class);
 

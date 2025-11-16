@@ -270,6 +270,47 @@ class ContactQboImportController extends Controller
         return back()->with('success', "Imported selected: {$imported}. Errors: {$errors}.");
     }
 
+    public function link(Request $request, \App\Models\Contact $client)
+    {
+        $request->validate(['qbo_customer_id' => 'required|string']);
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) return back()->with('error', 'Connect QuickBooks first');
+        $id = $request->input('qbo_customer_id');
+        $url = $this->baseUrl($token->realm_id).'/customer/'.$id;
+        $res = Http::withHeaders($this->authHeaders())->get($url, ['minorversion' => 65]);
+        if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())->get($url, ['minorversion' => 65]);
+        }
+        if (!$res->ok()) return back()->with('error', 'QBO fetch failed: '.$res->body());
+        $c = $res->json()['Customer'] ?? [];
+        if (!$c) return back()->with('error', 'No Customer found');
+
+        $addr = $c['BillAddr'] ?? [];
+        $email = $c['PrimaryEmailAddr']['Address'] ?? null;
+        $phone = $c['PrimaryPhone']['FreeFormNumber'] ?? null;
+        $mobile = $c['Mobile']['FreeFormNumber'] ?? null;
+        $names = $this->mapNames($c);
+
+        // Link and update fields without overwriting local non-empty values unless empty locally
+        $client->qbo_customer_id = $c['Id'];
+        $client->qbo_sync_token = $c['SyncToken'] ?? $client->qbo_sync_token;
+        $client->qbo_last_synced_at = now();
+        $client->first_name = $client->first_name ?: $names['first'];
+        $client->last_name = $client->last_name ?: $names['last'];
+        $client->company_name = $client->company_name ?: $names['company'];
+        $client->email = $client->email ?: $email;
+        $client->phone = $client->phone ?: $phone;
+        $client->mobile = $client->mobile ?: $mobile;
+        $client->address = $client->address ?: ($addr['Line1'] ?? null);
+        $client->city = $client->city ?: ($addr['City'] ?? null);
+        $client->state = $client->state ?: ($addr['CountrySubDivisionCode'] ?? null);
+        $client->postal_code = $client->postal_code ?: ($addr['PostalCode'] ?? null);
+        $client->save();
+
+        return back()->with('success', 'Linked to QuickBooks');
+    }
+
     public function importBulk(Request $request)
     {
         $token = QboToken::latest('updated_at')->first();
