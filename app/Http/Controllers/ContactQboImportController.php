@@ -22,6 +22,28 @@ class ContactQboImportController extends Controller
         return ['Authorization' => 'Bearer '.$token->access_token, 'Accept' => 'application/json'];
     }
 
+    protected function refreshTokenIfNeeded(): void
+    {
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) return;
+        // if expires_at is in the past or within 60 seconds, refresh
+        if (!$token->expires_at || now()->diffInSeconds($token->expires_at, false) > 60) return;
+
+        $conf = config('qbo');
+        $res = Http::asForm()->withBasicAuth($conf['client_id'], $conf['client_secret'])
+            ->post('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $token->refresh_token,
+            ]);
+        if ($res->ok()) {
+            $data = $res->json();
+            $token->access_token = $data['access_token'] ?? $token->access_token;
+            if (!empty($data['refresh_token'])) $token->refresh_token = $data['refresh_token'];
+            if (!empty($data['expires_in'])) $token->expires_at = now()->addSeconds($data['expires_in']);
+            $token->save();
+        }
+    }
+
     public function search(Request $request)
     {
         $token = QboToken::latest('updated_at')->first();
@@ -49,8 +71,16 @@ class ContactQboImportController extends Controller
                 $queryLite = "SELECT {$fieldsLite} FROM Customer ORDER BY DisplayName STARTPOSITION {$start} MAXRESULTS {$max}";
             }
 
+            // First attempt
             $res = Http::withHeaders($this->authHeaders())
                 ->get($this->baseUrl($token->realm_id).'/query', [ 'query' => $queryFull, 'minorversion' => 65 ]);
+
+            // If token expired, try refresh once and retry
+            if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
+                $this->refreshTokenIfNeeded();
+                $res = Http::withHeaders($this->authHeaders())
+                    ->get($this->baseUrl($token->realm_id).'/query', [ 'query' => $queryFull, 'minorversion' => 65 ]);
+            }
 
             if (!$res->ok()) {
                 // If invalid query due to field selection (e.g., BillAddr not supported), retry with a lite field list

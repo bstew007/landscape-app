@@ -21,6 +21,26 @@ class QboCustomerService
         return ['Authorization' => 'Bearer '.$token->access_token, 'Accept' => 'application/json', 'Content-Type' => 'application/json'];
     }
 
+    protected function refreshTokenIfNeeded(): void
+    {
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) return;
+        if (!$token->expires_at || now()->diffInSeconds($token->expires_at, false) > 60) return;
+        $conf = config('qbo');
+        $res = Http::asForm()->withBasicAuth($conf['client_id'], $conf['client_secret'])
+            ->post('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $token->refresh_token,
+            ]);
+        if ($res->ok()) {
+            $data = $res->json();
+            $token->access_token = $data['access_token'] ?? $token->access_token;
+            if (!empty($data['refresh_token'])) $token->refresh_token = $data['refresh_token'];
+            if (!empty($data['expires_in'])) $token->expires_at = now()->addSeconds($data['expires_in']);
+            $token->save();
+        }
+    }
+
     public function upsert(Contact $c): array
     {
         $token = QboToken::latest('updated_at')->first();
@@ -56,6 +76,10 @@ class QboCustomerService
         }
 
         $res = Http::withHeaders($this->authHeaders())->post($url, [ 'Customer' => $payload ]);
+        if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())->post($url, [ 'Customer' => $payload ]);
+        }
         if (!$res->ok()) {
             throw new \RuntimeException('QBO Customer upsert failed: '.$res->body());
         }
