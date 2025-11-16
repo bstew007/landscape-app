@@ -126,8 +126,23 @@ class QboCustomerService
                     'body' => $get->body(),
                 ]);
             }
+            if ($get->status() === 401) {
+                // Access token likely expired; refresh and retry fetch to obtain SyncToken
+                $this->refreshTokenIfNeeded();
+                $get = Http::withHeaders($this->authHeaders())
+                    ->get($this->baseUrl($token->realm_id).'/customer/'.$c->qbo_customer_id, ['minorversion' => 65]);
+                if (config('qbo.debug')) {
+                    \Log::info('QBO fetch retry after refresh', [
+                        'status' => $get->status(),
+                        'tid' => $get->header('intuit_tid'),
+                        'body' => $get->body(),
+                    ]);
+                }
+            }
             if ($get->ok()) {
                 $existing = $get->json()['Customer'] ?? null;
+            } else if ($get->status() === 401) {
+                throw new \RuntimeException('QBO auth failed while fetching customer for update');
             }
 
             // Minimal sparse update: only include allowed, changed fields
