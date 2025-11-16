@@ -212,7 +212,7 @@ class QboCustomerService
         }
         $res = Http::withHeaders($this->authHeaders())
             ->withOptions(['query' => $query])
-            ->post($url, ['Customer' => $payload]);
+            ->post($url, $payload);
 
         if (config('qbo.debug')) {
             \Log::info('QBO upsert response', [
@@ -247,7 +247,7 @@ class QboCustomerService
         }
         $res = Http::withHeaders($this->authHeaders())
             ->withOptions(['query' => $query])
-            ->post($url, ['Customer' => $payload]);
+            ->post($url, $payload);
             if (config('qbo.debug')) {
                 \Log::warning('QBO upsert retry after refresh', [
                     'status' => $res->status(),
