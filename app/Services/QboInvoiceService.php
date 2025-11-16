@@ -53,18 +53,49 @@ class QboInvoiceService
             return $res->json()['QueryResponse']['Item'][0];
         }
         // Find an Income account to attach to the Service item
-        $accQ = [ 'query' => "select Id,Name,AccountType from Account where AccountType in ('Income','OtherIncome') order by Id" ];
+        // Some companies reject OtherIncome (no space) in AccountType filter; try safe variants and fallbacks
+        $accounts = [];
+
+        // Attempt 1: Income and Other Income (with space)
+        $accQ = [ 'query' => "select Id,Name,AccountType,Classification from Account where AccountType in ('Income','Other Income') order by Id" ];
         $accRes = Http::withHeaders($this->authHeaders())
             ->get($this->baseUrl($realmId).'/query', array_merge($accQ, ['minorversion' => 65]));
         if ($accRes->status() === 401) { $this->refreshTokenIfNeeded(); $accRes = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', array_merge($accQ, ['minorversion' => 65])); }
-        if (config('qbo.debug')) { \Log::info('QBO query income accounts', ['status'=>$accRes->status(),'body'=>$accRes->body()]); }
-        if (!$accRes->ok() || empty($accRes->json()['QueryResponse']['Account'])) {
-            throw new \RuntimeException('Unable to locate an Income account in QBO for Service item.');
+        if (config('qbo.debug')) { \Log::info('QBO query income accounts (type filter)', ['status'=>$accRes->status(),'body'=>$accRes->body()]); }
+        if ($accRes->ok() && !empty($accRes->json()['QueryResponse']['Account'])) {
+            $accounts = $accRes->json()['QueryResponse']['Account'];
         }
-        $accounts = $accRes->json()['QueryResponse']['Account'];
-        // Prefer an Income account with subtype ServiceFeeIncome if available
-        $incomeAccount = collect($accounts)->first(function($a){ return ($a['AccountType'] ?? '') === 'Income' && (($a['AccountSubType'] ?? '') === 'ServiceFeeIncome'); })
-            ?? collect($accounts)->first(function($a){ return in_array(($a['AccountType'] ?? ''), ['Income','OtherIncome']); })
+
+        // Attempt 2: Income only (if previous failed or returned nothing)
+        if (empty($accounts)) {
+            $accQ2 = [ 'query' => "select Id,Name,AccountType,Classification from Account where AccountType = 'Income' order by Id" ];
+            $accRes2 = Http::withHeaders($this->authHeaders())
+                ->get($this->baseUrl($realmId).'/query', array_merge($accQ2, ['minorversion' => 65]));
+            if ($accRes2->status() === 401) { $this->refreshTokenIfNeeded(); $accRes2 = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', array_merge($accQ2, ['minorversion' => 65])); }
+            if (config('qbo.debug')) { \Log::info('QBO query income accounts (Income only)', ['status'=>$accRes2->status(),'body'=>$accRes2->body()]); }
+            if ($accRes2->ok() && !empty($accRes2->json()['QueryResponse']['Account'])) {
+                $accounts = $accRes2->json()['QueryResponse']['Account'];
+            }
+        }
+
+        // Attempt 3: Classification = Revenue (broad fallback)
+        if (empty($accounts)) {
+            $accQ3 = [ 'query' => "select Id,Name,AccountType,Classification from Account where Classification = 'Revenue' order by Id" ];
+            $accRes3 = Http::withHeaders($this->authHeaders())
+                ->get($this->baseUrl($realmId).'/query', array_merge($accQ3, ['minorversion' => 65]));
+            if ($accRes3->status() === 401) { $this->refreshTokenIfNeeded(); $accRes3 = Http::withHeaders($this->authHeaders())->get($this->baseUrl($realmId).'/query', array_merge($accQ3, ['minorversion' => 65])); }
+            if (config('qbo.debug')) { \Log::info('QBO query income accounts (Classification fallback)', ['status'=>$accRes3->status(),'body'=>$accRes3->body()]); }
+            if ($accRes3->ok() && !empty($accRes3->json()['QueryResponse']['Account'])) {
+                $accounts = $accRes3->json()['QueryResponse']['Account'];
+            }
+        }
+
+        if (empty($accounts)) {
+            throw new \RuntimeException('Unable to locate an Income/Revenue account in QBO for Service item.');
+        }
+
+        // Prefer a classic Income account; otherwise take first Revenue account
+        $incomeAccount = collect($accounts)->first(function($a){ return ($a['AccountType'] ?? '') === 'Income'; })
             ?? $accounts[0];
 
         // Create Services item with the found Income account
