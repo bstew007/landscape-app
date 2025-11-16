@@ -53,6 +53,7 @@ class QboCustomerService
             'FamilyName' => $c->last_name ?: null,
             'PrimaryEmailAddr' => $c->email ? ['Address' => $c->email] : null,
             'PrimaryPhone' => $c->phone ? ['FreeFormNumber' => $c->phone] : null,
+            'Mobile' => $c->mobile ? ['FreeFormNumber' => $c->mobile] : null,
             'BillAddr' => [
                 'Line1' => $c->address ?: null,
                 'City' => $c->city ?: null,
