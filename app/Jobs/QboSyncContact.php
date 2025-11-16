@@ -14,12 +14,10 @@ class QboSyncContact implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Run this job only after DB commit to avoid race conditions.
-     */
-    public bool $afterCommit = true;
-
-    public function __construct(public int $contactId) {}
+    public function __construct(public int $contactId) {
+        // Respect DB transactions; process only after commit
+        $this->afterCommit = true;
+    }
 
     public function handle(QboCustomerService $svc): void
     {
