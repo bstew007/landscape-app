@@ -29,6 +29,7 @@ class Contact extends Model
         'qbo_customer_id',
         'qbo_sync_token',
         'qbo_last_synced_at',
+        'qbo_balance',
     ];
 
     public function siteVisits()

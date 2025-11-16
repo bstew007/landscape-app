@@ -111,6 +111,7 @@ class PollQboCdc extends Command
                         $email = $c['PrimaryEmailAddr']['Address'] ?? null;
                         $phone = $c['PrimaryPhone']['FreeFormNumber'] ?? null;
                         $mobile = $c['Mobile']['FreeFormNumber'] ?? null;
+                        $balance = isset($c['BalanceWithJobs']) ? (float) $c['BalanceWithJobs'] : (isset($c['Balance']) ? (float) $c['Balance'] : null);
                         $names = $this->mapNames($c);
                         if (empty($names['first'])) $names['first'] = 'Customer';
                         if (!array_key_exists('last', $names) || $names['last'] === null) $names['last'] = (string) ($c['Id'] ?? '');
@@ -129,6 +130,7 @@ class PollQboCdc extends Command
                             'state' => $addr['CountrySubDivisionCode'] ?? null,
                             'postal_code' => $addr['PostalCode'] ?? null,
                         ]);
+                        $contact->qbo_balance = $balance;
                         $contact->qbo_sync_token = $c['SyncToken'] ?? $contact->qbo_sync_token;
                         $contact->qbo_last_synced_at = now();
                         $contact->save();

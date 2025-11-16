@@ -127,6 +127,10 @@
             <p class="text-xs uppercase text-gray-500">Alt Phone</p>
             <p class="font-semibold text-gray-900">{{ $contact->phone2 ?? '—' }}</p>
         </div>
+        <div>
+            <p class="text-xs uppercase text-gray-500">QBO Balance</p>
+            <p class="font-semibold text-gray-900">{{ isset($contact->qbo_balance) ? ('$'.number_format($contact->qbo_balance,2)) : '—' }}</p>
+        </div>
         <div class="sm:col-span-2 lg:col-span-3">
             <p class="text-xs uppercase text-gray-500">Billing Address</p>
             <p class="font-semibold text-gray-900">{{ $contact->address ?? '—' }}</p>

@@ -290,6 +290,10 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
     Route::resource('estimates', EstimateController::class);
+
+    // Invoices -> QBO actions
+    Route::post('invoices/{invoice}/qbo/create', [\App\Http\Controllers\InvoiceQboController::class, 'create'])->name('invoices.qbo.create');
+    Route::post('invoices/{invoice}/qbo/refresh', [\App\Http\Controllers\InvoiceQboController::class, 'refresh'])->name('invoices.qbo.refresh');
     // Admin budgets (protect with auth/ability middleware in your app)
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('budgets', CompanyBudgetController::class)->except(['destroy', 'show']);
