@@ -123,9 +123,15 @@ class ContactQboImportController extends Controller
         if (!$token) return redirect()->route('integrations.qbo.settings')->with('error', 'Connect QuickBooks first');
 
         $id = $request->input('qbo_customer_id');
-        $res = Http::withHeaders($this->authHeaders())->get($this->baseUrl($token->realm_id).'/customer/'.$id);
+        $url = $this->baseUrl($token->realm_id).'/customer/'.$id;
+        $res = Http::withHeaders($this->authHeaders())->get($url, ['minorversion' => 65]);
+        if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())->get($url, ['minorversion' => 65]);
+        }
         if (!$res->ok()) return back()->with('error', 'QBO fetch failed: '.$res->body());
-        $c = $res->json()['Customer'] ?? [];
+        $j = $res->json();
+        $c = is_array($j) ? ($j['Customer'] ?? []) : [];
 
         $addr = $c['BillAddr'] ?? [];
         $email = $c['PrimaryEmailAddr']['Address'] ?? null;
