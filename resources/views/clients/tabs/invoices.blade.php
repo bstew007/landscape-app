@@ -1,13 +1,45 @@
 <section class="bg-white rounded-lg shadow p-6 space-y-4">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
         <h2 class="text-lg font-semibold text-gray-900">Invoices</h2>
-        @if(isset($invoices) && $invoices->isNotEmpty())
-            <form method="POST" action="{{ route('invoices.qbo.refresh', $invoices->first()) }}">
-                @csrf
-                <x-brand-button type="submit" variant="outline" size="sm">Refresh QBO</x-brand-button>
-            </form>
-        @endif
+        <div class="flex items-center gap-2">
+            @if(!empty($estimates) && $estimates->isNotEmpty())
+                <form id="createInvoiceForm" method="POST" action="#" class="flex items-center gap-2">
+                    @csrf
+                    <select id="createInvoiceEstimate" class="form-select text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500 min-w-[220px]">
+                        <option value="">Select estimate…</option>
+                        @foreach($estimates->take(25) as $est)
+                            <option value="{{ $est->id }}">#{{ $est->id }} · {{ $est->title }}</option>
+                        @endforeach
+                    </select>
+                    <x-brand-button type="button" id="createInvoiceBtn" size="sm">Create Invoice</x-brand-button>
+                </form>
+            @endif
+            @if(isset($invoices) && $invoices->isNotEmpty())
+                <form method="POST" action="{{ route('invoices.qbo.refresh', $invoices->first()) }}">
+                    @csrf
+                    <x-brand-button type="submit" variant="outline" size="sm">Refresh QBO</x-brand-button>
+                </form>
+            @endif
+        </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('createInvoiceBtn');
+            const sel = document.getElementById('createInvoiceEstimate');
+            const form = document.getElementById('createInvoiceForm');
+            if (btn && sel && form) {
+                btn.addEventListener('click', () => {
+                    const id = sel.value;
+                    if (!id) { alert('Please select an estimate first.'); return; }
+                    form.action = `{{ url('estimates') }}/${id}/invoice`;
+                    form.submit();
+                });
+            }
+        });
+    </script>
+    @endpush
 
     @if($invoices->isEmpty())
         <p class="text-sm text-gray-500">No invoices yet.</p>
