@@ -218,6 +218,58 @@ class ContactQboImportController extends Controller
         return redirect()->route('contacts.index')->with('success', 'Imported from QuickBooks');
     }
 
+    public function importSelected(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (!is_array($ids) || empty($ids)) return back()->with('error', 'No customers selected');
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) return redirect()->route('integrations.qbo.settings')->with('error', 'Connect QuickBooks first');
+
+        $imported = 0; $errors = 0;
+        foreach ($ids as $id) {
+            try {
+                $url = $this->baseUrl($token->realm_id).'/customer/'.$id;
+                $res = Http::withHeaders($this->authHeaders())->get($url, ['minorversion' => 65]);
+                if ($res->status() === 401 || str_contains($res->body(), 'Token expired')) {
+                    $this->refreshTokenIfNeeded();
+                    $res = Http::withHeaders($this->authHeaders())->get($url, ['minorversion' => 65]);
+                }
+                if (!$res->ok()) { $errors++; continue; }
+                $c = $res->json()['Customer'] ?? [];
+                if (!$c) { $errors++; continue; }
+
+                $addr = $c['BillAddr'] ?? [];
+                $email = $c['PrimaryEmailAddr']['Address'] ?? null;
+                $phone = $c['PrimaryPhone']['FreeFormNumber'] ?? null;
+                $mobile = $c['Mobile']['FreeFormNumber'] ?? null;
+                $names = $this->mapNames($c);
+
+                $contact = Contact::firstOrCreate(
+                    ['qbo_customer_id' => $c['Id']],
+                    [
+                        'first_name' => $names['first'],
+                        'last_name' => $names['last'],
+                        'company_name' => $names['company'],
+                        'contact_type' => 'client',
+                        'email' => $email,
+                        'phone' => $phone,
+                        'mobile' => $mobile,
+                        'address' => $addr['Line1'] ?? null,
+                        'city' => $addr['City'] ?? null,
+                        'state' => $addr['CountrySubDivisionCode'] ?? null,
+                        'postal_code' => $addr['PostalCode'] ?? null,
+                    ]
+                );
+                $contact->qbo_sync_token = $c['SyncToken'] ?? null;
+                $contact->qbo_last_synced_at = now();
+                $contact->save();
+                $imported++;
+            } catch (\Throwable $e) { $errors++; }
+        }
+
+        return back()->with('success', "Imported selected: {$imported}. Errors: {$errors}.");
+    }
+
     public function importBulk(Request $request)
     {
         $token = QboToken::latest('updated_at')->first();
