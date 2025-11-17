@@ -9,8 +9,8 @@
             <label class="block text-sm font-medium text-gray-700">Estimate Type</label>
             <select name="estimate_type" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
                 @php($typeVal = old('estimate_type', $estimate->estimate_type ?? 'design_build'))
-                <option value="design_build" @selected($typeVal==='design_build')>Design/Build</option>
-                <option value="maintenance" @selected($typeVal==='maintenance')>Maintenance</option>
+                <option value="design_build" {{ $typeVal==='design_build' ? 'selected' : '' }}>Design/Build</option>
+                <option value="maintenance" {{ $typeVal==='maintenance' ? 'selected' : '' }}>Maintenance</option>
             </select>
             <p class="text-xs text-gray-500 mt-1">Design/Build uses Work Areas; Maintenance uses Services.</p>
         </div>
@@ -23,7 +23,7 @@
             <label class="block text-sm font-medium text-gray-700">Status</label>
             <select name="status" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                 @foreach ($statuses as $status)
-                    <option value="{{ $status }}" @selected(old('status', $estimate->status ?? 'draft') === $status)>{{ ucfirst($status) }}</option>
+                    <option value="{{ $status }}" {{ old('status', $estimate->status ?? 'draft') === $status ? 'selected' : '' }}>{{ ucfirst($status) }}</option>
                 @endforeach
             </select>
         </div>
@@ -32,7 +32,7 @@
             <select name="division_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                 <option value="">—</option>
                 @foreach (($divisions ?? []) as $d)
-                    <option value="{{ $d->id }}" @selected(old('division_id', $estimate->division_id ?? null) == $d->id)>{{ $d->name }}</option>
+                    <option value="{{ $d->id }}" {{ old('division_id', $estimate->division_id ?? null) == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -41,7 +41,7 @@
             <select name="cost_code_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                 <option value="">—</option>
                 @foreach (($costCodes ?? []) as $cc)
-                    <option value="{{ $cc->id }}" @selected(old('cost_code_id', $estimate->cost_code_id ?? null) == $cc->id)>{{ $cc->code }} — {{ $cc->name }}</option>
+                    <option value="{{ $cc->id }}" {{ old('cost_code_id', $estimate->cost_code_id ?? null) == $cc->id ? 'selected' : '' }}>{{ $cc->code }} — {{ $cc->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -50,7 +50,7 @@
             <select name="client_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
                 <option value="">Select client</option>
                 @foreach ($clients as $client)
-                    <option value="{{ $client->id }}" @selected(old('client_id', $estimate->client_id ?? '') == $client->id)>
+                    <option value="{{ $client->id }}" {{ old('client_id', $estimate->client_id ?? '') == $client->id ? 'selected' : '' }}>
                         {{ $client->name }}
                     </option>
                 @endforeach
@@ -62,7 +62,7 @@
                 <option value="">Select property</option>
                 @foreach ($clients as $client)
                     @foreach ($client->properties as $property)
-                        <option value="{{ $property->id }}" data-client-id="{{ $client->id }}" @selected(old('property_id', $estimate->property_id ?? '') == $property->id)>
+                        <option value="{{ $property->id }}" data-client-id="{{ $client->id }}" {{ old('property_id', $estimate->property_id ?? '') == $property->id ? 'selected' : '' }}>
                             {{ $client->name }} – {{ $property->name }}
                         </option>
                     @endforeach
@@ -80,7 +80,7 @@
                     <option value="{{ $visit->id }}"
                             data-client-id="{{ $visit->client_id }}"
                             data-scope-template="{{ base64_encode($visit->scope_note_template ?? '') }}"
-                            @selected(old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id)>
+                            {{ old('site_visit_id', $estimate->site_visit_id ?? '') == $visit->id ? 'selected' : '' }}>
                         {{ optional($visit->client)->name }} – {{ optional($visit->visit_date)->format('M j, Y') }}
                     </option>
                 @endforeach
