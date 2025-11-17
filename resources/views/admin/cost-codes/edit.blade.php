@@ -61,9 +61,10 @@
         }
 
         function onChange(){
-          const txt = select.options[select.selectedIndex]?.text || '';
+          const opt = select.options[select.selectedIndex];
+          const txt = opt?.text || '';
           idInput.value = select.value || '';
-          nameInput.value = select.value ? txt : '';
+          nameInput.value = select.value ? (opt?.dataset.fullName || txt) : '';
           setSelectedDisplay();
         }
 
@@ -78,7 +79,8 @@
             items.forEach(i => {
               const opt = document.createElement('option');
               opt.value = i.id || '';
-              opt.text = i.full_name || i.name || '';
+              opt.text = (i.full_name || i.name || '') + (i.id ? (' — ID ' + i.id) : '');
+              opt.dataset.fullName = i.full_name || i.name || '';
               select.appendChild(opt);
             });
             // Preselect existing mapping if present
@@ -88,8 +90,13 @@
               const match = Array.from(select.options).find(o => o.value === existingId);
               if (match) {
                 match.selected = true;
-              } else if (existingName) {
-                const opt = document.createElement('option'); opt.value = existingId; opt.text = existingName; select.appendChild(opt); opt.selected = true;
+              } else {
+                const opt = document.createElement('option');
+                opt.value = existingId;
+                opt.text = (existingName || ('Item')) + ' — ID ' + existingId;
+                opt.dataset.fullName = existingName || '';
+                select.appendChild(opt);
+                opt.selected = true;
               }
             }
             setSelectedDisplay();

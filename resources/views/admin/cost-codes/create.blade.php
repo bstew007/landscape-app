@@ -58,9 +58,10 @@
         }
 
         function onChange(){
-          const txt = select.options[select.selectedIndex]?.text || '';
+          const opt = select.options[select.selectedIndex];
+          const txt = opt?.text || '';
           idInput.value = select.value || '';
-          nameInput.value = select.value ? txt : '';
+          nameInput.value = select.value ? (opt?.dataset.fullName || txt) : '';
           setSelectedDisplay();
         }
 
@@ -75,7 +76,8 @@
             items.forEach(i => {
               const opt = document.createElement('option');
               opt.value = i.id || '';
-              opt.text = i.full_name || i.name || '';
+              opt.text = (i.full_name || i.name || '') + (i.id ? (' — ID ' + i.id) : '');
+              opt.dataset.fullName = i.full_name || i.name || '';
               select.appendChild(opt);
             });
             setSelectedDisplay();
