@@ -38,12 +38,18 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700">Cost Code</label>
-            <select name="cost_code_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required data-selected-id="{{ old('cost_code_id', $estimate->cost_code_id ?? '') }}">
+            <select name="cost_code_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
                 <option value="">—</option>
-                @foreach (($costCodes ?? []) as $cc)
+                @forelse (($costCodes ?? []) as $cc)
                     <option value="{{ $cc->id }}">{{ $cc->code }} - {{ $cc->name }}</option>
-                @endforeach
+                @empty
+                    <option value="" disabled>(No mapped Cost Codes found)</option>
+                @endforelse
             </select>
+            <input type="hidden" id="preselected_cost_code_id" value="{{ old('cost_code_id', $estimate->cost_code_id ?? '') }}">
+            @if(empty($costCodes) || (is_iterable($costCodes) && count($costCodes) === 0))
+                <p class="text-xs text-amber-700 mt-1">No mapped Cost Codes available. Add one under Settings → Estimates → Cost Codes.</p>
+            @endif
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700">Client</label>
@@ -236,13 +242,12 @@
         // Initial run on load (handles edit form pre-selection or query-param prefill)
         applyFilters();
 
-        // Apply pre-selected Cost Code without Blade conditionals
+        // Apply pre-selected Cost Code without inline Blade conditionals
         const ccSelect = document.querySelector('select[name="cost_code_id"]');
-        if (ccSelect) {
-            const preselected = ccSelect.getAttribute('data-selected-id') || '';
-            if (preselected !== '') {
-                ccSelect.value = String(preselected);
-            }
+        const ccHidden = document.getElementById('preselected_cost_code_id');
+        if (ccSelect && ccHidden) {
+            const pre = (ccHidden.value || '').toString();
+            if (pre) ccSelect.value = pre;
         }
     });
 </script>

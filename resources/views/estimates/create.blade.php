@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        @include('estimates._form', [
+        @include('estimates._form_simple', [
             'estimate' => $estimate,
             'route' => route('estimates.store'),
             'method' => 'POST',
