@@ -92,11 +92,13 @@
             <input type="date" name="expires_at" class="form-input w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500"
                    value="{{ old('expires_at', optional($estimate->expires_at ?? null)->format('Y-m-d')) }}">
         </div>
+        @if (($method ?? 'POST') === 'PUT')
         <div>
             <label class="block text-sm font-medium text-gray-700">Total</label>
             <input type="number" step="0.01" name="total" class="form-input w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500"
-                   value="{{ old('total', $estimate->total ?? '') }}" readonly>
+                   value="{{ old('total', $estimate->total ?? 0) }}" readonly>
         </div>
+        @endif
     </div>
 
     <div class="bg-brand-50 border border-brand-100 rounded p-4 text-sm text-brand-900">
@@ -106,7 +108,6 @@
 
     @php
         $scopeNoteTemplate = $scopeNoteTemplate ?? '';
-        $noteDefault = old('notes', $estimate->notes ?? $scopeNoteTemplate);
     @endphp
 
     <div>
@@ -114,7 +115,7 @@
         <textarea name="notes"
                   rows="4"
                   class="form-textarea w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500"
-                  data-initial-template="{{ base64_encode($scopeNoteTemplate ?? '') }}">{{ $noteDefault }}</textarea>
+                  data-initial-template="{{ base64_encode($scopeNoteTemplate ?? '') }}">{{ old('notes', $estimate->notes ?? '') }}</textarea>
     </div>
 
     @php

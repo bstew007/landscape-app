@@ -254,7 +254,7 @@ class EstimateController extends Controller
             'status' => 'required|in:' . implode(',', Estimate::STATUSES),
             'estimate_type' => 'required|in:design_build,maintenance',
             'division_id' => 'nullable|exists:divisions,id',
-            'cost_code_id' => 'nullable|exists:cost_codes,id',
+            'cost_code_id' => 'required|exists:cost_codes,id',
             'total' => 'nullable|numeric',
             'expires_at' => 'nullable|date',
             'notes' => 'nullable|string',
@@ -290,7 +290,7 @@ class EstimateController extends Controller
             'siteVisits' => $siteVisits,
             'statuses' => Estimate::STATUSES,
             'divisions' => \App\Models\Division::orderBy('sort_order')->get(),
-            'costCodes' => \App\Models\CostCode::orderBy('code')->get(),
+            'costCodes' => \App\Models\CostCode::where('is_active', true)->whereNotNull('qbo_item_id')->orderBy('code')->get(),
             'scopeSummaries' => $scopeSummaries,
             'scopeNoteTemplate' => $scopeNoteTemplate,
         ];
