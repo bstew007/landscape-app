@@ -76,7 +76,7 @@
             items.forEach(i => {
               const opt = document.createElement('option');
               opt.value = i.id || '';
-              opt.text = (i.full_name || i.name || '') + (i.id ? (' — ID ' + i.id) : '');
+              opt.text = (i.full_name || i.name || '');
               opt.dataset.fullName = i.full_name || i.name || '';
               select.appendChild(opt);
             });

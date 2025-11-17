@@ -16,15 +16,7 @@
         <input type="text" name="name" class="form-input w-full" value="{{ old('name', $code->name) }}" required />
       </div>
     </div>
-    <div>
-      <label class="block text-sm font-medium">Division</label>
-      <select name="division_id" class="form-select w-full">
-        <option value="">—</option>
-        @foreach($divisions as $d)
-          <option value="{{ $d->id }}" @selected(old('division_id', $code->division_id) == $d->id)>{{ $d->name }}</option>
-        @endforeach
-      </select>
-    </div>
+
     <div class="grid gap-3">
       <div>
         <label class="block text-sm font-medium">QBO Service Item</label>
@@ -79,7 +71,7 @@
             items.forEach(i => {
               const opt = document.createElement('option');
               opt.value = i.id || '';
-              opt.text = (i.full_name || i.name || '') + (i.id ? (' — ID ' + i.id) : '');
+              opt.text = (i.full_name || i.name || '');
               opt.dataset.fullName = i.full_name || i.name || '';
               select.appendChild(opt);
             });
@@ -93,7 +85,7 @@
               } else {
                 const opt = document.createElement('option');
                 opt.value = existingId;
-                opt.text = (existingName || ('Item')) + ' — ID ' + existingId;
+                opt.text = (existingName || 'Item');
                 opt.dataset.fullName = existingName || '';
                 select.appendChild(opt);
                 opt.selected = true;

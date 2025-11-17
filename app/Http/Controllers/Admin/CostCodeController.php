@@ -26,6 +26,8 @@ class CostCodeController extends Controller
             'code' => 'required|string|max:50|unique:cost_codes,code',
             'name' => 'required|string|max:255',
             'division_id' => 'nullable|exists:divisions,id',
+            'qbo_item_id' => 'nullable|string|max:100',
+            'qbo_item_name' => 'nullable|string|max:500',
             'is_active' => 'sometimes|boolean',
         ]);
         $data['is_active'] = (bool)($data['is_active'] ?? true);
