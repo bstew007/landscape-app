@@ -38,16 +38,10 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700">Cost Code</label>
-            @php
-                $selectedCostCodeId = old('cost_code_id');
-                if ($selectedCostCodeId === null) {
-                    $selectedCostCodeId = (isset($estimate) && isset($estimate->cost_code_id)) ? $estimate->cost_code_id : null;
-                }
-            @endphp
             <select name="cost_code_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
                 <option value="">—</option>
                 @foreach (($costCodes ?? []) as $cc)
-                    <option value="{{ $cc->id }}" @if((string)$selectedCostCodeId === (string)$cc->id) selected @endif>{{ $cc->code }} - {{ $cc->name }}</option>
+                    <option value="{{ $cc->id }}" {{ (string)old('cost_code_id', (string)($estimate->cost_code_id ?? '')) === (string)$cc->id ? 'selected' : '' }}>{{ $cc->code }} - {{ $cc->name }}</option>
                 @endforeach
             </select>
         </div>
