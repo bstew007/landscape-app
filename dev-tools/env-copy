@@ -1,0 +1,11 @@
+GOOGLE_PLACES_KEY=AIzaSyDwaIyAmoZTk1YfZD9j-k6qwSLXMustSi0
+GOOGLE_PLACES_COUNTRY=us
+
+SSL_CERT_FILE=C:\laragon\www\landscape-app\vendor\composer\ca-bundle\res\cacert.pem 
+CURL_CA_BUNDLE=C:\laragon\www\landscape-app\vendor\composer\ca-bundle\res\cacert.pem
+
+QBO_CLIENT_ID=ABXU1uZZt9XzzNhHUpihVj2z6ajEivbtPmeALShvEsG4RP2MkH
+QBO_CLIENT_SECRET=EmsEJLgtDWaguHfBAbjLGZ9OZyYZ1EFfJmwQ4p8w
+APP_URL=http://localhost:8000
+QBO_ENV=sandbox
+QBO_REDIRECT_URI=http://localhost:8000/integrations/qbo/callback
