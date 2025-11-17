@@ -18,6 +18,8 @@ class Estimate extends Model
         'estimate_type',
         'title',
         'status',
+        'division_id',
+        'cost_code_id',
         'total',
         'material_subtotal',
         'material_cost_total',
@@ -69,6 +71,8 @@ class Estimate extends Model
         'net_margin' => 'decimal:2',
         'email_sent_at' => 'datetime',
         'email_last_sent_at' => 'datetime',
+        'division_id' => 'integer',
+        'cost_code_id' => 'integer',
         'estimate_type' => 'string',
     ];
 

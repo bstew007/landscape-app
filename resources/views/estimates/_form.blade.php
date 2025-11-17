@@ -28,6 +28,24 @@
             </select>
         </div>
         <div>
+            <label class="block text-sm font-medium text-gray-700">Division</label>
+            <select name="division_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                <option value="">—</option>
+                @foreach (($divisions ?? []) as $d)
+                    <option value="{{ $d->id }}" @selected(old('division_id', $estimate->division_id ?? null) == $d->id)>{{ $d->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Cost Code</label>
+            <select name="cost_code_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                <option value="">—</option>
+                @foreach (($costCodes ?? []) as $cc)
+                    <option value="{{ $cc->id }}" @selected(old('cost_code_id', $estimate->cost_code_id ?? null) == $cc->id)>{{ $cc->code }} — {{ $cc->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <label class="block text-sm font-medium text-gray-700">Client</label>
             <select name="client_id" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
                 <option value="">Select client</option>

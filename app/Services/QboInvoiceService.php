@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\QboToken;
+use App\Models\Estimate;
+use App\Models\CostCode;
 use Illuminate\Support\Facades\Http;
 
 class QboInvoiceService
@@ -118,15 +120,37 @@ class QboInvoiceService
     {
         $estimate = $invoice->estimate; $client = $estimate?->client; $token = QboToken::latest('updated_at')->first();
         if (!$client || !$client->qbo_customer_id) throw new \RuntimeException('Invoice client is not linked to QBO');
-        $lines = [];
-        // For Phase 1, one line with total amount as Services
+
+        // Prefer estimate-level Cost Code mapping
+        $itemRef = ['value' => $serviceItem['Id'], 'name' => $serviceItem['Name'] ];
+        if ($estimate && $estimate->cost_code_id) {
+            $cc = CostCode::find($estimate->cost_code_id);
+            if ($cc && !empty($cc->qbo_item_id)) {
+                $itemRef = ['value' => (string)$cc->qbo_item_id, 'name' => $cc->qbo_item_name ?: 'Service'];
+            }
+        }
+
+        // Build single line with estimate total and description derived from estimate
         $amount = (float) ($invoice->amount ?? $estimate?->grand_total ?? 0);
-        $lines[] = [
+        $description = trim($estimate?->title ?: 'Services');
+        if ($estimate && ($estimate->estimate_type ?? 'design_build') === 'design_build') {
+            // Optionally append work areas summary
+            try {
+                $areas = $estimate->areas()->pluck('name')->all();
+                if (!empty($areas)) {
+                    $summary = 'Areas: '.implode(', ', array_slice($areas, 0, 5));
+                    $description = mb_substr($description.' — '.$summary, 0, 4000);
+                }
+            } catch (\Throwable $e) { /* ignore */ }
+        }
+
+        $lines = [[
             'DetailType' => 'SalesItemLineDetail',
             'Amount' => $amount,
-            'SalesItemLineDetail' => [ 'ItemRef' => ['value' => $serviceItem['Id'], 'name' => $serviceItem['Name'] ] ],
-            'Description' => $estimate?->title ?: 'Services',
-        ];
+            'SalesItemLineDetail' => [ 'ItemRef' => $itemRef ],
+            'Description' => $description,
+        ]];
+
         $payload = [
             'CustomerRef' => ['value' => $client->qbo_customer_id],
             'TxnDate' => now()->toDateString(),
@@ -149,6 +173,16 @@ class QboInvoiceService
         $token = QboToken::latest('updated_at')->first();
         if (!$token) throw new \RuntimeException('QBO not connected');
         $realmId = $token->realm_id;
+        // Enforce estimate-level cost code mapping
+        $estimate = $invoice->estimate;
+        if (!$estimate || empty($estimate->cost_code_id)) {
+            throw new \RuntimeException('Estimate cost code is not selected. Please set a Cost Code before creating an invoice.');
+        }
+        $cc = CostCode::find($estimate->cost_code_id);
+        if (!$cc || empty($cc->qbo_item_id)) {
+            throw new \RuntimeException('Selected Cost Code is not mapped to a QBO Service Item. Please map it under Settings → Estimates → Cost Codes.');
+        }
+        // We still fetch/create a fallback Services item in case mapping gets removed mid-flight
         $serviceItem = $this->ensureServiceItem($realmId, 'Services');
         $payload = $this->mapInvoiceToQbo($invoice, $serviceItem);
         $amount = $payload['Line'][0]['Amount'] ?? 0;

@@ -253,6 +253,8 @@ class EstimateController extends Controller
             'site_visit_id' => 'nullable|exists:site_visits,id',
             'status' => 'required|in:' . implode(',', Estimate::STATUSES),
             'estimate_type' => 'required|in:design_build,maintenance',
+            'division_id' => 'nullable|exists:divisions,id',
+            'cost_code_id' => 'nullable|exists:cost_codes,id',
             'total' => 'nullable|numeric',
             'expires_at' => 'nullable|date',
             'notes' => 'nullable|string',
@@ -260,7 +262,6 @@ class EstimateController extends Controller
             'terms_header' => 'nullable|string',
             'terms_footer' => 'nullable|string',
             'crew_notes' => 'nullable|string',
-            'estimate_type' => 'required|in:design_build,maintenance',
         ]);
 
         return $data;
@@ -288,6 +289,8 @@ class EstimateController extends Controller
             'clients' => $clients,
             'siteVisits' => $siteVisits,
             'statuses' => Estimate::STATUSES,
+            'divisions' => \App\Models\Division::orderBy('sort_order')->get(),
+            'costCodes' => \App\Models\CostCode::orderBy('code')->get(),
             'scopeSummaries' => $scopeSummaries,
             'scopeNoteTemplate' => $scopeNoteTemplate,
         ];
