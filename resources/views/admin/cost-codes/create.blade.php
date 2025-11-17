@@ -66,7 +66,7 @@
 
         async function loadAll(){
           try{
-            const url = '{{ route('qbo.items.search') }}' + '?limit=500';
+            const url = '{{ route('admin.qbo.items.search') }}' + '?limit=500';
             const res = await fetch(url, { headers: { 'Accept':'application/json' } });
             const json = await res.json();
             const items = json.items || [];

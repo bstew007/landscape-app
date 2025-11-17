@@ -28,14 +28,15 @@
     <div class="grid gap-3">
       <div>
         <label class="block text-sm font-medium">QBO Service Item</label>
-        <div class="flex gap-2">
-          <input type="text" id="qboItemSearch" class="form-input w-full" placeholder="Search QBO service items…" />
+        <div class="flex gap-2 items-center">
+          <select id="qboItemSelect" class="form-select w-full">
+            <option value="">— Select a Service Item —</option>
+          </select>
           <button type="button" id="qboItemClear" class="px-3 py-2 border rounded">Clear</button>
         </div>
-        <div id="qboItemResults" class="mt-2 max-h-48 overflow-auto border rounded hidden"></div>
         <input type="hidden" name="qbo_item_id" id="qbo_item_id" value="{{ old('qbo_item_id', $code->qbo_item_id) }}" />
         <input type="hidden" name="qbo_item_name" id="qbo_item_name" value="{{ old('qbo_item_name', $code->qbo_item_name) }}" />
-        <p class="text-xs text-gray-500 mt-1">Only QBO Service Items are shown. Your selection will be saved to this cost code.</p>
+        <p class="text-xs text-gray-500 mt-1">Only QBO Service Items are shown.</p>
         <div id="qboItemSelected" class="text-sm mt-2 {{ $code->qbo_item_name ? '' : 'hidden' }}">Selected: <span class="font-medium">{{ $code->qbo_item_name }}</span></div>
       </div>
     </div>
@@ -43,52 +44,64 @@
     @push('scripts')
     <script>
       (function(){
-        const search = document.getElementById('qboItemSearch');
-        const results = document.getElementById('qboItemResults');
+        const select = document.getElementById('qboItemSelect');
         const idInput = document.getElementById('qbo_item_id');
         const nameInput = document.getElementById('qbo_item_name');
         const selected = document.getElementById('qboItemSelected');
         const clearBtn = document.getElementById('qboItemClear');
-        if (!search || !results) return;
+        if (!select) return;
 
-        let timer = null;
-        function render(list){
-          results.innerHTML = '';
-          if (!list || !list.length) { results.classList.add('hidden'); return; }
-          list.forEach(item => {
-            const row = document.createElement('button');
-            row.type = 'button';
-            row.className = 'w-full text-left px-3 py-2 hover:bg-gray-50 border-b';
-            row.textContent = item.full_name || item.name || '(unnamed)';
-            row.addEventListener('click', ()=>{
-              idInput.value = item.id || '';
-              nameInput.value = item.full_name || item.name || '';
-              results.classList.add('hidden');
-              if (selected){ selected.classList.remove('hidden'); selected.querySelector('span').textContent = nameInput.value; }
-            });
-            results.appendChild(row);
-          });
-          results.classList.remove('hidden');
+        function setSelectedDisplay(){
+          const txt = select.options[select.selectedIndex]?.text || '';
+          if (select.value) {
+            if (selected){ selected.classList.remove('hidden'); selected.querySelector('span').textContent = txt; }
+          } else {
+            if (selected){ selected.classList.add('hidden'); selected.querySelector('span').textContent = ''; }
+          }
         }
-        async function doSearch(q){
-          if (!q || q.length < 2) { results.classList.add('hidden'); return; }
+
+        function onChange(){
+          const txt = select.options[select.selectedIndex]?.text || '';
+          idInput.value = select.value || '';
+          nameInput.value = select.value ? txt : '';
+          setSelectedDisplay();
+        }
+
+        async function loadAll(){
           try{
-            const url = '{{ route('admin.qbo.items.search') }}' + '?q=' + encodeURIComponent(q);
-            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const url = '{{ route('admin.qbo.items.search') }}' + '?limit=500';
+            const res = await fetch(url, { headers: { 'Accept':'application/json' } });
             const json = await res.json();
-            render(json.items || []);
-          }catch(err){ results.classList.add('hidden'); }
+            const items = json.items || [];
+            // Clear existing (keep placeholder)
+            select.options.length = 1;
+            items.forEach(i => {
+              const opt = document.createElement('option');
+              opt.value = i.id || '';
+              opt.text = i.full_name || i.name || '';
+              select.appendChild(opt);
+            });
+            // Preselect existing mapping if present
+            const existingId = idInput.value;
+            const existingName = nameInput.value;
+            if (existingId) {
+              const match = Array.from(select.options).find(o => o.value === existingId);
+              if (match) {
+                match.selected = true;
+              } else if (existingName) {
+                const opt = document.createElement('option'); opt.value = existingId; opt.text = existingName; select.appendChild(opt); opt.selected = true;
+              }
+            }
+            setSelectedDisplay();
+          } catch(e) {
+            // disable select on error
+            select.disabled = true;
+          }
         }
-        search.addEventListener('input', ()=>{
-          clearTimeout(timer);
-          timer = setTimeout(()=> doSearch(search.value.trim()), 250);
-        });
-        if (clearBtn){ clearBtn.addEventListener('click', ()=>{
-          if (idInput) idInput.value = '';
-          if (nameInput) nameInput.value = '';
-          if (selected){ selected.classList.add('hidden'); selected.querySelector('span').textContent = ''; }
-          search.value=''; results.classList.add('hidden');
-        }); }
+
+        select.addEventListener('change', onChange);
+        if (clearBtn){ clearBtn.addEventListener('click', ()=>{ select.value=''; onChange(); }); }
+        loadAll();
       })();
     </script>
     @endpush
