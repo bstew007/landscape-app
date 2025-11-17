@@ -22,6 +22,26 @@ class QboItemLookupController extends Controller
         return ['Authorization' => 'Bearer '.$token->access_token, 'Accept' => 'application/json'];
     }
 
+    protected function refreshTokenIfNeeded(): void
+    {
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) return;
+        if (!$token->expires_at || now()->diffInSeconds($token->expires_at, false) > 60) return;
+        $conf = config('qbo');
+        $res = Http::asForm()->withBasicAuth($conf['client_id'], $conf['client_secret'])
+            ->post('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $token->refresh_token,
+            ]);
+        if ($res->ok()) {
+            $data = $res->json();
+            $token->access_token = $data['access_token'] ?? $token->access_token;
+            if (!empty($data['refresh_token'])) $token->refresh_token = $data['refresh_token'];
+            if (!empty($data['expires_in'])) $token->expires_at = now()->addSeconds($data['expires_in']);
+            $token->save();
+        }
+    }
+
     public function search(Request $request)
     {
         $term = trim((string) $request->query('q', ''));
@@ -41,6 +61,11 @@ class QboItemLookupController extends Controller
         $query = "select Id, Name, Type, Active, FullyQualifiedName from Item where {$where} order by FullyQualifiedName";
         $res = Http::withHeaders($this->authHeaders())
             ->get($this->baseUrl($realmId).'/query', ['query' => $query, 'minorversion' => 65]);
+        if ($res->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $res = Http::withHeaders($this->authHeaders())
+                ->get($this->baseUrl($realmId).'/query', ['query' => $query, 'minorversion' => 65]);
+        }
         if (!$res->ok()) {
             return response()->json(['error' => 'QBO query failed', 'details' => $res->json() ?: $res->body()], 500);
         }
