@@ -6,6 +6,15 @@
 
     <div class="grid md:grid-cols-2 gap-4">
         <div>
+            <label class="block text-sm font-medium text-gray-700">Estimate Type</label>
+            <select name="estimate_type" class="form-select w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
+                @php($typeVal = old('estimate_type', $estimate->estimate_type ?? 'design_build'))
+                <option value="design_build" @selected($typeVal==='design_build')>Design/Build</option>
+                <option value="maintenance" @selected($typeVal==='maintenance')>Maintenance</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Design/Build uses Work Areas; Maintenance uses Services.</p>
+        </div>
+        <div>
             <label class="block text-sm font-medium text-gray-700">Title</label>
             <input type="text" name="title" class="form-input w-full mt-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500"
                    value="{{ old('title', $estimate->title ?? 'New Landscape Estimate') }}" required>

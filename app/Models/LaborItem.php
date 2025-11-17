@@ -14,6 +14,7 @@ class LaborItem extends Model
     protected $fillable = [
         'name',
         'type',
+        'cost_code_id',
         'unit',
         'base_rate',
         'overtime_rate',
@@ -29,5 +30,6 @@ class LaborItem extends Model
         'burden_percentage' => 'decimal:2',
         'is_billable' => 'boolean',
         'is_active' => 'boolean',
+        'cost_code_id' => 'integer',
     ];
 }

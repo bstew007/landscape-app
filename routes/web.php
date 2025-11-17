@@ -299,6 +299,10 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::resource('budgets', CompanyBudgetController::class)->except(['destroy', 'show']);
         // Users management
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['show']);
+        // Settings & Configurations: Divisions and Cost Codes
+        Route::resource('divisions', \App\Http\Controllers\Admin\DivisionController::class)->except(['show']);
+        Route::resource('cost-codes', \App\Http\Controllers\Admin\CostCodeController::class)->except(['show']);
+        Route::get('qbo/items/search', [\App\Http\Controllers\Admin\QboItemLookupController::class, 'search'])->name('admin.qbo.items.search');
     });
 
     // Integrations: QuickBooks Online

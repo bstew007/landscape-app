@@ -16,6 +16,15 @@
                value="{{ old('type', $labor->type ?? 'crew') }}" required>
     </div>
     <div>
+        <label class="block text-sm font-semibold mb-1">Cost Code</label>
+        <select name="cost_code_id" class="form-select w-full">
+            <option value="">—</option>
+            @foreach(\App\Models\CostCode::orderBy('code')->get() as $cc)
+                <option value="{{ $cc->id }}" @selected(old('cost_code_id', $labor->cost_code_id ?? null) == $cc->id)>{{ $cc->code }} — {{ $cc->name }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div>
         <label class="block text-sm font-semibold mb-1">Unit</label>
         <input type="text" name="unit" class="form-input w-full"
                value="{{ old('unit', $labor->unit ?? 'hr') }}" required>

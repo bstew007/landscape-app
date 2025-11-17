@@ -15,6 +15,7 @@ class Estimate extends Model
         'client_id',
         'property_id',
         'site_visit_id',
+        'estimate_type',
         'title',
         'status',
         'total',
@@ -68,6 +69,7 @@ class Estimate extends Model
         'net_margin' => 'decimal:2',
         'email_sent_at' => 'datetime',
         'email_last_sent_at' => 'datetime',
+        'estimate_type' => 'string',
     ];
 
     public const STATUSES = ['draft', 'pending', 'sent', 'approved', 'rejected'];

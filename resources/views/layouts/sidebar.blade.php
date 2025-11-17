@@ -52,23 +52,37 @@
                 <li>
                     <a href="{{ route('admin.budgets.index') }}"
                        class="block px-4 py-2 text-sm text-brand-100 hover:bg-brand-800">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg><span>Company Budget</span></span>
+                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg><span>Budget</span></span>
                     </a>
                 </li>
-                @can('manage-users')
-                <li>
-                    <a href="{{ route('admin.users.index') }}"
-                       class="block px-4 py-2 text-sm text-brand-100 hover:bg-brand-800">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="12" cy="8" r="4"/><path d="M2 21c0-4 4-7 10-7s10 3 10 7"/></svg><span>Users</span></span>
-                    </a>
-                </li>
-                @endcan
+
                 <li>
                     <a href="{{ route('materials.index') }}"
                        class="block px-4 py-2 text-sm text-brand-100 hover:bg-brand-800">
                         <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg><span>Materials Catalog</span></span>
                     </a>
                 </li>
+                <li>
+                    <details class="group">
+                        <summary class="list-none px-4 py-2 text-sm text-brand-100 hover:bg-brand-800 cursor-pointer rounded flex items-center justify-between">
+                            <span class="inline-flex items-center">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                                <span>Settings</span>
+                            </span>
+                            <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                        </summary>
+                        <div class="ml-6 mt-1 space-y-1">
+                            @can('manage-users')
+                            <a href="{{ route('admin.users.index') }}" class="block px-2 py-1 rounded text-brand-100 hover:bg-brand-800">Users</a>
+                            @endcan
+                            <div class="px-2 pt-2 text-xs uppercase tracking-wide text-brand-300">Estimates</div>
+                            <a href="{{ route('admin.divisions.index') }}" class="block px-2 py-1 rounded text-brand-100 hover:bg-brand-800">Divisions</a>
+                            <a href="{{ route('admin.cost-codes.index') }}" class="block px-2 py-1 rounded text-brand-100 hover:bg-brand-800">Cost Codes</a>
+                        </div>
+                    </details>
+                </li>
+
+
             </ul>
         </div>
 
@@ -92,7 +106,7 @@
             <div>
                 <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Admin</h3>
                 <a href="{{ route('production-rates.index') }}" class="block px-2 py-1 rounded text-brand-100 hover:bg-brand-800">⚙️ Production Rates</a>
-                <a href="{{ route('admin.budgets.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-100 hover:bg-brand-800">💼 Company Budget</a>
+                <a href="{{ route('admin.budgets.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-100 hover:bg-brand-800">💼 Budget</a>
                 <a href="{{ route('materials.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-100 hover:bg-brand-800">🧱 Materials Catalog</a>
             </div>
             <div>

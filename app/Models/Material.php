@@ -13,6 +13,7 @@ class Material extends Model
         'name',
         'sku',
         'category',
+        'cost_code_id',
         'unit',
         'unit_cost',
         'tax_rate',
@@ -28,5 +29,6 @@ class Material extends Model
         'tax_rate' => 'decimal:4',
         'is_taxable' => 'boolean',
         'is_active' => 'boolean',
+        'cost_code_id' => 'integer',
     ];
 }

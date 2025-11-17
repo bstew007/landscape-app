@@ -80,8 +80,8 @@ class EstimateController extends Controller
 
         $estimate = Estimate::create($data);
 
-        // Auto-create a default General work area
-        if ($estimate->areas()->count() === 0) {
+        // Auto-create a default General work area for Design/Build only
+        if (($estimate->estimate_type ?? 'design_build') === 'design_build' && $estimate->areas()->count() === 0) {
             $estimate->areas()->create(['name' => 'General', 'sort_order' => 1]);
         }
 
@@ -252,6 +252,7 @@ class EstimateController extends Controller
             'property_id' => 'nullable|exists:properties,id',
             'site_visit_id' => 'nullable|exists:site_visits,id',
             'status' => 'required|in:' . implode(',', Estimate::STATUSES),
+            'estimate_type' => 'required|in:design_build,maintenance',
             'total' => 'nullable|numeric',
             'expires_at' => 'nullable|date',
             'notes' => 'nullable|string',
@@ -259,6 +260,7 @@ class EstimateController extends Controller
             'terms_header' => 'nullable|string',
             'terms_footer' => 'nullable|string',
             'crew_notes' => 'nullable|string',
+            'estimate_type' => 'required|in:design_build,maintenance',
         ]);
 
         return $data;
