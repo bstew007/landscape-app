@@ -17,7 +17,7 @@
         paver_patio: '{{ route('calculators.patio.form') }}',
         fence: '{{ route('calculators.fence.form') }}',
         syn_turf: '{{ route('calculators.syn_turf.form') }}',
-        pruning: '{{ route('calculators.pruning.form') }}',
+        pruning: '{{ route('calculators.pruning.form') }}'
     };
     window.__estimateTemplatesUrl = "{{ route('estimates.calculator.templates', $estimate) }}";
     window.__estimateImportUrl = "{{ route('estimates.calculator.import', $estimate) }}";
@@ -1430,7 +1430,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 { key: 'discount', revenue: discountRevenue, cost: discountCost, profit: discountProfit },
             ];
 
-            breakdowns.forEach(({ key, revenue, cost, profit }) => {
+            breakdowns.forEach((entry) => {
+                const key = entry.key;
+                const revenue = entry.revenue;
+                const cost = entry.cost;
+                const profit = entry.profit;
                 setText(`breakdown-${key}-revenue`, formatMoney(revenue));
                 setText(`breakdown-${key}-cost`, formatMoney(cost));
                 setText(`breakdown-${key}-profit`, formatMoney(profit));
@@ -1526,7 +1530,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function updateFormState(form) {
-            const quantityInput = form.querySelector('input[name="quantity"]');
-            const costInput = form.querySelector('input[name="unit_cost"]');
-            const unitPriceInput = form.querySelector('[data-role="unit-price"]');
-            const ma
+            const quantityInput = form.querySelector('inpu

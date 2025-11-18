@@ -172,7 +172,7 @@
       if (selectedBadge) {
         if (count) {
           selectedBadge.classList.remove('hidden');
-          selectedBadge.textContent = `${count} selected`;
+          selectedBadge.textContent = count + ' selected';
         } else selectedBadge.classList.add('hidden');
       }
     }
@@ -240,7 +240,8 @@
       const list = checks();
       const idx = list.indexOf(cb);
       if (e.shiftKey && lastClickedIndex !== null) {
-        const [start, end] = idx > lastClickedIndex ? [lastClickedIndex, idx] : [idx, lastClickedIndex];
+        const start = idx > lastClickedIndex ? lastClickedIndex : idx;
+        const end = idx > lastClickedIndex ? idx : lastClickedIndex;
         for (let i = start; i <= end; i++) {
           list[i].checked = cb.checked;
           if (list[i].checked) selectedIds.add(list[i].value); else selectedIds.delete(list[i].value);
@@ -255,7 +256,9 @@
       if (!ids.length) return;
       const val = actionSelect.value || '';
       if (!val) return;
-      const [action, arg] = val.split(':');
+      const splitVal = val.split(':');
+      const action = splitVal[0];
+      const arg = splitVal.length > 1 ? splitVal[1] : '';
 
       try {
         applyBtn.disabled = true;
