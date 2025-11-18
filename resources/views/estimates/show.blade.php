@@ -1113,6 +1113,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            function escapeHtml(str){
+                const div = document.createElement('div');
+                div.textContent = String(str ?? '');
+                return div.innerHTML;
+            }
             function renderTemplateRow(t){
                 const wrap = document.createElement('div');
                 wrap.className = 'flex items-center justify-between border rounded p-2';
@@ -1524,73 +1529,4 @@ document.addEventListener('DOMContentLoaded', () => {
             const quantityInput = form.querySelector('input[name="quantity"]');
             const costInput = form.querySelector('input[name="unit_cost"]');
             const unitPriceInput = form.querySelector('[data-role="unit-price"]');
-            const marginDisplay = form.querySelector('[data-role="margin-percent"]');
-            const marginHidden = form.querySelector('input[name="margin_rate"]');
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const preview = form.querySelector('[data-role="preview-total"]');
-            const select = form.querySelector('select[name="catalog_id"]');
-            const nameInput = form.querySelector('input[name="name"]');
-
-            const qty = parseNumber(quantityInput?.value, 0);
-            const unitCost = parseNumber(costInput?.value, 0);
-            let unitPrice = parseNumber(unitPriceInput?.value, unitCost);
-            let marginRate = parseNumber(marginHidden?.value, 0);
-            const manualOverride = unitPriceInput?.dataset.manualOverride === '1';
-
-            if (marginDisplay && !manualOverride) {
-                marginRate = clamp(parseNumber(marginDisplay.value, 0) / 100, -0.99, 10);
-                if (marginHidden) marginHidden.value = marginRate.toFixed(4);
-                unitPrice = unitCost * (1 + marginRate);
-                if (unitPriceInput) unitPriceInput.value = unitPrice.toFixed(2);
-            } else if (unitPriceInput) {
-                unitPrice = parseNumber(unitPriceInput.value, unitCost);
-                marginRate = unitCost !== 0 ? clamp((unitPrice - unitCost) / unitCost, -0.99, 10) : 0;
-                if (marginHidden) marginHidden.value = marginRate.toFixed(4);
-                if (marginDisplay) marginDisplay.value = (marginRate * 100).toFixed(2);
-            }
-
-            const lineTotal = qty * unitPrice;
-            const costTotal = qty * unitCost;
-            const marginTotal = lineTotal - costTotal;
-
-            if (preview) {
-                preview.textContent = `Line total: ${formatMoney(lineTotal)} · Profit: ${formatMoney(marginTotal)}`;
-            }
-
-            let canSubmit = true;
-            const type = form.dataset.formType;
-            if (type === 'material' || type === 'labor') {
-                canSubmit = Boolean(select && select.value);
-            } else {
-                canSubmit = Boolean(nameInput && nameInput.value.trim().length);
-            }
-            if (!Number.isFinite(qty) || qty < 0) canSubmit = false;
-            if (!Number.isFinite(unitCost) || unitCost < 0) canSubmit = false;
-            if (!Number.isFinite(unitPrice) || unitPrice < 0) canSubmit = false;
-
-            if (submitBtn) submitBtn.disabled = !canSubmit;
-        }
-
-        function clearFormErrors(form) {
-            form.querySelectorAll('[data-error]').forEach(el => el.remove());
-            form.querySelectorAll('.border-red-300').forEach(el => el.classList.remove('border-red-300'));
-        }
-
-        function renderFormErrors(form, errors) {
-            Object.entries(errors || {}).forEach(([field, messages]) => {
-                const input = form.querySelector(`[name="${field}"]`);
-                const message = Array.isArray(messages) ? messages[0] : String(messages);
-                if (input) {
-                    input.classList.add('border-red-300');
-                    const errorEl = document.createElement('p');
-                    errorEl.className = 'text-red-600 text-xs mt-1';
-                    errorEl.setAttribute('data-error', field);
-                    errorEl.textContent = message;
-                    input.insertAdjacentElement('afterend', errorEl);
-                }
-            });
-        }
-
-        function resetForm(form) {
-            const formType = form.dataset.formType;
-            if (formType === 'material' || formTy
+            const ma
