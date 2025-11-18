@@ -489,8 +489,8 @@
         </x-modal>
 
         @php $allItems = $estimate->items; @endphp
-        <div class="rounded-lg border border-gray-200 bg-slate-100 shadow-sm overflow-hidden">
-                                <div class="px-4 py-2 border-b bg-gray-50">
+        <div class="rounded-lg border border-gray-200 bg-slate-300 shadow-sm overflow-hidden">
+                                <div class="px-4 py-2 border-b border-slate-200 bg-slate-100">
                         <x-brand-button type="button" size="sm"
                             @click="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'add-work-area' }))">
                             + Add Work Area
@@ -506,7 +506,7 @@
                 $profit = $price - $cogs;
             @endphp
             <div x-data="{ open: true, tab: 'pricing', menuOpen: false }" class="mb-6 border rounded-lg bg-white work-area overflow-visible" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
-                    <div class="px-4 py-3 border-b bg-gray-50">
+                    <div class="px-4 py-3 border-b border-slate-200 bg-slate-100">
                         <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-3">
                             @csrf
                             @method('PATCH')
