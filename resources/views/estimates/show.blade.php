@@ -63,20 +63,22 @@
     </x-page-header>
 
     <!-- Add via Calculator Slide-over (controlled by JS module) -->
-    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;">
+    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;" x-data="{ section: 'templates', itemsTab: 'labor' }">
         <div id="calcDrawerOverlay" class="absolute inset-0 bg-black/30"></div>
         <div class="absolute right-0 top-0 h-full w-full sm:max-w-2xl bg-white shadow-xl flex flex-col">
             <div class="flex items-center justify-between px-4 py-3 border-b">
-                <h3 class="text-lg font-semibold">Add via Calculator</h3>
+                <h3 class="text-lg font-semibold">Add Items</h3>
                 <button id="calcDrawerCloseBtn" class="text-gray-500 hover:text-gray-700">Close</button>
             </div>
             <div class="px-4 pt-3 border-b">
-                <div class="inline-flex rounded border">
-                    <button id="calcTabCreateBtn" class="px-3 py-1 text-sm">Create with Calculator</button>
-                    <button id="calcTabTemplatesBtn" class="px-3 py-1 text-sm">Templates</button>
+                <div class="inline-flex rounded border overflow-hidden">
+                    <button id="calcTabCreateBtn" class="px-3 py-1 text-sm" @click="section='create'">Create</button>
+                    <button id="calcTabTemplatesBtn" class="px-3 py-1 text-sm" @click="section='templates'">Templates</button>
+                    <button class="px-3 py-1 text-sm" @click="section='items'">Items</button>
                 </div>
             </div>
-            <div id="calcCreatePane" class="p-4 overflow-y-auto space-y-4">
+            <!-- Create Pane -->
+            <div id="calcCreatePane" class="p-4 overflow-y-auto space-y-4" x-show="section==='create'">
                 <div class="space-y-2">
                     <label class="block text-sm font-medium">Calculator</label>
                     <select id="calcTypeSelect" class="form-select w-full sm:w-64 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
@@ -96,7 +98,8 @@
                     <p class="text-xs text-gray-500 mt-1">Opens the selected calculator with template fields. Save as template and optionally import into this estimate.</p>
                 </div>
             </div>
-            <div id="calcTemplatesPane" class="p-4 overflow-y-auto space-y-4" style="display:none;">
+            <!-- Templates Pane -->
+            <div id="calcTemplatesPane" class="p-4 overflow-y-auto space-y-4" x-show="section==='templates'" style="display:none;">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <label class="text-sm">Type:</label>
@@ -119,6 +122,62 @@
                 </div>
                 <div id="calcTplLoading" class="text-sm text-gray-500" style="display:none;">Loading templates...</div>
                 <div id="calcTplList" class="space-y-2"></div>
+            </div>
+            <!-- Items Pane (Labor, Equipment, Materials, Subs, Other) -->
+            <div id="calcItemsPane" class="p-4 overflow-y-auto space-y-4" x-show="section==='items'">
+                <div class="inline-flex flex-wrap gap-2">
+                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='labor' }" @click="itemsTab='labor'">Labor</button>
+                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='equipment' }" @click="itemsTab='equipment'">Equipment</button>
+                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='materials' }" @click="itemsTab='materials'">Materials</button>
+                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='subs' }" @click="itemsTab='subs'">Subs</button>
+                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='other' }" @click="itemsTab='other'">Other</button>
+                </div>
+                <!-- Labor List -->
+                <div x-show="itemsTab==='labor'" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold">Labor Catalog</h4>
+                        <x-brand-button as="a" href="{{ route('labor.create') }}" size="sm">New</x-brand-button>
+                    </div>
+                    <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
+                        @foreach ($laborCatalog as $labor)
+                            <div class="px-3 py-2 text-sm flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-gray-900">{{ $labor->name }}</div>
+                                    <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} • {{ $labor->unit }}</div>
+                                </div>
+                                <div class="text-xs text-gray-600">Base: ${{ number_format($labor->base_rate, 2) }}</div>
+                            </div>
+                        @endforeach
+                        @if($laborCatalog->isEmpty())
+                            <div class="px-3 py-3 text-sm text-gray-500">No labor items yet.</div>
+                        @endif
+                    </div>
+                </div>
+                <!-- Materials List -->
+                <div x-show="itemsTab==='materials'" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold">Materials Catalog</h4>
+                        <x-brand-button as="a" href="{{ route('materials.create') }}" size="sm">New</x-brand-button>
+                    </div>
+                    <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
+                        @foreach ($materials as $material)
+                            <div class="px-3 py-2 text-sm flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-gray-900">{{ $material->name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $material->unit }}</div>
+                                </div>
+                                <div class="text-xs text-gray-600">Cost: ${{ number_format($material->unit_cost, 2) }}</div>
+                            </div>
+                        @endforeach
+                        @if($materials->isEmpty())
+                            <div class="px-3 py-3 text-sm text-gray-500">No materials yet.</div>
+                        @endif
+                    </div>
+                </div>
+                <!-- Placeholders -->
+                <div x-show="itemsTab==='equipment'" class="text-sm text-gray-600">Equipment list coming soon.</div>
+                <div x-show="itemsTab==='subs'" class="text-sm text-gray-600">Subcontractors list coming soon.</div>
+                <div x-show="itemsTab==='other'" class="text-sm text-gray-600">Other items coming soon.</div>
             </div>
         </div>
     </div>
@@ -518,6 +577,7 @@
                                      class="absolute z-20 mt-1 min-w-[9rem] left-0 bg-white border rounded-md shadow-lg text-sm py-1 ring-1 ring-black/5">
                                     <button type="button" class="block w-full text-left px-3 py-1 hover:bg-gray-100" @click="open = true; menuOpen = false">Edit</button>
                                     <button type="button" class="block w-full text-left px-3 py-1 hover:bg-gray-100" @click="open = false; menuOpen = false">Close</button>
+                                    <div class="my-1 border-t border-slate-200"></div>
                                     <button type="button" class="block w-full text-left px-3 py-1 text-red-600 hover:bg-red-50" @click.prevent="$refs.deleteForm.submit()">Delete</button>
                                 </div>
                             </div>
@@ -564,7 +624,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center pt-1 ml-auto">
-                                <x-brand-button type="button" size="sm" @click="addItemsTab='templates'; showAddItems = true">Add Items + Templates</x-brand-button>
+                                <x-brand-button type="button" size="sm" @click="document.getElementById('openCalcDrawerBtn') && document.getElementById('openCalcDrawerBtn').click()">Add Items + Templates</x-brand-button>
                             </div>
                         </form>
                         <form x-ref="deleteForm" method="POST" action="{{ route('estimates.areas.destroy', [$estimate, $area]) }}" class="hidden">
@@ -1015,6 +1075,44 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Minimal wiring to open/close the Calculator drawer and switch tabs (no network calls)
+(function(){
+  function init(){
+    var drawer = document.getElementById('calcDrawer');
+    if (!drawer) return;
+    var overlay = document.getElementById('calcDrawerOverlay');
+    var openBtn = document.getElementById('openCalcDrawerBtn');
+    var closeBtn = document.getElementById('calcDrawerCloseBtn');
+    var createPane = document.getElementById('calcCreatePane');
+    var templatesPane = document.getElementById('calcTemplatesPane');
+    var tabCreate = document.getElementById('calcTabCreateBtn');
+    var tabTemplates = document.getElementById('calcTabTemplatesBtn');
+
+    function setTab(which){
+      var createActive = which === 'create';
+      var tplActive = which === 'templates';
+      if (createPane) createPane.style.display = createActive ? '' : 'none';
+      if (templatesPane) templatesPane.style.display = tplActive ? '' : 'none';
+      if (tabCreate) tabCreate.classList.toggle('bg-gray-100', createActive);
+      if (tabTemplates) tabTemplates.classList.toggle('bg-gray-100', tplActive);
+    }
+    function onKey(e){ if (e.key === 'Escape') closeDrawer(); }
+    function openDrawer(defaultTab){ if (!drawer) return; drawer.style.display='block'; setTab(defaultTab||'templates'); document.addEventListener('keydown', onKey); }
+    function closeDrawer(){ if (!drawer) return; drawer.style.display='none'; document.removeEventListener('keydown', onKey); }
+
+    if (openBtn) openBtn.addEventListener('click', function(){ openDrawer('templates'); });
+    if (overlay) overlay.addEventListener('click', closeDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (tabCreate) tabCreate.addEventListener('click', function(){ setTab('create'); });
+    if (tabTemplates) tabTemplates.addEventListener('click', function(){ setTab('templates'); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+@endpush
 
 @push('scripts')
 <script>
@@ -1550,5 +1648,3 @@ window.estimatePage = function(){ return { tab: 'work', activeArea: 'all', showA
 */
 </script>
 @endpush
-
-            const quantityInput = form.querySelector('inpu

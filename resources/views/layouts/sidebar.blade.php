@@ -57,10 +57,19 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('materials.index') }}"
-                       class="block px-4 py-2 text-sm text-brand-100 hover:bg-brand-800">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg><span>Materials Catalog</span></span>
-                    </a>
+                    <details class="group">
+                        <summary class="list-none px-4 py-2 text-sm text-brand-100 hover:bg-brand-800 cursor-pointer rounded flex items-center justify-between">
+                            <span class="inline-flex items-center">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+                                <span>Price List</span>
+                            </span>
+                            <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                        </summary>
+                        <div class="ml-6 mt-1 space-y-1">
+                            <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-100 hover:bg-brand-800">Materials Catalog</a>
+                            <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-100 hover:bg-brand-800">Labor Catalog</a>
+                        </div>
+                    </details>
                 </li>
                 <li>
                     <details class="group">
