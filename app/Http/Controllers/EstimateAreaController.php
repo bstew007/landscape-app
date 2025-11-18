@@ -12,11 +12,15 @@ class EstimateAreaController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'identifier' => ['nullable', 'string', 'max:255'],
+            'cost_code_id' => ['nullable', 'exists:cost_codes,id'],
             'description' => ['nullable', 'string'],
         ]);
         $max = (int) ($estimate->areas()->max('sort_order') ?? 0);
         $area = $estimate->areas()->create([
             'name' => $data['name'],
+            'identifier' => $data['identifier'] ?? null,
+            'cost_code_id' => $data['cost_code_id'] ?? null,
             'description' => $data['description'] ?? null,
             'sort_order' => $max + 1,
         ]);
@@ -34,6 +38,8 @@ class EstimateAreaController extends Controller
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'identifier' => ['nullable', 'string', 'max:255'],
+            'cost_code_id' => ['nullable', 'exists:cost_codes,id'],
             'description' => ['nullable', 'string'],
         ]);
         $area->update($data);

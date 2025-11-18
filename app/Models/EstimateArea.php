@@ -10,7 +10,7 @@ class EstimateArea extends Model
     use HasFactory;
 
     protected $fillable = [
-        'estimate_id', 'name', 'description', 'sort_order',
+        'estimate_id', 'name', 'identifier', 'cost_code_id', 'description', 'sort_order',
     ];
 
     public function estimate()

@@ -45,6 +45,7 @@
         </x-slot:leading>
         <x-slot:actions>
             <x-brand-button type="button" id="estimateRefreshBtn" variant="outline">Refresh</x-brand-button>
+            <x-brand-button type="button" id="saveAllBtn" class="ml-2">Save All</x-brand-button>
             <x-brand-button href="{{ route('estimates.edit', $estimate) }}" variant="outline">Edit</x-brand-button>
             <form action="{{ route('estimates.destroy', $estimate) }}" method="POST" onsubmit="return confirm('Delete this estimate?');">
                 @csrf
@@ -123,13 +124,15 @@
     </div>
 
     <!-- Tabs Bar -->
-    <div class="bg-white rounded shadow p-2 flex flex-wrap gap-2">
-        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='overview' }" @click="tab='overview'">Customer Info</button>
-        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='work' }" @click="tab='work'">Work & Pricing</button>
-        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='notes' }" @click="tab='notes'">Client Notes</button>
-        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='crew' }" @click="tab='crew'">Crew Notes</button>
-        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='analysis' }" @click="tab='analysis'">Analysis</button>
-        <button class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600' : tab==='files' }" @click="tab='files'">Files</button>
+    <div class="bg-white rounded shadow p-3">
+        <div class="inline-flex rounded-md border bg-gray-50 overflow-x-auto">
+            <button class="px-3 py-1.5 text-base rounded-l-md hover:bg-gray-100 text-gray-700" :class="{ 'bg-gray-200 text-gray-900' : tab==='overview' }" @click="tab='overview'">Customer Info</button>
+            <button class="px-3 py-1.5 text-base hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='work' }" @click="tab='work'">Work & Pricing</button>
+            <button class="px-3 py-1.5 text-base hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='notes' }" @click="tab='notes'">Client Notes</button>
+            <button class="px-3 py-1.5 text-base hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='crew' }" @click="tab='crew'">Crew Notes</button>
+            <button class="px-3 py-1.5 text-base hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='analysis' }" @click="tab='analysis'">Analysis</button>
+            <button class="px-3 py-1.5 text-base rounded-r-md hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='files' }" @click="tab='files'">Files</button>
+        </div>
     </div>
 
     <section class="bg-white rounded-lg shadow p-6 space-y-4" x-show="tab==='overview'">
@@ -447,135 +450,206 @@
             </div>
         </div>
 
-        <div>
-            <h2 class="text-lg font-semibold text-gray-900">Line Items</h2>
-            <p class="text-sm text-gray-500">Includes calculator imports + manual catalog additions.</p>
-            <form method="POST" action="{{ route('estimates.areas.store', $estimate) }}" class="mt-2 flex flex-wrap items-center gap-2" id="createAreaForm">
-                @csrf
-                <input type="text" name="name" placeholder="New work area name" class="form-input text-sm" required>
-                <x-brand-button size="sm" type="submit">Add Work Area</x-brand-button>
-            </form>
-        </div>
 
-        <div class="mb-4 bg-white border rounded p-4">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-semibold text-gray-700">Work Areas:</span>
-                <button type="button" class="px-2 py-1 text-sm rounded border hover:bg-gray-50" data-area-chip="all">All</button>
-                @foreach ($estimate->areas as $area)
-                    <div class="inline-flex items-center gap-1">
-                        <button type="button" class="px-2 py-1 text-sm rounded border hover:bg-gray-50" data-area-chip="{{ $area->id }}">{{ $area->name }}</button>
-                        <form action="{{ route('estimates.areas.destroy', [$estimate, $area]) }}" method="POST" class="inline"
-                              onsubmit="return confirm('Delete this work area? Any items in this area will be unassigned.');">
+
+        <x-modal name="add-work-area" maxWidth="lg">
+            <div class="border-b px-4 py-3">
+                <h3 class="text-lg font-semibold">Add Work Area</h3>
+            </div>
+            <div class="p-4">
+                <form method="POST" action="{{ route('estimates.areas.store', $estimate) }}" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Work Area Name</label>
+                        <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Work Area Identifier (optional)</label>
+                        <input type="text" name="identifier" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="e.g., A1, Zone 3">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Cost Code</label>
+                        <select name="cost_code_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                            <option value="">—</option>
+                            @foreach (($costCodes ?? []) as $cc)
+                                <option value="{{ $cc->id }}">{{ $cc->code }} - {{ $cc->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea name="description" rows="3" class="form-textarea w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Details or special instructions for this area"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <x-secondary-button type="button" x-on:click="$dispatch('close-modal', 'add-work-area')">Cancel</x-secondary-button>
+                        <x-brand-button type="submit">Save Area</x-brand-button>
+                    </div>
+                </form>
+            </div>
+        </x-modal>
+
+        @php $allItems = $estimate->items; @endphp
+        <div class="rounded-lg border border-gray-200 bg-slate-100 shadow-sm overflow-hidden">
+                                <div class="px-4 py-2 border-b bg-gray-50">
+                        <x-brand-button type="button" size="sm"
+                            @click="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'add-work-area' }))">
+                            + Add Work Area
+                        </x-brand-button>
+                    </div>
+            <div id="areasContainer" class="p-2 space-y-6">
+        @forelse ($estimate->areas as $area)
+            @php
+                $areaItems = $allItems->where('area_id', $area->id);
+                $laborHours = $areaItems->where('item_type', 'labor')->sum('quantity');
+                $cogs = $areaItems->filter(fn($i) => in_array($i->item_type, ['labor','material']))->sum('cost_total');
+                $price = $areaItems->sum('line_total');
+                $profit = $price - $cogs;
+            @endphp
+            <div x-data="{ open: true, tab: 'pricing' }" class="mb-6 border rounded-lg overflow-hidden bg-white work-area" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
+                    <div class="px-4 py-3 border-b bg-gray-50">
+                        <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-3">
                             @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 text-xs hover:underline" title="Delete area">Delete</button>
+                            @method('PATCH')
+                            <button type="button" class="text-xs px-2 py-1 rounded border" @click="open = !open" x-text="open ? 'Collapse' : 'Expand'"></button>
+                            <div class="w-16">
+                                <label class="block text-xs font-medium text-gray-600">Order</label>
+                                <input type="number" name="sort_order" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->sort_order ?? $loop->iteration }}">
+                            </div>
+                            <div class="w-full sm:w-48">
+                                <label class="block text-xs font-medium text-gray-600">Name</label>
+                                <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->name }}">
+                            </div>
+                            <div class="w-28">
+                                <label class="block text-xs font-medium text-gray-600">Id</label>
+                                <input type="text" name="identifier" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->identifier }}">
+                            </div>
+                            <div class="w-64">
+                                <label class="block text-xs font-medium text-gray-600">Cost Code</label>
+                                <select name="cost_code_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                                    <option value="">—</option>
+                                    @foreach (($costCodes ?? []) as $cc)
+                                        <option value="{{ $cc->id }}" @selected($area->cost_code_id === $cc->id)>{{ $cc->code }} - {{ $cc->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto pt-1">
+                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
+                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">Hrs</p>
+                                    <p class="text-sm font-semibold text-gray-900">{{ number_format($laborHours, 2) }}</p>
+                                </div>
+                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
+                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">COGS</p>
+                                    <p class="text-sm font-semibold text-gray-900">${{ number_format($cogs, 2) }}</p>
+                                </div>
+                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
+                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">Price</p>
+                                    <p class="text-sm font-semibold text-gray-900">${{ number_format($price, 2) }}</p>
+                                </div>
+                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
+                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">Profit</p>
+                                    <p class="text-sm font-semibold text-gray-900">${{ number_format($profit, 2) }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center pt-1">
+                                <x-brand-button type="button" size="sm" @click="addItemsTab='templates'; showAddItems = true">Add Items + Templates</x-brand-button>
+                            </div>
                         </form>
                     </div>
-                @endforeach
-                <x-brand-button type="button" size="sm" class="ml-auto" @click="showAddItems = true">+ Add Items</x-brand-button>
+                    <div x-show="open" class="px-4 pt-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="inline-flex rounded-md border">
+                                <button type="button" class="px-3 py-1.5 text-sm rounded-l-md hover:bg-gray-100 text-gray-700" :class="{ 'bg-gray-200 text-gray-900': tab==='pricing' }" @click="tab='pricing'">
+                                    <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    Edit Pricing
+                                </button>
+                                <button type="button" class="px-3 py-1.5 text-sm rounded-r-md hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900': tab==='notes' }" @click="tab='notes'">
+                                    <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9l7 7v9a2 2 0 0 1-2 2z"/><path d="M17 21v-8h-6"/></svg>
+                                    Edit Notes
+                                </button>
+                            </div>
+                        </div>
+                        <div x-show="tab==='pricing'" class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                                    <tr>
+                                        <th class="text-left px-3 py-2">Name</th>
+                                        <th class="text-center px-3 py-2">Qty</th>
+                                        <th class="text-center px-3 py-2">Units</th>
+                                        <th class="text-center px-3 py-2">Unit Cost</th>
+                                        <th class="text-center px-3 py-2">Unit Price</th>
+                                        <th class="text-center px-3 py-2">Profit</th>
+                                        <th class="text-center px-3 py-2">Total Cost</th>
+                                        <th class="text-right px-3 py-2">Total Price</th>
+                                        <th class="px-3 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($areaItems as $item)
+                                        @php $rowProfit = $item->margin_total; @endphp
+                                        <tr class="border-t">
+                                            <td class="px-3 py-2">
+                                                <form method="POST" action="{{ route('estimates.items.update', [$estimate, $item]) }}" class="contents">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="area_id" value="{{ $area->id }}">
+                                                    <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->name }}">
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                    <input type="number" step="0.01" min="0" name="quantity" class="form-input w-24 mx-auto border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->quantity }}">
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                    <input type="text" name="unit" class="form-input w-24 mx-auto border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->unit }}">
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                    <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->unit_cost }}">
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                    <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->unit_price }}">
+                                            </td>
+                                            <td class="px-3 py-2 text-center text-gray-700">
+                                                ${{ number_format($rowProfit, 2) }}
+                                            </td>
+                                            <td class="px-3 py-2 text-center text-gray-700">
+                                                ${{ number_format($item->cost_total, 2) }}
+                                            </td>
+                                            <td class="px-3 py-2 text-right font-semibold text-gray-900">
+                                                ${{ number_format($item->line_total, 2) }}
+                                            </td>
+                                            <td class="px-3 py-2 text-right space-x-2">
+                                                    <x-brand-button type="submit" size="sm" variant="outline">Save</x-brand-button>
+                                                </form>
+                                                <form action="{{ route('estimates.items.destroy', [$estimate, $item]) }}" method="POST" class="inline" onsubmit="return confirm('Remove this line item?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <x-danger-button size="sm" type="submit">Delete</x-danger-button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="9" class="px-3 py-4 text-sm text-gray-500">No items in this work area yet.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="tab==='notes'" class="pb-4">
+                            <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="space-y-2">
+                                @csrf
+                                @method('PATCH')
+                                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                                <textarea name="description" rows="5" class="form-textarea w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">{{ old('description', $area->description) }}</textarea>
+                                <p class="text-xs text-gray-500">Use “Save All” at the top to save changes.</p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <p class="text-sm text-gray-500 p-4">No work areas yet. Use “Add Work Area” to create one.</p>
+        @endforelse
             </div>
         </div>
-
-        @if ($estimate->items->isNotEmpty())
-            <div class="overflow-x-auto border rounded">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-                        <tr>
-                            <th class="text-left px-3 py-2">Type</th>
-                            <th class="text-left px-3 py-2">Description</th>
-                            <th class="text-center px-3 py-2">Qty</th>
-                            <th class="text-center px-3 py-2">Unit Cost</th>
-                            <th class="text-center px-3 py-2">Unit Price</th>
-                            <th class="text-center px-3 py-2">Margin</th>
-                            <th class="text-center px-3 py-2">Tax</th>
-                            <th class="text-right px-3 py-2">Line Total</th>
-                            <th class="px-3 py-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                            $grouped = $estimate->items->groupBy('calculation_id');
-                        @endphp
-                        @foreach ($grouped as $calcId => $items)
-                            @php
-                                $calc = $calcId ? $items->first()->calculation : null;
-                                $groupLabel = $calc ? (\Illuminate\Support\Str::headline($calc->calculation_type) . ' Calculation') : 'Manual Items';
-                                $groupSubtotal = $items->sum('line_total');
-                            @endphp
-                            <tr class="bg-gray-50" @if ($calc) data-calculation-id="{{ $calc->id }}" @endif>
-                                <td colspan="7" class="px-3 py-2 text-gray-700 font-semibold">{{ $groupLabel }}</td>
-                                <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="group-subtotal">${{ number_format($groupSubtotal, 2) }}</td>
-                                <td class="px-3 py-2 text-right space-x-2">
-                                    @if ($calc)
-                                        <x-danger-button type="button" size="sm" data-action="remove-group" data-calculation-id="{{ $calc->id }}">Remove Items</x-danger-button>
-                                    @endif
-                                </td>
-                            </tr>
-                            @foreach ($items as $item)
-                                @php
-                                    $marginPercent = $item->margin_rate !== null ? $item->margin_rate * 100 : 0;
-                                @endphp
-                                <tr
-                                    class="border-t"
-                                    data-item-id="{{ $item->id }}"
-                                    @if ($calcId) data-calculation-id="{{ $calcId }}" @endif
-                                    draggable="true"
-                                    data-name="{{ e($item->name) }}"
-                                    data-quantity="{{ $item->quantity }}"
-                                    data-unit="{{ $item->unit }}"
-                                    data-unit-cost="{{ $item->unit_cost }}"
-                                    data-unit-price="{{ $item->unit_price }}"
-                                    data-margin-rate="{{ $item->margin_rate }}"
-                                    data-tax-rate="{{ $item->tax_rate }}"
-                                    data-cost-total="{{ $item->cost_total }}"
-                                    data-margin-total="{{ $item->margin_total }}"
-                                    data-area-id="{{ $item->area_id ?? 0 }}"
-                                    data-item-type="{{ $item->item_type }}"
-                                >
-                                    <td class="px-3 py-2 text-gray-600 capitalize">{{ $item->item_type }}</td>
-                                    <td class="px-3 py-2">
-                                        <div class="font-semibold text-gray-900">{{ $item->name }}</div>
-                                        @if ($item->description)
-                                            <p class="text-xs text-gray-500">{{ $item->description }}</p>
-                                        @endif
-                                        <p class="mt-1 text-xs text-gray-500">Cost total: <span data-col="cost_total">${{ number_format($item->cost_total, 2) }}</span></p>
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-gray-700" data-col="quantity">{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }} {{ $item->unit }}</td>
-                                    <td class="px-3 py-2 text-center text-gray-700" data-col="unit_cost">${{ number_format($item->unit_cost, 2) }}</td>
-                                    <td class="px-3 py-2 text-center text-gray-700" data-col="unit_price">${{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="px-3 py-2 text-center text-gray-700" data-col="margin">
-                                        <div class="font-semibold text-gray-900" data-col="margin_percent">{{ number_format($marginPercent, 2) }}%</div>
-                                        <div class="text-xs text-gray-500" data-col="margin_total">${{ number_format($item->margin_total, 2) }}</div>
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-gray-700" data-col="tax_rate">
-                                        {{ $item->tax_rate > 0 ? number_format($item->tax_rate * 100, 2) . '%' : '—' }}
-                                    </td>
-                                    <td class="px-3 py-2 text-right font-semibold text-gray-900" data-col="line_total">${{ number_format($item->line_total, 2) }}</td>
-                                    <td class="px-3 py-2 text-right space-x-3" data-col="actions">
-                                        <label class="text-xs text-gray-500 mr-1">Area</label>
-                                        <select class="form-select text-xs" data-action="set-area" data-item-id="{{ $item->id }}">
-                                            <option value="">Unassigned</option>
-                                            @foreach ($estimate->areas as $area)
-                                                <option value="{{ $area->id }}" @selected($item->area_id === $area->id)>{{ $area->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <x-brand-button variant="outline" size="sm" type="button" data-action="edit-item" data-item-id="{{ $item->id }}">Edit</x-brand-button>
-                                        <form action="{{ route('estimates.items.destroy', [$estimate, $item]) }}" method="POST"
-                                              onsubmit="return confirm('Remove this line item?')" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <x-danger-button size="sm" type="submit">Delete</x-danger-button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <p class="text-sm text-gray-500">No structured line items yet. Import from calculators or add a catalog item below.</p>
-        @endif
     </section>
 
     <!-- Add Items Slide-over Panel -->
@@ -1098,11 +1172,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Refresh button to reload the page and pick up any changes
         const refreshBtn = document.getElementById('estimateRefreshBtn');
+
+        // === Wire Work Area manual ordering via Order input ===
+        (function wireAreaOrdering(){
+            const container = document.getElementById('areasContainer');
+            if (!container) return;
+            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const baseUrl = "{{ url('estimates/'.$estimate->id.'/areas/reorder') }}";
+
+            function readRows() {
+                return Array.from(container.querySelectorAll('.work-area'));
+            }
+            function getOrderFromRow(row){
+                const input = row.querySelector('input[name="sort_order"]');
+                const v = input ? parseInt(input.value, 10) : NaN;
+                return Number.isFinite(v) ? v : parseInt(row.getAttribute('data-sort-order') || '0', 10);
+            }
+            function applyDomOrder(){
+                const rows = readRows();
+                rows.sort((a,b) => getOrderFromRow(a) - getOrderFromRow(b));
+                rows.forEach(r => container.appendChild(r));
+            }
+            function payload(){
+                return readRows().map(r => ({ id: r.getAttribute('data-area-id'), sort_order: getOrderFromRow(r) }));
+            }
+            async function persist(){
+                try {
+                    await fetch(baseUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                        body: JSON.stringify({ areas: payload() }),
+                    });
+                } catch(e) {/* non-blocking */}
+            }
+            container.addEventListener('change', (e) => {
+                const t = e.target;
+                if (t && t.name === 'sort_order') {
+                    applyDomOrder();
+                    persist();
+                }
+            });
+        })();
         if (refreshBtn) refreshBtn.addEventListener('click', () => autoRefresh());
+
+        // Save All: submits all area + item update forms
+        const saveAllBtn = document.getElementById('saveAllBtn');
+        if (saveAllBtn) {
+            saveAllBtn.addEventListener('click', async () => {
+                try {
+                    showPageSpinner();
+                    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const scope = document.querySelector('[x-show="tab===\'work\'"]') || document;
+                    // Area update forms (PATCH /areas/{id})
+                    const areaForms = Array.from(document.querySelectorAll('form[action*="/areas/"] input[name="_method"][value="PATCH"]')).map(i => i.closest('form'));
+                    // Item update forms (PATCH /items/{id})
+                    const itemForms = Array.from(document.querySelectorAll('form[action*="/items/"] input[name="_method"][value="PATCH"]')).map(i => i.closest('form'));
+
+                    const forms = [...new Set([...areaForms, ...itemForms])];
+
+                    for (const form of forms) {
+                        const action = form.getAttribute('action');
+                        const fd = new FormData(form);
+                        const res = await fetch(action, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                            body: fd,
+                        });
+                        // If a single update fails, continue saving others, then refresh
+                    }
+                    showToast('All changes saved', 'success');
+                    autoRefresh(200);
+                } catch (e) {
+                    hidePageSpinner();
+                    showToast('Save failed', 'error');
+                }
+            });
+        }
         // Build collapsible headers per area with subtotals
-        function buildAreaHeaders() {
-            const tbody = document.querySelector('table tbody');
-            if (!tbody) return;
+        function buildAreaHeaders() { return; // legacy table area headers removed
             // Remove existing
             tbody.querySelectorAll('tr[data-role="area-header"]').forEach(el => el.remove());
             const rows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
@@ -1446,447 +1593,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function resetForm(form) {
             const formType = form.dataset.formType;
-            if (formType === 'material' || formType === 'labor') {
-                const select = form.querySelector('select[name="catalog_id"]');
-                if (select) select.value = '';
-            } else {
-                const name = form.querySelector('input[name="name"]');
-                if (name) name.value = '';
-                const description = form.querySelector('textarea[name="description"]');
-                if (description) description.value = '';
-            }
-
-            const quantityInput = form.querySelector('input[name="quantity"]');
-            if (quantityInput) quantityInput.value = '1';
-
-            const costInput = form.querySelector('input[name="unit_cost"]');
-            if (costInput) costInput.value = '0';
-
-            const unitInput = form.querySelector('input[name="unit"]');
-            if (unitInput) unitInput.value = '';
-
-            const unitPriceInput = form.querySelector('[data-role="unit-price"]');
-            if (unitPriceInput) {
-                unitPriceInput.value = costInput ? costInput.value : '0';
-                unitPriceInput.dataset.manualOverride = '0';
-            }
-
-            const marginDisplay = form.querySelector('[data-role="margin-percent"]');
-            if (marginDisplay) marginDisplay.value = '0';
-
-            const marginHidden = form.querySelector('input[name="margin_rate"]');
-            if (marginHidden) marginHidden.value = '0';
-
-            const taxInput = form.querySelector('input[name="tax_rate"]');
-            if (taxInput) taxInput.value = taxInput.getAttribute('data-default') ?? taxInput.value ?? '0';
-
-            updateFormState(form);
-        }
-
-        async function handleFormSubmit(event, form) {
-            event.preventDefault();
-            clearFormErrors(form);
-            const action = form.getAttribute('action');
-            const payload = new FormData(form);
-
-            try {
-                const response = await fetch(action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: payload,
-                });
-                if (!response.ok) {
-                    throw await response.json().catch(() => ({}));
-                }
-                const data = await response.json();
-                if (data.totals) updateSummary(data.totals);
-                showToast('Line item added', 'success');
-                return autoRefresh();
-            } catch (error) {
-                if (error && error.errors) {
-                    renderFormErrors(form, error.errors);
-                }
-                showToast('Could not add item', 'error');
-            }
-        }
-
-        function ensureManualHeader(tbody) {
-            let manualHeader = tbody.querySelector('tr.bg-gray-50:not([data-calculation-id])');
-            if (!manualHeader) {
-                manualHeader = document.createElement('tr');
-                manualHeader.className = 'bg-gray-50';
-                manualHeader.innerHTML = `
-                    <td colspan="7" class="px-3 py-2 text-gray-700 font-semibold">Manual Items</td>
-                    <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="group-subtotal">$0.00</td>
-                    <td class="px-3 py-2 text-right space-x-2"></td>
-                `;
-                tbody.appendChild(manualHeader);
-            }
-            return manualHeader;
-        }
-
-        function insertOrUpdateRow(item) {
-            const table = document.querySelector('table');
-            const tbody = table ? table.querySelector('tbody') : null;
-            if (!tbody) {
-                return window.location.reload();
-            }
-
-            if (item.calculation_id) {
-                return window.location.reload();
-            }
-
-            const existing = tbody.querySelector(`tr[data-item-id="${item.id}"]`);
-            if (existing) {
-                existing.replaceWith(renderItemRow(item));
-                return;
-            }
-
-            const manualHeader = ensureManualHeader(tbody);
-            const newRow = renderItemRow(item);
-            let insertAfter = manualHeader;
-            let cursor = manualHeader.nextElementSibling;
-            while (cursor && !cursor.classList.contains('bg-gray-50')) {
-                insertAfter = cursor;
-                cursor = cursor.nextElementSibling;
-            }
-
-            insertAfter.insertAdjacentElement('afterend', newRow);
-            newRow.classList.add('bg-brand-50');
-            setTimeout(() => newRow.classList.remove('bg-brand-50'), 1200);
-            updateGroupSubtotal(manualHeader);
-        }
-
-        function updateGroupSubtotal(headerRow) {
-            if (!headerRow) return;
-            let subtotal = 0;
-            let cursor = headerRow.nextElementSibling;
-            while (cursor && !cursor.classList.contains('bg-gray-50')) {
-                const amountCell = cursor.querySelector('[data-col="line_total"]');
-                if (amountCell) {
-                    subtotal += parseNumber(amountCell.textContent, 0);
-                }
-                cursor = cursor.nextElementSibling;
-            }
-            const subtotalCell = headerRow.querySelector('[data-role="group-subtotal"]');
-            if (subtotalCell) subtotalCell.textContent = formatMoney(subtotal);
-        }
-
-        function renderItemRow(item) {
-            const row = document.createElement('tr');
-            row.className = 'border-t';
-            row.setAttribute('data-item-id', item.id);
-            if (item.calculation_id) {
-                row.setAttribute('data-calculation-id', item.calculation_id);
-            }
-            row.setAttribute('draggable', 'true');
-            row.dataset.name = item.name || 'Line Item';
-            row.dataset.itemType = (item.item_type || 'item');
-            row.dataset.quantity = item.quantity ?? 0;
-            row.dataset.unit = item.unit || '';
-            row.dataset.unitCost = item.unit_cost ?? 0;
-            row.dataset.unitPrice = item.unit_price ?? item.unit_cost ?? 0;
-            row.dataset.marginRate = item.margin_rate ?? 0;
-            row.dataset.taxRate = item.tax_rate ?? 0;
-            row.dataset.costTotal = item.cost_total ?? 0;
-            row.dataset.marginTotal = item.margin_total ?? 0;
-
-            const marginPercent = parseNumber(item.margin_rate ?? 0) * 100;
-            const quantityText = `${parseNumber(item.quantity, 0).toFixed(2).replace(/\.00$/, '')} ${item.unit || ''}`.trim();
-            const taxDisplay = parseNumber(item.tax_rate, 0) > 0 ? `${(parseNumber(item.tax_rate, 0) * 100).toFixed(2)}%` : '—';
-            const description = item.description ? `<p class="text-xs text-gray-500">${escapeHtml(item.description)}</p>` : '';
-
-            row.innerHTML = `
-                <td class="px-3 py-2 text-gray-600 capitalize">${escapeHtml(item.item_type || 'item')}</td>
-                <td class="px-3 py-2">
-                    <div class="font-semibold text-gray-900">${escapeHtml(item.name || 'Line Item')}</div>
-                    ${description}
-                    <p class="mt-1 text-xs text-gray-500">Cost total: <span data-col="cost_total">${formatMoney(item.cost_total ?? 0)}</span></p>
-                </td>
-                <td class="px-3 py-2 text-center text-gray-700" data-col="quantity">${escapeHtml(quantityText)}</td>
-                <td class="px-3 py-2 text-center text-gray-700" data-col="unit_cost">${formatMoney(item.unit_cost ?? 0)}</td>
-                <td class="px-3 py-2 text-center text-gray-700" data-col="unit_price">${formatMoney(item.unit_price ?? item.unit_cost ?? 0)}</td>
-                <td class="px-3 py-2 text-center text-gray-700" data-col="margin">
-                    <div class="font-semibold text-gray-900" data-col="margin_percent">${formatPercent(marginPercent, 2)}</div>
-                    <div class="text-xs text-gray-500" data-col="margin_total">${formatMoney(item.margin_total ?? 0)}</div>
-                </td>
-                <td class="px-3 py-2 text-center text-gray-700" data-col="tax_rate">${taxDisplay}</td>
-                <td class="px-3 py-2 text-right font-semibold text-gray-900" data-col="line_total">${formatMoney(item.line_total ?? 0)}</td>
-                <td class="px-3 py-2 text-right space-x-3" data-col="actions">
-                    <button type="button" class="text-brand-700 hover:underline text-sm" data-action="edit-item" data-item-id="${item.id}">Edit</button>
-                    <form action="{{ url('estimates/'.$estimate->id.'/items') }}/${item.id}" method="POST" class="inline" onsubmit="return confirm('Remove this line item?')">
-                        <input type="hidden" name="_token" value="${csrfToken}">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <x-danger-button size="sm" type="submit">Delete</x-danger-button>
-                    </form>
-                </td>
-            `;
-            return row;
-        }
-
-        function escapeHtml(value) {
-            return (value ?? '').toString()
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        }
-
-        const tbody = document.querySelector('table tbody');
-        if (tbody) {
-            let dragSrc = null;
-            tbody.addEventListener('dragstart', (event) => {
-                const row = event.target.closest('tr[data-item-id]');
-                if (!row) return;
-                dragSrc = row;
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', row.dataset.itemId);
-                row.classList.add('opacity-50');
-            });
-
-            tbody.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-            });
-
-            tbody.addEventListener('drop', (event) => {
-                event.preventDefault();
-                const targetRow = event.target.closest('tr[data-item-id]');
-                if (!dragSrc || !targetRow || dragSrc === targetRow) return;
-                const rect = targetRow.getBoundingClientRect();
-                const before = (event.clientY - rect.top) < rect.height / 2;
-                if (before) {
-                    targetRow.parentNode.insertBefore(dragSrc, targetRow);
-                } else {
-                    targetRow.parentNode.insertBefore(dragSrc, targetRow.nextSibling);
-                }
-                dragSrc.classList.remove('opacity-50');
-                dragSrc = null;
-
-                const ids = Array.from(tbody.querySelectorAll('tr[data-item-id]')).map(tr => parseInt(tr.dataset.itemId, 10));
-                fetch(reorderUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ order: ids }),
-                }).then(async (response) => {
-                    if (!response.ok) throw await response.json().catch(() => ({}));
-                    const json = await response.json();
-                    if (json.totals) updateSummary(json.totals);
-                    showToast('Item order updated', 'success');
-                    autoRefresh();
-                }).catch(() => window.location.reload());
-            });
-
-            tbody.addEventListener('dragend', (event) => {
-                const row = event.target.closest('tr[data-item-id]');
-                if (row) row.classList.remove('opacity-50');
-                dragSrc = null;
-            });
-        }
-
-        document.addEventListener('click', async (event) => {
-            const editBtn = event.target.closest('[data-action="edit-item"]');
-            const saveBtn = event.target.closest('[data-action="save-item"]');
-            const cancelBtn = event.target.closest('[data-action="cancel-edit"]');
-            const removeGroupBtn = event.target.closest('[data-action="remove-group"]');
-
-            if (editBtn) {
-                const id = editBtn.dataset.itemId;
-                const row = document.querySelector(`tr[data-item-id="${id}"]`);
-                if (row) enterEditMode(row);
-                return;
-            }
-
-            if (cancelBtn) {
-                const id = cancelBtn.dataset.itemId;
-                const row = document.querySelector(`tr[data-item-id="${id}"]`);
-                if (row && row.dataset.originalHtml) {
-                    row.innerHTML = row.dataset.originalHtml;
-                    row.dataset.editing = '0';
-                }
-                return;
-            }
-
-            if (saveBtn) {
-                const id = saveBtn.dataset.itemId;
-                const row = document.querySelector(`tr[data-item-id="${id}"]`);
-                if (!row) return;
-
-                const payload = collectRowPayload(row);
-                if (!payload) return;
-
-                try {
-                    const response = await fetch(`${updateBaseUrl}${id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify(payload),
-                    });
-                    if (!response.ok) throw await response.json().catch(() => ({}));
-                    const data = await response.json();
-                    row.dataset.editing = '0';
-                    row.dataset.originalHtml = '';
-                    const updatedRow = renderItemRow(data.item);
-                    row.replaceWith(updatedRow);
-                    if (data.totals) updateSummary(data.totals);
-                    showToast('Item updated', 'success');
-                    autoRefresh();
-                } catch (error) {
-                    showToast('Failed to update item', 'error');
-                }
-                return;
-            }
-
-            if (removeGroupBtn) {
-                const calcId = removeGroupBtn.dataset.calculationId;
-                if (!calcId) return;
-                try {
-                    const response = await fetch(`${removeCalcBaseUrl}${calcId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({ _method: 'DELETE' }),
-                    });
-                    if (!response.ok) throw await response.json().catch(() => ({}));
-                    const data = await response.json();
-                    document.querySelectorAll(`tr[data-calculation-id="${calcId}"]`).forEach(row => row.remove());
-                    if (data.totals) updateSummary(data.totals);
-                    showToast('Removed items for calculation', 'success');
-                    autoRefresh();
-                } catch (error) {
-                    window.location.reload();
-                }
-            }
-        });
-
-        function collectRowPayload(row) {
-            const name = row.querySelector('[data-edit-name]')?.value ?? '';
-            const quantity = parseNumber(row.querySelector('[data-edit-qty]')?.value, NaN);
-            const unit = row.querySelector('[data-edit-unit]')?.value ?? '';
-            const unitCost = parseNumber(row.querySelector('[data-edit-unit-cost]')?.value, NaN);
-            const unitPrice = parseNumber(row.querySelector('[data-edit-unit-price]')?.value, NaN);
-            const marginPercent = parseNumber(row.querySelector('[data-edit-margin]')?.value, NaN);
-            const taxRate = parseNumber(row.querySelector('[data-edit-tax]')?.value, NaN);
-
-            if (!name.trim().length) {
-                alert('Item name is required.');
-                return null;
-            }
-            if (!Number.isFinite(quantity) || quantity < 0) {
-                alert('Invalid quantity value.');
-                return null;
-            }
-            if (!Number.isFinite(unitCost) || unitCost < 0) {
-                alert('Invalid unit cost value.');
-                return null;
-            }
-            if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-                alert('Invalid unit price value.');
-                return null;
-            }
-            if (!Number.isFinite(marginPercent)) {
-                alert('Invalid margin percentage.');
-                return null;
-            }
-            if (!Number.isFinite(taxRate) || taxRate < 0) {
-                alert('Invalid tax rate.');
-                return null;
-            }
-
-            return {
-                name,
-                unit,
-                quantity,
-                unit_cost: unitCost,
-                unit_price: unitPrice,
-                margin_rate: clamp(marginPercent / 100, -0.99, 10),
-                tax_rate: taxRate,
-            };
-        }
-
-        function enterEditMode(row) {
-            if (row.dataset.editing === '1') return;
-            row.dataset.editing = '1';
-            row.dataset.originalHtml = row.innerHTML;
-
-            const name = row.dataset.name || '';
-            const quantity = parseNumber(row.dataset.quantity, 0);
-            const unit = row.dataset.unit || '';
-            const unitCost = parseNumber(row.dataset.unitCost, 0);
-            const unitPrice = parseNumber(row.dataset.unitPrice, unitCost);
-            const marginRate = parseNumber(row.dataset.marginRate, 0);
-            const marginPercent = marginRate * 100;
-            const taxRate = parseNumber(row.dataset.taxRate, 0);
-
-            const cells = row.children;
-            cells[1].innerHTML = `
-                <input type="text" class="form-input w-full text-sm" data-edit-name value="${escapeHtml(name)}">
-                <p class="text-xs text-gray-500 mt-1">Update name, pricing, and margins</p>
-            `;
-            cells[2].innerHTML = `
-                <div class="flex items-center justify-center gap-2">
-                    <input type="number" step="0.01" min="0" class="form-input w-24 text-sm text-center" data-edit-qty value="${quantity}">
-                    <input type="text" class="form-input w-16 text-sm text-center" data-edit-unit value="${escapeHtml(unit)}">
-                </div>
-            `;
-            cells[3].innerHTML = `<input type="number" step="0.01" min="0" class="form-input w-24 text-sm text-center" data-edit-unit-cost value="${unitCost.toFixed(2)}">`;
-            cells[4].innerHTML = `<input type="number" step="0.01" min="0" class="form-input w-24 text-sm text-center" data-edit-unit-price value="${unitPrice.toFixed(2)}">`;
-            cells[5].innerHTML = `
-                <div class="flex flex-col items-center gap-1">
-                    <input type="number" step="0.1" min="-99" class="form-input w-24 text-sm text-center" data-edit-margin value="${marginPercent.toFixed(2)}">
-                    <span class="text-xs text-gray-500" data-edit-margin-preview>${formatMoney((unitPrice - unitCost) * quantity)} total</span>
-                </div>
-            `;
-            cells[6].innerHTML = `<input type="number" step="0.001" min="0" class="form-input w-24 text-sm text-center" data-edit-tax value="${taxRate.toFixed(3)}">`;
-            cells[7].innerHTML = `
-                <div class="text-right space-x-2">
-                    <button type="button" class="text-sm text-brand-700 hover:underline" data-action="save-item" data-item-id="${row.dataset.itemId}">Save</button>
-                    <button type="button" class="text-sm text-gray-600 hover:underline" data-action="cancel-edit" data-item-id="${row.dataset.itemId}">Cancel</button>
-                </div>
-            `;
-
-            // Live preview of margin total while editing
-            const qtyInput = row.querySelector('[data-edit-qty]');
-            const unitCostInput = row.querySelector('[data-edit-unit-cost]');
-            const unitPriceInput = row.querySelector('[data-edit-unit-price]');
-            const marginInput = row.querySelector('[data-edit-margin]');
-            const previewEl = row.querySelector('[data-edit-margin-preview]');
-            function recomputePreview(){
-                const q = parseFloat(qtyInput?.value || '0') || 0;
-                const uc = parseFloat(unitCostInput?.value || '0') || 0;
-                const up = parseFloat(unitPriceInput?.value || '0') || 0;
-                const total = (up - uc) * q;
-                if (previewEl) previewEl.textContent = `${formatMoney(total)} total`;
-            }
-            [qtyInput, unitCostInput, unitPriceInput, marginInput].forEach(el => {
-                if (!el) return;
-                el.addEventListener('input', () => {
-                    if (el === marginInput && unitCostInput && unitPriceInput) {
-                        const m = parseFloat(marginInput.value || '0');
-                        const rate = isFinite(m) ? m / 100 : 0;
-                        const uc = parseFloat(unitCostInput.value || '0') || 0;
-                        unitPriceInput.value = (uc * (1 + rate)).toFixed(2);
-                    }
-                    recomputePreview();
-                });
-            });
-        }
-
-        // Close DOMContentLoaded handler
-});
-</script>
-@endpush
-
+            if (formType === 'material' || formTy

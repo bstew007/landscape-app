@@ -171,6 +171,8 @@ class EstimateController extends Controller
             'defaultMarginRate' => $defaultMarginRate,
             'defaultMarginPercent' => $defaultMarginPercent,
             'statuses' => Estimate::STATUSES,
+            // Cost codes for Work Area dialog
+            'costCodes' => \App\Models\CostCode::where('is_active', true)->whereNotNull('qbo_item_id')->orderBy('code')->get(),
         ]);
     }
 
