@@ -63,43 +63,44 @@
     </x-page-header>
 
     <!-- Add via Calculator Slide-over (controlled by JS module) -->
-    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;" x-data="{ section: 'templates', itemsTab: 'labor' }">
+    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;" x-data="{ itemsTab: 'labor' }">
         <div id="calcDrawerOverlay" class="absolute inset-0 bg-black/30"></div>
         <div class="absolute right-0 top-0 h-full w-full sm:max-w-2xl bg-white shadow-xl flex flex-col">
             <div class="flex items-center justify-between px-4 py-3 border-b">
-                <h3 class="text-lg font-semibold">Add Items</h3>
-                <button id="calcDrawerCloseBtn" class="text-gray-500 hover:text-gray-700">Close</button>
+                <h3 class="text-lg font-semibold"></h3>
+                <x-close-button id="calcDrawerCloseBtn" size="md" />
             </div>
             <div class="px-4 pt-3 border-b">
-                <div class="inline-flex rounded border overflow-hidden">
-                    <button id="calcTabCreateBtn" class="px-3 py-1 text-sm" @click="section='create'">Create</button>
-                    <button id="calcTabTemplatesBtn" class="px-3 py-1 text-sm" @click="section='templates'">Templates</button>
-                    <button class="px-3 py-1 text-sm" @click="section='items'">Items</button>
+                <div class="inline-flex rounded-md border overflow-x-auto">
+                    <button type="button" class="px-3 py-1.5 text-sm rounded-l-md hover:bg-gray-100 text-gray-700" :class="{ 'bg-gray-200 text-gray-900': itemsTab==='labor' }" @click="itemsTab='labor'">
+                        <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/><path d="M6 20v-2a4 4 0 0 1 4-4h4"/></svg>
+                        Labor
+                    </button>
+                    <button type="button" class="px-3 py-1.5 text-sm hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900': itemsTab==='equipment' }" @click="itemsTab='equipment'">
+                        <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h4l3-3 4 6 3-3 4 0"/><path d="M14 19H6a3 3 0 0 1-3-3V7"/></svg>
+                        Equipment
+                    </button>
+                    <button type="button" class="px-3 py-1.5 text-sm hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900': itemsTab==='materials' }" @click="itemsTab='materials'">
+                        <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+                        Materials
+                    </button>
+                    <button type="button" class="px-3 py-1.5 text-sm hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900': itemsTab==='subs' }" @click="itemsTab='subs'">
+                        <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Subs
+                    </button>
+                    <button type="button" class="px-3 py-1.5 text-sm hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900': itemsTab==='other' }" @click="itemsTab='other'">
+                        <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M3 12h18"/></svg>
+                        Other
+                    </button>
+                    <button type="button" class="px-3 py-1.5 text-sm rounded-r-md hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900': itemsTab==='templates' }" @click="itemsTab='templates'">
+                        <svg class="inline h-4 w-4 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h18"/></svg>
+                        Templates
+                    </button>
                 </div>
             </div>
-            <!-- Create Pane -->
-            <div id="calcCreatePane" class="p-4 overflow-y-auto space-y-4" x-show="section==='create'">
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium">Calculator</label>
-                    <select id="calcTypeSelect" class="form-select w-full sm:w-64 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
-                        <option value="mulching">Mulching</option>
-                        <option value="weeding">Weeding</option>
-                        <option value="planting">Planting</option>
-                        <option value="turf_mowing">Turf Mowing</option>
-                        <option value="retaining_wall">Retaining Wall</option>
-                        <option value="paver_patio">Paver Patio</option>
-                        <option value="fence">Fence</option>
-                        <option value="syn_turf">Synthetic Turf</option>
-                        <option value="pruning">Pruning</option>
-                    </select>
-                </div>
-                <div>
-                    <x-brand-button href="#" id="openTemplateModeLink">Open in Template Mode</x-brand-button>
-                    <p class="text-xs text-gray-500 mt-1">Opens the selected calculator with template fields. Save as template and optionally import into this estimate.</p>
-                </div>
-            </div>
+
             <!-- Templates Pane -->
-            <div id="calcTemplatesPane" class="p-4 overflow-y-auto space-y-4" x-show="section==='templates'" style="display:none;">
+            <div id="calcTemplatesPane" class="p-4 overflow-y-auto space-y-4" x-show="itemsTab==='templates'">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <label class="text-sm">Type:</label>
@@ -120,23 +121,34 @@
                         <x-secondary-button id="calcTplRefresh" size="sm">Refresh</x-secondary-button>
                     </div>
                 </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium">Calculator</label>
+                    <select id="calcTypeSelect" class="form-select w-full sm:w-64 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                        <option value="mulching">Mulching</option>
+                        <option value="weeding">Weeding</option>
+                        <option value="planting">Planting</option>
+                        <option value="turf_mowing">Turf Mowing</option>
+                        <option value="retaining_wall">Retaining Wall</option>
+                        <option value="paver_patio">Paver Patio</option>
+                        <option value="fence">Fence</option>
+                        <option value="syn_turf">Synthetic Turf</option>
+                        <option value="pruning">Pruning</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <x-brand-button href="#" id="openTemplateModeLink">Open in Template Mode</x-brand-button>
+                    <x-secondary-button as="a" href="#" id="openCreateLink" size="sm">Create</x-secondary-button>
+                </div>
                 <div id="calcTplLoading" class="text-sm text-gray-500" style="display:none;">Loading templates...</div>
                 <div id="calcTplList" class="space-y-2"></div>
             </div>
             <!-- Items Pane (Labor, Equipment, Materials, Subs, Other) -->
-            <div id="calcItemsPane" class="p-4 overflow-y-auto space-y-4" x-show="section==='items'">
-                <div class="inline-flex flex-wrap gap-2">
-                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='labor' }" @click="itemsTab='labor'">Labor</button>
-                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='equipment' }" @click="itemsTab='equipment'">Equipment</button>
-                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='materials' }" @click="itemsTab='materials'">Materials</button>
-                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='subs' }" @click="itemsTab='subs'">Subs</button>
-                    <button class="px-3 py-1 text-sm rounded border" :class="{ 'bg-brand-50 text-brand-700 border-brand-300': itemsTab==='other' }" @click="itemsTab='other'">Other</button>
-                </div>
+            <div id="calcItemsPane" class="p-4 overflow-y-auto space-y-4" x-show="itemsTab!=='templates'">
                 <!-- Labor List -->
                 <div x-show="itemsTab==='labor'" class="space-y-2">
                     <div class="flex items-center justify-between">
                         <h4 class="text-sm font-semibold">Labor Catalog</h4>
-                        <x-brand-button as="a" href="{{ route('labor.create') }}" size="sm">New</x-brand-button>
+                        <x-brand-button type="button" size="sm" @click="$dispatch('open-modal','new-labor')">New</x-brand-button>
                     </div>
                     <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
                         @foreach ($laborCatalog as $labor)
@@ -157,7 +169,7 @@
                 <div x-show="itemsTab==='materials'" class="space-y-2">
                     <div class="flex items-center justify-between">
                         <h4 class="text-sm font-semibold">Materials Catalog</h4>
-                        <x-brand-button as="a" href="{{ route('materials.create') }}" size="sm">New</x-brand-button>
+                        <x-brand-button type="button" size="sm" @click="$dispatch('open-modal','new-material')">New</x-brand-button>
                     </div>
                     <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
                         @foreach ($materials as $material)
@@ -1072,6 +1084,42 @@
             <p class="text-sm text-gray-500">No invoice generated yet. Use the button above to create one.</p>
         @endif
     </section>
+
+<!-- New Labor Modal -->
+<x-modal name="new-labor" maxWidth="xl">
+    <div class="border-b px-4 py-3 flex items-center justify-between">
+        <h3 class="text-lg font-semibold">New Labor Item</h3>
+        <x-close-button @click="$dispatch('close-modal','new-labor')" />
+    </div>
+    <div class="p-4">
+        <form method="POST" action="{{ route('labor.store') }}" class="space-y-4">
+            @csrf
+            @include('labor._form')
+            <div class="flex items-center justify-end gap-2">
+                <x-secondary-button type="button" @click="$dispatch('close-modal','new-labor')">Cancel</x-secondary-button>
+                <x-brand-button type="submit">Save</x-brand-button>
+            </div>
+        </form>
+    </div>
+</x-modal>
+
+<!-- New Material Modal -->
+<x-modal name="new-material" maxWidth="xl">
+    <div class="border-b px-4 py-3 flex items-center justify-between">
+        <h3 class="text-lg font-semibold">New Material</h3>
+        <x-close-button @click="$dispatch('close-modal','new-material')" />
+    </div>
+    <div class="p-4">
+        <form method="POST" action="{{ route('materials.store') }}" class="space-y-4">
+            @csrf
+            @include('materials._form')
+            <div class="flex items-center justify-end gap-2">
+                <x-secondary-button type="button" @click="$dispatch('close-modal','new-material')">Cancel</x-secondary-button>
+                <x-brand-button type="submit">Save</x-brand-button>
+            </div>
+        </form>
+    </div>
+</x-modal>
 
 </div>
 @endsection
