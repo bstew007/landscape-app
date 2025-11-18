@@ -505,12 +505,26 @@
                 $price = $areaItems->sum('line_total');
                 $profit = $price - $cogs;
             @endphp
-            <div x-data="{ open: true, tab: 'pricing' }" class="mb-6 border rounded-lg overflow-hidden bg-white work-area" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
+            <div x-data="{ open: true, tab: 'pricing', menuOpen: false }" class="mb-6 border rounded-lg overflow-hidden bg-white work-area" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
                     <div class="px-4 py-3 border-b bg-gray-50">
                         <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-3">
                             @csrf
                             @method('PATCH')
-                            <button type="button" class="text-xs px-2 py-1 rounded border" @click="open = !open" x-text="open ? 'Collapse' : 'Expand'"></button>
+                            <div class="relative inline-block text-left">
+                                <button type="button" class="text-xs px-2 py-1 rounded border" @click.stop="menuOpen = !menuOpen" @keydown.escape.window="menuOpen = false">
+                                    Options
+                                </button>
+                                <div x-show="menuOpen" x-transition @click.away="menuOpen = false"
+                                     class="absolute z-10 mt-1 w-28 right-0 bg-white border rounded shadow text-xs py-1">
+                                    <button type="button" class="block w-full text-left px-3 py-1 hover:bg-gray-100" @click="open = true; menuOpen = false">Edit</button>
+                                    <button type="button" class="block w-full text-left px-3 py-1 hover:bg-gray-100" @click="open = false; menuOpen = false">Close</button>
+                                    <button type="button" class="block w-full text-left px-3 py-1 text-red-600 hover:bg-red-50" @click.prevent="$refs.deleteForm.submit()">Delete</button>
+                                </div>
+                            </div>
+                            <form x-ref="deleteForm" method="POST" action="{{ route('estimates.areas.destroy', [$estimate, $area]) }}" class="hidden">
+                                @csrf
+                                @method('DELETE')
+                            </form>
                             <div class="w-16">
                                 <label class="block text-xs font-medium text-gray-600">Order</label>
                                 <input type="number" name="sort_order" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->sort_order ?? $loop->iteration }}">
