@@ -1,14 +1,26 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="max-w-5xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">{{ $budget->exists ? 'Edit Budget' : 'New Budget' }}</h1>
-        <a href="{{ route('admin.budgets.index') }}" class="px-4 py-2 rounded border">Back</a>
-    </div>
+@php($initialSalesRows = old('inputs.sales.rows', data_get($budget->inputs, 'sales.rows', [])))
+<div class="max-w-7xl mx-auto py-6 text-sm" data-theme="compact" x-data="budgetEditor()">
+    <x-page-header title="{{ $budget->exists ? 'Budget' : 'New Budget' }}" eyebrow="Admin" variant="compact">
+        <x-slot:leading>
+            <div class="h-10 w-10 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-sm">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                    <path d="M8 10h8M8 14h5"></path>
+                    <path d="M12 2v2M7 2v2M17 2v2"></path>
+                </svg>
+            </div>
+        </x-slot:leading>
+        <x-slot:actions>
+            <x-brand-button href="{{ route('admin.budgets.index') }}">Back</x-brand-button>
+            <x-brand-button type="submit" form="companyBudgetForm">Save</x-brand-button>
+        </x-slot:actions>
+    </x-page-header>
 
     @if ($errors->any())
-        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded">
+        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded mb-4">
             <ul class="list-disc list-inside text-sm">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -17,129 +29,320 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="space-y-6 bg-white rounded shadow p-6">
+    <form id="companyBudgetForm" method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="bg-white rounded shadow overflow-hidden text-sm">
         @csrf
         @if ($budget->exists)
             @method('PUT')
         @endif
+        <div class="flex">
+            <!-- Left Nav -->
+            <aside class="w-56 md:w-64 border-r bg-gray-50">
+                <nav class="p-2">
+                    @foreach (['Budget Info','Sales Budget','Field Labor','Equipment','Materials','Subcontracting','Overhead','Profit/Loss','OH Recovery','Analysis'] as $s)
+                        <button type="button"
+                                @click="section='{{ $s }}'"
+                                :class="{'bg-white text-brand-700 border-brand-300': section==='{{ $s }}'}"
+                                class="w-full text-left px-3 py-2 text-sm rounded border hover:bg-white mb-1">
+                            {{ $s }}
+                        </button>
+                    @endforeach
+                    <div class="mt-3 pt-3 border-t">
+                        <label class="inline-flex items-center text-sm">
+                            <input type="checkbox" name="is_active" value="1" class="mr-2" {{ old('is_active', $budget->is_active) ? 'checked' : '' }}>
+                            Active Budget
+                        </label>
+                    </div>
+                </nav>
+            </aside>
 
-        <div class="grid md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium">Name</label>
-                <input type="text" name="name" class="form-input w-full mt-1" value="{{ old('name', $budget->name) }}" required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Year</label>
-                <input type="number" name="year" class="form-input w-full mt-1" value="{{ old('year', $budget->year) }}" min="2000" max="2100">
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Effective From</label>
-                <input type="date" name="effective_from" class="form-input w-full mt-1" value="{{ old('effective_from', optional($budget->effective_from)->format('Y-m-d')) }}">
-            </div>
-        </div>
+            <!-- Main Panel -->
+            <div class="flex-1 p-4 space-y-4 text-sm">
+                <!-- BUDGET INFO -->
+                <section x-show="section==='Budget Info'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Budget Info</h2>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium">Name</label>
+                            <input type="text" name="name" class="form-input w-full mt-1" value="{{ old('name', $budget->name) }}" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Year</label>
+                            <input type="number" name="year" class="form-input w-full mt-1" value="{{ old('year', $budget->year) }}" min="2000" max="2100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Effective From</label>
+                            <input type="date" name="effective_from" class="form-input w-full mt-1" value="{{ old('effective_from', optional($budget->effective_from)->format('Y-m-d')) }}">
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium">Desired Profit Margin (%)</label>
+                            <input type="number" step="0.1" min="0" max="99.9" name="desired_profit_margin_percent" class="form-input w-full mt-1" value="{{ old('desired_profit_margin_percent', number_format(($budget->desired_profit_margin ?? 0.2) * 100, 1)) }}">
+                            <input type="hidden" name="desired_profit_margin" value="{{ old('desired_profit_margin', $budget->desired_profit_margin ?? 0.2) }}" id="desired_profit_margin_hidden">
+                            <p class="text-xs text-gray-500 mt-1">Target company profit margin used in pricing.</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="rounded border p-3 bg-gray-50 text-sm text-gray-700">
+                                Define revenue goals, pricing strategy, and global assumptions here.
+                                We’ll expand this section with forecast and sales mix inputs.
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-        <div class="grid md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium">Desired Profit Margin (%)</label>
-                <input type="number" step="0.1" min="0" max="99.9" name="desired_profit_margin_percent" class="form-input w-full mt-1" value="{{ old('desired_profit_margin_percent', number_format(($budget->desired_profit_margin ?? 0.2) * 100, 1)) }}">
-                <input type="hidden" name="desired_profit_margin" value="{{ old('desired_profit_margin', $budget->desired_profit_margin ?? 0.2) }}" id="desired_profit_margin_hidden">
-                <p class="text-xs text-gray-500 mt-1">Used to compute target charge-out rate.</p>
-            </div>
-            <div class="flex items-end">
-                <label class="inline-flex items-center mt-6">
-                    <input type="checkbox" name="is_active" value="1" class="mr-2" {{ old('is_active', $budget->is_active) ? 'checked' : '' }}>
-                    Make Active
-                </label>
-            </div>
-        </div>
+                <!-- SALES BUDGET -->
+                <section x-show="section==='Sales Budget'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <svg class="h-5 w-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
+                        <span>SALES BUDGET</span>
+                    </h2>
+                    <div class="rounded border p-4">
+                        <!-- Graphics Row -->
+                        <div class="grid md:grid-cols-3 gap-4 mb-4">
+                            <!-- Pie: Divisional Sales -->
+                            <div class="rounded border p-3">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Divisional Sales</div>
+                                <div class="flex items-center gap-4">
+                                    <div class="relative h-28 w-28 rounded-full"
+                                         :style="{ backgroundImage: pieGradient() }">
+                                        <div class="absolute inset-3 bg-white rounded-full"></div>
+                                    </div>
+                                    <div class="flex-1 text-xs">
+                                        <template x-for="seg in divisionSegments()" :key="seg.label">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="inline-block w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: seg.color }"></span>
+                                                <span x-text="seg.percent.toFixed(0) + '%'" class="tabular-nums"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="divisionSegments().length === 0" class="text-gray-500">No data</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Prev vs Forecast -->
+                            <div class="rounded border p-3">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Prev vs Forecast</div>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span>Previous</span>
+                                        <span x-text="formatMoney(prevTotal())"></span>
+                                    </div>
+                                    <div class="h-2 rounded bg-gray-200 overflow-hidden">
+                                        <div class="h-2 bg-gray-500" :style="{ width: barWidth(prevTotal()) }"></div>
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span>Forecast</span>
+                                        <span x-text="formatMoney(forecastTotal())"></span>
+                                    </div>
+                                    <div class="h-2 rounded bg-brand-200 overflow-hidden">
+                                        <div class="h-2 bg-brand-600" :style="{ width: barWidth(forecastTotal()) }"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Change over Previous -->
+                            <div class="rounded border p-3">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Change over Previous</div>
+                                <div class="flex items-center gap-4">
+                                    <div class="relative h-28 w-28 rounded-full" :style="{ backgroundImage: changeRing() }">
+                                        <div class="absolute inset-4 bg-white rounded-full flex items-center justify-center text-lg font-semibold">
+                                            <span x-text="(changePercent() >= 0 ? '+' : '') + changePercent().toFixed(1) + '%' "></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-700">
+                                        <div class="font-semibold" x-text="(changePercent() >= 0 ? 'Increase' : 'Decrease')"></div>
+                                        <div>Total Prev: <span class="font-semibold" x-text="formatMoney(prevTotal())"></span></div>
+                                        <div>Total Forecast: <span class="font-semibold" x-text="formatMoney(forecastTotal())"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Header Row -->
+                        <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
+                            <div class="col-span-2">Acct. ID</div>
+                            <div class="col-span-2">Division</div>
+                            <div class="col-span-2">Previous $</div>
+                            <div class="col-span-2">Forecast $</div>
+                            <div class="col-span-1">% Diff</div>
+                            <div class="col-span-2">Comments</div>
+                            <div class="col-span-1 text-right">Actions</div>
+                        </div>
 
-        <div class="rounded border p-4">
-            <h3 class="font-semibold mb-3">Labor Inputs</h3>
-            <div class="grid md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium">Headcount</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][headcount]" class="form-input w-full mt-1" value="{{ old('inputs.labor.headcount', data_get($budget->inputs, 'labor.headcount', 5)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Wage ($/hr)</label>
-                    <input type="number" step="0.01" min="0" name="inputs[labor][wage]" class="form-input w-full mt-1" value="{{ old('inputs.labor.wage', data_get($budget->inputs, 'labor.wage', 25)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Payroll Taxes (% of wage)</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][payroll_taxes]" class="form-input w-full mt-1" value="{{ old('inputs.labor.payroll_taxes', data_get($budget->inputs, 'labor.payroll_taxes', 9)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Benefits (% of wage)</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][benefits]" class="form-input w-full mt-1" value="{{ old('inputs.labor.benefits', data_get($budget->inputs, 'labor.benefits', 12)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Workers Comp (% of wage)</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][workers_comp]" class="form-input w-full mt-1" value="{{ old('inputs.labor.workers_comp', data_get($budget->inputs, 'labor.workers_comp', 3)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">PTO Hours (per person)</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][pto_hours]" class="form-input w-full mt-1" value="{{ old('inputs.labor.pto_hours', data_get($budget->inputs, 'labor.pto_hours', 80)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Hours per Week</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][hours_per_week]" class="form-input w-full mt-1" value="{{ old('inputs.labor.hours_per_week', data_get($budget->inputs, 'labor.hours_per_week', 40)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Weeks per Year</label>
-                    <input type="number" step="0.1" min="0" name="inputs[labor][weeks_per_year]" class="form-input w-full mt-1" value="{{ old('inputs.labor.weeks_per_year', data_get($budget->inputs, 'labor.weeks_per_year', 52)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Utilization (0-1)</label>
-                    <input type="number" step="0.01" min="0" max="1" name="inputs[labor][utilization]" class="form-input w-full mt-1" value="{{ old('inputs.labor.utilization', data_get($budget->inputs, 'labor.utilization', 0.85)) }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Productivity (0-1)</label>
-                    <input type="number" step="0.01" min="0" max="1" name="inputs[labor][productivity]" class="form-input w-full mt-1" value="{{ old('inputs.labor.productivity', data_get($budget->inputs, 'labor.productivity', 0.95)) }}">
+                        <!-- Rows -->
+                        <template x-for="(row, idx) in salesRows" :key="idx">
+                            <div class="grid grid-cols-12 gap-3 items-center py-2 border-b">
+                                <!-- Acct. ID -->
+                                <div class="col-span-12 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Acct. ID</label>
+                                    <input type="text" class="form-input w-full" x-model="row.account_id" :name="'inputs[sales][rows]['+idx+'][account_id]'" placeholder="e.g., 4001">
+                                </div>
+                                <!-- Division -->
+                                <div class="col-span-12 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Division</label>
+                                    <input type="text" class="form-input w-full" x-model="row.division" :name="'inputs[sales][rows]['+idx+'][division]'" placeholder="e.g., Maintenance">
+                                </div>
+                                <!-- Previous $ -->
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Previous $</label>
+                                    <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.previous" :name="'inputs[sales][rows]['+idx+'][previous]'" placeholder="0.00">
+                                </div>
+                                <!-- Forecast $ -->
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Forecast $</label>
+                                    <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.forecast" :name="'inputs[sales][rows]['+idx+'][forecast]'" placeholder="0.00">
+                                </div>
+                                <!-- % Diff -->
+                                <div class="col-span-6 md:col-span-1">
+                                    <label class="md:hidden block text-xs text-gray-500">% Diff</label>
+                                    <input type="text" class="form-input w-full bg-gray-50" :value="computeDiff(row)" readonly tabindex="-1">
+                                </div>
+                                <!-- Comments -->
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Comments</label>
+                                    <input type="text" class="form-input w-full" x-model="row.comments" :name="'inputs[sales][rows]['+idx+'][comments]'" placeholder="Notes">
+                                </div>
+                                <!-- Actions -->
+                                <div class="col-span-12 md:col-span-1 flex md:justify-end">
+                                    <x-danger-button size="sm" type="button" @click="removeSalesRow(idx)">Delete</x-danger-button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Add New Row -->
+                        <div class="pt-3">
+                            <x-brand-button type="button" size="sm" variant="ghost" @click="addSalesRow()">+ New</x-brand-button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FIELD LABOR -->
+                <section x-show="section==='Field Labor'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Field Labor</h2>
+                    <div class="rounded border p-4">
+                        <h3 class="font-semibold mb-3">Labor Inputs</h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium">Headcount</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][headcount]" class="form-input w-full mt-1" value="{{ old('inputs.labor.headcount', data_get($budget->inputs, 'labor.headcount', 5)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Wage ($/hr)</label>
+                                <input type="number" step="0.01" min="0" name="inputs[labor][wage]" class="form-input w-full mt-1" value="{{ old('inputs.labor.wage', data_get($budget->inputs, 'labor.wage', 25)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Payroll Taxes (% of wage)</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][payroll_taxes]" class="form-input w-full mt-1" value="{{ old('inputs.labor.payroll_taxes', data_get($budget->inputs, 'labor.payroll_taxes', 9)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Benefits (% of wage)</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][benefits]" class="form-input w-full mt-1" value="{{ old('inputs.labor.benefits', data_get($budget->inputs, 'labor.benefits', 12)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Workers Comp (% of wage)</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][workers_comp]" class="form-input w-full mt-1" value="{{ old('inputs.labor.workers_comp', data_get($budget->inputs, 'labor.workers_comp', 3)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">PTO Hours (per person)</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][pto_hours]" class="form-input w-full mt-1" value="{{ old('inputs.labor.pto_hours', data_get($budget->inputs, 'labor.pto_hours', 80)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Hours per Week</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][hours_per_week]" class="form-input w-full mt-1" value="{{ old('inputs.labor.hours_per_week', data_get($budget->inputs, 'labor.hours_per_week', 40)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Weeks per Year</label>
+                                <input type="number" step="0.1" min="0" name="inputs[labor][weeks_per_year]" class="form-input w-full mt-1" value="{{ old('inputs.labor.weeks_per_year', data_get($budget->inputs, 'labor.weeks_per_year', 52)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Utilization (0-1)</label>
+                                <input type="number" step="0.01" min="0" max="1" name="inputs[labor][utilization]" class="form-input w-full mt-1" value="{{ old('inputs.labor.utilization', data_get($budget->inputs, 'labor.utilization', 0.85)) }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Productivity (0-1)</label>
+                                <input type="number" step="0.01" min="0" max="1" name="inputs[labor][productivity]" class="form-input w-full mt-1" value="{{ old('inputs.labor.productivity', data_get($budget->inputs, 'labor.productivity', 0.95)) }}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- EQUIPMENT -->
+                <section x-show="section==='Equipment'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Equipment</h2>
+                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
+                        Define owned/leased equipment cost structure, rates, and utilization. (Coming soon)
+                    </div>
+                </section>
+
+                <!-- MATERIALS -->
+                <section x-show="section==='Materials'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Materials</h2>
+                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
+                        Configure material markups, waste factors, and category-specific assumptions. (Coming soon)
+                    </div>
+                </section>
+
+                <!-- SUBCONTRACTING -->
+                <section x-show="section==='Subcontracting'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Subcontracting</h2>
+                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
+                        Define subcontractor fees, markups, and usage assumptions. (Coming soon)
+                    </div>
+                </section>
+
+                <!-- OVERHEAD -->
+                <section x-show="section==='Overhead'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Overhead</h2>
+                    <div class="rounded border p-4">
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium">Annual Overhead ($)</label>
+                                <input type="number" step="0.01" min="0" name="inputs[overhead][total]" class="form-input w-full mt-1" value="{{ old('inputs.overhead.total', data_get($budget->inputs, 'overhead.total', 150000)) }}">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PROFIT / LOSS -->
+                <section x-show="section==='Profit/Loss'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Profit / Loss</h2>
+                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
+                        High-level P&L view and targets will appear here. (Coming soon)
+                    </div>
+                </section>
+
+                <!-- OH RECOVERY -->
+                <section x-show="section==='OH Recovery'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Overhead Recovery</h2>
+                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
+                        Configure recovery method (e.g., labor-based, revenue-based) and allocations. (Coming soon)
+                    </div>
+                </section>
+
+                <!-- ANALYSIS -->
+                <section x-show="section==='Analysis'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3">Analysis</h2>
+                    <div class="grid md:grid-cols-4 gap-4 text-sm">
+                        <div class="rounded border p-3">
+                            <p class="text-gray-600">Direct Labor Cost</p>
+                            <p class="font-semibold">${{ number_format(data_get($budget->outputs ?? [], 'labor.dlc', 0), 2) }}/hr</p>
+                        </div>
+                        <div class="rounded border p-3">
+                            <p class="text-gray-600">Overhead / Prod. Hour</p>
+                            <p class="font-semibold">${{ number_format(data_get($budget->outputs ?? [], 'labor.ohr', 0), 2) }}/hr</p>
+                        </div>
+                        <div class="rounded border p-3">
+                            <p class="text-gray-600">Burdened Labor Cost</p>
+                            <p class="font-semibold">${{ number_format(data_get($budget->outputs ?? [], 'labor.blc', 0), 2) }}/hr</p>
+                        </div>
+                        <div class="rounded border p-3">
+                            <p class="text-gray-600">Productive Hours (annual)</p>
+                            <p class="font-semibold">{{ number_format(data_get($budget->outputs ?? [], 'labor.plh', 0), 0) }}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex justify-end">
+                    <x-brand-button type="submit">Save Budget</x-brand-button>
                 </div>
             </div>
-        </div>
-
-        <div class="rounded border p-4">
-            <h3 class="font-semibold mb-3">Overhead</h3>
-            <div class="grid md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium">Annual Overhead ($)</label>
-                    <input type="number" step="0.01" min="0" name="inputs[overhead][total]" class="form-input w-full mt-1" value="{{ old('inputs.overhead.total', data_get($budget->inputs, 'overhead.total', 150000)) }}">
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded border p-4">
-            <h3 class="font-semibold mb-3">Outputs (computed)</h3>
-            @php
-                $outputs = $budget->outputs ?? [];
-                $dlc = data_get($outputs, 'labor.dlc', 0);
-                $ohr = data_get($outputs, 'labor.ohr', 0);
-                $blc = data_get($outputs, 'labor.blc', 0);
-                $plh = data_get($outputs, 'labor.plh', 0);
-            @endphp
-            <div class="grid md:grid-cols-4 gap-4 text-sm">
-                <div>
-                    <p class="text-gray-600">Direct Labor Cost</p>
-                    <p class="font-semibold">${{ number_format($dlc, 2) }}/hr</p>
-                </div>
-                <div>
-                    <p class="text-gray-600">Overhead / Prod. Hour</p>
-                    <p class="font-semibold">${{ number_format($ohr, 2) }}/hr</p>
-                </div>
-                <div>
-                    <p class="text-gray-600">Burdened Labor Cost</p>
-                    <p class="font-semibold">${{ number_format($blc, 2) }}/hr</p>
-                </div>
-                <div>
-                    <p class="text-gray-600">Productive Hours (annual)</p>
-                    <p class="font-semibold">{{ number_format($plh, 0) }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex justify-end gap-2">
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Budget</button>
         </div>
     </form>
 </div>
@@ -147,6 +350,77 @@
 
 @push('scripts')
 <script>
+    // Seed initial Sales rows from server
+    window.__initialSalesRows = @json($initialSalesRows);
+
+    // Alpine data for the budget editor
+    window.budgetEditor = function(){
+        return {
+            section: 'Budget Info',
+            salesRows: Array.isArray(window.__initialSalesRows) ? window.__initialSalesRows : [],
+            addSalesRow() { this.salesRows.push({ account_id: '', division: '', previous: '', forecast: '', comments: '' }); },
+            removeSalesRow(i) { this.salesRows.splice(i, 1); },
+            computeDiff(row) {
+                const p = parseFloat(row.previous) || 0;
+                const f = parseFloat(row.forecast) || 0;
+                if (!p) return f === 0 ? '0%' : '—';
+                const pct = ((f - p) / Math.abs(p)) * 100;
+                return pct.toFixed(1) + '%';
+            },
+            // Formatting helpers
+            formatMoney(n){ const v = parseFloat(n) || 0; return '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+            // Totals
+            prevTotal(){ return this.salesRows.reduce((s, r) => s + (parseFloat(r.previous) || 0), 0); },
+            forecastTotal(){ return this.salesRows.reduce((s, r) => s + (parseFloat(r.forecast) || 0), 0); },
+            barWidth(val){ const max = Math.max(this.prevTotal(), this.forecastTotal(), 1); return Math.round((Math.max(0, val) / max) * 100) + '%'; },
+            // Division segments for pie
+            divisionSegments(){
+                const map = new Map();
+                this.salesRows.forEach(r => {
+                    const key = (r.division || '').trim() || 'Unassigned';
+                    const v = parseFloat(r.forecast) || 0;
+                    map.set(key, (map.get(key) || 0) + v);
+                });
+                const total = Array.from(map.values()).reduce((a,b)=>a+b,0);
+                const palette = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0ea5e9','#ea580c','#22c55e','#e11d48'];
+                let i = 0;
+                return Array.from(map.entries()).map(([label, value]) => ({
+                    label,
+                    value,
+                    percent: total > 0 ? (value / total) * 100 : 0,
+                    color: palette[i++ % palette.length],
+                }));
+            },
+            pieGradient(){
+                const segs = this.divisionSegments();
+                if (!segs.length) return 'conic-gradient(#e5e7eb 0 360deg)';
+                let acc = 0;
+                const parts = segs.map(seg => {
+                    const start = acc;
+                    const sweep = (seg.percent / 100) * 360;
+                    const end = start + sweep;
+                    acc = end;
+                    return `${seg.color} ${start}deg ${end}deg`;
+                });
+                if (acc < 360) parts.push(`#e5e7eb ${acc}deg 360deg`);
+                return `conic-gradient(${parts.join(',')})`;
+            },
+            // Change ring
+            changePercent(){
+                const p = this.prevTotal();
+                const f = this.forecastTotal();
+                if (!p) return f === 0 ? 0 : 100; // if no previous, treat as 100% change when forecast > 0
+                return ((f - p) / Math.abs(p)) * 100;
+            },
+            changeRing(){
+                const c = this.changePercent();
+                const pct = Math.max(0, Math.min(100, Math.abs(c)));
+                const color = c >= 0 ? '#16a34a' : '#dc2626';
+                return `conic-gradient(${color} 0 ${pct}%, #e5e7eb ${pct}%)`;
+            }
+        };
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         const percent = document.querySelector('input[name="desired_profit_margin_percent"]');
         const hidden = document.getElementById('desired_profit_margin_hidden');
