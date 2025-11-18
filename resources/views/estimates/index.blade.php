@@ -1,7 +1,7 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="space-y-6">
+<div class="max-w-6xl mx-auto py-6 space-y-6">
     <x-page-header title="Estimates" eyebrow="Sales" subtitle="Draft, send, and track pricing packages.">
         <x-slot:actions>
             <x-brand-button href="{{ route('estimates.create') }}">
@@ -82,15 +82,19 @@
                         <p class="text-xs text-gray-500">{{ optional($estimate->property)->name ?? 'No property' }}</p>
                     </td>
                     <td class="px-4 py-3">
-                        <button type="button" class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold border hover:ring-2 hover:ring-brand-300"
-                            data-filter-key="status" data-filter-value="{{ $estimate->status }}"
-                            @class([
-                                'bg-gray-100 text-gray-700 border-gray-200' => $estimate->status === 'draft',
-                                'bg-amber-100 text-amber-700 border-amber-200' => $estimate->status === 'pending',
-                                'bg-brand-100 text-brand-700 border-brand-200' => $estimate->status === 'sent',
-                                'bg-green-100 text-green-700 border-green-200' => $estimate->status === 'approved',
-                                'bg-red-100 text-red-700 border-red-200' => $estimate->status === 'rejected',
-                            ])>
+                        @php
+                            $statusClass = match($estimate->status) {
+                                'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
+                                'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
+                                'sent' => 'bg-brand-100 text-brand-700 border-brand-200',
+                                'approved' => 'bg-green-100 text-green-700 border-green-200',
+                                'rejected' => 'bg-red-100 text-red-700 border-red-200',
+                                default => 'bg-gray-100 text-gray-700 border-gray-200',
+                            };
+                        @endphp
+                        <button type="button"
+                                class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold border hover:ring-2 hover:ring-brand-300 {{ $statusClass }}"
+                                data-filter-key="status" data-filter-value="{{ $estimate->status }}">
                             {{ ucfirst($estimate->status) }}
                         </button>
                     </td>
