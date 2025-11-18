@@ -143,4 +143,52 @@
 </div>
 @endsection
 
+@push('scripts')
+<script>
+// Feature 1: Click-to-filter (status, client) only
+// Safe, minimal JS with a basic fallback for older browsers
+(function(){
+  function initFilter(){
+    var tbody = document.getElementById('estimateTbody');
+    if (!tbody) return;
+    tbody.addEventListener('click', function(e){
+      var el = e.target;
+      // Walk up DOM until an element node with the attribute is found or tbody reached
+      while (el && el !== tbody && (el.nodeType !== 1 || !el.hasAttribute('data-filter-key'))) {
+        el = el.parentNode;
+      }
+      if (!el || el === tbody) return;
+      var key = el.getAttribute('data-filter-key');
+      var val = el.getAttribute('data-filter-value') || '';
+      if (!key) return;
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set(key, val);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+      } catch (err) {
+        // Fallback for environments without URL API
+        var qs = window.location.search.replace(/^\?/, '');
+        var params = qs ? qs.split('&') : [];
+        var found = false;
+        for (var i=0; i<params.length; i++){
+          var pair = params[i].split('=');
+          var k = pair[0];
+          if (k === 'page') { params.splice(i,1); i--; continue; }
+          if (k === key) { params[i] = key + '=' + encodeURIComponent(val); found = true; }
+        }
+        if (!found) params.push(key + '=' + encodeURIComponent(val));
+        var newQs = params.length ? ('?' + params.join('&')) : '';
+        window.location.href = window.location.pathname + newQs;
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFilter);
+  } else {
+    initFilter();
+  }
+})();
+</script>
+@endpush
 
