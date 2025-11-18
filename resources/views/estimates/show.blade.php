@@ -1529,5 +1529,5 @@ document.addEventListener('DOMContentLoaded', () => {
             updateFormState(form);
         }
 
-        function updateFormState(form) {
+function updateFormState(form) {
             const quantityInput = form.querySelector('inpu
