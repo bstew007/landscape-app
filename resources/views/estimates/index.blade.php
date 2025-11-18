@@ -143,23 +143,4 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var tbody = document.getElementById('estimateTbody');
-    if (!tbody) return;
-    tbody.addEventListener('click', function(e) {
-      var t = e.target;
-      while (t && t !== tbody && !t.getAttribute('data-filter-key')) { t = t.parentNode; }
-      if (!t || t === tbody) return;
-      var key = t.getAttribute('data-filter-key');
-      var val = t.getAttribute('data-filter-value') || '';
-      if (!key) return;
-      var url = new URL(window.location.href);
-      url.searchParams.set(key, val);
-      url.searchParams.delete('page');
-      window.location.href = url.toString();
-    });
-  });
-</script>
-@endpush
+

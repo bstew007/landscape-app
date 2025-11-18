@@ -1001,10 +1001,11 @@
 
 @push('scripts')
 <script>
-    // Alpine state factory to avoid huge x-data inline JS
-    window.estimatePage = function(){ return { tab: 'work', activeArea: 'all', showAddItems: false }; };
+// Minimal init only; disable heavy inline JS to restore rendering
+window.estimatePage = function(){ return { tab: 'work', activeArea: 'all', showAddItems: false }; };
 
-document.addEventListener('DOMContentLoaded', () => {
+/* Disabled interactive script for stability
+// document.addEventListener('DOMContentLoaded', () => {
         // Spinner + auto-refresh helpers
         const overlay = document.getElementById('pageLoadingOverlay');
         function showPageSpinner(){ if (overlay) overlay.classList.remove('hidden'); }
@@ -1529,5 +1530,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateFormState(form);
         }
 
-function updateFormState(form) {
+*/
+</script>
+@endpush
+
             const quantityInput = form.querySelector('inpu
