@@ -145,174 +145,21 @@
 
 @push('scripts')
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const storageKey = 'selected_estimate_ids';
-    const selectedIds = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
-    const tbody = document.getElementById('estimateTbody');
-    const toggleAll = document.querySelector('[data-action="toggle-all"]');
-    const applyBtn = document.getElementById('applyBulk');
-    const actionSelect = document.getElementById('bulkAction');
-    const selectedBadge = document.querySelector('[data-role="selected-count"]');
-
-    function checks() { return Array.from(document.querySelectorAll('[data-role="row-check"]')); }
-    function selectedRows() { return checks().filter(c => c.checked).map(c => c.closest('tr')); }
-    function syncCheckboxesFromStorage() {
-      checks().forEach(cb => {
-        const id = cb.value;
-        cb.checked = selectedIds.has(id);
-      });
-      updateToolbar();
-      updateSelectAllBanner();
-    }
-    function persist() { localStorage.setItem(storageKey, JSON.stringify(Array.from(selectedIds))); }
-
-    function updateToolbar() {
-      const count = selectedIds.size;
-      if (applyBtn) applyBtn.disabled = !(count && actionSelect && actionSelect.value);
-      if (selectedBadge) {
-        if (count) {
-          selectedBadge.classList.remove('hidden');
-          selectedBadge.textContent = count + ' selected';
-        } else selectedBadge.classList.add('hidden');
-      }
-    }
-
-    const banner = document.getElementById('selectAllBanner');
-    function updateSelectAllBanner(){
-      if (!banner) return;
-      const pageIds = checks().map(cb => cb.value);
-      const allOnPageSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.has(id));
-      banner.classList.toggle('hidden', !allOnPageSelected);
-    }
-
-    if (toggleAll) {
-      toggleAll.addEventListener('change', () => {
-        checks().forEach(c => {
-          c.checked = toggleAll.checked;
-          if (c.checked) selectedIds.add(c.value); else selectedIds.delete(c.value);
-        });
-        persist();
-        updateToolbar();
-        updateSelectAllBanner();
-      });
-    }
-    checks().forEach(c => c.addEventListener('change', () => {
-      if (c.checked) selectedIds.add(c.value); else selectedIds.delete(c.value);
-      persist();
-      updateToolbar();
-      updateSelectAllBanner();
-    }));
-    if (actionSelect) actionSelect.addEventListener('change', updateToolbar);
-
-    // Click-to-filter chips
-    if (tbody) {
-      tbody.addEventListener('click', (e) => {
-        const t = e.target.closest('[data-filter-key]');
-        if (!t) return;
-        const key = t.getAttribute('data-filter-key');
-        const val = t.getAttribute('data-filter-value');
-        if (!key) return;
-        const url = new URL(window.location.href);
-        url.searchParams.set(key, val || '');
-        url.searchParams.delete('page');
-        window.location.href = url.toString();
-      });
-    }
-
-    // Quick-select helpers
-    document.querySelector('[data-action="select-page"]')?.addEventListener('click', () => {
-      checks().forEach(c => { c.checked = true; selectedIds.add(c.value); });
-      persist(); updateToolbar(); updateSelectAllBanner();
+  document.addEventListener('DOMContentLoaded', function() {
+    var tbody = document.getElementById('estimateTbody');
+    if (!tbody) return;
+    tbody.addEventListener('click', function(e) {
+      var t = e.target;
+      while (t && t !== tbody && !t.getAttribute('data-filter-key')) { t = t.parentNode; }
+      if (!t || t === tbody) return;
+      var key = t.getAttribute('data-filter-key');
+      var val = t.getAttribute('data-filter-value') || '';
+      if (!key) return;
+      var url = new URL(window.location.href);
+      url.searchParams.set(key, val);
+      url.searchParams.delete('page');
+      window.location.href = url.toString();
     });
-    document.querySelector('[data-action="clear-selection"]')?.addEventListener('click', () => {
-      selectedIds.clear(); persist(); syncCheckboxesFromStorage();
-    });
-    document.querySelector('[data-action="clear-page-selection"]')?.addEventListener('click', () => {
-      checks().forEach(c => { c.checked = false; selectedIds.delete(c.value); });
-      persist(); updateToolbar(); updateSelectAllBanner();
-    });
-
-    // Shift-click range selection
-    let lastClickedIndex = null;
-    tbody?.addEventListener('click', (e) => {
-      const cb = e.target.closest('input[type="checkbox"][data-role="row-check"]');
-      if (!cb) return;
-      const list = checks();
-      const idx = list.indexOf(cb);
-      if (e.shiftKey && lastClickedIndex !== null) {
-        const start = idx > lastClickedIndex ? lastClickedIndex : idx;
-        const end = idx > lastClickedIndex ? idx : lastClickedIndex;
-        for (let i = start; i <= end; i++) {
-          list[i].checked = cb.checked;
-          if (list[i].checked) selectedIds.add(list[i].value); else selectedIds.delete(list[i].value);
-        }
-        persist(); updateToolbar(); updateSelectAllBanner();
-      }
-      lastClickedIndex = idx;
-    });
-
-    async function runBulkAction() {
-      const ids = Array.from(selectedIds);
-      if (!ids.length) return;
-      const val = actionSelect.value || '';
-      if (!val) return;
-      const splitVal = val.split(':');
-      const action = splitVal[0];
-      const arg = splitVal.length > 1 ? splitVal[1] : '';
-
-      try {
-        applyBtn.disabled = true;
-        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        if (action === 'status') {
-          // PATCH each estimate to new status
-          for (const id of ids) {
-            const url = `${document.getElementById('estimateTbody').dataset.updateBase}/${id}`;
-            await fetch(url, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-              body: JSON.stringify({ status: arg })
-            });
-          }
-          showToast('Status updated', 'success');
-        } else if (action === 'send_reminders') {
-          const suffix = document.getElementById('estimateTbody').dataset.emailSuffix;
-          for (const id of ids) {
-            const url = `${document.getElementById('estimateTbody').dataset.updateBase}/${id}${suffix}`;
-            await fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } });
-          }
-          showToast('Reminders sent', 'success');
-        } else if (action === 'lock') {
-          for (const id of ids) {
-            const url = `${document.getElementById('estimateTbody').dataset.updateBase}/${id}`;
-            await fetch(url, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-              body: JSON.stringify({ locked: true })
-            });
-          }
-          showToast('Estimates locked', 'success');
-        } else if (action === 'archive') {
-          for (const id of ids) {
-            const url = `${document.getElementById('estimateTbody').dataset.updateBase}/${id}`;
-            await fetch(url, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-              body: JSON.stringify({ archived: true })
-            });
-          }
-          showToast('Estimates archived', 'success');
-        }
-      } catch (e) {
-        showToast('Bulk action failed', 'error');
-      } finally {
-        window.location.reload();
-      }
-    }
-
-    if (applyBtn) applyBtn.addEventListener('click', runBulkAction);
-
-    // Initialize checkboxes from storage on page load
-    syncCheckboxesFromStorage();
   });
 </script>
 @endpush
