@@ -78,8 +78,8 @@
                         <p class="text-xs text-gray-500">Created {{ $estimate->created_at->format('M j, Y') }}</p>
                     </td>
                     <td class="px-4 py-3">
-                        <p class="text-sm text-brand-700 hover:text-brand-900 hover:underline cursor-pointer" data-filter-key="client_id" data-filter-value="{{ $estimate->client_id }}">{{ $estimate->client->name }}</p>
-                        <p class="text-xs text-gray-500">{{ $estimate->property->name ?? 'No property' }}</p>
+                        <p class="text-sm text-brand-700 hover:text-brand-900 hover:underline cursor-pointer" data-filter-key="client_id" data-filter-value="{{ $estimate->client_id }}">{{ optional($estimate->client)->name ?? 'Unknown client' }}</p>
+                        <p class="text-xs text-gray-500">{{ optional($estimate->property)->name ?? 'No property' }}</p>
                     </td>
                     <td class="px-4 py-3">
                         <button type="button" class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold border hover:ring-2 hover:ring-brand-300"
