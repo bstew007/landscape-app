@@ -505,31 +505,27 @@
                 $price = $areaItems->sum('line_total');
                 $profit = $price - $cogs;
             @endphp
-            <div x-data="{ open: true, tab: 'pricing', menuOpen: false }" class="mb-6 border rounded-lg overflow-hidden bg-white work-area" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
+            <div x-data="{ open: true, tab: 'pricing', menuOpen: false }" class="mb-6 border rounded-lg bg-white work-area overflow-visible" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
                     <div class="px-4 py-3 border-b bg-gray-50">
                         <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-3">
                             @csrf
                             @method('PATCH')
-                            <div class="relative inline-block text-left">
+                            <div class="relative inline-block text-left shrink-0">
                                 <button type="button" class="text-xs px-2 py-1 rounded border" @click.stop="menuOpen = !menuOpen" @keydown.escape.window="menuOpen = false">
                                     Options
                                 </button>
-                                <div x-show="menuOpen" x-transition @click.away="menuOpen = false"
-                                     class="absolute z-10 mt-1 w-28 right-0 bg-white border rounded shadow text-xs py-1">
+                                <div x-cloak x-show="menuOpen" x-transition @click.away="menuOpen = false"
+                                     class="absolute z-20 mt-1 min-w-[9rem] left-0 bg-white border rounded-md shadow-lg text-sm py-1 ring-1 ring-black/5">
                                     <button type="button" class="block w-full text-left px-3 py-1 hover:bg-gray-100" @click="open = true; menuOpen = false">Edit</button>
                                     <button type="button" class="block w-full text-left px-3 py-1 hover:bg-gray-100" @click="open = false; menuOpen = false">Close</button>
                                     <button type="button" class="block w-full text-left px-3 py-1 text-red-600 hover:bg-red-50" @click.prevent="$refs.deleteForm.submit()">Delete</button>
                                 </div>
                             </div>
-                            <form x-ref="deleteForm" method="POST" action="{{ route('estimates.areas.destroy', [$estimate, $area]) }}" class="hidden">
-                                @csrf
-                                @method('DELETE')
-                            </form>
                             <div class="w-16">
                                 <label class="block text-xs font-medium text-gray-600">Order</label>
                                 <input type="number" name="sort_order" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->sort_order ?? $loop->iteration }}">
                             </div>
-                            <div class="w-full sm:w-48">
+                            <div class="w-full sm:w-80">
                                 <label class="block text-xs font-medium text-gray-600">Name</label>
                                 <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->name }}">
                             </div>
@@ -546,27 +542,34 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto pt-1">
-                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
-                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">Hrs</p>
-                                    <p class="text-sm font-semibold text-gray-900">{{ number_format($laborHours, 2) }}</p>
+                            <div class="flex flex-wrap items-center gap-6 w-auto pt-1">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xs uppercase tracking-wide text-gray-500">Hrs</span>
+                                    <span class="text-base font-semibold text-gray-900">{{ number_format($laborHours, 2) }}</span>
                                 </div>
-                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
-                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">COGS</p>
-                                    <p class="text-sm font-semibold text-gray-900">${{ number_format($cogs, 2) }}</p>
+                                <span class="text-gray-300">•</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xs uppercase tracking-wide text-gray-500">COGS</span>
+                                    <span class="text-base font-semibold text-gray-900">${{ number_format($cogs, 2) }}</span>
                                 </div>
-                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
-                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">Price</p>
-                                    <p class="text-sm font-semibold text-gray-900">${{ number_format($price, 2) }}</p>
+                                <span class="text-gray-300">•</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xs uppercase tracking-wide text-gray-500">Price</span>
+                                    <span class="text-base font-semibold text-gray-900">${{ number_format($price, 2) }}</span>
                                 </div>
-                                <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-center">
-                                    <p class="text-[10px] uppercase tracking-wide text-gray-500">Profit</p>
-                                    <p class="text-sm font-semibold text-gray-900">${{ number_format($profit, 2) }}</p>
+                                <span class="text-gray-300">•</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xs uppercase tracking-wide text-gray-500">Profit</span>
+                                    <span class="text-base font-semibold text-gray-900">${{ number_format($profit, 2) }}</span>
                                 </div>
                             </div>
-                            <div class="flex items-center pt-1">
+                            <div class="flex items-center pt-1 ml-auto">
                                 <x-brand-button type="button" size="sm" @click="addItemsTab='templates'; showAddItems = true">Add Items + Templates</x-brand-button>
                             </div>
+                        </form>
+                        <form x-ref="deleteForm" method="POST" action="{{ route('estimates.areas.destroy', [$estimate, $area]) }}" class="hidden">
+                            @csrf
+                            @method('DELETE')
                         </form>
                     </div>
                     <div x-show="open" class="px-4 pt-3">
