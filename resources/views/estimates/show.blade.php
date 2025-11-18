@@ -152,12 +152,13 @@
                     </div>
                     <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
                         @foreach ($laborCatalog as $labor)
+                            @php $rate = $labor->average_wage ?? $labor->base_rate; @endphp
                             <div class="px-3 py-2 text-sm flex items-center justify-between">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ $labor->name }}</div>
                                     <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} • {{ $labor->unit }}</div>
                                 </div>
-                                <div class="text-xs text-gray-600">Base: ${{ number_format($labor->base_rate, 2) }}</div>
+                                <div class="text-xs text-gray-600">Avg Wage: ${{ number_format($rate, 2) }}</div>
                             </div>
                         @endforeach
                         @if($laborCatalog->isEmpty())
@@ -956,9 +957,10 @@
                     <select name="catalog_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" data-role="labor-select">
                         <option value="">Select labor</option>
                         @foreach ($laborCatalog as $labor)
+                            @php $rate = $labor->average_wage ?? $labor->base_rate; @endphp
                             <option value="{{ $labor->id }}"
                                     data-unit="{{ $labor->unit }}"
-                                    data-cost="{{ $labor->base_rate }}">
+                                    data-cost="{{ $rate }}">
                                 {{ $labor->name }} ({{ ucfirst($labor->type) }})
                             </option>
                         @endforeach
@@ -1094,6 +1096,7 @@
     <div class="p-4">
         <form method="POST" action="{{ route('labor.store') }}" class="space-y-4">
             @csrf
+            <input type="hidden" name="return_to" value="{{ request()->fullUrl() }}">
             @include('labor._form')
             <div class="flex items-center justify-end gap-2">
                 <x-secondary-button type="button" @click="$dispatch('close-modal','new-labor')">Cancel</x-secondary-button>

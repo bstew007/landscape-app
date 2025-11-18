@@ -36,7 +36,7 @@ class LaborController extends Controller
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
-        $columns = ['name','type','unit','base_rate','overtime_rate','burden_percentage','is_billable','is_active','notes'];
+        $columns = ['name','type','unit','base_rate','overtime_rate','burden_percentage','labor_burden_percentage','unbillable_percentage','average_wage','overtime_factor','is_billable','is_active','description','notes','internal_notes'];
         $callback = function () use ($rows, $columns) {
             $out = fopen('php://output', 'w');
             fputcsv($out, $columns);
@@ -48,9 +48,15 @@ class LaborController extends Controller
                     $r->base_rate,
                     $r->overtime_rate,
                     $r->burden_percentage,
+                    $r->labor_burden_percentage,
+                    $r->unbillable_percentage,
+                    $r->average_wage,
+                    $r->overtime_factor,
                     $r->is_billable ? 'true' : 'false',
                     $r->is_active ? 'true' : 'false',
+                    $r->description,
                     $r->notes,
+                    $r->internal_notes,
                 ]);
             }
             fclose($out);
@@ -81,9 +87,15 @@ class LaborController extends Controller
                 'base_rate' => (float) ($row['base_rate'] ?? 0),
                 'overtime_rate' => (float) ($row['overtime_rate'] ?? 0),
                 'burden_percentage' => (float) ($row['burden_percentage'] ?? 0),
+                'labor_burden_percentage' => (float) ($row['labor_burden_percentage'] ?? 0),
+                'unbillable_percentage' => (float) ($row['unbillable_percentage'] ?? 0),
+                'average_wage' => isset($row['average_wage']) ? (float) $row['average_wage'] : null,
+                'overtime_factor' => isset($row['overtime_factor']) ? (float) $row['overtime_factor'] : null,
                 'is_billable' => array_key_exists('is_billable', $row) ? (bool)$row['is_billable'] : true,
                 'is_active' => array_key_exists('is_active', $row) ? (bool)$row['is_active'] : true,
+                'description' => $row['description'] ?? null,
                 'notes' => $row['notes'] ?? null,
+                'internal_notes' => $row['internal_notes'] ?? null,
             ];
 
             $existing = \App\Models\LaborItem::where('name', $name)
@@ -113,8 +125,12 @@ class LaborController extends Controller
         $data = $this->validateLabor($request);
         $data['is_billable'] = (bool) ($data['is_billable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
-        LaborItem::create($data);
+        $labor = LaborItem::create($data);
 
+        $returnTo = $request->input('return_to');
+        if ($returnTo) {
+            return redirect($returnTo)->with('success', "Labor item '{$labor->name}' created.");
+        }
         return redirect()->route('labor.index')->with('success', 'Labor entry created.');
     }
 
@@ -157,9 +173,15 @@ class LaborController extends Controller
                 'base_rate' => ['base_rate','rate','price'],
                 'overtime_rate' => ['overtime_rate','ot_rate'],
                 'burden_percentage' => ['burden_percentage','burden','burden_pct'],
+                'labor_burden_percentage' => ['labor_burden_percentage','labor_burden','labor_burden_pct'],
+                'unbillable_percentage' => ['unbillable_percentage','unbillable','unbillable_pct'],
+                'average_wage' => ['average_wage','avg_wage','wage'],
+                'overtime_factor' => ['overtime_factor','ot_factor','ot_mult'],
                 'is_billable' => ['is_billable','billable'],
                 'is_active' => ['is_active','active'],
-                'notes' => ['notes','desc','description'],
+                'description' => ['description','desc'],
+                'notes' => ['notes'],
+                'internal_notes' => ['internal_notes','internal'],
             ];
             $normalized = [];
             foreach ($map as $canonical => $aliases) {
@@ -168,9 +190,9 @@ class LaborController extends Controller
                 }
             }
             // Casts
-            if (isset($normalized['base_rate'])) $normalized['base_rate'] = (float) $normalized['base_rate'];
-            if (isset($normalized['overtime_rate'])) $normalized['overtime_rate'] = (float) $normalized['overtime_rate'];
-            if (isset($normalized['burden_percentage'])) $normalized['burden_percentage'] = (float) $normalized['burden_percentage'];
+            foreach (['base_rate','overtime_rate','burden_percentage','labor_burden_percentage','unbillable_percentage','average_wage','overtime_factor'] as $k) {
+                if (isset($normalized[$k])) $normalized[$k] = (float) $normalized[$k];
+            }
             if (isset($normalized['is_billable'])) $normalized['is_billable'] = filter_var($normalized['is_billable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
             if (isset($normalized['is_active'])) $normalized['is_active'] = filter_var($normalized['is_active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
             $rows[] = $normalized + ['name' => $row['name'] ?? ($row['labor'] ?? '')];
@@ -188,9 +210,16 @@ class LaborController extends Controller
             'base_rate' => ['required', 'numeric', 'min:0'],
             'overtime_rate' => ['nullable', 'numeric', 'min:0'],
             'burden_percentage' => ['nullable', 'numeric', 'min:0'],
+            'labor_burden_percentage' => ['nullable', 'numeric', 'min:0'],
+            'unbillable_percentage' => ['nullable', 'numeric', 'min:0'],
+            'average_wage' => ['nullable', 'numeric', 'min:0'],
+            'overtime_factor' => ['nullable', 'numeric', 'min:0'],
             'is_billable' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'description' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
+            'internal_notes' => ['nullable', 'string'],
+            'cost_code_id' => ['nullable','integer','exists:cost_codes,id'],
         ]);
     }
 }
