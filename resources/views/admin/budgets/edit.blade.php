@@ -11,6 +11,17 @@
 @php($initialEquipmentGeneral = old('inputs.equipment.general', data_get($budget->inputs, 'equipment.general', ['fuel'=>0,'repairs'=>0,'insurance_misc'=>0])))
 @php($initialEquipmentRentals = old('inputs.equipment.rentals', data_get($budget->inputs, 'equipment.rentals', 0)))
 @php($initialEquipmentIndustryAvg = old('inputs.equipment.industry_avg_ratio', data_get($budget->inputs, 'equipment.industry_avg_ratio', 13.7)))
+@php($initialMaterialsRows = old('inputs.materials.rows', data_get($budget->inputs, 'materials.rows', [])))
+@php($initialMaterialsTaxPct = old('inputs.materials.tax_pct', data_get($budget->inputs, 'materials.tax_pct', 0)))
+@php($initialMaterialsIndustryAvg = old('inputs.materials.industry_avg_ratio', data_get($budget->inputs, 'materials.industry_avg_ratio', 22.3)))
+@php($initialOverheadExpensesRows = old('inputs.overhead.expenses.rows', data_get($budget->inputs, 'overhead.expenses.rows', [])))
+@php($initialOverheadWagesRows = old('inputs.overhead.wages.rows', data_get($budget->inputs, 'overhead.wages.rows', [])))
+@php($initialOverheadEquipmentRows = old('inputs.overhead.equipment.rows', data_get($budget->inputs, 'overhead.equipment.rows', [])))
+@php($initialOverheadEquipmentGeneral = old('inputs.overhead.equipment.general', data_get($budget->inputs, 'overhead.equipment.general', ['fuel'=>0,'repairs'=>0,'insurance_misc'=>0])))
+@php($initialOverheadEquipmentRentals = old('inputs.overhead.equipment.rentals', data_get($budget->inputs, 'overhead.equipment.rentals', 0)))
+@php($initialOverheadIndustryAvg = old('inputs.overhead.industry_avg_ratio', data_get($budget->inputs, 'overhead.industry_avg_ratio', 24.8)))
+@php($initialOverheadLaborBurden = old('inputs.overhead.labor_burden_pct', data_get($budget->inputs, 'overhead.labor_burden_pct', 0)))
+@php($initialSubcontractingRows = old('inputs.subcontracting.rows', data_get($budget->inputs, 'subcontracting.rows', [])))
 <div class="max-w-7xl mx-auto py-6 text-sm" data-theme="compact" x-data="budgetEditor()">
     <x-page-header title="{{ $budget->exists ? 'Budget' : 'New Budget' }}" eyebrow="Admin" variant="compact">
         <x-slot:leading>
@@ -60,10 +71,34 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(forecastTotal())"></span>
                             @elseif ($s === 'Field Labor')
                                 <span>{{ $s }}</span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'" title="Field Labor Ratio"></span>
+                                </span>
                             @elseif ($s === 'Equipment')
                                 <span>{{ $s }}</span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(equipmentExpensesTotal())"></span>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(equipmentExpensesTotal())"></span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'" title="Equipment Ratio"></span>
+                                </span>
+                            @elseif ($s === 'Materials')
+                                <span>{{ $s }}</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(materialsCurrentTotal())"></span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%' "></span>
+                                </span>
+                            @elseif ($s === 'Subcontracting')
+                                <span>{{ $s }}</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(subcCurrentTotal())"></span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span>
+                                </span>
+                            @elseif ($s === 'Overhead')
+                                <span>{{ $s }}</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(overheadCurrentTotal())"></span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span>
+                                </span>
                             @else
                                 <span>{{ $s }}</span>
                             @endif
@@ -244,6 +279,7 @@
                 <section x-show="section==='Field Labor'" x-cloak>
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Field Labor
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'" title="Field Labor Ratio"></span>
                     </h2>
                     <div class="rounded border p-4">
                         <!-- Boxes Row -->
@@ -290,11 +326,11 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold" x-text="laborRatio().toFixed(1) + '%'" ></div>
+                                                                                        <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'"></span></div>
                                         </div>
                                         <div class="flex-1 text-right">
                                             <div class="text-xs uppercase text-gray-500">Industry Avg</div>
-                                            <div class="text-3xl font-bold" x-text="(industryAvgRatio||0).toFixed(1) + '%'" ></div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(industryAvgRatio||0).toFixed(1) + '%'"></span></div>
                                         </div>
                                     </div>
                                     <div>
@@ -411,6 +447,7 @@
                 <section x-show="section==='Equipment'" x-cloak>
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Equipment
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(equipmentExpensesTotal())"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'" title="Equipment Ratio"></span>
                     </h2>
                     <div class="rounded border p-4">
                         <!-- Graphics Row -->
@@ -459,11 +496,11 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold" x-text="equipmentRatio().toFixed(1) + '%'" ></div>
+                                                                                        <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'"></span></div>
                                         </div>
                                         <div class="flex-1 text-right">
                                             <div class="text-xs uppercase text-gray-500">Industry Avg</div>
-                                            <div class="text-3xl font-bold" x-text="(equipmentIndustryAvgRatio||0).toFixed(1) + '%'" ></div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(equipmentIndustryAvgRatio||0).toFixed(1) + '%'"></span></div>
                                         </div>
                                     </div>
                                     <div>
@@ -493,12 +530,26 @@
                                 </div>
                                 <div class="col-span-6 md:col-span-2">
                                     <label class="md:hidden block text-xs text-gray-500">Class</label>
-                                    <select class="form-select w-full" x-model="row.class" :name="'inputs[equipment][rows]['+idx+'][class]'" @change="if(row.class==='Owned' && !row.owned){row.owned={ replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }}; if(row.class==='Leased' && !row.leased){row.leased={ monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' }}" >
+                                    <select class="form-select w-full" x-model="row.class" :name="'inputs[equipment][rows]['+idx+'][class]'" @change="if(row.class==='Owned' && !row.owned){row.owned={ replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }}; if(row.class==='Leased' && !row.leased){row.leased={ monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' }}; if(row.class==='Group' && !row.group){row.group={ items: [] }}" >
                                         <option>Custom</option>
                                         <option>Owned</option>
                                         <option>Leased</option>
                                         <option>Group</option>
                                     </select>
+                                    <!-- Always submit months fields so values persist regardless of panel state -->
+                                    <template x-if="row.class==='Owned'">
+                                        <div class="hidden">
+                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][months_per_year]'" :value="row.owned.months_per_year">
+                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][division_months]'" :value="row.owned.division_months">
+                                        </div>
+                                    </template>
+                                    <template x-if="row.class==='Leased'">
+                                        <div class="hidden">
+                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][payments_per_year]'" :value="row.leased.payments_per_year">
+                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][months_per_year]'" :value="row.leased.months_per_year">
+                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][division_months]'" :value="row.leased.division_months">
+                                        </div>
+                                    </template>
                                 </div>
                                 <div class="col-span-12 md:col-span-4">
                                     <label class="md:hidden block text-xs text-gray-500">Description</label>
@@ -510,6 +561,18 @@
                                         <div class="relative">
                                             <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeOwnedAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
                                             <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][cost_per_year]'" :value="computeOwnedAnnual(row)">
+                                            <!-- Ensure owned fields persist even when collapsed -->
+                                            <template x-if="!row._ownedOpen">
+                                                <div>
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][replacement_value]'" :value="row.owned.replacement_value">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][fees]'" :value="row.owned.fees">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][years]'" :value="row.owned.years">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][salvage_value]'" :value="row.owned.salvage_value">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][months_per_year]'" :value="row.owned.months_per_year">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][division_months]'" :value="row.owned.division_months">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][owned][interest_rate_pct]'" :value="row.owned.interest_rate_pct">
+                                                </div>
+                                            </template>
                                             <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
                                                     @click.prevent="row._ownedOpen = !row._ownedOpen"
                                                     :aria-expanded="row._ownedOpen ? 'true' : 'false'"
@@ -525,6 +588,15 @@
                                         <div class="relative">
                                             <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeLeasedAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
                                             <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][cost_per_year]'" :value="computeLeasedAnnual(row)">
+                                            <!-- Ensure leased fields persist even when collapsed -->
+                                            <template x-if="!row._ownedOpen">
+                                                <div>
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][monthly_payment]'" :value="row.leased.monthly_payment">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][payments_per_year]'" :value="row.leased.payments_per_year">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][months_per_year]'" :value="row.leased.months_per_year">
+                                                    <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][leased][division_months]'" :value="row.leased.division_months">
+                                                </div>
+                                            </template>
                                             <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
                                                     @click.prevent="row._ownedOpen = !row._ownedOpen"
                                                     :aria-expanded="row._ownedOpen ? 'true' : 'false'"
@@ -536,7 +608,36 @@
                                             </button>
                                         </div>
                                     </template>
-                                    <template x-if="row.class!=='Owned' && row.class!=='Leased'">
+                                    <template x-if="row.class==='Group'">
+                                        <div class="relative">
+                                            <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeGroupAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
+                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][cost_per_year]'" :value="computeGroupAnnual(row)">
+                                            <!-- Ensure group items persist even when collapsed -->
+                                            <template x-if="!row._ownedOpen">
+                                                <div>
+                                                    <template x-for="(gi, gidx) in (row.group?.items || [])" :key="'g'+gidx">
+                                                        <div>
+                                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gidx+'][name]'" :value="row.group.items[gidx].name">
+                                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gidx+'][qty]'" :value="row.group.items[gidx].qty">
+                                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gidx+'][purchase_price]'" :value="row.group.items[gidx].purchase_price">
+                                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gidx+'][resale_value]'" :value="row.group.items[gidx].resale_value">
+                                                            <input type="hidden" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gidx+'][years]'" :value="row.group.items[gidx].years">
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
+                                                    @click.prevent="row._ownedOpen = !row._ownedOpen"
+                                                    :aria-expanded="row._ownedOpen ? 'true' : 'false'"
+                                                    title="Toggle calculator">
+                                                <svg viewBox="0 0 24 24" class="h-4 w-4 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                    <path d="M7 7h10M7 11h4M13 11h4M7 15h4M13 15h4"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="row.class!=='Owned' && row.class!=='Leased' && row.class!=='Group'">
                                         <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.cost_per_year" :name="'inputs[equipment][rows]['+idx+'][cost_per_year]'" placeholder="0.00">
                                     </template>
                                 </div>
@@ -563,17 +664,20 @@
                                             </div>
                                             <div class="flex items-center justify-between py-1.5">
                                                 <label class="text-sm font-medium text-gray-800 pr-3">Months used per year (1–12)</label>
-                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.owned.months_per_year" :name="'inputs[equipment][rows]['+idx+'][owned][months_per_year]'">
+                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.owned.months_per_year" x-init="$el.value = (row.owned.months_per_year || '')" :name="'inputs[equipment][rows]['+idx+'][owned][months_per_year]'">
+                                                    <option value="" disabled x-bind:selected="!row.owned.months_per_year">Select…</option>
                                                     <template x-for="m in 12" :key="m">
-                                                        <option :value="m" x-text="m"></option>
+                                                        <option :value="String(m)" :selected="String(row.owned.months_per_year) === String(m)" x-text="m"></option>
                                                     </template>
                                                 </select>
                                             </div>
                                             <div class="flex items-center justify-between py-1.5">
                                                 <label class="text-sm font-medium text-gray-800 pr-3">Division months (1–12)</label>
-                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.owned.division_months" :name="'inputs[equipment][rows]['+idx+'][owned][division_months]'">
+                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.owned.division_months" x-init="$el.value = (row.owned.division_months || '')" :name="'inputs[equipment][rows]['+idx+'][owned][division_months]'">
+                                                    <option value="" disabled x-bind:selected="!row.owned.division_months">Select…</option>
+                
                                                     <template x-for="m in 12" :key="'d'+m">
-                                                        <option :value="m" x-text="m"></option>
+                                                        <option :value="String(m)" :selected="String(row.owned.division_months) === String(m)" x-text="m"></option>
                                                     </template>
                                                 </select>
                                             </div>
@@ -608,7 +712,63 @@
                                             <div class="text-sm text-gray-700">Interest/Inflation value over the life of the equipment:</div>
                                             <div class="text-sm font-semibold" x-text="formatMoney(computeOwnedInterestLifeCompounded(row))"></div>
                                         </div>
-                                        <div class="text-xs text-gray-600">Annual cost is replacement value divided by useful life plus compounded interest over the life divided by useful life.</div>
+                                        <div class="text-xs text-gray-600">Annual cost = (replacement value + fees + interest over life - end-of-life value) / useful life.</div>
+                                    </div>
+                                </div>
+                                <!-- Group details panel (full width under Cost/Yr/Ea) -->
+                                <div class="col-span-12" x-show="row.class==='Group' && row._ownedOpen">
+                                    <div class="mt-2 bg-green-50 border border-green-200 rounded p-3 space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-sm uppercase tracking-wide text-green-700 pb-2 mb-2 border-b-2 border-green-700 border-double">Group – Cost/Year (Total) Breakdown</div>
+                                            <div class="space-x-2">
+                                                <x-brand-button type="button" size="sm" @click="addGroupItem(row)">Add</x-brand-button>
+                                                <x-secondary-button type="button" size="sm" @click="row._ownedOpen=false">Cancel</x-secondary-button>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <div class="hidden md:grid grid-cols-12 gap-2 text-xs font-medium text-gray-600 border-b pb-2">
+                                                <div class="col-span-3">Name</div>
+                                                <div class="col-span-1">Qty</div>
+                                                <div class="col-span-2">Purch. Price</div>
+                                                <div class="col-span-2">Resale Value</div>
+                                                <div class="col-span-2">Yrs/Life</div>
+                                                <div class="col-span-2 text-right">Cost/Yr (Ea)</div>
+                                            </div>
+                                            <template x-for="(it, gi) in (row.group?.items || [])" :key="'gi'+gi">
+                                                <div class="grid grid-cols-12 gap-2 items-center py-2 border-b">
+                                                    <div class="col-span-12 md:col-span-3">
+                                                        <label class="md:hidden block text-xs text-gray-500">Name</label>
+                                                        <input type="text" class="form-input w-full" x-model="it.name" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gi+'][name]'" placeholder="Item name">
+                                                    </div>
+                                                    <div class="col-span-6 md:col-span-1">
+                                                        <label class="md:hidden block text-xs text-gray-500">Qty</label>
+                                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="it.qty" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gi+'][qty]'" placeholder="0">
+                                                    </div>
+                                                    <div class="col-span-6 md:col-span-2">
+                                                        <label class="md:hidden block text-xs text-gray-500">Purch. Price</label>
+                                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="it.purchase_price" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gi+'][purchase_price]'" placeholder="0.00">
+                                                    </div>
+                                                    <div class="col-span-6 md:col-span-2">
+                                                        <label class="md:hidden block text-xs text-gray-500">Resale Value</label>
+                                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="it.resale_value" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gi+'][resale_value]'" placeholder="0.00">
+                                                    </div>
+                                                    <div class="col-span-6 md:col-span-2">
+                                                        <label class="md:hidden block text-xs text-gray-500">Yrs/Life</label>
+                                                        <input type="number" step="0.1" min="0.1" class="form-input w-full" x-model="it.years" :name="'inputs[equipment][rows]['+idx+'][group][items]['+gi+'][years]'" placeholder="0.0">
+                                                    </div>
+                                                    <div class="col-span-6 md:col-span-2 text-right font-semibold">
+                                                        <span x-text="formatMoney(computeGroupItemAnnual(it))"></span>
+                                                    </div>
+                                                    <div class="col-span-12 md:col-span-12 md:text-right">
+                                                        <x-danger-button size="sm" type="button" @click="removeGroupItem(row, gi)">Delete</x-danger-button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <div class="grid grid-cols-12 gap-2 items-center pt-2">
+                                                <div class="col-span-8 text-right font-semibold">Annual ROI (Total)</div>
+                                                <div class="col-span-4 text-right font-bold" x-text="formatMoney(computeGroupAnnual(row))"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <!-- Leased details panel (full width under Cost/Yr/Ea) -->
@@ -622,15 +782,30 @@
                                             </div>
                                             <div class="flex items-center justify-between py-1.5">
                                                 <label class="text-sm font-medium text-gray-800 pr-3">How many payments do you make per year</label>
-                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.payments_per_year" :name="'inputs[equipment][rows]['+idx+'][leased][payments_per_year]'"><template x-for="m in 12" :key="'lp'+m"><option :value="m" x-text="m"></option></template></select>
+                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.payments_per_year" x-init="$el.value = (row.leased.payments_per_year || '')" :name="'inputs[equipment][rows]['+idx+'][leased][payments_per_year]'">
+                                                    <option value="" disabled x-bind:selected="!row.leased.payments_per_year">Select…</option>
+                                                    <template x-for="m in 12" :key="'lp'+m">
+                                                        <option :value="String(m)" :selected="String(row.leased.payments_per_year) === String(m)" x-text="m"></option>
+                                                    </template>
+                                                </select>
                                             </div>
                                             <div class="flex items-center justify-between py-1.5">
                                                 <label class="text-sm font-medium text-gray-800 pr-3">Enter the number of months per year you use it</label>
-                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.months_per_year" :name="'inputs[equipment][rows]['+idx+'][leased][months_per_year]'"><template x-for="m in 12" :key="'lm'+m"><option :value="m" x-text="m"></option></template></select>
+                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.months_per_year" x-init="$el.value = (row.leased.months_per_year || '')" :name="'inputs[equipment][rows]['+idx+'][leased][months_per_year]'">
+                                                    <option value="" disabled x-bind:selected="!row.leased.months_per_year">Select…</option>
+                                                    <template x-for="m in 12" :key="'lm'+m">
+                                                        <option :value="String(m)" :selected="String(row.leased.months_per_year) === String(m)" x-text="m"></option>
+                                                    </template>
+                                                </select>
                                             </div>
                                             <div class="flex items-center justify-between py-1.5">
                                                 <label class="text-sm font-medium text-gray-800 pr-3">If this is a divisional budget, months this works in this division</label>
-                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.division_months" :name="'inputs[equipment][rows]['+idx+'][leased][division_months]'"><template x-for="m in 12" :key="'ld'+m"><option :value="m" x-text="m"></option></template></select>
+                                                <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.division_months" x-init="$el.value = (row.leased.division_months || '')" :name="'inputs[equipment][rows]['+idx+'][leased][division_months]'">
+                                                    <option value="" disabled x-bind:selected="!row.leased.division_months">Select…</option>
+                                                    <template x-for="m in 12" :key="'ld'+m">
+                                                        <option :value="String(m)" :selected="String(row.leased.division_months) === String(m)" x-text="m"></option>
+                                                    </template>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="grid md:grid-cols-5 gap-3 text-sm mt-2">
@@ -685,29 +860,407 @@
 
                 <!-- MATERIALS -->
                 <section x-show="section==='Materials'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Materials</h2>
-                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
-                        Configure material markups, waste factors, and category-specific assumptions. (Coming soon)
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Materials
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(materialsCurrentTotal())"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%'"></span>
+                    </h2>
+                    <div class="rounded border p-4">
+                        <!-- Graphics Row -->
+                        <div class="grid md:grid-cols-3 gap-4 mb-4">
+                            <!-- Key Factors -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Key Factors</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M8 7v13"/><path d="M16 7v13"/></svg></div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700">Materials Tax (%)</label>
+                                        <input type="number" step="0.1" min="0" class="form-input w-full" x-model.number="materialsTaxPct" name="inputs[materials][tax_pct]" placeholder="0.0">
+                                        <p class="text-xs text-gray-500 mt-1">Applied to material expenses totals.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Material Summary -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Material Summary</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg></div>
+                                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                                    <div class="text-gray-600">Previous Total</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(materialsPrevTotal())"></div>
+                                    <div class="text-gray-600">Previous Ratio</div>
+                                    <div class="text-right font-semibold">
+                                        <span class="px-2 py-0.5 rounded-full" :class="materialsPillClassFor(materialsPrevRatio())" x-text="materialsPrevRatio().toFixed(1) + '%'"></span>
+                                    </div>
+                                    <div class="text-gray-600">Current Total</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(materialsCurrentTotal())"></div>
+                                    <div class="text-gray-600">Current Ratio</div>
+                                    <div class="text-right font-semibold">
+                                        <span class="px-2 py-0.5 rounded-full" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Material Ratio -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Material Ratio</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div>
+                                <div class="space-y-2">
+                                    <div class="flex items-start justify-between gap-3 mb-2">
+                                        <div class="flex-1">
+                                            <div class="text-xs uppercase text-gray-500">Your Ratio</div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%'"></span></div>
+                                        </div>
+                                        <div class="flex-1 text-right">
+                                            <div class="text-xs uppercase text-gray-500">Industry Avg</div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(materialsIndustryAvgRatio||0).toFixed(1) + '%'"></span></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700">Industry Avg (%)</label>
+                                        <input type="number" step="0.1" min="0" class="form-input w-full" x-model.number="materialsIndustryAvgRatio" name="inputs[materials][industry_avg_ratio]" placeholder="22.3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Header Row -->
+                        <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
+                            <div class="col-span-2">Acct. ID</div>
+                            <div class="col-span-3">Material Expense</div>
+                            <div class="col-span-2">Previous $</div>
+                            <div class="col-span-2">Current $</div>
+                            <div class="col-span-2">Comments</div>
+                            <div class="col-span-1 text-right">Actions</div>
+                        </div>
+                        <template x-for="(row, idx) in materialsRows" :key="'m'+idx">
+                            <div class="grid grid-cols-12 gap-3 items-center py-2 border-b">
+                                <div class="col-span-12 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Acct. ID</label>
+                                    <input type="text" class="form-input w-full" x-model="row.account_id" :name="'inputs[materials][rows]['+idx+'][account_id]'" placeholder="e.g., 5001">
+                                </div>
+                                <div class="col-span-12 md:col-span-3">
+                                    <label class="md:hidden block text-xs text-gray-500">Material Expense</label>
+                                    <input type="text" class="form-input w-full" x-model="row.expense" :name="'inputs[materials][rows]['+idx+'][expense]'" placeholder="e.g., Mulch">
+                                </div>
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Previous $</label>
+                                    <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.previous" :name="'inputs[materials][rows]['+idx+'][previous]'" placeholder="0.00">
+                                </div>
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Current $</label>
+                                    <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.current" :name="'inputs[materials][rows]['+idx+'][current]'" placeholder="0.00">
+                                </div>
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Comments</label>
+                                    <input type="text" class="form-input w-full" x-model="row.comments" :name="'inputs[materials][rows]['+idx+'][comments]'" placeholder="Notes">
+                                </div>
+                                <div class="col-span-12 md:col-span-1 flex md:justify-end">
+                                    <x-danger-button size="sm" type="button" @click="removeMaterialsRow(idx)">Delete</x-danger-button>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="pt-3">
+                            <x-brand-button type="button" size="sm" variant="ghost" @click="addMaterialsRow()">+ New</x-brand-button>
+                        </div>
                     </div>
                 </section>
 
                 <!-- SUBCONTRACTING -->
                 <section x-show="section==='Subcontracting'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Subcontracting</h2>
-                    <div class="rounded border p-4 bg-gray-50 text-sm text-gray-700">
-                        Define subcontractor fees, markups, and usage assumptions. (Coming soon)
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Subcontracting
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(subcCurrentTotal())"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span>
+                    </h2>
+                    <div class="rounded border p-4">
+                        <!-- Graphics Row -->
+                        <div class="grid md:grid-cols-3 gap-4 mb-4">
+                            <!-- Subcontracting Summary -->
+                            <div class="rounded border p-3 relative md:col-span-2">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Subcontracting Summary</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg></div>
+                                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                                    <div class="text-gray-600">Previous Total</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(subcPrevTotal())"></div>
+                                    <div class="text-gray-600">Previous Ratio</div>
+                                    <div class="text-right font-semibold"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800" x-text="subcPrevRatio().toFixed(1) + '%'"></span></div>
+                                    <div class="text-gray-600">Current Total</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(subcCurrentTotal())"></div>
+                                    <div class="text-gray-600">Current Ratio</div>
+                                    <div class="text-right font-semibold"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span></div>
+                                </div>
+                            </div>
+                            <!-- Subcontracting Ratio -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Subcontracting Ratio</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div>
+                                <div class="space-y-2">
+                                    <div class="flex items-start justify-between gap-3 mb-2">
+                                        <div class="flex-1">
+                                            <div class="text-xs uppercase text-gray-500">Your Ratio</div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Header Row -->
+                        <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
+                            <div class="col-span-2">Acct. ID</div>
+                            <div class="col-span-3">Subcontracting Expense</div>
+                            <div class="col-span-2">Previous $</div>
+                            <div class="col-span-2">Current $</div>
+                            <div class="col-span-2">Comments</div>
+                            <div class="col-span-1 text-right">Actions</div>
+                        </div>
+                        <template x-for="(row, idx) in subcontractingRows" :key="'sc'+idx">
+                            <div class="grid grid-cols-12 gap-3 items-center py-2 border-b">
+                                <div class="col-span-12 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Acct. ID</label>
+                                    <input type="text" class="form-input w-full" x-model="row.account_id" :name="'inputs[subcontracting][rows]['+idx+'][account_id]'" placeholder="e.g., 6001">
+                                </div>
+                                <div class="col-span-12 md:col-span-3">
+                                    <label class="md:hidden block text-xs text-gray-500">Subcontracting Expense</label>
+                                    <input type="text" class="form-input w-full" x-model="row.expense" :name="'inputs[subcontracting][rows]['+idx+'][expense]'" placeholder="e.g., Tree work">
+                                </div>
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Previous $</label>
+                                    <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.previous" :name="'inputs[subcontracting][rows]['+idx+'][previous]'" placeholder="0.00">
+                                </div>
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Current $</label>
+                                    <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.current" :name="'inputs[subcontracting][rows]['+idx+'][current]'" placeholder="0.00">
+                                </div>
+                                <div class="col-span-6 md:col-span-2">
+                                    <label class="md:hidden block text-xs text-gray-500">Comments</label>
+                                    <input type="text" class="form-input w-full" x-model="row.comments" :name="'inputs[subcontracting][rows]['+idx+'][comments]'" placeholder="Notes">
+                                </div>
+                                <div class="col-span-12 md:col-span-1 flex md:justify-end">
+                                    <x-danger-button size="sm" type="button" @click="removeSubcontractingRow(idx)">Delete</x-danger-button>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="pt-3">
+                            <x-brand-button type="button" size="sm" variant="ghost" @click="addSubcontractingRow()">+ New</x-brand-button>
+                        </div>
                     </div>
                 </section>
 
                 <!-- OVERHEAD -->
                 <section x-show="section==='Overhead'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Overhead</h2>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Overhead
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(overheadCurrentTotal())"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span>
+                    </h2>
                     <div class="rounded border p-4">
-                        <div class="grid md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium">Annual Overhead ($)</label>
-                                <input type="number" step="0.01" min="0" name="inputs[overhead][total]" class="form-input w-full mt-1" value="{{ old('inputs.overhead.total', data_get($budget->inputs, 'overhead.total', 150000)) }}">
+                        <!-- Graphics Row -->
+                        <div class="grid md:grid-cols-3 gap-4 mb-4">
+                            <!-- Key Factors -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Key Factors</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M8 7v13"/><path d="M16 7v13"/></svg></div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700">Labor Burden (%)</label>
+                                        <input type="number" step="0.1" min="0" class="form-input w-full" x-model.number="overheadLaborBurdenPct" name="inputs[overhead][labor_burden_pct]" placeholder="0.0">
+                                    </div>
+                                </div>
                             </div>
+                            <!-- Overhead Summary -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Overhead Summary</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg></div>
+                                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                                    <div class="text-gray-600">Overhead Expenses</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(overheadExpensesCurrentTotal())"></div>
+                                    <div class="text-gray-600">Overhead Wages</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(overheadWagesForecastTotal())"></div>
+>
+                                </div>
+                            </div>
+                            <!-- Overhead Ratio -->
+                            <div class="rounded border p-3 relative">
+                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Overhead Ratio</div>
+                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div>
+                                <div class="space-y-2">
+                                    <div class="flex items-start justify-between gap-3 mb-2">
+                                        <div class="flex-1">
+                                            <div class="text-xs uppercase text-gray-500">Your Ratio</div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span></div>
+                                        </div>
+                                        <div class="flex-1 text-right">
+                                            <div class="text-xs uppercase text-gray-500">Industry Avg</div>
+                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(overheadIndustryAvgRatio||0).toFixed(1) + '%'"></span></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700">Industry Avg (%)</label>
+                                        <input type="number" step="0.1" min="0" class="form-input w-full" x-model.number="overheadIndustryAvgRatio" name="inputs[overhead][industry_avg_ratio]" placeholder="24.8">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Overhead Tabs -->
+                        <div class="inline-flex rounded-md border overflow-hidden mb-4">
+                            <button type="button" class="px-3 py-1.5 text-sm" :class="{ 'bg-gray-200 text-gray-900' : overheadTab==='expenses' }" @click="overheadTab='expenses'">Overhead Expenses</button>
+                            <button type="button" class="px-3 py-1.5 text-sm border-l" :class="{ 'bg-gray-200 text-gray-900' : overheadTab==='wages' }" @click="overheadTab='wages'">Overhead Wages</button>
+                            <button type="button" class="px-3 py-1.5 text-sm border-l" :class="{ 'bg-gray-200 text-gray-900' : overheadTab==='equipment' }" @click="overheadTab='equipment'">Overhead Equipment</button>
+                        </div>
+                        <!-- Overhead Expenses Table -->
+                        <div class="mb-6" x-show="overheadTab==='expenses'">
+                            <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
+                                <div class="col-span-2">Acct. ID</div>
+                                <div class="col-span-3">Overhead</div>
+                                <div class="col-span-2">Previous $</div>
+                                <div class="col-span-2">Current $</div>
+                                <div class="col-span-2">Comments</div>
+                                <div class="col-span-1 text-right">Actions</div>
+                            </div>
+                            <template x-for="(row, idx) in overheadExpensesRows" :key="'oe'+idx">
+                                <div class="grid grid-cols-12 gap-3 items-center py-2 border-b">
+                                    <div class="col-span-12 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Acct. ID</label>
+                                        <input type="text" class="form-input w-full" x-model="row.account_id" :name="'inputs[overhead][expenses][rows]['+idx+'][account_id]'" placeholder="e.g., 7001">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-3">
+                                        <label class="md:hidden block text-xs text-gray-500">Overhead</label>
+                                        <input type="text" class="form-input w-full" x-model="row.expense" :name="'inputs[overhead][expenses][rows]['+idx+'][expense]'" placeholder="e.g., Utilities">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Previous $</label>
+                                        <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.previous" :name="'inputs[overhead][expenses][rows]['+idx+'][previous]'" placeholder="0.00">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Current $</label>
+                                        <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.current" :name="'inputs[overhead][expenses][rows]['+idx+'][current]'" placeholder="0.00">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Comments</label>
+                                        <input type="text" class="form-input w-full" x-model="row.comments" :name="'inputs[overhead][expenses][rows]['+idx+'][comments]'" placeholder="Notes">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-1 flex md:justify-end">
+                                        <x-danger-button size="sm" type="button" @click="removeOverheadExpenseRow(idx)">Delete</x-danger-button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="pt-3">
+                                <x-brand-button type="button" size="sm" variant="ghost" @click="addOverheadExpenseRow()">+ New</x-brand-button>
+                            </div>
+                        </div>
+                        <!-- Overhead Wages Table -->
+                        <div class="mb-6" x-show="overheadTab==='wages'">
+                            <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
+                                <div class="col-span-3">Salary</div>
+                                <div class="col-span-2">Previous $</div>
+                                <div class="col-span-2">Forecast $</div>
+                                <div class="col-span-2">% Diff</div>
+                                <div class="col-span-2">Comments</div>
+                                <div class="col-span-1 text-right">Actions</div>
+                            </div>
+                            <template x-for="(row, idx) in overheadWagesRows" :key="'ow'+idx">
+                                <div class="grid grid-cols-12 gap-3 items-center py-2 border-b">
+                                    <div class="col-span-12 md:col-span-3">
+                                        <label class="md:hidden block text-xs text-gray-500">Salary</label>
+                                        <input type="text" class="form-input w-full" x-model="row.title" :name="'inputs[overhead][wages][rows]['+idx+'][title]'" placeholder="e.g., Office Admin">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Previous $</label>
+                                        <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.previous" :name="'inputs[overhead][wages][rows]['+idx+'][previous]'" placeholder="0.00">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Forecast $</label>
+                                        <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.forecast" :name="'inputs[overhead][wages][rows]['+idx+'][forecast]'" placeholder="0.00">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">% Diff</label>
+                                        <input type="text" class="form-input w-full bg-gray-50" :value="overheadWageDiff(row)" readonly tabindex="-1">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Comments</label>
+                                        <input type="text" class="form-input w-full" x-model="row.comments" :name="'inputs[overhead][wages][rows]['+idx+'][comments]'" placeholder="Notes">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-1 flex md:justify-end">
+                                        <x-danger-button size="sm" type="button" @click="removeOverheadWageRow(idx)">Delete</x-danger-button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="pt-3">
+                                <x-brand-button type="button" size="sm" variant="ghost" @click="addOverheadWageRow()">+ New</x-brand-button>
+                            </div>
+                        </div>
+                        <!-- Overhead Equipment (mirrors Equipment) -->
+                        <div class="mb-2" x-show="overheadTab==='equipment'">
+                            <div class="text-sm font-semibold mb-2">Overhead Equipment</div>
+                            <div class="hidden md:grid grid-cols-12 gap-2 text-xs font-medium text-gray-600 border-b pb-2">
+                                <div class="col-span-2">Equipment Type</div>
+                                <div class="col-span-1">Qty</div>
+                                <div class="col-span-2">Class</div>
+                                <div class="col-span-4">Description</div>
+                                <div class="col-span-2">Cost/Yr/Ea</div>
+                                <div class="col-span-1 text-right">Cost/Yr/Ea</div>
+                            </div>
+                            <template x-for="(row, idx) in overheadEquipmentRows" :key="'oer'+idx">
+                                <div class="grid grid-cols-12 gap-2 items-center py-2 border-b">
+                                    <div class="col-span-12 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Equipment Type</label>
+                                        <input type="text" class="form-input w-full" x-model="row.type" :name="'inputs[overhead][equipment][rows]['+idx+'][type]'" placeholder="e.g., Copier">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-1">
+                                        <label class="md:hidden block text-xs text-gray-500">Qty</label>
+                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.qty" :name="'inputs[overhead][equipment][rows]['+idx+'][qty]'" placeholder="0">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Class</label>
+                                        <select class="form-select w-full" x-model="row.class" :name="'inputs[overhead][equipment][rows]['+idx+'][class]'" @change="if(row.class==='Owned' && !row.owned){row.owned={ replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }}; if(row.class==='Leased' && !row.leased){row.leased={ monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' }}; if(row.class==='Group' && !row.group){row.group={ items: [] }}" >
+                                            <option>Custom</option>
+                                            <option>Owned</option>
+                                            <option>Leased</option>
+                                            <option>Group</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-span-12 md:col-span-4">
+                                        <label class="md:hidden block text-xs text-gray-500">Description</label>
+                                        <input type="text" class="form-input w-full" x-model="row.description" :name="'inputs[overhead][equipment][rows]['+idx+'][description]'" placeholder="Notes">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <label class="md:hidden block text-xs text-gray-500">Cost/Yr/Ea</label>
+                                        <template x-if="row.class==='Owned'">
+                                            <div class="relative">
+                                                <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeOwnedAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][cost_per_year]'" :value="computeOwnedAnnual(row)">
+                                                <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
+                                                        @click.prevent="row._ownedOpen = !row._ownedOpen"
+                                                        :aria-expanded="row._ownedOpen ? 'true' : 'false'"
+                                                        title="Toggle calculator">
+                                                    <svg viewBox="0 0 24 24" class="h-4 w-4 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                        <path d="M7 7h10M7 11h4M13 11h4M7 15h4M13 15h4"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <template x-if="row.class==='Leased'">
+                                            <div class="relative">
+                                                <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeLeasedAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][cost_per_year]'" :value="computeLeasedAnnual(row)">
+                                                <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
+                                                        @click.prevent="row._ownedOpen = !row._ownedOpen"
+                                                        :aria-expanded="row._ownedOpen ? 'true' : 'false'"
+                                                        title="Toggle calculator">
+                                                    <svg viewBox="0 0 24 24" class="h-4 w-4 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                        <path d="M7 7h10M7 11h4M13 11h4M7 15h4M13 15h4"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <template x-if="row.class!=='Owned' && row.class!=='Leased' && row.class!=='Group'">
+                                            <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.cost_per_year" :name="'inputs[overhead][equipment][rows]['+idx+'][cost_per_year]'" placeholder="0.00">
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="pt-3 flex items-center justify-between">
+                                <x-brand-button type="button" size="sm" variant="ghost" @click="addOverheadEquipmentRow()">+ New</x-brand-button>
+                                <div class="text-sm text-gray-700" x-show="overheadEquipmentTotal() > 0"><span class="font-semibold">Total Equipment:</span> <span x-text="formatMoney(overheadEquipmentTotal())"></span></div>
+                            </div>
+                            >
                         </div>
                     </div>
                 </section>
@@ -771,6 +1324,17 @@
     window.__initialEquipmentGeneral = @json($initialEquipmentGeneral);
     window.__initialEquipmentRentals = @json($initialEquipmentRentals);
     window.__initialEquipmentIndustryAvgRatio = @json($initialEquipmentIndustryAvg);
+    window.__initialMaterialsRows = @json($initialMaterialsRows);
+    window.__initialMaterialsTaxPct = @json($initialMaterialsTaxPct);
+    window.__initialMaterialsIndustryAvg = @json($initialMaterialsIndustryAvg);
+    window.__initialOverheadExpensesRows = @json($initialOverheadExpensesRows);
+    window.__initialOverheadWagesRows = @json($initialOverheadWagesRows);
+    window.__initialOverheadEquipmentRows = @json($initialOverheadEquipmentRows);
+    window.__initialOverheadEquipmentGeneral = @json($initialOverheadEquipmentGeneral);
+    window.__initialOverheadEquipmentRentals = @json($initialOverheadEquipmentRentals);
+    window.__initialOverheadIndustryAvg = @json($initialOverheadIndustryAvg);
+    window.__initialOverheadLaborBurden = @json($initialOverheadLaborBurden);
+    window.__initialSubcontractingRows = @json($initialSubcontractingRows);
 
     // Alpine data for the budget editor
     window.budgetEditor = function(){
@@ -778,9 +1342,15 @@
             section: (new URL(window.location.href)).searchParams.get('section') || 'Budget Info',
             salesRows: Array.isArray(window.__initialSalesRows) ? window.__initialSalesRows : [],
             laborTab: 'hourly',
+            overheadTab: 'expenses',
             hourlyRows: Array.isArray(window.__initialHourlyRows) ? window.__initialHourlyRows : [],
             salaryRows: Array.isArray(window.__initialSalaryRows) ? window.__initialSalaryRows : [],
             equipmentRows: Array.isArray(window.__initialEquipmentRows) ? window.__initialEquipmentRows : [],
+            materialsRows: Array.isArray(window.__initialMaterialsRows) ? window.__initialMaterialsRows : [],
+            overheadExpensesRows: Array.isArray(window.__initialOverheadExpensesRows) ? window.__initialOverheadExpensesRows : [],
+            overheadWagesRows: Array.isArray(window.__initialOverheadWagesRows) ? window.__initialOverheadWagesRows : [],
+            overheadEquipmentRows: Array.isArray(window.__initialOverheadEquipmentRows) ? window.__initialOverheadEquipmentRows : [],
+            subcontractingRows: Array.isArray(window.__initialSubcontractingRows) ? window.__initialSubcontractingRows : [],
             equipmentGeneral: (window.__initialEquipmentGeneral && typeof window.__initialEquipmentGeneral === 'object') ? {
                 fuel: Number(window.__initialEquipmentGeneral.fuel ?? 0),
                 repairs: Number(window.__initialEquipmentGeneral.repairs ?? 0),
@@ -788,14 +1358,46 @@
             } : { fuel: 0, repairs: 0, insurance_misc: 0 },
             equipmentRentals: (window.__initialEquipmentRentals !== null && window.__initialEquipmentRentals !== undefined && window.__initialEquipmentRentals !== '') ? Number(window.__initialEquipmentRentals) : 0,
             equipmentIndustryAvgRatio: (window.__initialEquipmentIndustryAvgRatio !== null && window.__initialEquipmentIndustryAvgRatio !== undefined && window.__initialEquipmentIndustryAvgRatio !== '') ? Number(window.__initialEquipmentIndustryAvgRatio) : 13.7,
+            materialsTaxPct: (window.__initialMaterialsTaxPct !== null && window.__initialMaterialsTaxPct !== undefined && window.__initialMaterialsTaxPct !== '') ? Number(window.__initialMaterialsTaxPct) : 0,
+            materialsIndustryAvgRatio: (window.__initialMaterialsIndustryAvg !== null && window.__initialMaterialsIndustryAvg !== undefined && window.__initialMaterialsIndustryAvg !== '') ? Number(window.__initialMaterialsIndustryAvg) : 22.3,
+            overheadLaborBurdenPct: (window.__initialOverheadLaborBurden !== null && window.__initialOverheadLaborBurden !== undefined && window.__initialOverheadLaborBurden !== '') ? Number(window.__initialOverheadLaborBurden) : 0,
+            overheadIndustryAvgRatio: (window.__initialOverheadIndustryAvg !== null && window.__initialOverheadIndustryAvg !== undefined && window.__initialOverheadIndustryAvg !== '') ? Number(window.__initialOverheadIndustryAvg) : 24.8,
+            overheadEquipmentGeneral: (window.__initialOverheadEquipmentGeneral && typeof window.__initialOverheadEquipmentGeneral === 'object') ? {
+                fuel: Number(window.__initialOverheadEquipmentGeneral.fuel ?? 0),
+                repairs: Number(window.__initialOverheadEquipmentGeneral.repairs ?? 0),
+                insurance_misc: Number(window.__initialOverheadEquipmentGeneral.insurance_misc ?? 0),
+            } : { fuel: 0, repairs: 0, insurance_misc: 0 },
+            overheadEquipmentRentals: (window.__initialOverheadEquipmentRentals !== null && window.__initialOverheadEquipmentRentals !== undefined && window.__initialOverheadEquipmentRentals !== '') ? Number(window.__initialOverheadEquipmentRentals) : 0,
             init(){
-                // Ensure toggle flags and sub-objects exist
+                // Ensure toggle flags and sub-objects exist and normalize select-bound values as numbers to preserve selection
                 this.equipmentRows = (Array.isArray(this.equipmentRows) ? this.equipmentRows : []).map(r => {
                     if (r && typeof r === 'object') {
                         if (r._ownedOpen === undefined) r._ownedOpen = false;
                         if (r._menuOpen === undefined) r._menuOpen = false;
                         if (!r.owned) r.owned = { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' };
                         if (!r.leased) r.leased = { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' };
+                        if (!r.group) r.group = { items: [] };
+
+                        // Normalize to strings so <select> value binding matches option values
+                        if (r.owned) {
+                            if (r.owned.months_per_year !== undefined && r.owned.months_per_year !== null && r.owned.months_per_year !== '') {
+                                r.owned.months_per_year = String(r.owned.months_per_year);
+                            } else { r.owned.months_per_year = r.owned.months_per_year || ''; }
+                            if (r.owned.division_months !== undefined && r.owned.division_months !== null && r.owned.division_months !== '') {
+                                r.owned.division_months = String(r.owned.division_months);
+                            } else { r.owned.division_months = r.owned.division_months || ''; }
+                        }
+                        if (r.leased) {
+                            if (r.leased.payments_per_year !== undefined && r.leased.payments_per_year !== null && r.leased.payments_per_year !== '') {
+                                r.leased.payments_per_year = String(r.leased.payments_per_year);
+                            } else { r.leased.payments_per_year = r.leased.payments_per_year || ''; }
+                            if (r.leased.months_per_year !== undefined && r.leased.months_per_year !== null && r.leased.months_per_year !== '') {
+                                r.leased.months_per_year = String(r.leased.months_per_year);
+                            } else { r.leased.months_per_year = r.leased.months_per_year || ''; }
+                            if (r.leased.division_months !== undefined && r.leased.division_months !== null && r.leased.division_months !== '') {
+                                r.leased.division_months = String(r.leased.division_months);
+                            } else { r.leased.division_months = r.leased.division_months || ''; }
+                        }
                     }
                     return r;
                 });
@@ -809,15 +1411,27 @@
             removeHourlyRow(i){ this.hourlyRows.splice(i,1); },
             addSalaryRow(){ this.salaryRows.push({ type:'', staff:'', ann_hrs:'', ann_salary:'', bonus:'' }); },
             removeSalaryRow(i){ this.salaryRows.splice(i,1); },
-            addEquipmentRow(){ this.equipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' } }); },
+            addMaterialsRow(){ this.materialsRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
+            removeMaterialsRow(i){ this.materialsRows.splice(i,1); },
+            addOverheadExpenseRow(){ this.overheadExpensesRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
+            removeOverheadExpenseRow(i){ this.overheadExpensesRows.splice(i,1); },
+              addOverheadWageRow(){ this.overheadWagesRows.push({ title:'', previous:'', forecast:'', comments:'' }); },
+  removeOverheadWageRow(i){ this.overheadWagesRows.splice(i,1); },
+  addOverheadEquipmentRow(){ this.overheadEquipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' } }); },
+  removeOverheadEquipmentRow(i){ this.overheadEquipmentRows.splice(i,1); },
+  addSubcontractingRow(){ this.subcontractingRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
+            removeSubcontractingRow(i){ this.subcontractingRows.splice(i,1); },
+            addEquipmentRow(){ this.equipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' }, group: { items: [] } }); },
             removeEquipmentRow(i){ this.equipmentRows.splice(i,1); },
-            // Owned calculations (Annual = replacement/useful life + compounded interest over life divided by useful life)
+            // Owned calculations (Annual = ((replacement + fees + interest over life) - end-of-life value) / useful life)
             computeOwnedAnnual(row){
                 const cap = (parseFloat(row?.owned?.replacement_value) || 0) + (parseFloat(row?.owned?.fees) || 0);
                 const years = Math.max(0.1, parseFloat(row?.owned?.years) || 0);
                 const rate = Math.max(0, Math.min(100, parseFloat(row?.owned?.interest_rate_pct) || 0)) / 100;
+                const salvage = Math.max(0, parseFloat(row?.owned?.salvage_value) || 0);
                 const totalInflationLife = cap * (Math.pow(1 + rate, years) - 1);
-                const annual = (cap / years) + (totalInflationLife / years);
+                const numerator = (cap + totalInflationLife) - salvage;
+                const annual = numerator / years;
                 return Math.max(0, annual);
             },
             computeOwnedMonthlyCalendar(row){
@@ -848,6 +1462,19 @@
                 const compoundedInterest = cap * (Math.pow(1 + rate, years) - 1);
                 return Math.max(0, compoundedInterest);
             },
+            // Group computations
+            computeGroupItemAnnual(it){
+                const p = parseFloat(it?.purchase_price) || 0;
+                const r = parseFloat(it?.resale_value) || 0;
+                const y = Math.max(0.1, parseFloat(it?.years) || 0);
+                return Math.max(0, (p - r) / y);
+            },
+            computeGroupAnnual(row){
+                const items = (row?.group?.items || []);
+                return items.reduce((s, it) => s + ((parseFloat(it?.qty)||0) * this.computeGroupItemAnnual(it)), 0);
+            },
+            addGroupItem(row){ if (!row.group) row.group = { items: [] }; row.group.items.push({ name:'', qty:'', purchase_price:'', resale_value:'', years:'' }); },
+            removeGroupItem(row, i){ try { row.group.items.splice(i,1); } catch(_) {} },
             // Leased computations
             computeLeasedAnnual(row){
                 const pmt = Math.max(0, parseFloat(row?.leased?.monthly_payment) || 0);
@@ -873,7 +1500,7 @@
                 const divMonths = Math.max(1, parseInt(row?.leased?.division_months) || 1);
                 return divAnnual / divMonths;
             },
-            perUnitCost(row){ if (row.class==='Owned') return this.computeOwnedAnnual(row); if (row.class==='Leased') return this.computeLeasedAnnual(row); return (parseFloat(row.cost_per_year)||0); },
+            perUnitCost(row){ if (row.class==='Owned') return this.computeOwnedAnnual(row); if (row.class==='Leased') return this.computeLeasedAnnual(row); if (row.class==='Group') return this.computeGroupAnnual(row); return (parseFloat(row.cost_per_year)||0); },
             equipmentRowTotal(row){ const q = parseFloat(row.qty)||0; const c = this.perUnitCost(row); return q * c; },
             equipmentTotal(){ return this.equipmentRows.reduce((s,r)=> s + this.equipmentRowTotal(r), 0); },
             equipmentDisplayedListTotal(){ return this.equipmentRows.reduce((s,r)=> s + (this.perUnitCost(r)||0), 0); },
@@ -915,7 +1542,14 @@
             },
             // Formatting helpers
             formatMoney(n){ const v = parseFloat(n) || 0; return '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
-            // Totals
+            // Ratio coloring helpers (within 4 percentage points of industry avg => green; else red)
+            within4(cur, avg){ const a = Number(cur)||0; const b = Number(avg)||0; return Math.abs(a - b) <= 4; },
+            laborPillClass(){ return this.within4(this.laborRatio(), this.industryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+              equipmentPillClass(){ return this.within4(this.equipmentRatio(), this.equipmentIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+              materialsPillClass(){ return this.within4(this.materialsRatio(), this.materialsIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+              materialsPillClassFor(val){ return this.within4(val, this.materialsIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+              overheadPillClass(){ return this.within4(this.overheadRatio(), this.overheadIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+  // Totals
             prevTotal(){ return this.salesRows.reduce((s, r) => s + (parseFloat(r.previous) || 0), 0); },
             forecastTotal(){ return this.salesRows.reduce((s, r) => s + (parseFloat(r.forecast) || 0), 0); },
             barWidth(val){ const max = Math.max(this.prevTotal(), this.forecastTotal(), 1); return Math.round((Math.max(0, val) / max) * 100) + '%'; },
@@ -1015,12 +1649,34 @@
                 if (!p) return f === 0 ? 0 : 100; // if no previous, treat as 100% change when forecast > 0
                 return ((f - p) / Math.abs(p)) * 100;
             },
+            // Materials totals and ratios
+            materialsPrevTotal(){ const sum = this.materialsRows.reduce((s,r)=> s + (parseFloat(r.previous)||0), 0); const t = (parseFloat(this.materialsTaxPct)||0)/100; return sum * (1 + Math.max(0,t)); },
+            materialsCurrentTotal(){ const sum = this.materialsRows.reduce((s,r)=> s + (parseFloat(r.current)||0), 0); const t = (parseFloat(this.materialsTaxPct)||0)/100; return sum * (1 + Math.max(0,t)); },
+            materialsPrevRatio(){ const sales = this.forecastTotal(); if (!sales) return 0; return (this.materialsPrevTotal() / Math.abs(sales)) * 100; },
+            materialsRatio(){ const sales = this.forecastTotal(); if (!sales) return 0; return (this.materialsCurrentTotal() / Math.abs(sales)) * 100; },
+            // Subcontracting totals and ratios
+            subcPrevTotal(){ return this.subcontractingRows.reduce((s,r)=> s + (parseFloat(r.previous)||0), 0); },
+            subcCurrentTotal(){ return this.subcontractingRows.reduce((s,r)=> s + (parseFloat(r.current)||0), 0); },
+            subcPrevRatio(){ const sales = this.forecastTotal(); if (!sales) return 0; return (this.subcPrevTotal() / Math.abs(sales)) * 100; },
+            subcRatio(){ const sales = this.forecastTotal(); if (!sales) return 0; return (this.subcCurrentTotal() / Math.abs(sales)) * 100; },
             changeRing(){
                 const c = this.changePercent();
                 const pct = Math.max(0, Math.min(100, Math.abs(c)));
                 const color = c >= 0 ? '#16a34a' : '#dc2626';
                 return `conic-gradient(${color} 0 ${pct}%, #e5e7eb ${pct}%)`;
-            }
+            },
+            // Overhead totals/ratios
+            overheadExpensesPrevTotal(){ return this.overheadExpensesRows.reduce((s,r)=> s + (parseFloat(r.previous)||0), 0); },
+            overheadExpensesCurrentTotal(){ return this.overheadExpensesRows.reduce((s,r)=> s + (parseFloat(r.current)||0), 0); },
+            overheadWagesPrevTotal(){ return this.overheadWagesRows.reduce((s,r)=> s + (parseFloat(r.previous)||0), 0); },
+            overheadWagesForecastTotal(){ return this.overheadWagesRows.reduce((s,r)=> s + (parseFloat(r.forecast)||0), 0); },
+            overheadEquipmentDisplayedListTotal(){ return this.overheadEquipmentRows.reduce((s,r)=> s + (parseFloat(r.cost_per_year)||0), 0); },
+            overheadEquipmentRowTotal(row){ const q = parseFloat(row.qty)||0; const c = parseFloat(row.cost_per_year)||0; return q * c; },
+            overheadEquipmentTotal(){ return this.overheadEquipmentRows.reduce((s,r)=> s + this.overheadEquipmentRowTotal(r), 0); },
+            overheadEquipmentExpensesTotal(){ return (this.overheadEquipmentDisplayedListTotal() || 0) + (parseFloat(this.overheadEquipmentGeneral.fuel)||0) + (parseFloat(this.overheadEquipmentGeneral.repairs)||0) + (parseFloat(this.overheadEquipmentGeneral.insurance_misc)||0); },
+            overheadCurrentTotal(){ return this.overheadExpensesCurrentTotal() + this.overheadWagesForecastTotal(); },
+            overheadPrevTotal(){ return this.overheadExpensesPrevTotal() + this.overheadWagesPrevTotal(); },
+            overheadRatio(){ const sales = this.forecastTotal(); if (!sales) return 0; return (this.overheadCurrentTotal() / Math.abs(sales)) * 100; }
         };
     };
 

@@ -1,11 +1,12 @@
 # Budget Editor: Implementation Summary and To‑Dos
 
-Date: 2025-11-19
+Date: 2025-11-19 (updated)
 
 ## What’s Implemented
 
 - Navigation and Save
-  - Left sidebar shows section pills with live metrics for Sales (Forecast), Field Labor (Field Payroll), and Equipment (Total Equip Expenses)
+  - Left sidebar shows section pills with live metrics for Sales (Forecast), Field Labor (Field Payroll), Equipment (Total Equip Expenses), Materials (Current Total), Subcontracting (Current Total), and Overhead (Current Total)
+  - Ratio bubbles added in sidebar and section headers for Field Labor, Equipment, Materials, Subcontracting (always green), and Overhead (vs industry avg). Colors: green when within 4 percentage points of industry average; red otherwise (where applicable).
   - Single Save button in the top header; bottom Save removed
   - After save, the form appends close=1 enabling controller to redirect away (server handling optional)
 
@@ -68,6 +69,31 @@ Date: 2025-11-19
   - Graphics cards enhanced with top-right icons
   - Pie and bars unchanged; persistence retained
 
+- Materials Section (new)
+  - Key Factors: Materials Tax (%) used to compute tax-inclusive totals
+  - Material Summary: Previous Total/Ratio, Current Total/Ratio with colored pills
+  - Material Ratio: Your Ratio vs Industry Avg (default 22.3) with colored pill
+  - Table mirrors Sales: Acct. ID, Material Expense, Previous $, Current $, Comments
+  - Persists under inputs.materials.*
+
+- Subcontracting Section (new)
+  - Summary: Previous Total/Ratio, Current Total/Ratio (ratio pills always green; no industry avg)
+  - Ratio: Your Ratio only (always green pill)
+  - Table mirrors Materials: Acct. ID, Subcontracting Expense, Previous $, Current $, Comments
+  - Persists under inputs.subcontracting.*
+
+- Overhead Section (expanded)
+  - Graphics Row:
+    - Key Factors: Labor Burden (%)
+    - Overhead Summary: Overhead Expenses (Current), Overhead Wages (Forecast)
+    - Overhead Ratio: Your Ratio vs Industry Avg (default 24.8) with colored pill
+  - Three tabs inside Overhead section:
+    1) Overhead Expenses: Acct. ID, Overhead, Previous $, Current $, Comments (Add/Delete)
+    2) Overhead Wages: Salary, Previous, Forecast, % Diff, Comments (Add/Delete)
+    3) Overhead Equipment: mirrors Equipment row UI; Owned/Leased breakdown panels enabled; removed the equipment general/rentals graphics from Overhead per requirement
+  - Overhead Current Total = Overhead Expenses (Current) + Overhead Wages (Forecast)
+  - Persists under inputs.overhead.*
+
 - Styling
   - Owned panel styled with dark-green double underline for title, thin dividers between rows
   - General Expenses uses compact, single-row label/input layout
@@ -87,6 +113,8 @@ Date: 2025-11-19
   - Move to Overhead increases inputs.overhead.total via DOM. Consider server-side recompute or displaying an inline confirmation.
 - Rentals in Equipment Ratio
   - Ratio currently includes Total Equip Expenses + Rentals. Confirm intended scope for KPI.
+- Overhead Equipment contribution
+  - Per requirements, Overhead Equipment graphics/inputs were removed from Overhead totals; equipment costs should be entered via Overhead Expenses. Confirm long-term plan and whether to delete the Overhead Equipment tab entirely.
 - Save-and-close behavior
   - Front-end appends close=1. Implement redirect logic in controller if desired.
 
@@ -98,11 +126,14 @@ Date: 2025-11-19
   - Add copy/duplicate row action to speed data entry.
 - Data validation and guardrails
   - Warn when salvage > replacement+fees; warn when months used < division months.
+  - Block negative numbers; normalize percent input accepting "6" or "0.06" via a helper.
+  - Materials/Subcontracting: optionally prevent saving when Sales Forecast is zero and ratios would divide by zero (show friendly message).
   - Normalize percent input accepting "6" or "0.06" via a helper.
 - Performance and state
   - Debounce numeric inputs; centralize numeric coercion.
   - Add a computed grand equipment cost including Rentals in the sidebar pill if helpful.
 - Reporting
+  - Add compact summaries at the bottom of Materials/Subcontracting/Overhead like Equipment, including ratios and diffs.
   - Add a compact summary at the bottom of Equipment showing: Equipment list total (extended), Other, Rentals, Total, and Ratio.
   - Export to CSV/PDF for Equipment assumptions.
 - Accessibility
@@ -116,4 +147,7 @@ Date: 2025-11-19
 4) Add duplicate row action in Equipment
 5) Add tooltips/info icons explaining Owned/Leased calculations
 6) Optional: expose toggle to include Rentals in sidebar pill and section header pill
-7) Optional: add tests for persistence of General, Rentals, Industry Avg, Owned and Leased fields
+7) Add tests for persistence and validation of Materials, Subcontracting, Overhead (expenses, wages, equipment) and Equipment (General, Rentals, Industry Avg, Owned/Leased fields)
+8) Overhead: consider fully removing Equipment tab if those costs are exclusively tracked under Expenses
+9) Accessibility: ensure all icon buttons (calc toggles, delete) have aria-labels and keyboard focus states
+10) Performance: debounce inputs and memoize totals/ratios for large tables
