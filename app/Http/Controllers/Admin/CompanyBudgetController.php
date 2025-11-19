@@ -128,6 +128,35 @@ class CompanyBudgetController extends Controller
             'inputs.labor.salary.rows.*.bonus' => 'nullable|numeric|min:0',
             // Overhead
             'inputs.overhead.total' => 'nullable|numeric|min:0',
+            // Equipment rows
+            'inputs.equipment.rows' => 'nullable|array',
+            'inputs.equipment.rows.*.type' => 'nullable|string|max:100',
+            'inputs.equipment.rows.*.qty' => 'nullable|numeric|min:0',
+            'inputs.equipment.rows.*.class' => 'nullable|string|in:Custom,Owned,Leased,Group',
+            'inputs.equipment.rows.*.description' => 'nullable|string|max:255',
+            'inputs.equipment.rows.*.cost_per_year' => 'nullable|numeric|min:0',
+            // Owned-class details (optional)
+            'inputs.equipment.rows.*.owned' => 'nullable|array',
+            'inputs.equipment.rows.*.owned.replacement_value' => 'nullable|numeric|min:0',
+            'inputs.equipment.rows.*.owned.fees' => 'nullable|numeric|min:0',
+            'inputs.equipment.rows.*.owned.years' => 'nullable|numeric|min:0.1',
+            'inputs.equipment.rows.*.owned.salvage_value' => 'nullable|numeric|min:0',
+            'inputs.equipment.rows.*.owned.months_per_year' => 'nullable|integer|min:1|max:12',
+            'inputs.equipment.rows.*.owned.division_months' => 'nullable|integer|min:1|max:12',
+            'inputs.equipment.rows.*.owned.interest_rate_pct' => 'nullable|numeric|min:0|max:100',
+            // Leased-class details (optional)
+            'inputs.equipment.rows.*.leased' => 'nullable|array',
+            'inputs.equipment.rows.*.leased.monthly_payment' => 'nullable|numeric|min:0',
+            'inputs.equipment.rows.*.leased.payments_per_year' => 'nullable|integer|min:1|max:12',
+            'inputs.equipment.rows.*.leased.months_per_year' => 'nullable|integer|min:1|max:12',
+            'inputs.equipment.rows.*.leased.division_months' => 'nullable|integer|min:1|max:12',
+            // Equipment general/summary inputs
+            'inputs.equipment.general' => 'nullable|array',
+            'inputs.equipment.general.fuel' => 'nullable|numeric|min:0',
+            'inputs.equipment.general.repairs' => 'nullable|numeric|min:0',
+            'inputs.equipment.general.insurance_misc' => 'nullable|numeric|min:0',
+            'inputs.equipment.rentals' => 'nullable|numeric|min:0',
+            'inputs.equipment.industry_avg_ratio' => 'nullable|numeric|min:0|max:100',
         ]);
     }
 }
