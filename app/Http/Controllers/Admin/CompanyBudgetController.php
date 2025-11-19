@@ -61,6 +61,22 @@ class CompanyBudgetController extends Controller
         $data = $this->validatePayload($request);
         // Preserve existing inputs and only overwrite changed keys (deep merge)
         $mergedInputs = array_replace_recursive($budget->inputs ?? [], $data['inputs'] ?? []);
+        // For list arrays that support deletions, overwrite the entire list with the posted value
+        // Equipment rows: overwrite the entire list so deletions persist (treat missing as empty)
+        $postedEquipmentRows = data_get($data, 'inputs.equipment.rows', null);
+        if ($postedEquipmentRows === null) {
+            $mergedInputs['equipment']['rows'] = [];
+        } else {
+            $mergedInputs['equipment']['rows'] = array_values($postedEquipmentRows);
+        }
+        // Overhead equipment rows: overwrite list to persist deletions (treat missing as empty)
+        $postedOverheadEquipRows = data_get($data, 'inputs.overhead.equipment.rows', null);
+        if ($postedOverheadEquipRows === null) {
+            $mergedInputs['overhead']['equipment']['rows'] = [];
+        } else {
+            $mergedInputs['overhead']['equipment']['rows'] = array_values($postedOverheadEquipRows);
+        }
+
         $outputs = $this->budget->computeOutputs($mergedInputs);
 
         $budget->fill([

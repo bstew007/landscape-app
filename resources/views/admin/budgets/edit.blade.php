@@ -1071,7 +1071,8 @@
                                     <div class="text-right font-semibold" x-text="formatMoney(overheadExpensesCurrentTotal())"></div>
                                     <div class="text-gray-600">Overhead Wages</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(overheadWagesForecastTotal())"></div>
->
+                                    <div class="text-gray-600">Overhead Equipment</div>
+                                    <div class="text-right font-semibold" x-text="formatMoney(overheadEquipmentTotal())"></div>
                                 </div>
                             </div>
                             <!-- Overhead Ratio -->
@@ -1196,7 +1197,7 @@
                                 <div class="col-span-1 text-right">Cost/Yr/Ea</div>
                             </div>
                             <template x-for="(row, idx) in overheadEquipmentRows" :key="'oer'+idx">
-                                <div class="grid grid-cols-12 gap-2 items-center py-2 border-b">
+                                <div class="grid grid-cols-12 gap-2 items-center py-2 border-b" @keydown.escape.stop="row._menuOpen=false">
                                     <div class="col-span-12 md:col-span-2">
                                         <label class="md:hidden block text-xs text-gray-500">Equipment Type</label>
                                         <input type="text" class="form-input w-full" x-model="row.type" :name="'inputs[overhead][equipment][rows]['+idx+'][type]'" placeholder="e.g., Copier">
@@ -1213,8 +1214,22 @@
                                             <option>Leased</option>
                                             <option>Group</option>
                                         </select>
+                                        <!-- Always submit months fields so values persist regardless of panel state -->
+                                        <template x-if="row.class==='Owned'">
+                                            <div class="hidden">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][months_per_year]'" :value="row.owned.months_per_year">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][division_months]'" :value="row.owned.division_months">
+                                            </div>
+                                        </template>
+                                        <template x-if="row.class==='Leased'">
+                                            <div class="hidden">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][payments_per_year]'" :value="row.leased.payments_per_year">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][months_per_year]'" :value="row.leased.months_per_year">
+                                                <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][division_months]'" :value="row.leased.division_months">
+                                            </div>
+                                        </template>
                                     </div>
-                                    <div class="col-span-12 md:col-span-4">
+                                    <div class="col-span-12 md:col-span-4 relative">
                                         <label class="md:hidden block text-xs text-gray-500">Description</label>
                                         <input type="text" class="form-input w-full" x-model="row.description" :name="'inputs[overhead][equipment][rows]['+idx+'][description]'" placeholder="Notes">
                                     </div>
@@ -1224,6 +1239,18 @@
                                             <div class="relative">
                                                 <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeOwnedAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
                                                 <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][cost_per_year]'" :value="computeOwnedAnnual(row)">
+                                                <!-- Ensure owned fields persist even when collapsed -->
+                                                <template x-if="!row._ownedOpen">
+                                                    <div>
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][replacement_value]'" :value="row.owned.replacement_value">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][fees]'" :value="row.owned.fees">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][years]'" :value="row.owned.years">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][salvage_value]'" :value="row.owned.salvage_value">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][months_per_year]'" :value="row.owned.months_per_year">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][division_months]'" :value="row.owned.division_months">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][interest_rate_pct]'" :value="row.owned.interest_rate_pct">
+                                                    </div>
+                                                </template>
                                                 <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
                                                         @click.prevent="row._ownedOpen = !row._ownedOpen"
                                                         :aria-expanded="row._ownedOpen ? 'true' : 'false'"
@@ -1239,6 +1266,15 @@
                                             <div class="relative">
                                                 <input type="text" class="form-input w-full bg-green-50 pr-10" :value="(computeLeasedAnnual(row) || 0).toFixed(2)" readonly tabindex="-1" placeholder="0.00">
                                                 <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][cost_per_year]'" :value="computeLeasedAnnual(row)">
+                                                <!-- Ensure leased fields persist even when collapsed -->
+                                                <template x-if="!row._ownedOpen">
+                                                    <div>
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][monthly_payment]'" :value="row.leased.monthly_payment">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][payments_per_year]'" :value="row.leased.payments_per_year">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][months_per_year]'" :value="row.leased.months_per_year">
+                                                        <input type="hidden" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][division_months]'" :value="row.leased.division_months">
+                                                    </div>
+                                                </template>
                                                 <button type="button" class="absolute inset-y-0 right-1 my-auto h-7 w-7 rounded border bg-white/80 hover:bg-white flex items-center justify-center shadow-sm"
                                                         @click.prevent="row._ownedOpen = !row._ownedOpen"
                                                         :aria-expanded="row._ownedOpen ? 'true' : 'false'"
@@ -1254,13 +1290,163 @@
                                             <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.cost_per_year" :name="'inputs[overhead][equipment][rows]['+idx+'][cost_per_year]'" placeholder="0.00">
                                         </template>
                                     </div>
+                                    <div class="col-span-4 md:col-span-1 text-right font-semibold relative">
+                                        <span class="inline-block mr-2" x-text="formatMoney(perUnitCost(row))"></span>
+                                        <div class="inline-block relative" @keydown.escape.stop="row._menuOpen=false">
+                                            <button type="button" class="h-6 w-6 inline-flex items-center justify-center rounded border bg-white hover:bg-gray-50 text-gray-700"
+                                                    @click.stop="row._menuOpen = !row._menuOpen"
+                                                    :aria-expanded="row._menuOpen ? 'true' : 'false'"
+                                                    title="Row actions">
+                                                <svg viewBox="0 0 20 20" class="h-4 w-4" fill="currentColor"><path d="M10 3a2 2 0 110 4 2 2 0 010-4zm0 5a2 2 0 110 4 2 2 0 010-4zm0 5a2 2 0 110 4 2 2 0 010-4z"/></svg>
+                                            </button>
+                                            <div class="absolute right-0 mt-1 w-44 bg-white border rounded shadow z-10" x-show="row._menuOpen" x-cloak @click.outside="row._menuOpen=false">
+                                                <button type="button" class="block w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50"
+                                                        @click="moveOverheadEquipmentToEquipment(idx); row._menuOpen=false">Move to Equipment</button>
+                                                <button type="button" class="block w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+                                                        @click="removeOverheadEquipmentRow(idx); row._menuOpen=false">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Owned details panel (Overhead Equipment) -->
+                                    <div class="col-span-12" x-show="row.class==='Owned' && row._ownedOpen">
+                                        <div class="mt-2 bg-green-50 border border-green-200 rounded p-3 space-y-3">
+                                            <div class="text-sm uppercase tracking-wide text-green-700 pb-2 mb-2 border-b-2 border-green-700 border-double">Owned – Cost/Year/Ea Breakdown</div>
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Replacement value</label>
+                                                    <input type="number" step="0.01" min="0" class="form-input w-28 md:w-36 text-sm" x-model="row.owned.replacement_value" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][replacement_value]'">
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Additional fees/taxes/admin</label>
+                                                    <input type="number" step="0.01" min="0" class="form-input w-28 md:w-36 text-sm" x-model="row.owned.fees" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][fees]'">
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Useful life (years)</label>
+                                                    <input type="number" step="0.1" min="0.1" class="form-input w-28 md:w-36 text-sm" x-model="row.owned.years" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][years]'">
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">End-of-life value</label>
+                                                    <input type="number" step="0.01" min="0" class="form-input w-28 md:w-36 text-sm" x-model="row.owned.salvage_value" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][salvage_value]'">
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Months used per year (1–12)</label>
+                                                    <select class="form-select w-28 md:w-36 text-sm" x-model="row.owned.months_per_year" x-init="$el.value = (row.owned.months_per_year || '')" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][months_per_year]'">
+                                                        <option value="" disabled x-bind:selected="!row.owned.months_per_year">Select…</option>
+                                                        <template x-for="m in 12" :key="'oem'+m">
+                                                            <option :value="String(m)" :selected="String(row.owned.months_per_year) === String(m)" x-text="m"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Division months (1–12)</label>
+                                                    <select class="form-select w-28 md:w-36 text-sm" x-model="row.owned.division_months" x-init="$el.value = (row.owned.division_months || '')" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][division_months]'">
+                                                        <option value="" disabled x-bind:selected="!row.owned.division_months">Select…</option>
+                                                        <template x-for="m in 12" :key="'oed'+m">
+                                                            <option :value="String(m)" :selected="String(row.owned.division_months) === String(m)" x-text="m"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5 mt-2 pt-2 border-t-2 border-green-700 border-double">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Inflation/Interest rate (%)</label>
+                                                    <input type="number" step="0.01" min="0" max="100" class="form-input w-28 md:w-36 text-sm" x-model="row.owned.interest_rate_pct" :name="'inputs[overhead][equipment][rows]['+idx+'][owned][interest_rate_pct]'">
+                                                </div>
+                                            </div>
+                                            <div class="grid md:grid-cols-5 gap-3 text-sm mt-2">
+                                                <div>
+                                                    <div class="text-gray-600">Annual cost/equipment</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeOwnedAnnual(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Monthly (calendar)</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeOwnedMonthlyCalendar(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Monthly (active)</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeOwnedMonthlyActive(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Division Annual</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeDivisionAnnual(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Division Monthly (active)</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeDivisionMonthlyActive(row))"></div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 pt-2 border-t flex items-center justify-between" x-show="computeOwnedInterestLifeCompounded(row) > 0">
+                                                <div class="text-sm text-gray-700">Interest/Inflation value over the life of the equipment:</div>
+                                                <div class="text-sm font-semibold" x-text="formatMoney(computeOwnedInterestLifeCompounded(row))"></div>
+                                            </div>
+                                            <div class="text-xs text-gray-600">Annual cost = (replacement value + fees + interest over life - end-of-life value) / useful life.</div>
+                                        </div>
+                                    </div>
+                                    <!-- Leased details panel (Overhead Equipment) -->
+                                    <div class="col-span-12" x-show="row.class==='Leased' && row._ownedOpen">
+                                        <div class="mt-2 bg-green-50 border border-green-200 rounded p-3 space-y-3">
+                                            <div class="text-sm uppercase tracking-wide text-green-700 pb-2 mb-2 border-b-2 border-green-700 border-double">Leased – Cost/Year/Ea Breakdown</div>
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Enter the monthly payment, including tax</label>
+                                                    <input type="number" step="0.01" min="0" class="form-input w-28 md:w-36 text-sm" x-model="row.leased.monthly_payment" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][monthly_payment]'">
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">How many payments do you make per year</label>
+                                                    <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.payments_per_year" x-init="$el.value = (row.leased.payments_per_year || '')" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][payments_per_year]'">
+                                                        <option value="" disabled x-bind:selected="!row.leased.payments_per_year">Select…</option>
+                                                        <template x-for="m in 12" :key="'oelp'+m">
+                                                            <option :value="String(m)" :selected="String(row.leased.payments_per_year) === String(m)" x-text="m"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">Enter the number of months per year you use it</label>
+                                                    <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.months_per_year" x-init="$el.value = (row.leased.months_per_year || '')" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][months_per_year]'">
+                                                        <option value="" disabled x-bind:selected="!row.leased.months_per_year">Select…</option>
+                                                        <template x-for="m in 12" :key="'oelm'+m">
+                                                            <option :value="String(m)" :selected="String(row.leased.months_per_year) === String(m)" x-text="m"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-center justify-between py-1.5">
+                                                    <label class="text-sm font-medium text-gray-800 pr-3">If this is a divisional budget, months this works in this division</label>
+                                                    <select class="form-select w-28 md:w-36 text-sm" x-model="row.leased.division_months" x-init="$el.value = (row.leased.division_months || '')" :name="'inputs[overhead][equipment][rows]['+idx+'][leased][division_months]'">
+                                                        <option value="" disabled x-bind:selected="!row.leased.division_months">Select…</option>
+                                                        <template x-for="m in 12" :key="'oeld'+m">
+                                                            <option :value="String(m)" :selected="String(row.leased.division_months) === String(m)" x-text="m"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="grid md:grid-cols-5 gap-3 text-sm mt-2">
+                                                <div>
+                                                    <div class="text-gray-600">Annual ROI</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeLeasedAnnual(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Monthly ROI</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeLeasedMonthlyCalendar(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Monthly (active)</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeLeasedMonthlyActive(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Division Annual</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeLeasedDivisionAnnual(row))"></div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-gray-600">Division Monthly (active)</div>
+                                                    <div class="text-base font-semibold" x-text="formatMoney(computeLeasedDivisionMonthlyActive(row))"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </template>
                             <div class="pt-3 flex items-center justify-between">
                                 <x-brand-button type="button" size="sm" variant="ghost" @click="addOverheadEquipmentRow()">+ New</x-brand-button>
                                 <div class="text-sm text-gray-700" x-show="overheadEquipmentTotal() > 0"><span class="font-semibold">Total Equipment:</span> <span x-text="formatMoney(overheadEquipmentTotal())"></span></div>
                             </div>
-                            >
                         </div>
                     </div>
                 </section>
@@ -1401,6 +1587,38 @@
                     }
                     return r;
                 });
+                // Normalize overhead equipment rows to ensure calculator panels work
+                this.overheadEquipmentRows = (Array.isArray(this.overheadEquipmentRows) ? this.overheadEquipmentRows : []).map(r => {
+                    if (r && typeof r === 'object') {
+                        if (r._ownedOpen === undefined) r._ownedOpen = false;
+                        if (r._menuOpen === undefined) r._menuOpen = false;
+                        if (!r.owned) r.owned = { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' };
+                        if (!r.leased) r.leased = { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' };
+                        if (!r.group) r.group = { items: [] };
+
+                        // Normalize to strings so <select> value binding matches option values
+                        if (r.owned) {
+                            if (r.owned.months_per_year !== undefined && r.owned.months_per_year !== null && r.owned.months_per_year !== '') {
+                                r.owned.months_per_year = String(r.owned.months_per_year);
+                            } else { r.owned.months_per_year = r.owned.months_per_year || ''; }
+                            if (r.owned.division_months !== undefined && r.owned.division_months !== null && r.owned.division_months !== '') {
+                                r.owned.division_months = String(r.owned.division_months);
+                            } else { r.owned.division_months = r.owned.division_months || ''; }
+                        }
+                        if (r.leased) {
+                            if (r.leased.payments_per_year !== undefined && r.leased.payments_per_year !== null && r.leased.payments_per_year !== '') {
+                                r.leased.payments_per_year = String(r.leased.payments_per_year);
+                            } else { r.leased.payments_per_year = r.leased.payments_per_year || ''; }
+                            if (r.leased.months_per_year !== undefined && r.leased.months_per_year !== null && r.leased.months_per_year !== '') {
+                                r.leased.months_per_year = String(r.leased.months_per_year);
+                            } else { r.leased.months_per_year = r.leased.months_per_year || ''; }
+                            if (r.leased.division_months !== undefined && r.leased.division_months !== null && r.leased.division_months !== '') {
+                                r.leased.division_months = String(r.leased.division_months);
+                            } else { r.leased.division_months = r.leased.division_months || ''; }
+                        }
+                    }
+                    return r;
+                });
             },
             burdenPct: (window.__initialLaborBurdenPct !== null && window.__initialLaborBurdenPct !== undefined && window.__initialLaborBurdenPct !== '') ? Number(window.__initialLaborBurdenPct) : 0,
             otMultiplier: (window.__initialOtMultiplier !== null && window.__initialOtMultiplier !== undefined && window.__initialOtMultiplier !== '') ? Number(window.__initialOtMultiplier) : 1.5,
@@ -1419,6 +1637,20 @@
   removeOverheadWageRow(i){ this.overheadWagesRows.splice(i,1); },
   addOverheadEquipmentRow(){ this.overheadEquipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' } }); },
   removeOverheadEquipmentRow(i){ this.overheadEquipmentRows.splice(i,1); },
+  moveOverheadEquipmentToEquipment(i){
+      const row = this.overheadEquipmentRows[i];
+      if (!row) return;
+      // Push a shallow copy into Equipment list with compatible structure
+      const clone = JSON.parse(JSON.stringify(row));
+      // Ensure keys exist as in equipment rows
+      if (!clone.owned) clone.owned = { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' };
+      if (!clone.leased) clone.leased = { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' };
+      if (!clone.group) clone.group = { items: [] };
+      clone._ownedOpen = false; clone._menuOpen = false;
+      this.equipmentRows.push(clone);
+      // Remove from overhead equipment
+      this.overheadEquipmentRows.splice(i,1);
+  },
   addSubcontractingRow(){ this.subcontractingRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
             removeSubcontractingRow(i){ this.subcontractingRows.splice(i,1); },
             addEquipmentRow(){ this.equipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' }, group: { items: [] } }); },
@@ -1670,11 +1902,11 @@
             overheadExpensesCurrentTotal(){ return this.overheadExpensesRows.reduce((s,r)=> s + (parseFloat(r.current)||0), 0); },
             overheadWagesPrevTotal(){ return this.overheadWagesRows.reduce((s,r)=> s + (parseFloat(r.previous)||0), 0); },
             overheadWagesForecastTotal(){ return this.overheadWagesRows.reduce((s,r)=> s + (parseFloat(r.forecast)||0), 0); },
-            overheadEquipmentDisplayedListTotal(){ return this.overheadEquipmentRows.reduce((s,r)=> s + (parseFloat(r.cost_per_year)||0), 0); },
-            overheadEquipmentRowTotal(row){ const q = parseFloat(row.qty)||0; const c = parseFloat(row.cost_per_year)||0; return q * c; },
+            overheadEquipmentDisplayedListTotal(){ return this.overheadEquipmentRows.reduce((s,r)=> s + (this.perUnitCost(r)||0), 0); },
+            overheadEquipmentRowTotal(row){ const qRaw = row?.qty; const q = (qRaw === '' || qRaw === null || qRaw === undefined) ? 1 : (parseFloat(qRaw)||0); const c = this.perUnitCost(row); return q * c; },
             overheadEquipmentTotal(){ return this.overheadEquipmentRows.reduce((s,r)=> s + this.overheadEquipmentRowTotal(r), 0); },
             overheadEquipmentExpensesTotal(){ return (this.overheadEquipmentDisplayedListTotal() || 0) + (parseFloat(this.overheadEquipmentGeneral.fuel)||0) + (parseFloat(this.overheadEquipmentGeneral.repairs)||0) + (parseFloat(this.overheadEquipmentGeneral.insurance_misc)||0); },
-            overheadCurrentTotal(){ return this.overheadExpensesCurrentTotal() + this.overheadWagesForecastTotal(); },
+            overheadCurrentTotal(){ return this.overheadExpensesCurrentTotal() + this.overheadWagesForecastTotal() + this.overheadEquipmentTotal(); },
             overheadPrevTotal(){ return this.overheadExpensesPrevTotal() + this.overheadWagesPrevTotal(); },
             overheadRatio(){ const sales = this.forecastTotal(); if (!sales) return 0; return (this.overheadCurrentTotal() / Math.abs(sales)) * 100; }
         };
