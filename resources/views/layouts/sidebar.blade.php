@@ -191,6 +191,20 @@
   window.showToast = makeToast;
 })();
 </script>
+@if (session('success'))
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    if (window.showToast) showToast(@json(session('success')), 'success');
+  });
+</script>
+@endif
+@if (session('error'))
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    if (window.showToast) showToast(@json(session('error')), 'error');
+  });
+</script>
+@endif
 
 {{-- Google Places – Extended Component Library (Place Picker) --}}
 @if (config('services.google_places.key'))

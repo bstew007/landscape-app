@@ -30,13 +30,14 @@ class CompanyBudgetController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatePayload($request);
-        $outputs = $this->budget->computeOutputs($data['inputs'] ?? []);
+        $inputs = $data['inputs'] ?? [];
+        $outputs = $this->budget->computeOutputs($inputs);
         $budget = CompanyBudget::create([
             'name' => $data['name'] ?? 'Budget',
             'year' => $data['year'] ?? null,
             'effective_from' => $data['effective_from'] ?? null,
             'desired_profit_margin' => $data['desired_profit_margin'] ?? 0.2,
-            'inputs' => $data['inputs'] ?? [],
+            'inputs' => $inputs,
             'outputs' => $outputs,
             'is_active' => (bool) ($data['is_active'] ?? false),
         ]);
@@ -46,7 +47,8 @@ class CompanyBudgetController extends Controller
         }
 
         Cache::forget(\App\Services\BudgetService::CACHE_KEY);
-        return redirect()->route('admin.budgets.edit', $budget)->with('success', 'Budget created.');
+        return redirect()->route('admin.budgets.edit', ['budget' => $budget->id, 'section' => $request->input('section', 'Budget Info')])
+            ->with('success', 'Budget created.');
     }
 
     public function edit(CompanyBudget $budget)
@@ -57,14 +59,16 @@ class CompanyBudgetController extends Controller
     public function update(Request $request, CompanyBudget $budget)
     {
         $data = $this->validatePayload($request);
-        $outputs = $this->budget->computeOutputs($data['inputs'] ?? []);
+        // Preserve existing inputs and only overwrite changed keys (deep merge)
+        $mergedInputs = array_replace_recursive($budget->inputs ?? [], $data['inputs'] ?? []);
+        $outputs = $this->budget->computeOutputs($mergedInputs);
 
         $budget->fill([
             'name' => $data['name'] ?? $budget->name,
             'year' => $data['year'] ?? $budget->year,
             'effective_from' => $data['effective_from'] ?? $budget->effective_from,
             'desired_profit_margin' => $data['desired_profit_margin'] ?? $budget->desired_profit_margin,
-            'inputs' => $data['inputs'] ?? $budget->inputs,
+            'inputs' => $mergedInputs,
             'outputs' => $outputs,
             'is_active' => (bool) ($data['is_active'] ?? $budget->is_active),
         ])->save();
@@ -74,7 +78,8 @@ class CompanyBudgetController extends Controller
         }
 
         Cache::forget(\App\Services\BudgetService::CACHE_KEY);
-        return redirect()->route('admin.budgets.edit', $budget)->with('success', 'Budget updated.');
+        return redirect()->route('admin.budgets.edit', ['budget' => $budget->id, 'section' => $request->input('section', 'Budget Info')])
+            ->with('success', 'Budget updated.');
     }
 
     protected function validatePayload(Request $request): array
@@ -86,6 +91,14 @@ class CompanyBudgetController extends Controller
             'desired_profit_margin' => 'required|numeric|min:0|max:0.999',
             'is_active' => 'sometimes|boolean',
             'inputs' => 'nullable|array',
+            // Sales Budget rows
+            'inputs.sales.rows' => 'nullable|array',
+            'inputs.sales.rows.*.account_id' => 'nullable|string|max:50',
+            'inputs.sales.rows.*.division' => 'nullable|string|max:100',
+            'inputs.sales.rows.*.previous' => 'nullable|numeric|min:0',
+            'inputs.sales.rows.*.forecast' => 'nullable|numeric|min:0',
+            'inputs.sales.rows.*.comments' => 'nullable|string|max:255',
+            // Labor inputs (legacy/simple model used by BudgetService outputs for now)
             'inputs.labor.headcount' => 'nullable|numeric|min:0',
             'inputs.labor.wage' => 'nullable|numeric|min:0',
             'inputs.labor.payroll_taxes' => 'nullable|numeric|min:0',
@@ -96,6 +109,24 @@ class CompanyBudgetController extends Controller
             'inputs.labor.weeks_per_year' => 'nullable|numeric|min:0',
             'inputs.labor.utilization' => 'nullable|numeric|min:0|max:1',
             'inputs.labor.productivity' => 'nullable|numeric|min:0|max:1',
+            // Field Labor detailed inputs (persist UI tables)
+            'inputs.labor.burden_pct' => 'nullable|numeric|min:0|max:100',
+            'inputs.labor.ot_multiplier' => 'nullable|numeric|min:1|max:3',
+            'inputs.labor.industry_avg_ratio' => 'nullable|numeric|min:0|max:100',
+            'inputs.labor.hourly.rows' => 'nullable|array',
+            'inputs.labor.hourly.rows.*.type' => 'nullable|string|max:100',
+            'inputs.labor.hourly.rows.*.staff' => 'nullable|numeric|min:0',
+            'inputs.labor.hourly.rows.*.hrs' => 'nullable|numeric|min:0',
+            'inputs.labor.hourly.rows.*.ot_hrs' => 'nullable|numeric|min:0',
+            'inputs.labor.hourly.rows.*.avg_wage' => 'nullable|numeric|min:0',
+            'inputs.labor.hourly.rows.*.bonus' => 'nullable|numeric|min:0',
+            'inputs.labor.salary.rows' => 'nullable|array',
+            'inputs.labor.salary.rows.*.type' => 'nullable|string|max:100',
+            'inputs.labor.salary.rows.*.staff' => 'nullable|numeric|min:0',
+            'inputs.labor.salary.rows.*.ann_hrs' => 'nullable|numeric|min:0',
+            'inputs.labor.salary.rows.*.ann_salary' => 'nullable|numeric|min:0',
+            'inputs.labor.salary.rows.*.bonus' => 'nullable|numeric|min:0',
+            // Overhead
             'inputs.overhead.total' => 'nullable|numeric|min:0',
         ]);
     }

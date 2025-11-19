@@ -34,11 +34,14 @@
         </div>
     @endif
 
+
     <form id="companyBudgetForm" method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="bg-white rounded shadow overflow-hidden text-sm">
         @csrf
+        <input type="hidden" name="section" :value="section">
         @if ($budget->exists)
             @method('PUT')
         @endif
+        <input type="hidden" name="section" :value="section">
         <div class="flex">
             <!-- Left Nav -->
             <aside class="w-56 md:w-64 border-r bg-gray-50">
@@ -47,8 +50,16 @@
                         <button type="button"
                                 @click="section='{{ $s }}'"
                                 :class="{'bg-white text-brand-700 border-brand-300': section==='{{ $s }}'}"
-                                class="w-full text-left px-3 py-2 text-sm rounded border hover:bg-white mb-1">
-                            {{ $s }}
+                                class="w-full px-3 py-2 text-sm rounded border hover:bg-white mb-1 flex items-center justify-between">
+                            @if ($s === 'Sales Budget')
+                                <span>{{ $s }}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(forecastTotal())"></span>
+                            @elseif ($s === 'Field Labor')
+                                <span>{{ $s }}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
+                            @else
+                                <span>{{ $s }}</span>
+                            @endif
                         </button>
                     @endforeach
                     <div class="mt-3 pt-3 border-t">
@@ -100,6 +111,7 @@
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
                         <svg class="h-5 w-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
                         <span>SALES BUDGET</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(forecastTotal())"></span>
                     </h2>
                     <div class="rounded border p-4">
                         <!-- Graphics Row -->
@@ -220,7 +232,9 @@
 
                 <!-- FIELD LABOR -->
                 <section x-show="section==='Field Labor'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Field Labor</h2>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Field Labor
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
+                    </h2>
                     <div class="rounded border p-4">
                         <!-- Boxes Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
@@ -236,9 +250,10 @@
                                         <label class="block text-xs font-medium text-gray-700">Overtime Multiplier</label>
                                         <select class="form-select w-full" x-model.number="otMultiplier" name="inputs[labor][ot_multiplier]">
                                             <template x-for="opt in overtimeOptions()" :key="opt">
-                                                <option :value="opt" x-text="opt.toFixed(2) + 'x'"></option>
+                                                <option :value="opt" x-text="opt.toFixed(2) + 'x'" :selected="Number(opt) === Number(otMultiplier)"></option>
                                             </template>
                                         </select>
+                                        <input type="hidden" name="section" :value="section">
                                     </div>
                                 </div>
                             </div>
@@ -472,14 +487,14 @@
     // Alpine data for the budget editor
     window.budgetEditor = function(){
         return {
-            section: 'Budget Info',
+            section: (new URL(window.location.href)).searchParams.get('section') || 'Budget Info',
             salesRows: Array.isArray(window.__initialSalesRows) ? window.__initialSalesRows : [],
             laborTab: 'hourly',
             hourlyRows: Array.isArray(window.__initialHourlyRows) ? window.__initialHourlyRows : [],
             salaryRows: Array.isArray(window.__initialSalaryRows) ? window.__initialSalaryRows : [],
-            burdenPct: parseFloat(window.__initialLaborBurdenPct) || 0,
-            otMultiplier: parseFloat(window.__initialOtMultiplier) || 1.5,
-            industryAvgRatio: parseFloat(window.__initialIndustryAvgRatio) || 26.6,
+            burdenPct: (window.__initialLaborBurdenPct !== null && window.__initialLaborBurdenPct !== undefined && window.__initialLaborBurdenPct !== '') ? Number(window.__initialLaborBurdenPct) : 0,
+            otMultiplier: (window.__initialOtMultiplier !== null && window.__initialOtMultiplier !== undefined && window.__initialOtMultiplier !== '') ? Number(window.__initialOtMultiplier) : 1.5,
+            industryAvgRatio: (window.__initialIndustryAvgRatio !== null && window.__initialIndustryAvgRatio !== undefined && window.__initialIndustryAvgRatio !== '') ? Number(window.__initialIndustryAvgRatio) : 26.6,
             addSalesRow() { this.salesRows.push({ account_id: '', division: '', previous: '', forecast: '', comments: '' }); },
             removeSalesRow(i) { this.salesRows.splice(i, 1); },
             addHourlyRow(){ this.hourlyRows.push({ type:'', staff:'', hrs:'', ot_hrs:'', avg_wage:'', bonus:'' }); },
@@ -487,10 +502,10 @@
             addSalaryRow(){ this.salaryRows.push({ type:'', staff:'', ann_hrs:'', ann_salary:'', bonus:'' }); },
             removeSalaryRow(i){ this.salaryRows.splice(i,1); },
             computeDiff(row) {
-                const p = parseFloat(row.previous) || 0;
-                const f = parseFloat(row.forecast) || 0;
-                if (!p) return f === 0 ? '0%' : '—';
-                const pct = ((f - p) / Math.abs(p)) * 100;
+                const p = parseFloat(row.previous);
+                const f = parseFloat(row.forecast);
+                if (!isFinite(p) || p === 0) return '0%';
+                const pct = (( (isFinite(f) ? f : 0) - p) / Math.abs(p)) * 100;
                 return pct.toFixed(1) + '%';
             },
             // Formatting helpers
@@ -524,7 +539,13 @@
             },
             // Totals and ratios
             totalHours(){
-                const h = this.hourlyRows.reduce((s, r) => s + ( (parseFloat(r.staff)||0) * ( (parseFloat(r.hrs)||0) + (parseFloat(r.ot_hrs)||0) ) , 0), 0);
+                const mult = parseFloat(this.otMultiplier) || 1.5;
+                const h = this.hourlyRows.reduce((sum, r) => {
+                    const staff = parseFloat(r.staff) || 0;
+                    const hrs = parseFloat(r.hrs) || 0;
+                    const ot = parseFloat(r.ot_hrs) || 0;
+                    return sum + (staff * (hrs + (ot * mult)));
+                }, 0);
                 const s = this.salaryRows.reduce((t, r) => t + ( (parseFloat(r.staff)||0) * (parseFloat(r.ann_hrs)||0) ), 0);
                 return Math.round(h + s);
             },
