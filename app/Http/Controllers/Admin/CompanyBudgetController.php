@@ -239,6 +239,20 @@ class CompanyBudgetController extends Controller
             'inputs.subcontracting.rows.*.previous' => 'nullable|numeric|min:0',
             'inputs.subcontracting.rows.*.current' => 'nullable|numeric|min:0',
             'inputs.subcontracting.rows.*.comments' => 'nullable|string|max:255',
+            // Overhead Recovery (persist UI selections and computed markups)
+            'inputs.oh_recovery' => 'nullable|array',
+            'inputs.oh_recovery.method' => 'nullable|string|in:labor_hour,revenue,dual',
+            'inputs.oh_recovery.labor_hour' => 'nullable|array',
+            'inputs.oh_recovery.labor_hour.activated' => 'nullable|boolean',
+            'inputs.oh_recovery.labor_hour.markup_per_hour' => 'nullable|numeric|min:0',
+            'inputs.oh_recovery.revenue' => 'nullable|array',
+            'inputs.oh_recovery.revenue.activated' => 'nullable|boolean',
+            'inputs.oh_recovery.revenue.markup_fraction' => 'nullable|numeric|min:0',
+            'inputs.oh_recovery.dual' => 'nullable|array',
+            'inputs.oh_recovery.dual.activated' => 'nullable|boolean',
+            'inputs.oh_recovery.dual.labor_share_pct' => 'nullable|numeric|min:0|max:100',
+            'inputs.oh_recovery.dual.labor_markup_per_hour' => 'nullable|numeric|min:0',
+            'inputs.oh_recovery.dual.revenue_markup_fraction' => 'nullable|numeric|min:0',
         ]);
     }
 }

@@ -1,6 +1,6 @@
 # Budget Editor Architecture and Guide
 
-Date: 2025-11-20
+Date: 2025-11-20 (updated)
 Owner: Dev Team
 
 ## Overview
@@ -28,13 +28,13 @@ This document explains the current structure, how the page is assembled, where t
     - _materials.blade.php
     - _subcontracting.blade.php
     - _overhead.blade.php
-    - _profit_loss.blade.php (stub)
-    - _oh_recovery.blade.php (stub)
+    - _profit_loss.blade.php
+    - _oh_recovery.blade.php
     - _analysis.blade.php (stub)
 
 - Alpine Section Modules
   - resources/js/budget/
-    - sales.js → `salesEditor()`
+    - sales.js → `salesEditor(root)`
     - fieldLabor.js → `fieldLaborEditor(root)`
     - equipment.js → `equipmentEditor(root)`
     - materials.js → `materialsEditor(root)`
@@ -102,26 +102,39 @@ Use this checklist when adding a new budget section (e.g., Profit/Loss, OH Recov
 
 ## Current Status
 
-- Modularized Sections: Sales, Field Labor, Equipment, Materials, Subcontracting, Overhead.
+- Modularized Sections: Sales, Field Labor, Equipment, Materials, Subcontracting, Overhead, Profit/Loss, Overhead Recovery.
+- Profit/Loss section:
+  - Top row: Sales (list + total) and COGS (Field Labor Wages, Materials; totals + % of income).
+  - Bottom row: Profit (Gross Profit, Net Income) and Overhead breakdown (Expenses, Equipment, Payroll; totals + % of income).
+  - Net Income pills shown in the Profit/Loss nav item (amount + percent).
+- Overhead Recovery section (three methods, selectable):
+  - Field Labor Hour: Markup per hour = Forecast Overhead / Forecast Labor Hours; activation persists; markup persisted on submit.
+  - Revenue-based: Revenue markup = Forecast Overhead / Forecast Revenue; activation persists; markup fraction persisted on submit.
+  - Dual-base: Split overhead by labor_share_pct; per-hour markup for labor share and percent for revenue share; activation and split persist; both markups persisted on submit.
 - UI Components: Panel cards and compact input rows applied to the main panels.
-- Pills: Removed from graphics panels; kept (or removable) in the sidebar only.
-- Duplicates: Legacy inline sections were removed after partials were verified.
+- Duplicates: Legacy inline sections removed after partials were verified.
 
-## Upcoming Sections (to expand)
+## Upcoming Work
 
-We have 3 sections to complete/expand:
+1) In-depth Analysis page
+   - Build a dedicated Analysis section with charts/visuals for trends and KPIs (e.g., labor productivity, overhead per prod hour, materials/subcontracting ratios over time).
+   - Add scenario toggles (e.g., different OH recovery methods or profit targets) to compare outcomes.
+   - Consider saving named scenarios to revisit.
 
-1) Profit/Loss
-   - Partial: `_profit_loss.blade.php` (stub UI is present)
-   - Add an Alpine module (e.g., `profitLossEditor(root)`), and flesh out the P&L metrics/cards.
+2) Summary page refresh
+   - Provide a concise dashboard of key totals and ratios across sections (Sales, COGS, Overhead, Net Income).
+   - Include current OH Recovery method and its markup(s).
+   - Show variance vs prior period/budget and industry averages.
 
-2) OH Recovery
-   - Partial: `_oh_recovery.blade.php` (stub UI is present)
-   - Add an Alpine module to configure and display recovery method/allocations.
+3) Data integrity/UX polish
+   - Add validations/tooltips for highly sensitive fields (labor hours, overhead components) to prevent off-by-one issues.
+   - Ensure all graphics ratios use the shared root store and remain consistent with sidebar pills.
+   - Normalize checkbox persistence patterns (hidden 0 + value 1) across new settings.
 
-3) Analysis
-   - Partial: `_analysis.blade.php` (stub UI is present)
-   - Add charts or KPIs as `x-panel-card` items and a small editor if interactive.
+4) Technical cleanup
+   - Extract common math/formatting helpers to resources/js/budget/utils.js.
+   - Convert the inline root Alpine store into a module for testability.
+   - Add feature tests for save/restore of OH Recovery method and computed markups.
 
 ## Conventions and Tips
 
@@ -153,7 +166,8 @@ We have 3 sections to complete/expand:
 ## Quick Troubleshooting
 
 - Graphics not updating: Ensure section editor is bound with `x-data` and its module is registered in app.js.
-- Values not persisting: Confirm input names under `inputs[...]` and that the controller maps them into the `$budget->inputs` JSON.
+- Values not persisting: Confirm input names under `inputs[...]` and that the controller maps them into the `$budget->inputs` JSON. Validate rules in CompanyBudgetController must include new keys (e.g., `inputs.oh_recovery.*`).
+- Checkboxes not persisting: For boolean UI, include a hidden input value 0 plus the checkbox value 1 to capture the unchecked state.
 - Select fields not reflecting saved values: Normalize saved numbers to strings for `<select>` bindings.
 
 ## Summary

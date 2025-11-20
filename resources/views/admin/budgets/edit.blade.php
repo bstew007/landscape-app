@@ -1475,20 +1475,83 @@
         const percent = document.querySelector('input[name="desired_profit_margin_percent"]');
         const hidden = document.getElementById('desired_profit_margin_hidden');
         if (percent && hidden) {
+            // Keep hidden decimal in sync with visible percent
             percent.addEventListener('input', () => {
                 const p = parseFloat(percent.value || '0');
                 hidden.value = (isFinite(p) ? Math.min(Math.max(p, 0), 99.9) / 100 : 0).toFixed(4);
             });
+            // Default the desired profit margin to the Profit/Loss net income margin
+            setTimeout(() => {
+                try {
+                    const d = window.__budgetRoot;
+                    if (d && typeof d.netIncomePct === 'function') {
+                        const nip = parseFloat(d.netIncomePct() || 0);
+                        if (isFinite(nip)) {
+                            percent.value = nip.toFixed(1);
+                            hidden.value = (nip / 100).toFixed(4);
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+            }, 150);
         }
+
         // Append close=1 to action so server can redirect away after save
         const form = document.getElementById('companyBudgetForm');
         if (form) {
+            // Ensure there is a hidden input to store selected OH recovery method
+            const ensureHidden = (name) => {
+                let el = form.querySelector(`[name="${name}"]`);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type = 'hidden';
+                    el.name = name;
+                    form.appendChild(el);
+                }
+                return el;
+            };
+            const methodHidden = ensureHidden('inputs[oh_recovery][method]');
+            const cbLabor = form.querySelector('input[name="inputs[oh_recovery][labor_hour][activated]"]');
+            const cbRevenue = form.querySelector('input[name="inputs[oh_recovery][revenue][activated]"]');
+            const cbDual = form.querySelector('input[name="inputs[oh_recovery][dual][activated]"]');
+            const updateMethod = () => {
+                if (cbLabor && cbLabor.checked) methodHidden.value = 'labor_hour';
+                else if (cbRevenue && cbRevenue.checked) methodHidden.value = 'revenue';
+                else if (cbDual && cbDual.checked) methodHidden.value = 'dual';
+                else methodHidden.value = methodHidden.value || '';
+            };
+            if (cbLabor) cbLabor.addEventListener('change', updateMethod);
+            if (cbRevenue) cbRevenue.addEventListener('change', updateMethod);
+            if (cbDual) cbDual.addEventListener('change', updateMethod);
+            updateMethod();
+
             form.addEventListener('submit', () => {
                 try {
                     const url = new URL(form.action, window.location.origin);
                     url.searchParams.set('close', '1');
                     form.action = url.pathname + url.search;
                 } catch (e) {}
+                // Persist computed OH recovery markups for server use
+                try {
+                    const d = window.__budgetRoot || {};
+                    const oh = (typeof d.overheadCurrentTotal === 'function') ? (parseFloat(d.overheadCurrentTotal()) || 0) : 0;
+                    const rev = (typeof d.forecastTotal === 'function') ? (parseFloat(d.forecastTotal()) || 0) : 0;
+                    const hrs = (typeof d.totalHours === 'function') ? (parseFloat(d.totalHours()) || 0) : 0;
+                    // Labor-hour
+                    const laborMarkup = hrs ? (oh / hrs) : 0;
+                    ensureHidden('inputs[oh_recovery][labor_hour][markup_per_hour]').value = laborMarkup.toFixed(4);
+                    // Revenue-based (fraction)
+                    const revFrac = rev ? (oh / Math.abs(rev)) : 0;
+                    ensureHidden('inputs[oh_recovery][revenue][markup_fraction]').value = revFrac.toFixed(6);
+                    // Dual-base
+                    const pctEl = form.querySelector('[name="inputs[oh_recovery][dual][labor_share_pct]"]');
+                    const pct = pctEl ? Math.max(0, Math.min(100, parseFloat(pctEl.value) || 0)) : 50;
+                    const laborShare = oh * (pct / 100);
+                    const revShare = oh - laborShare;
+                    const dualLabor = hrs ? (laborShare / hrs) : 0;
+                    const dualRevFrac = rev ? (revShare / Math.abs(rev)) : 0;
+                    ensureHidden('inputs[oh_recovery][dual][labor_markup_per_hour]').value = dualLabor.toFixed(4);
+                    ensureHidden('inputs[oh_recovery][dual][revenue_markup_fraction]').value = dualRevFrac.toFixed(6);
+                } catch (e) { /* ignore */ }
             });
         }
     });
