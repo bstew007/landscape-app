@@ -8,6 +8,7 @@ import { materialsEditor } from './budget/materials';
 import { subcontractingEditor } from './budget/subcontracting';
 import { equipmentEditor } from './budget/equipment';
 import { overheadEditor } from './budget/overhead';
+import { ohRecoveryEditor } from './budget/ohRecovery';
 
 window.Alpine = Alpine;
 window.salesEditor = salesEditor;
@@ -16,6 +17,7 @@ window.materialsEditor = materialsEditor;
 window.subcontractingEditor = subcontractingEditor;
 window.equipmentEditor = equipmentEditor;
 window.overheadEditor = overheadEditor;
+window.ohRecoveryEditor = ohRecoveryEditor;
 
 Alpine.start();
 
