@@ -1338,16 +1338,21 @@
                 return staff * this.wagesSalaryPerEmp(row);
             },
             // Totals and ratios
-            totalHours(){
-                const mult = parseFloat(this.otMultiplier) || 1.5;
-                const h = this.hourlyRows.reduce((sum, r) => {
+            // Hours helpers (used by OH Recovery and Analysis)
+            hourlyHours(){
+                return this.hourlyRows.reduce((sum, r) => {
                     const staff = parseFloat(r.staff) || 0;
                     const hrs = parseFloat(r.hrs) || 0;
                     const ot = parseFloat(r.ot_hrs) || 0;
-                    return sum + (staff * (hrs + (ot * mult)));
+                    return sum + (staff * (hrs + ot));
                 }, 0);
-                const s = this.salaryRows.reduce((t, r) => t + ((parseFloat(r.staff)||0) * (parseFloat(r.ann_hrs)||0)), 0);
-                return Math.round(h + s);
+            },
+            salaryHours(){
+                return this.salaryRows.reduce((sum, r) => sum + ((parseFloat(r.staff)||0) * (parseFloat(r.ann_hrs)||0)), 0);
+            },
+            totalHours(){
+                // Total hours = hourlyHours + salaryHours (no overtime pay multiplier applied to hours)
+                return this.hourlyHours() + this.salaryHours();
             },
             totalWages(){
                 const h = this.hourlyRows.reduce((s, r) => s + this.wagesHourlyRow(r), 0);

@@ -38,16 +38,20 @@ export function fieldLaborEditor(root) {
       const staff = toNum(row.staff);
       return staff * this.wagesSalaryPerEmp(row);
     },
-    totalHours(){
-      const mult = toNum(this.otMultiplier, 1.5);
-      const h = this.hourlyRows.reduce((sum, r) => {
+    // Hours should not apply overtime pay multipliers; they are pure time totals
+    hourlyHours(){
+      return this.hourlyRows.reduce((sum, r) => {
         const staff = toNum(r.staff);
         const hrs = toNum(r.hrs);
         const ot = toNum(r.ot_hrs);
-        return sum + (staff * (hrs + (ot * mult)));
+        return sum + (staff * (hrs + ot));
       }, 0);
-      const s = this.salaryRows.reduce((t, r) => t + ( toNum(r.staff) * toNum(r.ann_hrs) ), 0);
-      return Math.round(h + s);
+    },
+    salaryHours(){
+      return this.salaryRows.reduce((sum, r) => sum + ( toNum(r.staff) * toNum(r.ann_hrs) ), 0);
+    },
+    totalHours(){
+      return this.hourlyHours() + this.salaryHours();
     },
     totalWages(){
       const h = this.hourlyRows.reduce((s, r) => s + this.wagesHourlyRow(r), 0);
