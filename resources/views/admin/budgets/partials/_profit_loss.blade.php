@@ -1,6 +1,10 @@
                 <!-- PROFIT / LOSS -->
                 <section x-show="section==='Profit/Loss'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Profit / Loss</h2>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span>Profit / Loss</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(netIncome())"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="netIncome() >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="netIncomePct().toFixed(1) + '%'"></span>
+                    </h2>
                     <div class="space-y-4">
                         <!-- Top Row: Sales (left) and COGS (right) -->
                         <div class="grid md:grid-cols-2 gap-4">

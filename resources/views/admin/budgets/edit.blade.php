@@ -35,6 +35,10 @@
         </x-slot:leading>
         <x-slot:actions>
             <x-brand-button href="{{ route('admin.budgets.index') }}">Back</x-brand-button>
+            <div class="hidden md:flex items-center gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(netIncome())" x-show="section==='Profit/Loss'"></span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="netIncome() >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="netIncomePct().toFixed(1) + '%'" x-show="section==='Profit/Loss'"></span>
+            </div>
             <x-brand-button type="submit" form="companyBudgetForm">Save</x-brand-button>
         </x-slot:actions>
     </x-page-header>
@@ -98,6 +102,12 @@
                                 <span class="inline-flex items-center gap-1">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(overheadCurrentTotal())"></span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span>
+                                </span>
+                            @elseif ($s === 'Profit/Loss')
+                                <span>{{ $s }}</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(netIncome())"></span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="netIncome() >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="netIncomePct().toFixed(1) + '%'"></span>
                                 </span>
                             @else
                                 <span>{{ $s }}</span>
