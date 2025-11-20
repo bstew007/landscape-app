@@ -3,13 +3,14 @@ export function equipmentEditor(root) {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : def;
   };
-  const rowsRef = () => (Array.isArray(root?.equipmentRows) ? root.equipmentRows : (Array.isArray(window.__initialEquipmentRows) ? window.__initialEquipmentRows : []));
-  const genRef = () => (root?.equipmentGeneral || window.__initialEquipmentGeneral || { fuel: 0, repairs: 0, insurance_misc: 0 });
-  const setGen = (g) => { if (root) root.equipmentGeneral = g; };
-  const rentalsRef = () => (typeof root?.equipmentRentals !== 'undefined' ? root.equipmentRentals : Number(window.__initialEquipmentRentals || 0));
-  const setRentals = (v) => { if (root) root.equipmentRentals = Number(v || 0); };
-  const avgRef = () => (typeof root?.equipmentIndustryAvgRatio !== 'undefined' ? root.equipmentIndustryAvgRatio : Number(window.__initialEquipmentIndustryAvgRatio || 13.7));
-  const setAvg = (v) => { if (root) root.equipmentIndustryAvgRatio = Number(v || 0); };
+  const rd = () => (root?.__x?.$data ? root.__x.$data : (window.__budgetRoot || root));
+  const rowsRef = () => (Array.isArray(rd()?.equipmentRows) ? rd().equipmentRows : (Array.isArray(window.__initialEquipmentRows) ? window.__initialEquipmentRows : []));
+  const genRef = () => (rd()?.equipmentGeneral || window.__initialEquipmentGeneral || { fuel: 0, repairs: 0, insurance_misc: 0 });
+  const setGen = (g) => { if (rd()) rd().equipmentGeneral = g; };
+  const rentalsRef = () => (typeof rd()?.equipmentRentals !== 'undefined' ? rd().equipmentRentals : Number(window.__initialEquipmentRentals || 0));
+  const setRentals = (v) => { if (rd()) rd().equipmentRentals = Number(v || 0); };
+  const avgRef = () => (typeof rd()?.equipmentIndustryAvgRatio !== 'undefined' ? rd().equipmentIndustryAvgRatio : Number(window.__initialEquipmentIndustryAvgRatio || 13.7));
+  const setAvg = (v) => { if (rd()) rd().equipmentIndustryAvgRatio = Number(v || 0); };
 
   return {
     get equipmentRows(){ return rowsRef(); },
@@ -65,7 +66,14 @@ export function equipmentEditor(root) {
     generalExpensesTotal(){ const g = this.equipmentGeneral || {}; return (toNum(g.fuel)||0) + (toNum(g.repairs)||0) + (toNum(g.insurance_misc)||0); },
     equipmentExpensesTotal(){ return (this.equipmentDisplayedListTotal() || 0) + (this.generalExpensesTotal() || 0); },
     equipmentGrandTotal(){ return this.equipmentExpensesTotal() + (toNum(this.equipmentRentals)||0); },
-    equipmentRatio(){ const sales = typeof root?.forecastTotal === 'function' ? root.forecastTotal() : 0; if (!sales) return 0; return (this.equipmentGrandTotal() / Math.abs(sales)) * 100; },
+    equipmentRatio(){
+      let sales = 0;
+      const r = rd();
+      if (r && typeof r.forecastTotal === 'function') sales = r.forecastTotal();
+      else if (Array.isArray(r?.salesRows)) sales = r.salesRows.reduce((s,row)=> s + (toNum(row?.forecast)||0), 0);
+      if (!sales) return 0;
+      return (this.equipmentGrandTotal() / Math.abs(sales)) * 100;
+    },
     within4(cur, avg){ const a = Number(cur)||0; const b = Number(avg)||0; return Math.abs(a - b) <= 4; },
     equipmentPillClass(){ return this.within4(this.equipmentRatio(), this.equipmentIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
 

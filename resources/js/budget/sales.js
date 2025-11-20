@@ -1,10 +1,13 @@
-export function salesEditor() {
+export function salesEditor(root) {
   const toNum = (v, def = 0) => {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : def;
   };
+  const rows = () => (Array.isArray(root?.salesRows) ? root.salesRows : (Array.isArray(window.__initialSalesRows) ? window.__initialSalesRows : []));
+  const setRows = (v) => { if (Array.isArray(root?.salesRows)) root.salesRows = v; };
   return {
-    salesRows: Array.isArray(window.__initialSalesRows) ? window.__initialSalesRows : [],
+    get salesRows(){ return rows(); },
+    set salesRows(v){ setRows(v); },
     // actions
     addSalesRow() { this.salesRows.push({ account_id: '', division: '', previous: '', forecast: '', comments: '' }); },
     removeSalesRow(i) { this.salesRows.splice(i, 1); },
@@ -14,7 +17,7 @@ export function salesEditor() {
       const p = toNum(row.previous);
       const f = toNum(row.forecast);
       if (!isFinite(p) || p === 0) return '0%';
-      const pct = (( (isFinite(f) ? f : 0) - p) / Math.abs(p)) * 100;
+      const pct = (((isFinite(f) ? f : 0) - p) / Math.abs(p)) * 100;
       return pct.toFixed(1) + '%';
     },
     prevTotal(){ return this.salesRows.reduce((s, r) => s + (toNum(r.previous) || 0), 0); },

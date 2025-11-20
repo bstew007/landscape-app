@@ -3,10 +3,11 @@ export function subcontractingEditor(root) {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : def;
   };
-  const rowsRef = () => (Array.isArray(root?.subcontractingRows) ? root.subcontractingRows : (Array.isArray(window.__initialSubcontractingRows) ? window.__initialSubcontractingRows : []));
+  const rd = () => (root?.__x?.$data ? root.__x.$data : (window.__budgetRoot || root));
+  const rowsRef = () => (Array.isArray(rd()?.subcontractingRows) ? rd().subcontractingRows : (Array.isArray(window.__initialSubcontractingRows) ? window.__initialSubcontractingRows : []));
   return {
     get subcontractingRows(){ return rowsRef(); },
-    set subcontractingRows(v){ if (Array.isArray(root?.subcontractingRows)) root.subcontractingRows = v; },
+    set subcontractingRows(v){ if (Array.isArray(rd()?.subcontractingRows)) rd().subcontractingRows = v; },
 
     // actions
     addSubcontractingRow(){ this.subcontractingRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
@@ -18,7 +19,21 @@ export function subcontractingEditor(root) {
     // totals/ratios sourced from root sales
     subcPrevTotal(){ return this.subcontractingRows.reduce((s,r)=> s + (toNum(r.previous)||0), 0); },
     subcCurrentTotal(){ return this.subcontractingRows.reduce((s,r)=> s + (toNum(r.current)||0), 0); },
-    subcPrevRatio(){ const sales = typeof root?.forecastTotal === 'function' ? root.forecastTotal() : 0; if (!sales) return 0; return (this.subcPrevTotal() / Math.abs(sales)) * 100; },
-    subcRatio(){ const sales = typeof root?.forecastTotal === 'function' ? root.forecastTotal() : 0; if (!sales) return 0; return (this.subcCurrentTotal() / Math.abs(sales)) * 100; },
+    subcPrevRatio(){
+      let sales = 0;
+      const r = rd();
+      if (r && typeof r.forecastTotal === 'function') sales = r.forecastTotal();
+      else if (Array.isArray(r?.salesRows)) sales = r.salesRows.reduce((s,row)=> s + (toNum(row?.forecast)||0), 0);
+      if (!sales) return 0;
+      return (this.subcPrevTotal() / Math.abs(sales)) * 100;
+    },
+    subcRatio(){
+      let sales = 0;
+      const r = rd();
+      if (r && typeof r.forecastTotal === 'function') sales = r.forecastTotal();
+      else if (Array.isArray(r?.salesRows)) sales = r.salesRows.reduce((s,row)=> s + (toNum(row?.forecast)||0), 0);
+      if (!sales) return 0;
+      return (this.subcCurrentTotal() / Math.abs(sales)) * 100;
+    },
   };
 }

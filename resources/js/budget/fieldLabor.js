@@ -3,6 +3,7 @@ export function fieldLaborEditor(root) {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : def;
   };
+  const rd = () => (root?.__x?.$data ? root.__x.$data : (window.__budgetRoot || root));
   return {
     laborTab: 'hourly',
     hourlyRows: Array.isArray(window.__initialHourlyRows) ? window.__initialHourlyRows : [],
@@ -61,7 +62,10 @@ export function fieldLaborEditor(root) {
       return this.totalWages() + this.totalBurden();
     },
     laborRatio(){
-      const sales = typeof root?.forecastTotal === 'function' ? root.forecastTotal() : 0;
+      let sales = 0;
+      const r = rd();
+      if (r && typeof r.forecastTotal === 'function') sales = r.forecastTotal();
+      else if (Array.isArray(r?.salesRows)) sales = r.salesRows.reduce((s,row)=> s + (toNum(row?.forecast)||0), 0);
       if (!sales) return 0;
       return (this.fieldPayroll() / Math.abs(sales)) * 100;
     },

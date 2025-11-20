@@ -38,7 +38,8 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold" x-text="overheadRatio().toFixed(1) + '%'"></div>
+                                                                                        <div class="text-3xl font-bold" x-text="overheadRatio().toFixed(1) + '%' "></div>
+
                                         </div>
                                         <div class="flex-1 text-right">
                                             <div class="text-xs uppercase text-gray-500">Industry Avg</div>

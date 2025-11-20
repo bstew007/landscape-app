@@ -1,16 +1,17 @@
 export function overheadEditor(root) {
   const toNum = (v, def = 0) => { const n = parseFloat(v); return Number.isFinite(n) ? n : def; };
-  const expRows = () => (Array.isArray(root?.overheadExpensesRows) ? root.overheadExpensesRows : (Array.isArray(window.__initialOverheadExpensesRows) ? window.__initialOverheadExpensesRows : []));
-  const wageRows = () => (Array.isArray(root?.overheadWagesRows) ? root.overheadWagesRows : (Array.isArray(window.__initialOverheadWagesRows) ? window.__initialOverheadWagesRows : []));
-  const eqRows = () => (Array.isArray(root?.overheadEquipmentRows) ? root.overheadEquipmentRows : (Array.isArray(window.__initialOverheadEquipmentRows) ? window.__initialOverheadEquipmentRows : []));
-  const eqGen = () => (root?.overheadEquipmentGeneral || window.__initialOverheadEquipmentGeneral || { fuel:0, repairs:0, insurance_misc:0 });
-  const setEqGen = (g) => { if (root) root.overheadEquipmentGeneral = g; };
-  const eqRentals = () => (typeof root?.overheadEquipmentRentals !== 'undefined' ? root.overheadEquipmentRentals : Number(window.__initialOverheadEquipmentRentals || 0));
-  const setEqRentals = (v) => { if (root) root.overheadEquipmentRentals = Number(v || 0); };
-  const indAvg = () => (typeof root?.overheadIndustryAvgRatio !== 'undefined' ? root.overheadIndustryAvgRatio : Number(window.__initialOverheadIndustryAvg || 24.8));
-  const setIndAvg = (v) => { if (root) root.overheadIndustryAvgRatio = Number(v || 0); };
-  const laborBurden = () => (typeof root?.overheadLaborBurdenPct !== 'undefined' ? root.overheadLaborBurdenPct : Number(window.__initialOverheadLaborBurden || 0));
-  const setLaborBurden = (v) => { if (root) root.overheadLaborBurdenPct = Number(v || 0); };
+  const rd = () => (root?.__x?.$data ? root.__x.$data : (window.__budgetRoot || root)); // Resolve Alpine root data when a DOM element is passed
+  const expRows = () => (Array.isArray(rd()?.overheadExpensesRows) ? rd().overheadExpensesRows : (Array.isArray(window.__initialOverheadExpensesRows) ? window.__initialOverheadExpensesRows : []));
+  const wageRows = () => (Array.isArray(rd()?.overheadWagesRows) ? rd().overheadWagesRows : (Array.isArray(window.__initialOverheadWagesRows) ? window.__initialOverheadWagesRows : []));
+  const eqRows = () => (Array.isArray(rd()?.overheadEquipmentRows) ? rd().overheadEquipmentRows : (Array.isArray(window.__initialOverheadEquipmentRows) ? window.__initialOverheadEquipmentRows : []));
+  const eqGen = () => (rd()?.overheadEquipmentGeneral || window.__initialOverheadEquipmentGeneral || { fuel:0, repairs:0, insurance_misc:0 });
+  const setEqGen = (g) => { if (rd()) rd().overheadEquipmentGeneral = g; };
+  const eqRentals = () => (typeof rd()?.overheadEquipmentRentals !== 'undefined' ? rd().overheadEquipmentRentals : Number(window.__initialOverheadEquipmentRentals || 0));
+  const setEqRentals = (v) => { if (rd()) rd().overheadEquipmentRentals = Number(v || 0); };
+  const indAvg = () => (typeof rd()?.overheadIndustryAvgRatio !== 'undefined' ? rd().overheadIndustryAvgRatio : Number(window.__initialOverheadIndustryAvg || 24.8));
+  const setIndAvg = (v) => { if (rd()) rd().overheadIndustryAvgRatio = Number(v || 0); };
+  const laborBurden = () => (typeof rd()?.overheadLaborBurdenPct !== 'undefined' ? rd().overheadLaborBurdenPct : Number(window.__initialOverheadLaborBurden || 0));
+  const setLaborBurden = (v) => { if (rd()) rd().overheadLaborBurdenPct = Number(v || 0); };
 
   return {
     get overheadExpensesRows(){ return expRows(); }, set overheadExpensesRows(v){ if (Array.isArray(root?.overheadExpensesRows)) root.overheadExpensesRows = v; },
@@ -75,7 +76,14 @@ export function overheadEditor(root) {
     overheadEquipmentExpensesTotal(){ const g = this.overheadEquipmentGeneral || {}; return (this.overheadEquipmentDisplayedListTotal() || 0) + (toNum(g.fuel)||0) + (toNum(g.repairs)||0) + (toNum(g.insurance_misc)||0); },
     overheadCurrentTotal(){ return this.overheadExpensesCurrentTotal() + this.overheadWagesForecastTotal() + this.overheadEquipmentTotal(); },
     overheadPrevTotal(){ return this.overheadExpensesPrevTotal() + this.overheadWagesPrevTotal(); },
-    overheadRatio(){ const sales = typeof root?.forecastTotal === 'function' ? root.forecastTotal() : 0; if (!sales) return 0; return (this.overheadCurrentTotal() / Math.abs(sales)) * 100; },
+    overheadRatio(){
+      let sales = 0;
+      const r = rd();
+      if (r && typeof r.forecastTotal === 'function') sales = r.forecastTotal();
+      else if (Array.isArray(r?.salesRows)) sales = r.salesRows.reduce((s,row)=> s + (toNum(row?.forecast)||0), 0);
+      if (!sales) return 0;
+      return (this.overheadCurrentTotal() / Math.abs(sales)) * 100;
+    },
     within4(cur, avg){ const a = Number(cur)||0; const b = Number(avg)||0; return Math.abs(a - b) <= 4; },
     overheadPillClass(){ return this.within4(this.overheadRatio(), this.overheadIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
 

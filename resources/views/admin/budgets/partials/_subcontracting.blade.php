@@ -11,12 +11,14 @@
                                 <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                                     <div class="text-gray-600">Previous Total</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(subcPrevTotal())"></div>
-                                    <div class="text-gray-600">Previous Ratio</div>
+                                                                        <div class="text-gray-600">Previous Ratio</div>
                                     <div class="text-right font-semibold" x-text="subcPrevRatio().toFixed(1) + '%'"></div>
+
                                     <div class="text-gray-600">Current Total</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(subcCurrentTotal())"></div>
-                                    <div class="text-gray-600">Current Ratio</div>
+                                                                        <div class="text-gray-600">Current Ratio</div>
                                     <div class="text-right font-semibold" x-text="subcRatio().toFixed(1) + '%'"></div>
+
                                 </div>
                             </div>
                             <!-- Subcontracting Ratio -->
@@ -27,7 +29,8 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold" x-text="subcRatio().toFixed(1) + '%'"></div>
+                                                                                        <div class="text-3xl font-bold" x-text="subcRatio().toFixed(1) + '%'"></div>
+
                                         </div>
                                     </div>
                                 </div>
