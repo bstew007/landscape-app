@@ -2,8 +2,20 @@ import './bootstrap';
 import { initEstimateCalculatorDrawer } from './estimate-calculator';
 
 import Alpine from 'alpinejs';
+import { salesEditor } from './budget/sales';
+import { fieldLaborEditor } from './budget/fieldLabor';
+import { materialsEditor } from './budget/materials';
+import { subcontractingEditor } from './budget/subcontracting';
+import { equipmentEditor } from './budget/equipment';
+import { overheadEditor } from './budget/overhead';
 
 window.Alpine = Alpine;
+window.salesEditor = salesEditor;
+window.fieldLaborEditor = fieldLaborEditor;
+window.materialsEditor = materialsEditor;
+window.subcontractingEditor = subcontractingEditor;
+window.equipmentEditor = equipmentEditor;
+window.overheadEditor = overheadEditor;
 
 Alpine.start();
 

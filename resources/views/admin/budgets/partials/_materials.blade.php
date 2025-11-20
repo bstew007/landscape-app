@@ -1,16 +1,17 @@
                 <!-- MATERIALS -->
-                <section x-show="section==='Materials'" x-cloak>
+                <section x-data="materialsEditor($root)" x-show="section==='Materials'" x-cloak>
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Materials
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(materialsCurrentTotal())"></span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%'"></span>
+
+
                     </h2>
                     <div class="rounded border p-4">
                         <!-- Graphics Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
                             <!-- Key Factors -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Key Factors</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M8 7v13"/><path d="M16 7v13"/></svg></div>
+                            <x-panel-card title="Key Factors">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M8 7v13"/><path d="M16 7v13"/></svg>
+                                </x-slot:icon>
                                 <div class="space-y-3">
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700">Materials Tax (%)</label>
@@ -18,26 +19,23 @@
                                         <p class="text-xs text-gray-500 mt-1">Applied to material expenses totals.</p>
                                     </div>
                                 </div>
-                            </div>
+                            </x-panel-card>
                             <!-- Material Summary -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Material Summary</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg></div>
+                                                        <x-panel-card title="Material Summary">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg>
+                                </x-slot:icon>
                                 <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                                     <div class="text-gray-600">Previous Total</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(materialsPrevTotal())"></div>
                                     <div class="text-gray-600">Previous Ratio</div>
-                                    <div class="text-right font-semibold">
-                                        <span class="px-2 py-0.5 rounded-full" :class="materialsPillClassFor(materialsPrevRatio())" x-text="materialsPrevRatio().toFixed(1) + '%'"></span>
-                                    </div>
+                                    <div class="text-right font-semibold" x-text="materialsPrevRatio().toFixed(1) + '%'"></div>
                                     <div class="text-gray-600">Current Total</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(materialsCurrentTotal())"></div>
                                     <div class="text-gray-600">Current Ratio</div>
-                                    <div class="text-right font-semibold">
-                                        <span class="px-2 py-0.5 rounded-full" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%'"></span>
-                                    </div>
+                                    <div class="text-right font-semibold" x-text="materialsRatio().toFixed(1) + '%'"></div>
                                 </div>
-                            </div>
+                            </x-panel-card>
                             <!-- Material Ratio -->
                             <div class="rounded border p-3 relative">
                                 <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Material Ratio</div>
@@ -46,11 +44,11 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%'"></span></div>
+                                            <div class="text-3xl font-bold" x-text="materialsRatio().toFixed(1) + '%'"></div>
                                         </div>
                                         <div class="flex-1 text-right">
                                             <div class="text-xs uppercase text-gray-500">Industry Avg</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(materialsIndustryAvgRatio||0).toFixed(1) + '%'"></span></div>
+                                            <div class="text-3xl font-bold text-gray-800" x-text="(materialsIndustryAvgRatio||0).toFixed(1) + '%'"></div>
                                         </div>
                                     </div>
                                     <div>

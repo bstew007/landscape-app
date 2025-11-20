@@ -154,7 +154,7 @@
 @include('admin.budgets.partials._field_labor')
 
 @include('admin.budgets.partials._equipment')
-                <section x-show="false" x-cloak>
+{{-- DUPLICATE REMOVED: Hidden duplicate section removed
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Equipment
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(equipmentExpensesTotal())"></span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'" title="Equipment Ratio"></span>
@@ -566,14 +566,14 @@
                             <div class="text-sm text-gray-700" x-show="equipmentTotal() > 0"><span class="font-semibold">Total Equipment:</span> <span x-text="formatMoney(equipmentTotal())"></span></div>
                         </div>
                     </div>
-                </section>
+--}}
 
 @include('admin.budgets.partials._materials')
 
-
+@include('admin.budgets.partials._subcontracting')
 
 @include('admin.budgets.partials._overhead')
-                <section x-show="false" x-cloak>
+{{-- DUPLICATE REMOVED: Hidden duplicate section removed
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Overhead
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(overheadCurrentTotal())"></span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span>
@@ -979,7 +979,7 @@
                             </div>
                         </div>
                     </div>
-                </section>
+--}}
 
                 <!-- PROFIT / LOSS -->
                 <section x-show="section==='Profit/Loss'" x-cloak>
@@ -1163,25 +1163,25 @@
             removeMaterialsRow(i){ this.materialsRows.splice(i,1); },
             addOverheadExpenseRow(){ this.overheadExpensesRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
             removeOverheadExpenseRow(i){ this.overheadExpensesRows.splice(i,1); },
-              addOverheadWageRow(){ this.overheadWagesRows.push({ title:'', previous:'', forecast:'', comments:'' }); },
-  removeOverheadWageRow(i){ this.overheadWagesRows.splice(i,1); },
-  addOverheadEquipmentRow(){ this.overheadEquipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' } }); },
-  removeOverheadEquipmentRow(i){ this.overheadEquipmentRows.splice(i,1); },
-  moveOverheadEquipmentToEquipment(i){
-      const row = this.overheadEquipmentRows[i];
-      if (!row) return;
-      // Push a shallow copy into Equipment list with compatible structure
-      const clone = JSON.parse(JSON.stringify(row));
-      // Ensure keys exist as in equipment rows
-      if (!clone.owned) clone.owned = { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' };
-      if (!clone.leased) clone.leased = { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' };
-      if (!clone.group) clone.group = { items: [] };
-      clone._ownedOpen = false; clone._menuOpen = false;
-      this.equipmentRows.push(clone);
-      // Remove from overhead equipment
-      this.overheadEquipmentRows.splice(i,1);
-  },
-  addSubcontractingRow(){ this.subcontractingRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
+            addOverheadWageRow(){ this.overheadWagesRows.push({ title:'', previous:'', forecast:'', comments:'' }); },
+            removeOverheadWageRow(i){ this.overheadWagesRows.splice(i,1); },
+            addOverheadEquipmentRow(){ this.overheadEquipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' } }); },
+            removeOverheadEquipmentRow(i){ this.overheadEquipmentRows.splice(i,1); },
+            moveOverheadEquipmentToEquipment(i){
+                const row = this.overheadEquipmentRows[i];
+                if (!row) return;
+                // Push a shallow copy into Equipment list with compatible structure
+                const clone = JSON.parse(JSON.stringify(row));
+                // Ensure keys exist as in equipment rows
+                if (!clone.owned) clone.owned = { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' };
+                if (!clone.leased) clone.leased = { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' };
+                if (!clone.group) clone.group = { items: [] };
+                clone._ownedOpen = false; clone._menuOpen = false;
+                this.equipmentRows.push(clone);
+                // Remove from overhead equipment
+                this.overheadEquipmentRows.splice(i,1);
+            },
+            addSubcontractingRow(){ this.subcontractingRows.push({ account_id:'', expense:'', previous:'', current:'', comments:'' }); },
             removeSubcontractingRow(i){ this.subcontractingRows.splice(i,1); },
             addEquipmentRow(){ this.equipmentRows.push({ type:'', qty:'', class:'Custom', description:'', cost_per_year:'', _ownedOpen:false, _menuOpen:false, owned: { replacement_value:'', fees:'', years:'', salvage_value:'', months_per_year:'', division_months:'', interest_rate_pct:'' }, leased: { monthly_payment:'', payments_per_year:'', months_per_year:'', division_months:'' }, group: { items: [] } }); },
             removeEquipmentRow(i){ this.equipmentRows.splice(i,1); },
@@ -1291,7 +1291,6 @@
                     const cur = parseFloat(ohInput.value || '0') || 0;
                     const next = cur + addVal;
                     ohInput.value = next.toFixed(2);
-                    // Also reflect in any bound Alpine? Not bound, so direct is fine.
                 }
                 this.removeEquipmentRow(i);
             },
@@ -1299,7 +1298,7 @@
                 const p = parseFloat(row.previous);
                 const f = parseFloat(row.forecast);
                 if (!isFinite(p) || p === 0) return '0%';
-                const pct = (( (isFinite(f) ? f : 0) - p) / Math.abs(p)) * 100;
+                const pct = (((isFinite(f) ? f : 0) - p) / Math.abs(p)) * 100;
                 return pct.toFixed(1) + '%';
             },
             // Formatting helpers
@@ -1307,11 +1306,11 @@
             // Ratio coloring helpers (within 4 percentage points of industry avg => green; else red)
             within4(cur, avg){ const a = Number(cur)||0; const b = Number(avg)||0; return Math.abs(a - b) <= 4; },
             laborPillClass(){ return this.within4(this.laborRatio(), this.industryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
-              equipmentPillClass(){ return this.within4(this.equipmentRatio(), this.equipmentIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
-              materialsPillClass(){ return this.within4(this.materialsRatio(), this.materialsIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
-              materialsPillClassFor(val){ return this.within4(val, this.materialsIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
-              overheadPillClass(){ return this.within4(this.overheadRatio(), this.overheadIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
-  // Totals
+            equipmentPillClass(){ return this.within4(this.equipmentRatio(), this.equipmentIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+            materialsPillClass(){ return this.within4(this.materialsRatio(), this.materialsIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+            materialsPillClassFor(val){ return this.within4(val, this.materialsIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+            overheadPillClass(){ return this.within4(this.overheadRatio(), this.overheadIndustryAvgRatio) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; },
+            // Totals
             prevTotal(){ return this.salesRows.reduce((s, r) => s + (parseFloat(r.previous) || 0), 0); },
             forecastTotal(){ return this.salesRows.reduce((s, r) => s + (parseFloat(r.forecast) || 0), 0); },
             barWidth(val){ const max = Math.max(this.prevTotal(), this.forecastTotal(), 1); return Math.round((Math.max(0, val) / max) * 100) + '%'; },
@@ -1347,7 +1346,7 @@
                     const ot = parseFloat(r.ot_hrs) || 0;
                     return sum + (staff * (hrs + (ot * mult)));
                 }, 0);
-                const s = this.salaryRows.reduce((t, r) => t + ( (parseFloat(r.staff)||0) * (parseFloat(r.ann_hrs)||0) ), 0);
+                const s = this.salaryRows.reduce((t, r) => t + ((parseFloat(r.staff)||0) * (parseFloat(r.ann_hrs)||0)), 0);
                 return Math.round(h + s);
             },
             totalWages(){
@@ -1465,4 +1464,3 @@
     });
 </script>
 @endpush
-

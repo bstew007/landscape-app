@@ -1,35 +1,31 @@
                 <!-- EQUIPMENT -->
-                <section x-show="section==='Equipment'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Equipment
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(equipmentExpensesTotal())"></span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'" title="Equipment Ratio"></span>
-                    </h2>
+                <section x-data="equipmentEditor($root)" x-show="section==='Equipment'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Equipment</h2>
                     <div class="rounded border p-4">
                         <!-- Graphics Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
                             <!-- General Expenses -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">General Expenses</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 6 6 9 6 12a6 6 0 0 0 12 0c0-3-2-6-6-10z"/></svg></div>
+                            <x-panel-card title="General Expenses">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 6 6 9 6 12a6 6 0 0 0 12 0c0-3-2-6-6-10z"/></svg>
+                                </x-slot:icon>
                                 <div class="space-y-1.5">
-                                    <div class="flex items-center justify-between py-1.5 border-t border-gray-300 first:border-t-0">
-                                        <label class="text-sm font-medium text-gray-800 pr-3">Forecast Fuel</label>
+                                    <x-compact-input-row label="Forecast Fuel">
                                         <input type="number" step="0.01" min="0" class="form-input w-24 md:w-28 text-sm text-right" x-model.number="equipmentGeneral.fuel" name="inputs[equipment][general][fuel]" placeholder="0.00">
-                                    </div>
-                                    <div class="flex items-center justify-between py-1.5 border-t border-gray-300 first:border-t-0">
-                                        <label class="text-sm font-medium text-gray-800 pr-3">Forecast Repairs</label>
+                                    </x-compact-input-row>
+                                    <x-compact-input-row label="Forecast Repairs">
                                         <input type="number" step="0.01" min="0" class="form-input w-24 md:w-28 text-sm text-right" x-model.number="equipmentGeneral.repairs" name="inputs[equipment][general][repairs]" placeholder="0.00">
-                                    </div>
-                                    <div class="flex items-center justify-between py-1.5 border-t border-gray-300 first:border-t-0">
-                                        <label class="text-sm font-medium text-gray-800 pr-3">Insurance + Misc</label>
+                                    </x-compact-input-row>
+                                    <x-compact-input-row label="Insurance + Misc">
                                         <input type="number" step="0.01" min="0" class="form-input w-24 md:w-28 text-sm text-right" x-model.number="equipmentGeneral.insurance_misc" name="inputs[equipment][general][insurance_misc]" placeholder="0.00">
-                                    </div>
+                                    </x-compact-input-row>
                                 </div>
-                            </div>
+                            </x-panel-card>
                             <!-- Equip Summary -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Equip Summary</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg></div>
+                            <x-panel-card title="Equip Summary">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg>
+                                </x-slot:icon>
                                 <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                                     <div class="text-gray-600">Equipment Expenses (list total)</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(equipmentDisplayedListTotal())"></div>
@@ -42,28 +38,29 @@
                                         <input type="number" step="0.01" min="0" class="form-input w-full text-right" x-model.number="equipmentRentals" name="inputs[equipment][rentals]" placeholder="0.00">
                                     </div>
                                 </div>
-                            </div>
-                            <!-- Equipment Ratio -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Equipment Ratio</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div>
-                                <div class="space-y-2">
-                                    <div class="flex items-start justify-between gap-3 mb-2">
-                                        <div class="flex-1">
-                                            <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'"></span></div>
-                                        </div>
-                                        <div class="flex-1 text-right">
-                                            <div class="text-xs uppercase text-gray-500">Industry Avg</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(equipmentIndustryAvgRatio||0).toFixed(1) + '%'"></span></div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700">Industry Avg (%)</label>
-                                        <input type="number" step="0.1" min="0" class="form-input w-full" x-model.number="equipmentIndustryAvgRatio" name="inputs[equipment][industry_avg_ratio]" placeholder="13.7">
-                                    </div>
-                                </div>
-                            </div>
+                            </x-panel-card>
+                              <!-- Equipment Ratio -->
+  <x-panel-card title="Equipment Ratio">
+      <x-slot:icon>
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+      </x-slot:icon>
+      <div class="space-y-2">
+          <div class="flex items-start justify-between gap-3 mb-2">
+              <div class="flex-1">
+                  <div class="text-xs uppercase text-gray-500">Your Ratio</div>
+                  <div class="text-3xl font-bold" x-text="equipmentRatio().toFixed(1) + '%'"></div>
+              </div>
+              <div class="flex-1 text-right">
+                  <div class="text-xs uppercase text-gray-500">Industry Avg</div>
+                  <div class="text-3xl font-bold text-gray-800" x-text="(equipmentIndustryAvgRatio||0).toFixed(1) + '%'"></div>
+              </div>
+          </div>
+          <div>
+              <label class="block text-xs font-medium text-gray-700">Industry Avg (%)</label>
+              <input type="number" step="0.1" min="0" class="form-input w-full" x-model.number="equipmentIndustryAvgRatio" name="inputs[equipment][industry_avg_ratio]" placeholder="13.7">
+          </div>
+      </div>
+  </x-panel-card>
                         </div>
                         <div class="hidden md:grid grid-cols-12 gap-2 text-xs font-medium text-gray-600 border-b pb-2">
                             <div class="col-span-2">Equipment Type</div>

@@ -1,9 +1,6 @@
                 <!-- SUBCONTRACTING -->
-                <section x-show="section==='Subcontracting'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Subcontracting
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(subcCurrentTotal())"></span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span>
-                    </h2>
+                <section x-data="subcontractingEditor($root)" x-show="section==='Subcontracting'" x-cloak>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Subcontracting</h2>
                     <div class="rounded border p-4">
                         <!-- Graphics Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
@@ -15,11 +12,11 @@
                                     <div class="text-gray-600">Previous Total</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(subcPrevTotal())"></div>
                                     <div class="text-gray-600">Previous Ratio</div>
-                                    <div class="text-right font-semibold"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800" x-text="subcPrevRatio().toFixed(1) + '%'"></span></div>
+                                    <div class="text-right font-semibold" x-text="subcPrevRatio().toFixed(1) + '%'"></div>
                                     <div class="text-gray-600">Current Total</div>
                                     <div class="text-right font-semibold" x-text="formatMoney(subcCurrentTotal())"></div>
                                     <div class="text-gray-600">Current Ratio</div>
-                                    <div class="text-right font-semibold"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span></div>
+                                    <div class="text-right font-semibold" x-text="subcRatio().toFixed(1) + '%'"></div>
                                 </div>
                             </div>
                             <!-- Subcontracting Ratio -->
@@ -30,7 +27,7 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span></div>
+                                            <div class="text-3xl font-bold" x-text="subcRatio().toFixed(1) + '%'"></div>
                                         </div>
                                     </div>
                                 </div>

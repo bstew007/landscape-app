@@ -1,9 +1,6 @@
                 <!-- FIELD LABOR -->
                 <section x-data="fieldLaborEditor($root)" x-show="section==='Field Labor'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Field Labor
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'" title="Field Labor Ratio"></span>
-                    </h2>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">Field Labor</h2>
                     <div class="rounded border p-4">
                         <!-- Boxes Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
@@ -49,11 +46,11 @@
                                     <div class="flex items-start justify-between gap-3 mb-2">
                                         <div class="flex-1">
                                             <div class="text-xs uppercase text-gray-500">Your Ratio</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'"></span></div>
+                                            <div class="text-3xl font-bold" x-text="laborRatio().toFixed(1) + '%'"></div>
                                         </div>
                                         <div class="flex-1 text-right">
                                             <div class="text-xs uppercase text-gray-500">Industry Avg</div>
-                                            <div class="text-3xl font-bold"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-800" x-text="(industryAvgRatio||0).toFixed(1) + '%'"></span></div>
+                                            <div class="text-3xl font-bold text-gray-800" x-text="(industryAvgRatio||0).toFixed(1) + '%'"></div>
                                         </div>
                                     </div>
                                     <div>

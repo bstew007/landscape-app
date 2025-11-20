@@ -3,15 +3,16 @@
                     <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
                         <svg class="h-5 w-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
                         <span>SALES BUDGET</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(forecastTotal())"></span>
+
                     </h2>
                     <div class="rounded border p-4">
                         <!-- Graphics Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
                             <!-- Pie: Divisional Sales -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Divisional Sales</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10a8.1 8.1 0 0 1-.9 3.8L12 12V3a9 9 0 1 1 9 9z"/></svg></div>
+                            <x-panel-card title="Divisional Sales">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10a8.1 8.1 0 0 1-.9 3.8L12 12V3a9 9 0 1 1 9 9z"/></svg>
+                                </x-slot:icon>
                                 <div class="flex items-center gap-4">
                                     <div class="relative h-28 w-28 rounded-full"
                                          :style="{ backgroundImage: pieGradient() }">
@@ -27,11 +28,12 @@
                                         <div x-show="divisionSegments().length === 0" class="text-gray-500">No data</div>
                                     </div>
                                 </div>
-                            </div>
+                            </x-panel-card>
                             <!-- Prev vs Forecast -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Prev vs Forecast</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13h3v5H7zM12 9h3v9h-3zM17 5h3v13h-3z"/></svg></div>
+                            <x-panel-card title="Prev vs Forecast">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 13h3v5H7zM12 9h3v9h-3zM17 5h3v13h-3z"/></svg>
+                                </x-slot:icon>
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between text-xs">
                                         <span>Previous</span>
@@ -48,11 +50,12 @@
                                         <div class="h-2 bg-brand-600" :style="{ width: barWidth(forecastTotal()) }"></div>
                                     </div>
                                 </div>
-                            </div>
+                            </x-panel-card>
                             <!-- Change over Previous -->
-                            <div class="rounded border p-3 relative">
-                                <div class="text-xs uppercase tracking-wide text-gray-500 mb-2">Change over Previous</div>
-                                <div class="absolute top-2 right-2 text-gray-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 17l4-4 3 3 5-5"/></svg></div>
+                            <x-panel-card title="Change over Previous">
+                                <x-slot:icon>
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 17l4-4 3 3 5-5"/></svg>
+                                </x-slot:icon>
                                 <div class="flex items-center gap-4">
                                     <div class="relative h-28 w-28 rounded-full" :style="{ backgroundImage: changeRing() }">
                                         <div class="absolute inset-4 bg-white rounded-full flex items-center justify-center text-lg font-semibold">
@@ -65,7 +68,7 @@
                                         <div>Total Forecast: <span class="font-semibold" x-text="formatMoney(forecastTotal())"></span></div>
                                     </div>
                                 </div>
-                            </div>
+                            </x-panel-card>
                         </div>
                         <!-- Header Row -->
                         <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
