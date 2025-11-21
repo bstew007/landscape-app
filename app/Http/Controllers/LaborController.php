@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LaborItem;
+use App\Services\BudgetService;
 use Illuminate\Http\Request;
 
 class LaborController extends Controller
@@ -20,7 +21,12 @@ class LaborController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('labor.index', compact('labor', 'search'));
+        $budgetStats = $this->computeBudgetStats();
+
+        return view('labor.index', array_merge([
+            'labor' => $labor,
+            'search' => $search,
+        ], $budgetStats));
     }
 
     public function importForm()
@@ -122,7 +128,7 @@ class LaborController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validateLabor($request);
+        $data = $this->normalizeNumericFields($this->validateLabor($request));
         $data['is_billable'] = (bool) ($data['is_billable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $labor = LaborItem::create($data);
@@ -141,7 +147,7 @@ class LaborController extends Controller
 
     public function update(Request $request, LaborItem $labor)
     {
-        $data = $this->validateLabor($request);
+        $data = $this->normalizeNumericFields($this->validateLabor($request));
         $data['is_billable'] = (bool) ($data['is_billable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $labor->update($data);
@@ -221,5 +227,83 @@ class LaborController extends Controller
             'internal_notes' => ['nullable', 'string'],
             'cost_code_id' => ['nullable','integer','exists:cost_codes,id'],
         ]);
+    }
+
+    protected function normalizeNumericFields(array $data): array
+    {
+        $defaults = [
+            'overtime_rate',
+            'burden_percentage',
+            'labor_burden_percentage',
+            'unbillable_percentage',
+            'average_wage',
+            'overtime_factor',
+        ];
+
+        foreach ($defaults as $field) {
+            if (!array_key_exists($field, $data) || $data[$field] === null || $data[$field] === '') {
+                $data[$field] = 0;
+            }
+        }
+
+        return $data;
+    }
+    protected function computeBudgetStats(): array
+    {
+        $activeBudget = app(BudgetService::class)->active(false);
+        if (!$activeBudget) {
+            return [
+                'budgetName' => null,
+                'overheadRate' => 0.0,
+                'overheadHours' => 0.0,
+                'profitMarginPct' => null,
+            ];
+        }
+
+        $inputs = $activeBudget->inputs ?? [];
+        $expensesRows = (array) data_get($inputs, 'overhead.expenses.rows', []);
+        $wagesRows = (array) data_get($inputs, 'overhead.wages.rows', []);
+        $ohEquipRows = (array) data_get($inputs, 'overhead.equipment.rows', []);
+
+        $ohExpenses = 0.0;
+        foreach ($expensesRows as $r) {
+            $ohExpenses += (float) ($r['current'] ?? 0);
+        }
+        $ohWages = 0.0;
+        foreach ($wagesRows as $r) {
+            $ohWages += (float) ($r['forecast'] ?? 0);
+        }
+        $ohEquip = 0.0;
+        foreach ($ohEquipRows as $r) {
+            $qty = (float) ($r['qty'] ?? 1);
+            $per = (float) ($r['cost_per_year'] ?? 0);
+            $ohEquip += ($qty * $per);
+        }
+        $ohTotal = $ohExpenses + $ohWages + $ohEquip;
+
+        $hourlyRows = (array) data_get($inputs, 'labor.hourly.rows', []);
+        $salaryRows = (array) data_get($inputs, 'labor.salary.rows', []);
+        $totalHours = 0.0;
+        foreach ($hourlyRows as $r) {
+            $staff = (float) ($r['staff'] ?? 0);
+            $hrs = (float) ($r['hrs'] ?? 0);
+            $ot = (float) ($r['ot_hrs'] ?? 0);
+            $totalHours += $staff * ($hrs + $ot);
+        }
+        foreach ($salaryRows as $r) {
+            $staff = (float) ($r['staff'] ?? 0);
+            $hrs = (float) ($r['ann_hrs'] ?? 0);
+            $totalHours += $staff * $hrs;
+        }
+
+        $ohr = $totalHours > 0 ? ($ohTotal / $totalHours) : 0.0;
+        $profit = (float) ($activeBudget->desired_profit_margin ?? 0);
+
+        return [
+            'budgetName' => $activeBudget->name ?? 'Active Budget',
+            'overheadRate' => round($ohr, 2),
+            'overheadHours' => round($totalHours, 1),
+            'profitMarginPct' => round($profit * 100, 1),
+        ];
     }
 }

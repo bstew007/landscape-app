@@ -22,6 +22,8 @@
 @php($initialOverheadIndustryAvg = old('inputs.overhead.industry_avg_ratio', data_get($budget->inputs, 'overhead.industry_avg_ratio', 24.8)))
 @php($initialOverheadLaborBurden = old('inputs.overhead.labor_burden_pct', data_get($budget->inputs, 'overhead.labor_burden_pct', 0)))
 @php($initialSubcontractingRows = old('inputs.subcontracting.rows', data_get($budget->inputs, 'subcontracting.rows', [])))
+@php($activeBudget = app(\App\Services\BudgetService::class)->active(false))
+@php($desiredMarginSeed = $budget->desired_profit_margin ?? data_get($activeBudget, 'desired_profit_margin') ?? 0.2)
 <div class="max-w-7xl mx-auto py-6 text-sm" data-theme="compact" x-data="budgetEditor()">
     <x-page-header title="{{ $budget->exists ? 'Budget' : 'New Budget' }}" eyebrow="Admin" variant="compact">
         <x-slot:leading>
@@ -145,8 +147,8 @@
                     <div class="grid md:grid-cols-3 gap-4 mt-4">
                         <div>
                             <label class="block text-sm font-medium">Desired Profit Margin (%)</label>
-                            <input type="number" step="0.1" min="0" max="99.9" name="desired_profit_margin_percent" class="form-input w-full mt-1" value="{{ old('desired_profit_margin_percent', number_format(($budget->desired_profit_margin ?? 0.2) * 100, 1)) }}">
-                            <input type="hidden" name="desired_profit_margin" value="{{ old('desired_profit_margin', $budget->desired_profit_margin ?? 0.2) }}" id="desired_profit_margin_hidden">
+                            <input type="number" step="0.1" max="99.9" name="desired_profit_margin_percent" class="form-input w-full mt-1" value="{{ old('desired_profit_margin_percent', number_format($desiredMarginSeed * 100, 1)) }}">
+                            <input type="hidden" name="desired_profit_margin" value="{{ old('desired_profit_margin', $desiredMarginSeed) }}" id="desired_profit_margin_hidden">
                             <p class="text-xs text-gray-500 mt-1">Target company profit margin used in pricing.</p>
                         </div>
                         <div class="md:col-span-2">
@@ -1478,9 +1480,9 @@
             // Keep hidden decimal in sync with visible percent
             percent.addEventListener('input', () => {
                 const p = parseFloat(percent.value || '0');
-                hidden.value = (isFinite(p) ? Math.min(Math.max(p, 0), 99.9) / 100 : 0).toFixed(4);
+                hidden.value = (isFinite(p) ? Math.min(p, 99.9) / 100 : 0).toFixed(4);
             });
-            // Default the desired profit margin to the Profit/Loss net income margin
+            // Default the desired profit margin to the Profit/Loss net income margin (Net Profit %)
             setTimeout(() => {
                 try {
                     const d = window.__budgetRoot;

@@ -46,7 +46,7 @@
   }
 @endphp
 
-<div class="p-4">
+<div class="p-4 space-y-4" data-theme="compact">
     @if ($errors->any())
         <div class="max-w-2xl mx-auto mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
             <ul class="list-disc pl-5 text-sm space-y-1">
@@ -57,46 +57,50 @@
         </div>
     @endif
 
-    <x-modal name="labor-create" :show="true" maxWidth="2xl">
-        <div x-data="laborCreateForm()" class="p-4">
-            <div class="flex items-start justify-between pb-3 border-b">
-                <div>
-                    <h2 class="text-xl font-semibold">Add Labor Entry</h2>
-                    <p class="text-xs text-gray-600">Reusable labor/equipment rate for estimates</p>
-                </div>
-                <div class="flex items-center gap-2">
+    <x-modal name="labor-create" :show="true" maxWidth="3xl">
+        <div x-data="laborCreateForm()" x-init="mode = 'budget'" class="p-4">
+            <x-page-header title="Add Labor" eyebrow="Catalogs" variant="compact" class="mb-4 shadow-sm">
+                <x-slot:actions>
                     <a href="{{ route('labor.index') }}" class="inline-flex items-center h-9 px-3 rounded border text-sm hover:bg-gray-50">Cancel</a>
                     <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save</button>
-                </div>
-            </div>
+                </x-slot:actions>
+            </x-page-header>
 
             <form id="laborCreateForm" method="POST" action="{{ route('labor.store') }}" class="space-y-6 mt-4">
                 @csrf
                 <input type="hidden" name="type" value="{{ old('type','crew') }}">
                 <!-- Base rate follows the Price Calculator -->
                 <input type="hidden" name="base_rate" :value="price().toFixed(2)">
-                <input type="hidden" name="pricing_mode" :value="mode">
+                <input type="hidden" name="pricing_mode" id="pricing_mode" value="budget">
 
                 <!-- Two-column layout: left = Item Information, right = Calculators -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Left: Item Information -->
                     <div class="space-y-6">
                         <x-panel-card title="Item Information" titleClass="text-lg font-semibold text-gray-900 mb-4" class="space-y-4">
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-800 mb-1">Name</label>
-                                <input id="name" type="text" name="name" class="form-input w-full" value="{{ old('name') }}" required>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label for="name" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Name</label>
+                                <div class="sm:col-span-2">
+                                    <input id="name" type="text" name="name" class="form-input w-full" value="{{ old('name') }}" required>
+                                </div>
                             </div>
-                            <div>
-                                <label for="unit" class="block text-sm font-medium text-gray-800 mb-1">Units</label>
-                                <input id="unit" type="text" name="unit" class="form-input w-full" value="{{ old('unit','hr') }}" required>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label for="unit" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Units</label>
+                                <div class="sm:col-span-2">
+                                    <input id="unit" type="text" name="unit" class="form-input w-full" value="{{ old('unit','hr') }}" required>
+                                </div>
                             </div>
-                            <div>
-                                <label for="description" class="block text-sm font-medium text-gray-800 mb-1">Description</label>
-                                <textarea id="description" name="description" rows="2" class="form-textarea w-full" placeholder="Client-facing description">{{ old('description') }}</textarea>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-start gap-4">
+                                <label for="description" class="pt-2 text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Description</label>
+                                <div class="sm:col-span-2">
+                                    <textarea id="description" name="description" rows="2" class="form-textarea w-full" placeholder="Client-facing description">{{ old('description') }}</textarea>
+                                </div>
                             </div>
-                            <div>
-                                <label for="internal_notes" class="block text-sm font-medium text-gray-800 mb-1">Internal Notes</label>
-                                <textarea id="internal_notes" name="internal_notes" rows="2" class="form-textarea w-full" placeholder="Internal only">{{ old('internal_notes') }}</textarea>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-start gap-4">
+                                <label for="internal_notes" class="pt-2 text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Internal Notes</label>
+                                <div class="sm:col-span-2">
+                                    <textarea id="internal_notes" name="internal_notes" rows="2" class="form-textarea w-full" placeholder="Internal only">{{ old('internal_notes') }}</textarea>
+                                </div>
                             </div>
                         </x-panel-card>
                     </div>
@@ -104,63 +108,61 @@
                     <!-- Right: Cost/Breakeven + Price Calculator -->
                     <div class="space-y-6">
                         <x-panel-card title="Cost + Breakeven" titleClass="text-lg font-semibold text-gray-900 mb-4" class="space-y-4">
-                            <div>
-                                <label for="average_wage" class="block text-sm font-medium text-gray-800 mb-1">Average Wage ($)</label>
-                                <div class="relative">
-                                    <input id="average_wage" type="number" step="0.01" min="0" name="average_wage" class="form-input w-full pr-11" x-model.number="wage" value="{{ old('average_wage') }}">
-                                    <button type="button" class="absolute inset-y-0 right-1 my-auto h-8 w-8 rounded border bg-white/90 hover:bg-white flex items-center justify-center shadow-sm" @click="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'wage-calc' }))" title="Open wage calculator" aria-label="Open wage calculator">
-                                        <svg viewBox="0 0 24 24" class="h-4 w-4 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                            <path d="M7 7h10M7 11h4M13 11h4M7 15h4M13 15h4"/>
-                                        </svg>
-                                    </button>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label for="average_wage" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Average Wage</label>
+                                <div class="sm:col-span-2">
+                                    <div class="relative">
+                                        <input id="average_wage" type="number" step="0.01" min="0" name="average_wage" class="form-input w-full pr-11" x-model.number="wage" value="{{ old('average_wage') }}">
+                                        <button type="button" class="absolute inset-y-0 right-1 my-auto h-8 w-8 rounded border bg-white/90 hover:bg-white flex items-center justify-center shadow-sm" @click="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'wage-calc' }))" title="Open wage calculator" aria-label="Open wage calculator">
+                                            <svg viewBox="0 0 24 24" class="h-4 w-4 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                <path d="M7 7h10M7 11h4M13 11h4M7 15h4M13 15h4"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Use the calculator to compute an average from budget roles.</p>
                             </div>
-                            <div>
-                                <label for="overtime_factor" class="block text-sm font-medium text-gray-800 mb-1">Overtime Factor</label>
-                                <input id="overtime_factor" type="number" step="0.01" min="1" name="overtime_factor" class="form-input w-full" x-model.number="otFactor" value="{{ old('overtime_factor', 1.00) }}" placeholder="e.g., 1.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label for="overtime_factor" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Overtime Factor</label>
+                                <div class="sm:col-span-2">
+                                    <input id="overtime_factor" type="number" step="0.01" min="1" name="overtime_factor" class="form-input w-full" x-model.number="otFactor" value="{{ old('overtime_factor', 1.00) }}" placeholder="e.g., 1.5">
+                                </div>
                             </div>
-                            <div>
-                                <label for="unbillable_percentage" class="block text-sm font-medium text-gray-800 mb-1">Unbillable %</label>
-                                <input id="unbillable_percentage" type="number" step="0.1" min="0" max="99.9" name="unbillable_percentage" class="form-input w-full" x-model.number="unbillable" value="{{ old('unbillable_percentage', 0) }}">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label for="unbillable_percentage" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Unbillable %</label>
+                                <div class="sm:col-span-2">
+                                    <input id="unbillable_percentage" type="number" step="0.1" min="0" max="99.9" name="unbillable_percentage" class="form-input w-full" x-model.number="unbillable" value="{{ old('unbillable_percentage', 0) }}">
+                                </div>
                             </div>
-                            <div>
-                                <label for="labor_burden_percentage" class="block text-sm font-medium text-gray-800 mb-1">Labor Burden %</label>
-                                <input id="labor_burden_percentage" type="number" step="0.1" min="0" name="labor_burden_percentage" class="form-input w-full" x-model.number="burden" value="{{ old('labor_burden_percentage', 0) }}">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label for="labor_burden_percentage" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Labor Burden %</label>
+                                <div class="sm:col-span-2">
+                                    <input id="labor_burden_percentage" type="number" step="0.1" min="0" name="labor_burden_percentage" class="form-input w-full" x-model.number="burden" value="{{ old('labor_burden_percentage', 0) }}">
+                                </div>
                             </div>
-                            <div>
-                                <div class="text-sm font-medium text-gray-800 mb-1">Overhead Markup ($/hr)</div>
-                                <div class="text-lg font-semibold">${{ number_format($ohr, 2) }}/hr</div>
-                            <p class="text-xs text-gray-500">From active Budget: Field Labor Hour Markup</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <div class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">OH Markup</div>
+                                <div class="sm:col-span-2 text-gray-900">{{ number_format($ohr, 2) }}</div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
+                                <label class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Breakeven</label>
+                                <div class="sm:col-span-2 text-gray-900">
+                                    <span
+                                        id="breakeven_display"
+                                        data-overhead="{{ number_format($ohr, 2, '.', '') }}"
+                                        class="inline-block text-right sm:text-left w-full sm:w-32">
+                                        {{ number_format(((float) old('average_wage', 0)) + $ohr, 2, '.', '') }}
+                                    </span>
+                                </div>
                             </div>
 
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm pt-2">
-                                <div>
-                                    <div class="text-gray-600">Effective Wage</div>
-                                    <div class="font-semibold" x-text="fmtMoney(effectiveWage())"></div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-600">Loaded Wage</div>
-                                    <div class="font-semibold" x-text="fmtMoney(loadedWage())"></div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-600">Billable Fraction</div>
-                                    <div class="font-semibold" x-text="(billableFraction()*100).toFixed(1) + '%' "></div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-600">Breakeven ($/hr)</div>
-                                    <div class="font-semibold" x-text="fmtMoney(breakeven())"></div>
-                                </div>
-                            </div>
                         </x-panel-card>
 
-                        <section class="space-y-3">
-                            <h3 class="text-lg font-semibold text-gray-900">Price Calculator</h3>
+                        <x-panel-card title="Price Calculator" titleClass="text-lg font-semibold text-gray-900 mb-4" class="space-y-3">
                             <div class="space-y-2">
                                 <label class="flex items-center gap-2 text-sm">
-                                    <input type="radio" name="pricing_mode_choice" value="budget" x-model="mode">
-                                    <span>Use Profit Margin from Budget ({{ number_format($budgetMargin * 100, 1) }}%)</span>
+                                    <input type="radio" name="pricing_mode_choice" value="budget" x-model="mode" checked>
+                                    <span>Use Profit Margin from Budget</span>
                                 </label>
                                 <label class="inline-flex items-center gap-2 text-sm">
                                     <input type="radio" name="pricing_mode_choice" value="custom-margin" x-model="mode">
@@ -171,27 +173,55 @@
                                     <span>Set a Custom Price</span>
                                 </label>
                             </div>
-                            <div class="space-y-3 mt-2">
-                                <div>
-                                    <div class="text-gray-600 text-sm">Profit Margin</div>
-                                    <div x-show="mode==='custom-margin'">
-                                        <input type="number" step="0.1" min="0" max="99.9" class="form-input w-28" x-model.number="customMargin">
+                            <div class="space-y-3 mt-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-3">
+                                    <div class="text-gray-600 text-sm whitespace-nowrap">Profit Margin</div>
+                                    <div class="sm:col-span-2 flex items-center gap-3">
+                                        <div class="relative inline-flex items-center" id="pm-budget-wrap">
+                                            <input
+                                                type="text"
+                                                class="form-input w-32 pr-7 bg-gray-50 text-right"
+                                                id="budget_margin_value"
+                                                value="{{ number_format($budgetMargin * 100, 1, '.', '') }}"
+                                                readonly
+                                                aria-label="Budget profit margin">
+                                            <span class="absolute right-2 text-gray-500 pointer-events-none">%</span>
+                                        </div>
+                                        <div class="relative inline-flex items-center" id="pm-custom-wrap" style="display:none">
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                max="99.9"
+                                                class="form-input w-32 pr-7 text-right"
+                                                id="custom_margin_value"
+                                                x-model.number="customMargin"
+                                                x-ref="customMarginInput"
+                                                aria-label="Custom profit margin percent">
+                                            <span class="absolute right-2 text-gray-500 pointer-events-none">%</span>
+                                        </div>
                                     </div>
-                                    <div class="text-lg font-semibold" x-show="mode!=='custom-margin'" x-text="Number(budgetMargin).toFixed(1) + '%' "></div>
                                 </div>
-                                <div>
-                                    <div class="text-gray-600 text-sm">OH Hour Recovery Rate</div>
-                                    <div class="text-lg font-semibold" x-text="fmtMoney(breakeven()) + '/hr'"></div>
-                                </div>
-                                <div>
-                                    <div class="text-gray-600 text-sm">Price</div>
-                                    <div x-show="mode==='custom-price'">
-                                        <input type="number" step="0.01" min="0" class="form-input w-32" x-model.number="customPrice">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-3">
+                                    <div class="text-gray-600 text-sm whitespace-nowrap">Price</div>
+                                    <div class="sm:col-span-2 flex items-center gap-2">
+                                        <div class="relative w-32">
+                                            <span class="absolute inset-y-0 left-2 flex items-center text-sm text-gray-500">$</span>
+                                            <input
+                                                id="price_display"
+                                                data-overhead="{{ number_format($ohr, 2, '.', '') }}"
+                                                type="text"
+                                                class="form-input w-full text-right bg-gray-50 pl-6"
+                                                value="{{ number_format(((float) old('average_wage', 0)) + $ohr, 2, '.', '') }}"
+                                                readonly
+                                                title="Breakeven ÷ (1 - profit margin)">
+                                        </div>
+                                        <span class="text-sm text-gray-600">/ man hr.</span>
                                     </div>
-                                    <div class="text-lg font-semibold" x-show="mode!=='custom-price'" x-text="fmtMoney(price())"></div>
                                 </div>
+                                <input type="hidden" id="custom_price_input" x-model.number="customPrice">
                             </div>
-                        </section>
+                        </x-panel-card>
                     </div>
                 </div>
 
@@ -214,39 +244,53 @@
 
 
         </div>
-
         <script>
             function laborCreateForm(){
-                return {
-                    // Inputs
-                    wage: Number({{ json_encode(old('average_wage', '')) }}) || 0,
-                    otFactor: Number({{ json_encode(old('overtime_factor', 1.00)) }}) || 1,
-                    unbillable: Number({{ json_encode(old('unbillable_percentage', 0)) }}) || 0,
-                    burden: Number({{ json_encode(old('labor_burden_percentage', 0)) }}) || 0,
-                    overhead: Number({{ json_encode(number_format($ohr, 2, '.', '')) }}) || 0,
+            return {
+                // Inputs
+                wage: Number({{ json_encode(old('average_wage', '')) }}) || 0,
+                otFactor: Number({{ json_encode(old('overtime_factor', 1.00)) }}) || 1,
+                unbillable: Number({{ json_encode(old('unbillable_percentage', 0)) }}) || 0,
+                burden: Number({{ json_encode(old('labor_burden_percentage', 0)) }}) || 0,
+                overhead: Number({{ json_encode(number_format($ohr, 2, '.', '')) }}) || 0,
                     // Pricing
-                    mode: @json(old('pricing_mode', 'budget')),
-                    budgetMargin: Number({{ json_encode(number_format($budgetMargin * 100, 1, '.', '')) }}), // %
-                    customMargin: Number({{ json_encode(old('custom_margin', 20)) }}), // %
-                    customPrice: Number({{ json_encode(old('base_rate', '')) }}) || 0,
+                    mode: 'budget',
+                    budgetMargin: (parseFloat('{{ number_format($budgetMargin * 100, 1, '.', '') }}') || 0), // %
+                    customMargin: (() => {
+                        const oldVal = parseFloat('{{ old('custom_margin', number_format($budgetMargin * 100, 1, '.', '')) }}');
+                        const seed = parseFloat('{{ number_format($budgetMargin * 100, 1, '.', '') }}') || 0;
+                        return Number.isFinite(oldVal) ? oldVal : seed;
+                    })(), // %
+                customPrice: Number({{ json_encode(old('base_rate', '')) }}) || 0,
                     // Wage modal data (no longer used inside nested modal)
                     // employees: {!! json_encode($employeeRows) !!},
                     // Derived helpers
-                    effectiveWage(){
-                        const f = this.otFactor && this.otFactor > 0 ? this.otFactor : 1;
-                        return this.wage * f;
+                    init(){
+                        // Ensure default mode is budget on load
+                        if (!this.mode) this.mode = 'budget';
+                        // Seed custom margin to budget margin on load if empty/invalid
+                        const cm = Number(this.customMargin);
+                        this.customMargin = Number.isFinite(cm) ? cm : (Number(this.budgetMargin) || 0);
+                        // When switching to custom-margin, seed from budget if customMargin isn't valid yet
+                        this.$watch('mode', (val) => {
+                            try { document.querySelector('input[name="pricing_mode"]').value = val; } catch(_) {}
+                            if (val === 'custom-margin') {
+                                const cv = Number(this.customMargin);
+                                if (!Number.isFinite(cv)) {
+                                    this.customMargin = Number(this.budgetMargin) || 0;
+                                }
+                                // Focus the input when entering custom-margin
+                                this.$nextTick(() => { try { this.$refs.customMarginInput && this.$refs.customMarginInput.focus(); this.$refs.customMarginInput.select?.(); } catch(_) {} });
+                            }
+                        });
                     },
-                    loadedWage(){
-                        const pct = (Number(this.burden)||0) / 100;
-                        return this.effectiveWage() * (1 + pct);
-                    },
-                    billableFraction(){
-                        const frac = 1 - ((Number(this.unbillable)||0) / 100);
-                        return Math.max(0.01, frac);
-                    },
-                    breakeven(){
-                        return (this.loadedWage() / this.billableFraction()) + (Number(this.overhead)||0);
-                    },
+                effectiveWage(){
+                    const f = this.otFactor && this.otFactor > 0 ? this.otFactor : 1;
+                    return this.wage * f;
+                },
+                    loadedWage(){ return (this.effectiveWage()) * (1 + ((Number(this.burden)||0)/100)); },
+                    billableFraction(){ const frac = 1 - ((Number(this.unbillable)||0) / 100); return Math.max(0.01, frac); },
+                    breakeven(){ return (this.loadedWage() / this.billableFraction()) + (Number(this.overhead)||0); },
                     selectedMargin(){
                         if (this.mode === 'custom-price') {
                             const p = Number(this.customPrice)||0; const c = this.breakeven();
@@ -371,6 +415,160 @@ function wageCalcTopModal(){
         },
     }
 }
+</script>
+<script>
+    // Simple DOM toggler for budget/custom profit margin display
+    document.addEventListener('DOMContentLoaded', function(){
+        const budgetWrap = document.getElementById('pm-budget-wrap');
+        const customWrap = document.getElementById('pm-custom-wrap');
+        const customInput = document.getElementById('custom_margin_value');
+        const radios = document.querySelectorAll('input[name="pricing_mode_choice"]');
+        const hiddenMode = document.getElementById('pricing_mode');
+        const budgetVal = '{{ number_format($budgetMargin * 100, 1, '.', '') }}';
+        const apply = (val) => {
+            const isCustom = val === 'custom-margin';
+            if (budgetWrap) budgetWrap.style.display = isCustom ? 'none' : 'inline-flex';
+            if (customWrap) customWrap.style.display = isCustom ? 'inline-flex' : 'none';
+            if (!isCustom && customInput) customInput.value = budgetVal;
+            if (hiddenMode) hiddenMode.value = val;
+        };
+        radios.forEach(r => r.addEventListener('change', e => apply(e.target.value)));
+        const checked = document.querySelector('input[name="pricing_mode_choice"]:checked');
+        apply(checked ? checked.value : 'budget');
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const wageInput = document.getElementById('average_wage');
+        const priceInput = document.getElementById('price_display');
+        const customPriceInput = document.getElementById('custom_price_input');
+        const breakevenDisplay = document.getElementById('breakeven_display');
+        const otInput = document.getElementById('overtime_factor');
+        const unbillInput = document.getElementById('unbillable_percentage');
+        const burdenInput = document.getElementById('labor_burden_percentage');
+        const marginRadios = document.querySelectorAll('input[name="pricing_mode_choice"]');
+        const budgetMarginInput = document.getElementById('budget_margin_value');
+        const customMarginInput = document.getElementById('custom_margin_value');
+        const baseRateField = document.querySelector('input[name="base_rate"]');
+
+        let overhead = 0;
+        [priceInput, breakevenDisplay].some(el => {
+            if (!el) return false;
+            const val = parseFloat(el.getAttribute('data-overhead'));
+            if (Number.isFinite(val)) {
+                overhead = val;
+                return true;
+            }
+            return false;
+        });
+
+        const readNumber = (input, fallback = 0) => {
+            if (!input) return fallback;
+            const val = parseFloat(input.value);
+            return Number.isFinite(val) ? val : fallback;
+        };
+
+        const computeBreakeven = (baseWage) => {
+            const otFactorRaw = readNumber(otInput, 0);
+            const otPercent = Math.max(0, otFactorRaw);
+            const otFactor = 1 + (otPercent / 100); // convert % to multiplier
+            const burdenPct = Math.max(0, readNumber(burdenInput, 0));
+            const unbillPct = Math.min(99.9, Math.max(0, readNumber(unbillInput, 0)));
+
+            const effectiveWage = baseWage * otFactor;
+            const loadedWage = effectiveWage * (1 + (burdenPct / 100));
+            const billableFraction = Math.max(0.01, 1 - (unbillPct / 100));
+
+            return (loadedWage / billableFraction) + Math.max(0, overhead);
+        };
+
+        const clampMargin = (val) => Math.min(99.9, Math.max(0, val));
+
+        const marginMode = () => {
+            const checked = document.querySelector('input[name="pricing_mode_choice"]:checked');
+            return checked ? checked.value : 'budget';
+        };
+
+        const budgetMarginPct = () => clampMargin(readNumber(budgetMarginInput, 0));
+
+        const activeMarginPct = () => {
+            const mode = marginMode();
+            if (mode === 'custom-price') return null;
+            if (mode === 'custom-margin') {
+                const custom = readNumber(customMarginInput, NaN);
+                if (Number.isFinite(custom)) return clampMargin(custom);
+                return budgetMarginPct();
+            }
+            return budgetMarginPct();
+        };
+
+        const readCustomPrice = () => {
+            const val = readNumber(customPriceInput, NaN);
+            return Number.isFinite(val) ? Math.max(0, val) : null;
+        };
+
+        const computePriceWithMargin = (breakevenVal) => {
+            const marginPct = activeMarginPct();
+            if (marginPct === null) {
+                const custom = readCustomPrice();
+                return (custom ?? breakevenVal).toFixed(2);
+            }
+            const pct = clampMargin(marginPct);
+            const decimal = pct / 100;
+            if (decimal >= 0.999) return breakevenVal.toFixed(2);
+            return (breakevenVal / (1 - decimal)).toFixed(2);
+        };
+
+        const syncFields = () => {
+            const wage = Math.max(0, readNumber(wageInput, 0));
+            const breakeven = computeBreakeven(wage);
+            const breakevenFormatted = breakeven.toFixed(2);
+            const finalPrice = computePriceWithMargin(breakeven);
+            const mode = marginMode();
+            const isCustomPrice = mode === 'custom-price';
+
+            if (priceInput) {
+                if (isCustomPrice) {
+                    priceInput.removeAttribute('readonly');
+                    priceInput.classList.remove('bg-gray-50');
+                    let customVal = readCustomPrice();
+                    if (!Number.isFinite(customVal)) {
+                        customVal = breakeven;
+                        if (customPriceInput) {
+                            customPriceInput.value = customVal.toFixed(2);
+                            customPriceInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
+                    priceInput.value = (Number.isFinite(customVal) ? customVal : breakeven).toFixed(2);
+                } else {
+                    priceInput.setAttribute('readonly', 'readonly');
+                    priceInput.classList.add('bg-gray-50');
+                    priceInput.value = finalPrice;
+                }
+            }
+
+            if (breakevenDisplay) breakevenDisplay.textContent = breakevenFormatted;
+            if (baseRateField) baseRateField.value = finalPrice;
+        };
+
+        [wageInput, otInput, unbillInput, burdenInput, customMarginInput, customPriceInput].forEach(input => {
+            if (!input) return;
+            ['input', 'change'].forEach(evt => input.addEventListener(evt, syncFields));
+        });
+
+        marginRadios.forEach(radio => radio.addEventListener('change', syncFields));
+
+        if (priceInput) {
+            ['input', 'change'].forEach(evt => priceInput.addEventListener(evt, () => {
+                if (marginMode() !== 'custom-price') return;
+                if (!customPriceInput) return;
+                customPriceInput.value = priceInput.value;
+                customPriceInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }));
+        }
+
+        syncFields();
+    });
 </script>
 </div>
 @endsection

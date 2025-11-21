@@ -76,6 +76,13 @@ class CompanyBudgetController extends Controller
         } else {
             $mergedInputs['overhead']['equipment']['rows'] = array_values($postedOverheadEquipRows);
         }
+        // Subcontracting rows: overwrite list so deletions persist (treat missing as empty)
+        $postedSubcontractingRows = data_get($data, 'inputs.subcontracting.rows', null);
+        if ($postedSubcontractingRows === null) {
+            $mergedInputs['subcontracting']['rows'] = [];
+        } else {
+            $mergedInputs['subcontracting']['rows'] = array_values($postedSubcontractingRows);
+        }
 
         $outputs = $this->budget->computeOutputs($mergedInputs);
 
@@ -104,7 +111,7 @@ class CompanyBudgetController extends Controller
             'name' => 'required|string|max:255',
             'year' => 'nullable|integer|min:2000|max:2100',
             'effective_from' => 'nullable|date',
-            'desired_profit_margin' => 'required|numeric|min:0|max:0.999',
+            'desired_profit_margin' => 'required|numeric|max:0.999',
             'is_active' => 'sometimes|boolean',
             'inputs' => 'nullable|array',
             // Sales Budget rows
