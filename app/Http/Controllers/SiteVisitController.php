@@ -17,11 +17,29 @@ class SiteVisitController extends Controller
     {
     }
 
-    public function index(Client $client)
+    public function index(Request $request, Client $client)
     {
-        $siteVisits = $client->siteVisits()->with('property')->latest()->get();
+        $search = $request->get('search');
 
-        return view('site-visits.index', compact('client', 'siteVisits'));
+        $siteVisits = $client->siteVisits()
+            ->with('property')
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('property', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('city', 'like', "%{$search}%")
+                        ->orWhere('state', 'like', "%{$search}%")
+                        ->orWhere('display_address', 'like', "%{$search}%");
+                })->orWhere('notes', 'like', "%{$search}%");
+            })
+            ->orderByDesc('visit_date')
+            ->paginate(25)
+            ->appends(['search' => $search]);
+
+        return view('site-visits.index', [
+            'client' => $client,
+            'siteVisits' => $siteVisits,
+            'search' => $search,
+        ]);
     }
 
     public function create(Client $client)
@@ -78,12 +96,26 @@ class SiteVisitController extends Controller
      */
     public function select(Request $request)
     {
-        $redirectTo = $request->get('redirect_to', ''); // �o. fixed variable
-        $siteVisits = SiteVisit::with(['client', 'property'])
-            ->orderBy('visit_date', 'desc')
-            ->get();
+        $redirectTo = $request->get('redirect_to', '');
+        $search = $request->get('search');
 
-        return view('calculators.select-site-visit', compact('siteVisits', 'redirectTo'));
+        $siteVisits = SiteVisit::with(['client', 'property'])
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('client', function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"]);
+                })->orWhereHas('property', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('city', 'like', "%{$search}%")
+                        ->orWhere('state', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('visit_date', 'desc')
+            ->paginate(25)
+            ->appends(['redirect_to' => $redirectTo, 'search' => $search]);
+
+        return view('calculators.select-site-visit', compact('siteVisits', 'redirectTo', 'search'));
     }
 
     public function update(Request $request, Client $client, SiteVisit $siteVisit)

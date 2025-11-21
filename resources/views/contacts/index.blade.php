@@ -13,7 +13,7 @@
             </svg>
         </span>
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Contacts</h1>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-wide uppercase">Contacts</h1>
         </div>
     </div>
 

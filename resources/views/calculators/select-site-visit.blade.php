@@ -1,74 +1,142 @@
 @extends('layouts.sidebar')
 
 @section('content')
-    <div class="max-w-xl mx-auto bg-white shadow-md rounded px-6 py-8">
-        <h1 class="text-2xl font-bold mb-6">Select a Site Visit</h1>
+<div class="space-y-6">
+    {{-- Header card --}}
+    <div class="rounded-lg bg-white shadow-sm border border-brand-100 p-6 flex items-center gap-3">
+        <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M21 13a4 4 0 0 0-3-3.87" />
+            </svg>
+        </span>
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-wide uppercase">Select Site Visit</h1>
+        </div>
+    </div>
+
+    {{-- Main card --}}
+    <div class="rounded-lg bg-white shadow-sm border border-brand-100 p-6 space-y-6">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <form method="GET" action="{{ route('site-visit.select') }}" class="flex flex-1 gap-3 flex-col sm:flex-row sm:items-center">
+                <input type="hidden" name="redirect_to" value="{{ $redirectTo }}">
+                <input type="text"
+                       name="search"
+                       value="{{ $search ?? '' }}"
+                       placeholder="Search by client, property, or location..."
+                       class="flex-1 form-input border-brand-300 rounded focus:ring-brand-500 focus:border-brand-500 text-lg py-3">
+                <x-brand-button type="submit">Search</x-brand-button>
+                @if(!empty($search))
+                    <x-brand-button href="{{ route('site-visit.select', array_filter(['redirect_to' => $redirectTo])) }}" variant="ghost">Clear</x-brand-button>
+                @endif
+            </form>
+            <div class="flex gap-2 flex-wrap">
+                <x-brand-button href="{{ route('contacts.index') }}" variant="outline">Manage Contacts</x-brand-button>
+            </div>
+        </div>
 
         @if(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div class="p-4 rounded border border-amber-300 bg-amber-50 text-amber-900 text-sm">
                 {{ session('error') }}
             </div>
         @endif
 
-        <form method="GET" action="" id="siteVisitForm">
-            {{-- Site Visit Dropdown --}}
-            <div class="mb-4">
-                <label for="site_visit_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Site Visit:
-                </label>
-                <select name="site_visit_id" id="site_visit_id" required class="block w-full border rounded px-3 py-2">
-                    @foreach ($siteVisits as $visit)
-                        @php
-                            $client = optional($visit->client);
-                            $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')) ?: 'No Client';
-                            $formattedDate = optional($visit->visit_date)->format('M d, Y') ?? 'No Date';
-                            $property = optional($visit->property);
-                            $propertyLabel = $property->name ?: 'No Property';
-                            $propertyLocation = trim(($property->city ?? '') . ', ' . ($property->state ?? ''));
-                        @endphp
-                        <option value="{{ $visit->id }}">
-                            [Client {{ $visit->client_id }}] {{ $clientName }} — {{ $propertyLabel }}
-                            @if($propertyLocation && $propertyLocation !== ',')
-                                ({{ $propertyLocation }})
-                            @endif
-                            — {{ $formattedDate }}
-                        </option>
-                    @endforeach
-                </select>
+        @if(!$redirectTo)
+            <div class="p-4 rounded border border-brand-200 bg-brand-50 text-brand-800 text-sm">
+                No calculator destination was provided. Selecting a site visit will simply open the visit record.
+            </div>
+        @endif
+
+        @if ($siteVisits->count())
+            <div class="overflow-x-auto rounded-lg border border-brand-200">
+                <table class="min-w-full border-collapse text-sm">
+                    <thead class="bg-brand-50 text-brand-600 uppercase tracking-wide">
+                        <tr>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Client</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Property</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Address</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Visit Date</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-brand-900 text-base">
+                        @foreach ($siteVisits as $visit)
+                            @php
+                                $client = $visit->client;
+                                $property = $visit->property;
+                                $rowShade = $loop->even ? 'bg-brand-100/60' : 'bg-white';
+                            @endphp
+                            <tr class="{{ $rowShade }} hover:bg-brand-100">
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div class="font-semibold text-brand-900">{{ $client?->name ?? 'Unknown Client' }}</div>
+                                    <div class="text-sm text-brand-600">#{{ $client->id ?? '—' }} · {{ $client?->email ?? 'No Email' }}</div>
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div class="font-medium">{{ $property->name ?? 'Unassigned Property' }}</div>
+                                    <div class="text-sm text-brand-600">{{ $property?->type ?? '' }}</div>
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div>{{ $property?->display_address ?? 'No address on file' }}</div>
+                                    @if($property && $property->city)
+                                        <div class="text-sm text-brand-600">{{ $property->city }}, {{ $property->state }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">
+                                    {{ optional($visit->visit_date)->format('M d, Y') ?? 'No date recorded' }}
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div class="flex flex-wrap gap-2">
+                                        <x-brand-button type="button"
+                                                        size="sm"
+                                                        data-select-visit="{{ $visit->id }}"
+                                                        data-view-url="{{ route('contacts.site-visits.show', [$visit->client_id, $visit->id]) }}">
+                                            Select
+                                        </x-brand-button>
+                                        <x-secondary-button href="{{ route('contacts.site-visits.show', [$visit->client_id, $visit->id]) }}" size="sm">
+                                            View
+                                        </x-secondary-button>
+                                        <x-secondary-button href="{{ route('contacts.site-visits.edit', [$visit->client_id, $visit->id]) }}" size="sm">
+                                            Edit
+                                        </x-secondary-button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
 
-            {{-- Hidden redirect target --}}
-            <input type="hidden" name="redirect_to" id="redirect_to" value="{{ $redirectTo }}">
-
-            {{-- Submit --}}
-            <div class="mt-6">
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700">
-                    Continue to Calculator
-                </button>
+            <div class="pt-4">
+                {{ $siteVisits->links() }}
             </div>
-        </form>
+        @else
+            <p class="text-brand-600 text-lg">No site visits found. Try a different search or create a new visit from the Contacts section.</p>
+        @endif
     </div>
+</div>
 
-    {{-- JavaScript to handle redirect --}}
-    <script>
-        document.getElementById('siteVisitForm').addEventListener('submit', function (e) {
-            e.preventDefault();
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const redirectTo = @json($redirectTo);
+        document.querySelectorAll('[data-select-visit]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const siteVisitId = this.getAttribute('data-select-visit');
+                if (!siteVisitId) return;
 
-            const form = e.target;
-            const siteVisitId = form.site_visit_id.value;
-            const redirectUrl = form.redirect_to.value;
-
-            if (!siteVisitId || !redirectUrl) {
-                alert('Missing required information.');
-                return;
-            }
-
-            const fullUrl = redirectUrl.includes('?')
-                ? `${redirectUrl}&site_visit_id=${siteVisitId}`
-                : `${redirectUrl}?site_visit_id=${siteVisitId}`;
-
-            window.location.href = fullUrl;
+                if (redirectTo) {
+                    const fullUrl = redirectTo.includes('?')
+                        ? `${redirectTo}&site_visit_id=${siteVisitId}`
+                        : `${redirectTo}?site_visit_id=${siteVisitId}`;
+                    window.location.href = fullUrl;
+                } else {
+                    const fallbackUrl = this.getAttribute('data-view-url');
+                    window.location.href = fallbackUrl ?? "{{ route('client-hub') }}";
+                }
+            });
         });
-    </script>
+    });
+</script>
+@endpush
 @endsection

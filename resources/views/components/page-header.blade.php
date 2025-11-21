@@ -22,10 +22,7 @@
                 @if($eyebrow)
                     <p class="text-sm uppercase tracking-wide text-brand-700">{{ $eyebrow }}</p>
                 @endif
-                <h1 class="{{ $titleCls }} text-gray-900">{{ $title }}</h1>
-                @if($subtitle)
-                    <p class="text-gray-600 {{ $subtitleCls }}">{{ $subtitle }}</p>
-                @endif
+                <h1 class="{{ $titleCls }} text-gray-900 tracking-wide uppercase">{{ $title }}</h1>
             </div>
         </div>
         <div class="flex flex-wrap gap-2">

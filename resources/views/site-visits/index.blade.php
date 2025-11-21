@@ -1,80 +1,99 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="max-w-5xl mx-auto space-y-6">
-    <x-page-header title="Site Visits" eyebrow="Client" subtitle="For {{ $client->first_name }} {{ $client->last_name }}">
+<div class="space-y-6">
+    <x-page-header title="Site Visits" eyebrow="Client">
         <x-slot:actions>
-            <x-brand-button href="{{ route('contacts.site-visits.create', $client) }}">➕ Add Site Visit</x-brand-button>
+            <x-brand-button href="{{ route('contacts.site-visits.create', $client) }}">+ New Site Visit</x-brand-button>
         </x-slot:actions>
     </x-page-header>
 
     @if(session('success'))
-        <div class="mb-4 p-4 bg-green-100 text-green-800 border border-green-300 rounded">
+        <div class="p-4 bg-accent-50 text-accent-900 rounded border border-accent-200">
             {{ session('success') }}
         </div>
     @endif
 
-    @if($siteVisits->count())
-        <div class="bg-white shadow-md rounded-lg overflow-x-auto">
-            <table class="min-w-full text-lg">
-                <thead class="bg-gray-100 text-gray-700 uppercase">
-                    <tr>
-                        <th class="px-6 py-3 text-left">Property</th>
-                        <th class="px-6 py-3 text-left">Date</th>
-                        <th class="px-6 py-3 text-left">Notes</th>
-                        <th class="px-6 py-3 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="text-gray-800">
-                    @foreach ($siteVisits as $visit)
-                        <tr class="border-t">
-                            <td class="px-6 py-4">
-                                <p class="font-semibold">
-                                    {{ optional($visit->property)->name ?? 'Unassigned' }}
-                                    @if(optional($visit->property)->is_primary)
-                                        <span class="ml-1 inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">Primary</span>
-                                    @endif
-                                </p>
-                                <p class="text-sm text-gray-500">
-                                    {{ optional($visit->property)->display_address ?? 'No address on file' }}
-                                </p>
-                            </td>
-                            <td class="px-6 py-4">{{ $visit->visit_date->format('F j, Y') }}</td>
-                            <td class="px-6 py-4">{{ $visit->notes ?? 'No notes' }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex gap-2">
-                                    {{-- View --}}
-                                    <a href="{{ route('contacts.site-visits.show', [$client, $visit]) }}"
-                                       class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
-                                        View
-                                    </a>
-
-                                    {{-- Edit --}}
-                                    <a href="{{ route('contacts.site-visits.edit', [$client, $visit]) }}"
-                                       class="bg-brand-700 hover:bg-brand-800 text-white px-3 py-1 rounded text-sm">
-                                        Edit
-                                    </a>
-
-                                    {{-- Delete --}}
-                                    <form action="{{ route('contacts.site-visits.destroy', [$client, $visit]) }}"
-                                          method="POST"
-                                          onsubmit="return confirm('Are you sure you want to delete this site visit?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <div class="rounded-lg bg-white shadow-sm border border-brand-100 p-6 space-y-6">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <form method="GET" action="{{ route('contacts.site-visits.index', $client) }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <input type="text"
+                       name="search"
+                       value="{{ $search ?? '' }}"
+                       placeholder="Search by property, address, or notes..."
+                       class="flex-1 form-input border-brand-300 rounded focus:ring-brand-500 focus:border-brand-500 text-lg py-3">
+                <x-brand-button type="submit">Search</x-brand-button>
+                @if(!empty($search))
+                    <x-brand-button href="{{ route('contacts.site-visits.index', $client) }}" variant="ghost">Clear</x-brand-button>
+                @endif
+            </form>
+            <div class="flex flex-wrap gap-2">
+                <x-secondary-button href="{{ route('client-hub') }}" size="sm">Client Hub</x-secondary-button>
+                <x-secondary-button href="{{ route('contacts.show', $client) }}" size="sm">Back to Contact</x-secondary-button>
+            </div>
         </div>
-    @else
-        <p class="text-gray-600 text-lg mt-4">No site visits yet. Click "Add Site Visit" to get started.</p>
-    @endif
+
+        @if($siteVisits->count())
+            <div class="overflow-x-auto rounded-lg border border-brand-200">
+                <table class="min-w-full border-collapse text-base">
+                    <thead class="bg-brand-50 text-brand-600 uppercase tracking-wide">
+                        <tr>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Property</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Address</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Visit Date</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Notes</th>
+                            <th class="px-4 py-3 border border-brand-200 bg-brand-100 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-brand-900 text-lg">
+                        @foreach ($siteVisits as $visit)
+                            @php
+                                $property = $visit->property;
+                                $rowShade = $loop->even ? 'bg-brand-100/70' : 'bg-white';
+                            @endphp
+                            <tr class="{{ $rowShade }} hover:bg-brand-100">
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div class="font-semibold text-brand-900">
+                                        {{ $property->name ?? 'Unassigned Property' }}
+                                        @if(optional($property)->is_primary)
+                                            <span class="badge bg-brand-50 text-brand-700 border border-brand-200 ml-2">Primary</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-sm text-brand-600">Client: {{ $client->name }}</div>
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div>{{ $property->display_address ?? 'No address on file' }}</div>
+                                    @if($property && ($property->city || $property->state))
+                                        <div class="text-sm text-brand-600">{{ $property->city }}, {{ $property->state }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">{{ optional($visit->visit_date)->format('M d, Y') ?? 'No date recorded' }}</td>
+                                <td class="px-4 py-3 border border-brand-200 text-brand-700">
+                                    {{ $visit->notes ? \Illuminate\Support\Str::limit($visit->notes, 70) : 'No notes added' }}
+                                </td>
+                                <td class="px-4 py-3 border border-brand-200">
+                                    <div class="flex flex-wrap gap-2">
+                                        <x-brand-button href="{{ route('contacts.site-visits.show', [$client, $visit]) }}" size="sm">View</x-brand-button>
+                                        <x-secondary-button href="{{ route('contacts.site-visits.edit', [$client, $visit]) }}" size="sm">Edit</x-secondary-button>
+                                        <form action="{{ route('contacts.site-visits.destroy', [$client, $visit]) }}" method="POST" onsubmit="return confirm('Delete this site visit?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-danger-button size="sm">Delete</x-danger-button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pt-4">
+                {{ $siteVisits->links() }}
+            </div>
+        @else
+            <p class="text-brand-600 text-lg">No site visits yet. Use the ?New Site Visit? button to get started.</p>
+        @endif
+    </div>
 </div>
 @endsection
