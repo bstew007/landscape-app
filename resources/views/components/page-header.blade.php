@@ -10,7 +10,7 @@
     $titleCls = $isCompact ? 'text-2xl font-semibold' : 'text-3xl font-bold';
     $subtitleCls = $isCompact ? 'text-sm' : '';
 @endphp
-<div {{ $attributes->merge(['class' => "rounded-lg shadow $wrapPad ring-1 ring-brand-100 border-t-4 border-brand-600 bg-gradient-to-r from-brand-50/70 to-white"]) }}>
+<div {{ $attributes->merge(['class' => "rounded-2xl border border-brand-100 bg-white shadow-sm $wrapPad"]) }}>
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-start gap-3">
             @isset($leading)

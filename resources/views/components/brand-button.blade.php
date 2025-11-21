@@ -6,13 +6,10 @@
         'md' => 'h-10 px-4 text-sm',
     ][$size] ?? 'h-10 px-4 text-sm';
     $classes = [
-        // Primary action (Save) -> Green
-        'solid' => 'bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500',
-        // Secondary/outline -> Amber for Cancel
-        'outline' => 'border border-amber-700 text-amber-800 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500',
-        // Ghost stays neutral brand for links
-        'ghost' => 'text-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500',
-    ][$variant] ?? 'bg-green-600 text-white hover:bg-green-700';
+        'solid' => 'bg-accent-600 text-white hover:bg-accent-500 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-accent-400',
+        'outline' => 'border border-accent-600 text-accent-700 hover:bg-accent-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-accent-400',
+        'ghost' => 'text-brand-700 hover:bg-brand-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-300',
+    ][$variant] ?? 'bg-accent-600 text-white hover:bg-accent-500';
 @endphp
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $base.' '.$sizeClass.' '.$classes]) }}>
