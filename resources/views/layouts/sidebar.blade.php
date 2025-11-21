@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>{{ config('app.name', 'Landscape Estimator') }}</title>
+    <title>{{ config('app.name', 'CFL') }}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo.svg') }}" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

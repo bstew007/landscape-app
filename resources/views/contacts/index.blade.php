@@ -71,7 +71,7 @@
                             <td class="px-6 py-4"><input type="checkbox" value="{{ $contact->id }}" data-role="row-check"></td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <a href="{{ route('contacts.show', $contact) }}" class="text-brand-700 hover:text-brand-900 hover:underline">
-                                    {{ $contact->first_name }} {{ $contact->last_name }}
+                                    {{ collect([$contact->last_name, $contact->first_name])->filter()->join(', ') }}
                                 </a>
                             </td>
                             <td class="px-6 py-4">

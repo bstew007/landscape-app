@@ -21,8 +21,10 @@ class ContactController extends Controller
                       ->orWhere('company_name', 'like', "%{$term}%");
                 });
             })
+            ->orderByRaw("CASE WHEN company_name IS NULL OR company_name = '' THEN 1 ELSE 0 END")
             ->orderBy('company_name')
             ->orderBy('last_name')
+            ->orderBy('first_name')
             ->get();
 
         return view('contacts.index', ['contacts' => $contacts, 'search' => $search, 'type' => $type]);

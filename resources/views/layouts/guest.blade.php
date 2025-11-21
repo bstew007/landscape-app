@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'CFL') }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo.svg') }}" />
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -18,7 +19,7 @@
         <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4">
             <div class="text-center">
                 <a href="/" class="inline-flex items-center">
-                    <img src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name', 'Laravel') }} logo" class="h-48 w-auto drop-shadow-sm">
+                    <img src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name', 'CFL') }} logo" class="h-48 w-auto drop-shadow-sm">
                 </a>
             </div>
 
