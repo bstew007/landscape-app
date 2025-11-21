@@ -8,7 +8,7 @@
     $profitMarginPct = $profitMarginPct ?? null;
 @endphp
 
-<div class="max-w-5xl mx-auto py-8 space-y-6">
+<div class="space-y-8 max-w-7xl mx-auto">
     <x-page-header eyebrow="Catalogs" class="shadow-sm">
         <x-slot:leading>
             <div class="h-10 w-10 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg">🛠️</div>
@@ -20,7 +20,7 @@
         </x-slot:title>
     </x-page-header>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-4">
             <p class="text-xs uppercase tracking-wide text-gray-500">Budget</p>
             <p class="text-lg font-semibold text-gray-900 mt-1">{{ $budgetName ?? 'No active budget' }}</p>
@@ -33,21 +33,23 @@
             <p class="text-xs uppercase tracking-wide text-gray-500">Profit</p>
             <p class="text-lg font-semibold text-gray-900 mt-1">{{ isset($profitMarginPct) ? number_format($profitMarginPct, 1) . '%' : '—' }}</p>
         </div>
-    </div>
+    </section>
 
-    <form method="GET" class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded shadow mt-6 items-center justify-between">
-        <input type="text" name="search" value="{{ $search }}" placeholder="Search by name or type"
-               class="form-input w-full sm:max-w-xs">
-        <div class="flex items-center gap-3">
-            <x-brand-button type="submit">Search</x-brand-button>
-            <x-brand-button type="button" href="{{ route('labor.create') }}" class="bg-green-600 hover:bg-green-700">+ New</x-brand-button>
+    <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
+        <div class="p-5 sm:p-7 border-b border-brand-100/60">
+            <form method="GET" class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Search by name or type" class="form-input w-full sm:max-w-xs rounded-full border-brand-200 focus:ring-brand-500 focus:border-brand-500">
+                <div class="flex items-center gap-3">
+                    <x-brand-button type="submit" size="sm">Search</x-brand-button>
+                    <x-brand-button as="a" href="{{ route('labor.create') }}" variant="muted" size="sm">+ New</x-brand-button>
+                </div>
+            </form>
         </div>
-    </form>
 
-    <div class="bg-white rounded shadow overflow-x-auto">
+        <div class="overflow-x-auto">
         @php $overheadRate = $overheadRate ?? 0; @endphp
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+            <thead class="bg-brand-50/80 text-xs uppercase text-brand-500">
             <tr>
                 <th class="text-left px-4 py-3">Name</th>
                 <th class="text-right px-4 py-3 whitespace-nowrap">Wage/Hr</th>
@@ -92,13 +94,14 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-4 py-6 text-center text-gray-500">No labor entries yet.</td>
-                </tr>
+                    <td colspan="6" class="px-4 py-6 text-center text-brand-400">No labor entries yet.</td>
+            </tr>
             @endforelse
             </tbody>
         </table>
-    </div>
-
-    {{ $labor->links() }}
+        <div class="px-5 py-4 border-t border-brand-100/60">
+            {{ $labor->links() }}
+        </div>
+    </section>
 </div>
 @endsection

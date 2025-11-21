@@ -45,7 +45,16 @@ class EstimateItemController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Line item added.');
+        $response = back()
+            ->with('success', 'Line item added.')
+            ->with('recent_item_id', $item->id);
+
+        if ($request->boolean('stay_in_add_items')) {
+            $response->with('reopen_add_items', true)
+                ->with('add_items_tab', $request->input('add_items_tab', $payload['item_type'] ?? 'materials'));
+        }
+
+        return $response;
     }
 
     public function update(Request $request, Estimate $estimate, EstimateItem $item)

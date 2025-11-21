@@ -1,0 +1,665 @@
+import { initEstimateCalculatorDrawer } from './estimate-calculator';
+
+const STORAGE_KEY = 'estimate:addDrawerState';
+const DEFAULT_STATE = {
+    tab: 'work',
+    activeArea: 'all',
+    showAddItems: false,
+    addItemsTab: 'materials',
+};
+
+const safeJsonParse = (value, fallback) => {
+    try {
+        return value ? JSON.parse(value) : fallback;
+    } catch (_) {
+        return fallback;
+    }
+};
+
+export function initEstimateShow() {
+    window.estimateShowComponent = function (el) {
+        const initial = safeJsonParse(el?.dataset.estimateShowInitial, DEFAULT_STATE);
+        return {
+            tab: initial?.tab || 'work',
+            activeArea: initial?.activeArea || 'all',
+            showAddItems: !!initial?.showAddItems,
+            addItemsTab: initial?.addItemsTab || 'materials',
+            openAddItems(tab = 'labor') {
+                this.addItemsTab = tab;
+                this.showAddItems = true;
+                window.dispatchEvent(new CustomEvent('set-calc-tab', { detail: tab }));
+            },
+            closeAddItems() {
+                this.showAddItems = false;
+            },
+        };
+    };
+
+    const attach = () => {
+        const root = document.querySelector('[data-estimate-show-root]');
+        if (!root || root.__estimateShowController) {
+            return;
+        }
+        root.__estimateShowController = new EstimateShowController(root);
+        root.__estimateShowController.init();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach, { once: true });
+    } else {
+        attach();
+    }
+}
+
+class EstimateShowController {
+    constructor(root) {
+        this.root = root;
+        this.overlay = document.getElementById('pageLoadingOverlay');
+        this.csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        this.setup = window.__estimateSetup || {};
+        this.calcDrawerApi = null;
+        this.highlightItemId = root.dataset.highlightItem || '';
+        this.areaReorderUrl = window.__estimateAreaReorderUrl || '';
+        this.itemsBaseUrl = window.__estimateItemsBaseUrl || '';
+    }
+
+    init() {
+        this.initCalcDrawer();
+        this.initRefreshButton();
+        this.wireAreaOrdering();
+        this.buildAreaHeaders();
+        this.wireAreaHeaderToggles();
+        this.wireSaveAllButton();
+        this.wireCatalogForms();
+        this.wireDrawerAddButtons();
+        this.restoreDrawerState();
+        this.highlightRecentItem();
+        this.exposeSummaryHelpers();
+    }
+
+    initCalcDrawer() {
+        const drawer = document.getElementById('calcDrawer');
+        if (!drawer || !this.setup.estimateId) {
+            return;
+        }
+
+        try {
+            this.calcDrawerApi = initEstimateCalculatorDrawer({
+                estimateId: this.setup.estimateId,
+                areas: this.setup.areas || [],
+            });
+        } catch (error) {
+            console.error('Estimate calculator init error', error);
+        }
+
+        const overlayEl = document.getElementById('calcDrawerOverlay');
+        const closeBtn = document.getElementById('calcDrawerCloseBtn');
+        const openBtn = document.getElementById('openCalcDrawerBtn');
+        const tabCreateBtn = document.getElementById('calcTabCreateBtn');
+        const tabTemplatesBtn = document.getElementById('calcTabTemplatesBtn');
+        const createPane = document.getElementById('calcCreatePane');
+        const templatesPane = document.getElementById('calcTemplatesPane');
+        const typeSelectCreate = document.getElementById('calcTypeSelect');
+        const typeSelectTpl = document.getElementById('calcTypeSelectTpl');
+        const openTemplateModeLink = document.getElementById('openTemplateModeLink');
+        const tplRefreshBtn = document.getElementById('calcTplRefresh');
+
+        const activateCreate = () => {
+            if (createPane) createPane.style.display = '';
+            if (templatesPane) templatesPane.style.display = 'none';
+            tabCreateBtn?.classList.add('bg-brand-50', 'text-brand-700');
+            tabTemplatesBtn?.classList.remove('bg-brand-50', 'text-brand-700');
+        };
+
+        const activateTemplates = () => {
+            if (createPane) createPane.style.display = 'none';
+            if (templatesPane) templatesPane.style.display = '';
+            tabTemplatesBtn?.classList.add('bg-brand-50', 'text-brand-700');
+            tabCreateBtn?.classList.remove('bg-brand-50', 'text-brand-700');
+            this.calcDrawerApi?.fetchTemplates?.();
+        };
+
+        const showDrawer = (tab = 'templates') => {
+            drawer.style.display = 'block';
+            if (tab === 'create') {
+                activateCreate();
+                this.dispatchCalcTab('labor');
+            } else {
+                activateTemplates();
+                this.dispatchCalcTab(tab);
+            }
+            this.syncTemplateLink(typeSelectCreate, openTemplateModeLink);
+        };
+
+        const hideDrawer = () => {
+            drawer.style.display = 'none';
+        };
+
+        if (openBtn) openBtn.addEventListener('click', () => showDrawer('create'));
+        if (overlayEl) overlayEl.addEventListener('click', hideDrawer);
+        if (closeBtn) closeBtn.addEventListener('click', hideDrawer);
+        if (tabCreateBtn) tabCreateBtn.addEventListener('click', activateCreate);
+        if (tabTemplatesBtn) tabTemplatesBtn.addEventListener('click', activateTemplates);
+        if (tplRefreshBtn) tplRefreshBtn.addEventListener('click', () => this.calcDrawerApi?.fetchTemplates?.());
+
+        if (typeSelectCreate) {
+            typeSelectCreate.addEventListener('change', () => {
+                this.calcDrawerApi && (this.calcDrawerApi.state.calcType = typeSelectCreate.value || 'mulching');
+                this.syncTemplateLink(typeSelectCreate, openTemplateModeLink);
+            });
+            this.syncTemplateLink(typeSelectCreate, openTemplateModeLink);
+        }
+
+        if (typeSelectTpl) {
+            typeSelectTpl.addEventListener('change', () => {
+                if (this.calcDrawerApi) {
+                    this.calcDrawerApi.state.calcType = typeSelectTpl.value || 'mulching';
+                }
+                this.calcDrawerApi?.fetchTemplates?.();
+            });
+        }
+
+        window.__showCalcDrawerPanel = (tab = 'labor') => {
+            showDrawer('templates');
+            this.dispatchCalcTab(tab);
+        };
+    }
+
+    dispatchCalcTab(tab) {
+        window.dispatchEvent(new CustomEvent('set-calc-tab', { detail: tab }));
+    }
+
+    syncTemplateLink(selectEl, linkEl) {
+        if (!linkEl) return;
+        const type = selectEl?.value || 'mulching';
+        const href = this.calcDrawerApi?.calcHref?.(type);
+        if (href) {
+            linkEl.href = href;
+            linkEl.classList.remove('opacity-50', 'pointer-events-none');
+            linkEl.setAttribute('aria-disabled', 'false');
+        } else {
+            linkEl.href = '#';
+            linkEl.classList.add('opacity-50', 'pointer-events-none');
+            linkEl.setAttribute('aria-disabled', 'true');
+        }
+    }
+
+    initRefreshButton() {
+        const refreshBtn = document.getElementById('estimateRefreshBtn');
+        if (!refreshBtn) return;
+        refreshBtn.addEventListener('click', () => this.autoRefresh());
+    }
+
+    autoRefresh(delay = 150) {
+        this.showSpinner();
+        setTimeout(() => window.location.reload(), delay);
+    }
+
+    showSpinner() {
+        this.overlay?.classList.remove('hidden');
+    }
+
+    hideSpinner() {
+        this.overlay?.classList.add('hidden');
+    }
+
+    wireAreaOrdering() {
+        const container = document.getElementById('areasContainer');
+        if (!container || !this.areaReorderUrl || !this.csrf) return;
+
+        const readRows = () => Array.from(container.querySelectorAll('.work-area'));
+        const getOrderFromRow = (row) => {
+            const input = row.querySelector('input[name="sort_order"]');
+            const value = input ? parseInt(input.value, 10) : NaN;
+            return Number.isFinite(value) ? value : parseInt(row.dataset.sortOrder || '0', 10);
+        };
+        const applyDomOrder = () => {
+            const rows = readRows().sort((a, b) => getOrderFromRow(a) - getOrderFromRow(b));
+            rows.forEach((row) => container.appendChild(row));
+        };
+        const payload = () => readRows().map((row) => ({
+            id: row.getAttribute('data-area-id'),
+            sort_order: getOrderFromRow(row),
+        }));
+
+        const persist = async () => {
+            try {
+                await fetch(this.areaReorderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ areas: payload() }),
+                });
+            } catch (_) {
+                /* non-blocking */
+            }
+        };
+
+        container.addEventListener('change', (event) => {
+            if (event.target?.name !== 'sort_order') return;
+            applyDomOrder();
+            persist();
+        });
+    }
+
+    buildAreaHeaders() {
+        const tbody = document.querySelector('table tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr[data-role="area-header"]').forEach((header) => header.remove());
+        const rows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
+        const groups = new Map();
+        rows.forEach((row) => {
+            const areaId = row.getAttribute('data-area-id') || '0';
+            if (!groups.has(areaId)) groups.set(areaId, []);
+            groups.get(areaId).push(row);
+        });
+        const areaMap = new Map((this.setup.areas || []).map((a) => [String(a.id), a.name]));
+        groups.forEach((list, areaId) => {
+            if (!list?.length) return;
+            let subtotal = 0;
+            list.forEach((row) => {
+                const cell = row.querySelector('[data-col="line_total"]');
+                if (cell) subtotal += this.parseNumber(cell.textContent, 0);
+            });
+            const label = areaId === '0' ? 'Unassigned' : (areaMap.get(String(areaId)) || `Area ${areaId}`);
+            const header = document.createElement('tr');
+            header.className = 'bg-gray-100';
+            header.dataset.role = 'area-header';
+            header.dataset.areaId = areaId;
+            header.innerHTML = `
+                <td colspan="7" class="px-3 py-2 text-gray-700 font-semibold">
+                    <button data-action="toggle-area" data-area-id="${areaId}" class="mr-2 text-xs px-2 py-0.5 rounded border">Toggle</button>
+                    ${label}
+                </td>
+                <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="area-subtotal">$${subtotal.toFixed(2)}</td>
+                <td class="px-3 py-2 text-right text-sm">
+                    <button class="text-gray-600 hover:underline text-xs" data-action="collapse-all">Collapse All</button>
+                    <button class="text-gray-600 hover:underline text-xs ml-2" data-action="expand-all">Expand All</button>
+                </td>`;
+            tbody.insertBefore(header, list[0]);
+        });
+    }
+
+    wireAreaHeaderToggles() {
+        document.addEventListener('click', (event) => {
+            const tbody = document.querySelector('table tbody');
+            if (!tbody) return;
+            const toggle = event.target.closest('[data-action="toggle-area"]');
+            if (toggle) {
+                const areaId = toggle.getAttribute('data-area-id');
+                tbody.querySelectorAll(`tr[data-item-id][data-area-id="${areaId}"]`).forEach((row) => {
+                    row.style.display = row.style.display === 'none' ? '' : 'none';
+                });
+                return;
+            }
+            if (event.target.closest('[data-action="collapse-all"]')) {
+                tbody.querySelectorAll('tr[data-item-id]').forEach((row) => (row.style.display = 'none'));
+                return;
+            }
+            if (event.target.closest('[data-action="expand-all"]')) {
+                tbody.querySelectorAll('tr[data-item-id]').forEach((row) => (row.style.display = ''));
+            }
+        });
+    }
+
+    wireSaveAllButton() {
+        const saveAllBtn = document.getElementById('saveAllBtn');
+        if (!saveAllBtn || !this.csrf) return;
+
+        saveAllBtn.addEventListener('click', async () => {
+            try {
+                this.showSpinner();
+                const forms = new Set();
+                document.querySelectorAll('form[action*="/areas/"] input[name="_method"][value="PATCH"]').forEach((input) => forms.add(input.closest('form')));
+                document.querySelectorAll('form[action*="/items/"] input[name="_method"][value="PATCH"]').forEach((input) => forms.add(input.closest('form')));
+                for (const form of forms) {
+                    if (!form) continue;
+                    const action = form.getAttribute('action');
+                    if (!action) continue;
+                    const fd = new FormData(form);
+                    await fetch(action, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
+                        body: fd,
+                    });
+                }
+                this.toast('All changes saved', 'success');
+                this.autoRefresh(200);
+            } catch (error) {
+                console.error(error);
+                this.hideSpinner();
+                this.toast('Save failed', 'error');
+            }
+        });
+    }
+
+    wireCatalogForms() {
+        const forms = ['#materialCatalogForm', '#laborCatalogForm', '#customItemForm']
+            .map((selector) => document.querySelector(selector))
+            .filter(Boolean);
+        forms.forEach((form) => {
+            this.setInitialFinancialState(form);
+            form.querySelectorAll('input, select, textarea').forEach((el) => {
+                el.addEventListener('input', () => this.handleFormChange(form, el));
+                el.addEventListener('change', () => this.handleFormChange(form, el));
+            });
+            form.addEventListener('submit', (event) => {
+                const submit = form.querySelector('button[type="submit"]');
+                if (submit) {
+                    submit.disabled = true;
+                    submit.classList.add('opacity-50');
+                }
+                if (!form.dataset.allowAsync && !form.dataset.skipNative) {
+                    return;
+                }
+                event.preventDefault();
+            });
+            this.updateFormState(form);
+        });
+
+        this.wireCatalogForm('#materialCatalogForm', '[data-role="material-select"]', '[data-role="material-unit"]', '[data-role="material-cost"]', '[data-role="material-tax"]');
+        this.wireCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]');
+    }
+
+    wireCatalogForm(formSelector, selectSelector, unitSelector, costSelector, taxSelector) {
+        const form = document.querySelector(formSelector);
+        if (!form) return;
+        const select = form.querySelector(selectSelector);
+        const unitInput = unitSelector ? form.querySelector(unitSelector) : null;
+        const costInput = costSelector ? form.querySelector(costSelector) : null;
+        const taxInput = taxSelector ? form.querySelector(taxSelector) : null;
+
+        if (select) {
+            select.addEventListener('change', () => {
+                const option = select.options[select.selectedIndex];
+                if (!option) return;
+                if (unitInput) unitInput.value = option.dataset.unit || '';
+                if (costInput) {
+                    costInput.value = option.dataset.cost || 0;
+                    const unitPriceInput = form.querySelector('[data-role="unit-price"]');
+                    if (unitPriceInput && unitPriceInput.dataset.manualOverride !== '1') {
+                        unitPriceInput.value = option.dataset.cost || 0;
+                    }
+                }
+                if (taxInput) taxInput.value = option.dataset.tax || 0;
+                this.updateFormState(form);
+            });
+        }
+
+        const filterInput = form.querySelector('[data-role="filter"]');
+        if (filterInput && select) {
+            filterInput.addEventListener('input', () => {
+                const query = filterInput.value.toLowerCase().trim();
+                Array.from(select.options).forEach((opt, idx) => {
+                    if (idx === 0) return;
+                    const match = (opt.textContent || '').toLowerCase().includes(query);
+                    opt.hidden = !!query && !match;
+                });
+            });
+        }
+    }
+
+    setInitialFinancialState(form) {
+        const unitPriceInput = form.querySelector('[data-role="unit-price"]');
+        if (unitPriceInput && !unitPriceInput.dataset.manualOverride) {
+            unitPriceInput.dataset.manualOverride = '0';
+        }
+    }
+
+    handleFormChange(form, el) {
+        if (el.matches('[data-role="unit-price"]')) {
+            el.dataset.manualOverride = '1';
+        }
+        if (el.matches('[data-role="margin-percent"]')) {
+            const priceInput = form.querySelector('[data-role="unit-price"]');
+            if (priceInput) priceInput.dataset.manualOverride = '0';
+        }
+        this.updateFormState(form);
+    }
+
+    updateFormState(form) {
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        const unitPriceInput = form.querySelector('[data-role="unit-price"]');
+        const marginPercentInput = form.querySelector('[data-role="margin-percent"]');
+        const marginRateInput = form.querySelector('[data-role="margin-rate"]');
+        const catalogSelect = form.querySelector('select[name="catalog_id"]');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const previewEl = form.querySelector('[data-role="preview-total"]');
+        const costInput = form.querySelector('[data-role="material-cost"], [data-role="labor-cost"], input[name="unit_cost"]');
+
+        if (marginPercentInput && marginRateInput) {
+            const marginPercent = this.parseNumber(marginPercentInput.value, 0);
+            const clamped = Math.max(-99, Math.min(99, marginPercent));
+            marginRateInput.value = (clamped / 100).toFixed(4);
+            if (costInput && unitPriceInput && unitPriceInput.dataset.manualOverride !== '1') {
+                const cost = this.parseNumber(costInput.value, 0);
+                const rate = clamped / 100;
+                const price = rate >= 1 ? cost : cost / (1 - rate);
+                unitPriceInput.value = isFinite(price) ? price.toFixed(2) : cost.toFixed(2);
+            }
+        }
+
+        const qty = this.parseNumber(quantityInput?.value, 0);
+        const price = this.parseNumber(unitPriceInput?.value, 0);
+        if (previewEl) {
+            previewEl.textContent = `Line total: $${(qty * price).toFixed(2)}`;
+        }
+        if (submitBtn) {
+            const canSubmit = (!catalogSelect || !!catalogSelect.value) && qty > 0;
+            submitBtn.disabled = !canSubmit;
+        }
+    }
+
+    wireDrawerAddButtons() {
+        const buttons = document.querySelectorAll('[data-action="drawer-add"]');
+        if (!buttons.length || !this.itemsBaseUrl || !this.csrf) return;
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (btn.disabled) return;
+                const catalogId = btn.dataset.catalogId;
+                const itemType = btn.dataset.itemType || 'labor';
+                if (!catalogId) return;
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+                try {
+                    const formData = new FormData();
+                    formData.append('item_type', itemType);
+                    formData.append('catalog_type', itemType);
+                    formData.append('catalog_id', catalogId);
+                    formData.append('quantity', '1');
+                    formData.append('source', 'drawer');
+                    const response = await fetch(this.itemsBaseUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': this.csrf,
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+                    const json = await response.json().catch(() => ({}));
+                    if (!response.ok) throw json;
+                    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        tab: itemType,
+                        highlightItemId: json?.item?.id || null,
+                    }));
+                    this.showSpinner();
+                    window.location.reload();
+                } catch (error) {
+                    console.error(error);
+                    this.toast('Unable to add item. Please try again.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50');
+                }
+            });
+        });
+    }
+
+    restoreDrawerState() {
+        const stored = sessionStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+        try {
+            const data = JSON.parse(stored) || {};
+            sessionStorage.removeItem(STORAGE_KEY);
+            if (data.tab && window.__showCalcDrawerPanel) {
+                window.__showCalcDrawerPanel(data.tab);
+                window.dispatchEvent(new CustomEvent('set-calc-tab', { detail: data.tab }));
+            }
+            if (data.highlightItemId) {
+                requestAnimationFrame(() => this.highlightRow(data.highlightItemId));
+            }
+        } catch (_) {
+            sessionStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    highlightRecentItem() {
+        if (!this.highlightItemId) return;
+        requestAnimationFrame(() => this.highlightRow(this.highlightItemId));
+    }
+
+    highlightRow(itemId) {
+        const row = document.querySelector(`[data-item-id="${itemId}"]`);
+        if (!row) return;
+        const areaId = row.dataset.areaId;
+        if (areaId) {
+            window.dispatchEvent(new CustomEvent('force-open-area', { detail: { areaId: Number(areaId) } }));
+        }
+        row.classList.add('estimate-highlight');
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => row.classList.remove('estimate-highlight'), 2200);
+    }
+
+    exposeSummaryHelpers() {
+        window.updateSummary = (totals) => this.updateSummary(totals);
+    }
+
+    updateSummary(totals) {
+        if (!totals) return;
+        const materialRevenue = this.parseNumber(totals.material_subtotal);
+        const materialCost = this.parseNumber(totals.material_cost_total);
+        const materialProfit = this.parseNumber(totals.material_profit_total);
+        const laborRevenue = this.parseNumber(totals.labor_subtotal);
+        const laborCost = this.parseNumber(totals.labor_cost_total);
+        const laborProfit = this.parseNumber(totals.labor_profit_total);
+        const feeRevenue = this.parseNumber(totals.fee_total);
+        const feeCost = this.parseNumber(totals.fee_cost_total);
+        const feeProfit = this.parseNumber(totals.fee_profit_total);
+        const discountRevenue = this.parseNumber(totals.discount_total);
+        const discountCost = this.parseNumber(totals.discount_cost_total);
+        const discountProfit = this.parseNumber(totals.discount_profit_total);
+        const revenue = this.parseNumber(totals.revenue_total);
+        const costs = this.parseNumber(totals.cost_total);
+        const grossProfit = this.parseNumber(totals.profit_total);
+        const netProfit = this.parseNumber(totals.net_profit_total);
+        const grossMargin = this.parseNumber(totals.profit_margin);
+        const netMargin = this.parseNumber(totals.net_margin);
+        const taxTotal = this.parseNumber(totals.tax_total);
+        const grandTotal = this.parseNumber(totals.grand_total);
+
+        this.setText('summary-material', this.formatMoney(materialRevenue));
+        this.setText('summary-material-cost', this.formatMoney(materialCost));
+        this.setText('summary-labor', this.formatMoney(laborRevenue));
+        this.setText('summary-labor-cost', this.formatMoney(laborCost));
+        this.setText('summary-fees', this.formatMoney(feeRevenue - discountRevenue));
+        this.setText('summary-tax', this.formatMoney(taxTotal));
+        this.setText('summary-revenue', this.formatMoney(revenue));
+        this.setText('summary-cost', this.formatMoney(costs));
+        this.setText('summary-profit', this.formatMoney(grossProfit));
+        this.setText('summary-net', this.formatMoney(netProfit));
+        this.setText('summary-profit-margin', grossMargin.toFixed(2));
+        this.setText('summary-net-margin', netMargin.toFixed(2));
+        this.setText('summary-grand', this.formatMoney(grandTotal));
+
+        this.setText('work-total-cost', this.formatMoney(costs));
+        this.setText('work-subtotal', this.formatMoney(revenue));
+        this.setText('work-total-price', this.formatMoney(grandTotal));
+        this.setText('work-net-profit', this.formatMoney(netProfit));
+        this.setText('work-net-margin', netMargin.toFixed(2));
+        this.setText('work-gross-profit', this.formatMoney(grossProfit));
+        this.setText('work-gross-margin', grossMargin.toFixed(2));
+        this.setText('work-breakeven', this.formatMoney(Math.max(0, grandTotal - netProfit)));
+
+        const costPercent = revenue > 0 ? this.clamp((costs / revenue) * 100) : 0;
+        const grossPercent = revenue > 0 ? this.clamp((grossProfit / revenue) * 100) : 0;
+        const netPercent = revenue > 0 ? this.clamp((netProfit / revenue) * 100) : 0;
+        this.setText('snapshot-revenue', this.formatMoney(revenue));
+        this.setText('snapshot-costs', this.formatMoney(costs));
+        this.setText('snapshot-cost-percent', costPercent.toFixed(1));
+        this.setText('snapshot-cost-percent-inline', costPercent.toFixed(1));
+        this.setText('snapshot-gross-profit', this.formatMoney(grossProfit));
+        this.setText('snapshot-net-profit', this.formatMoney(netProfit));
+        this.setText('snapshot-gross-percent', `${grossMargin.toFixed(2)}% margin`);
+        this.setText('snapshot-net-percent', `${netMargin.toFixed(2)}% margin`);
+        this.setText('snapshot-gross-margin', `${grossMargin.toFixed(2)}%`);
+        this.setText('snapshot-net-margin', `${netMargin.toFixed(2)}%`);
+        this.setText('snapshot-gross-percent-inline', grossPercent.toFixed(1));
+        this.setText('snapshot-net-percent-inline', netPercent.toFixed(1));
+        this.setBarWidth('snapshot-cost-bar', costPercent);
+        this.setBarWidth('snapshot-gross-bar', grossPercent);
+        this.setBarWidth('snapshot-net-bar', netPercent);
+
+        [
+            { key: 'material', revenue: materialRevenue, cost: materialCost, profit: materialProfit },
+            { key: 'labor', revenue: laborRevenue, cost: laborCost, profit: laborProfit },
+            { key: 'fee', revenue: feeRevenue, cost: feeCost, profit: feeProfit },
+            { key: 'discount', revenue: discountRevenue, cost: discountCost, profit: discountProfit },
+        ].forEach((entry) => {
+            const margin = entry.revenue !== 0 ? ((entry.profit / Math.abs(entry.revenue)) * 100) : 0;
+            this.setText(`breakdown-${entry.key}-revenue`, this.formatMoney(entry.revenue));
+            this.setText(`breakdown-${entry.key}-cost`, this.formatMoney(entry.cost));
+            this.setText(`breakdown-${entry.key}-profit`, this.formatMoney(entry.profit));
+            this.setText(`breakdown-${entry.key}-margin`, margin.toFixed(1));
+        });
+
+        this.computeManHours();
+    }
+
+    computeManHours() {
+        const rows = document.querySelectorAll('tr[data-item-id]');
+        let hours = 0;
+        rows.forEach((row) => {
+            if ((row.dataset.itemType || '').toLowerCase() === 'labor') {
+                hours += this.parseNumber(row.dataset.quantity, 0);
+            }
+        });
+        this.setText('work-man-hours', hours.toFixed(2));
+    }
+
+    parseNumber(value, fallback = 0) {
+        if (value === null || value === undefined) return fallback;
+        const num = Number(String(value).replace(/[^0-9.\-]/g, ''));
+        return Number.isFinite(num) ? num : fallback;
+    }
+
+    formatMoney(value) {
+        return `$${this.parseNumber(value, 0).toFixed(2)}`;
+    }
+
+    setText(target, value) {
+        const element = typeof target === 'string' ? document.getElementById(target) : target;
+        if (element) element.textContent = value;
+    }
+
+    setBarWidth(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = `${this.clamp(value, 0, 100)}%`;
+    }
+
+    clamp(value, min = 0, max = 100) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    toast(message, type = 'success') {
+        if (window.showToast) {
+            window.showToast(message, type);
+        }
+    }
+}
+
+initEstimateShow();
+
+export default initEstimateShow;

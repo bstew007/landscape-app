@@ -1,159 +1,213 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="max-w-6xl mx-auto py-6 space-y-6">
-    <x-page-header title="Estimates" eyebrow="Sales" subtitle="Draft, send, and track pricing packages.">
-        <x-slot:actions>
-            <x-brand-button href="{{ route('estimates.create') }}">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                New Estimate
-            </x-brand-button>
-        </x-slot:actions>
-    </x-page-header>
+@php
+    $pageEstimates = collect($estimates->items());
+    $pageCount = $pageEstimates->count();
+    $pageValue = $pageEstimates->sum(function ($estimate) {
+        return (float) ($estimate->total ?? 0);
+    });
+    $approvedValue = $pageEstimates->where('status', 'approved')->sum(function ($estimate) {
+        return (float) ($estimate->total ?? 0);
+    });
+    $outstandingCount = $pageEstimates->whereIn('status', ['pending', 'sent'])->count();
+    $statusParam = request('status');
+    $clientIdParam = request('client_id');
+    $clientNameParam = optional(($clients ?? collect())->firstWhere('id', $clientIdParam))->name;
+@endphp
 
-    <div class="mt-6 bg-white rounded-lg shadow p-3 flex flex-wrap items-center gap-2" data-role="bulk-toolbar">
-        <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600">Actions</label>
-            <select id="bulkAction" class="form-select text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500">
-                <option value="">Choose...</option>
-                <optgroup label="Update status">
-                    @foreach (\App\Models\Estimate::STATUSES as $option)
-                        <option value="status:{{ $option }}">Set to {{ ucfirst($option) }}</option>
+<div class="space-y-8">
+    <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
+        <div class="flex flex-wrap items-start gap-6">
+            <div class="space-y-2 max-w-2xl">
+                <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Estimates</p>
+                <h1 class="text-2xl sm:text-3xl font-semibold">Pipeline + Pricing Workspace</h1>
+                <p class="text-sm text-brand-100/90">Track drafts, nurture approvals, and move proposals from follow-up to signature without leaving the hub.</p>
+            </div>
+            <div class="flex flex-wrap gap-3 ml-auto">
+                <x-secondary-button as="a" href="{{ route('calculator.templates.gallery') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20">
+                    Template Gallery
+                </x-secondary-button>
+                <x-brand-button href="{{ route('estimates.create') }}" variant="muted">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    New Estimate
+                </x-brand-button>
+            </div>
+        </div>
+        <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 text-sm text-brand-100">
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">On This Page</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">{{ number_format($pageCount) }}</dd>
+            </div>
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Page Volume</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">{{ $pageValue ? '$' . number_format($pageValue, 0) : 'N/A' }}</dd>
+            </div>
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Approved Value</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">{{ $approvedValue ? '$' . number_format($approvedValue, 0) : 'N/A' }}</dd>
+            </div>
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Awaiting Decision</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">{{ number_format($outstandingCount) }}</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
+        <div class="p-5 sm:p-7 space-y-5">
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+                <span class="text-xs uppercase tracking-wide text-brand-400">Bulk Actions</span>
+                <select id="bulkAction" class="min-w-[160px] rounded-full border-brand-200 bg-white text-sm px-3 py-1.5 focus:ring-brand-500 focus:border-brand-500">
+                    <option value="">Choose...</option>
+                    <optgroup label="Update status">
+                        @foreach (\App\Models\Estimate::STATUSES as $option)
+                            <option value="status:{{ $option }}">Set to {{ ucfirst($option) }}</option>
+                        @endforeach
+                    </optgroup>
+                    <option value="send_reminders">Send reminders</option>
+                    <option value="lock">Lock estimate</option>
+                    <option value="archive">Archive</option>
+                </select>
+                <x-brand-button id="applyBulk" size="sm" disabled>Apply</x-brand-button>
+                <span class="mx-2 text-brand-200">|</span>
+                <button type="button" class="text-xs text-brand-600 hover:text-brand-800" data-action="select-page">Select page</button>
+                <button type="button" class="text-xs text-brand-600 hover:text-brand-800" data-action="clear-selection">Clear selection</button>
+                <span class="ml-auto inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200 hidden" data-role="selected-count">0 selected</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs uppercase tracking-wide text-brand-400">Quick Filter</span>
+                @foreach (\App\Models\Estimate::STATUSES as $option)
+                    @php $isActive = $statusParam === $option; @endphp
+                    <a href="{{ request()->fullUrlWithQuery(['status' => $isActive ? null : $option, 'page' => null]) }}"
+                       class="px-3 py-1.5 rounded-full text-xs font-semibold border transition {{ $isActive ? 'bg-brand-700 text-white border-brand-600 shadow-lg shadow-brand-700/30' : 'bg-white text-brand-700 border-brand-200 hover:border-brand-400 hover:bg-brand-50' }}">
+                        {{ ucfirst($option) }}
+                    </a>
+                @endforeach
+                <a href="{{ route('estimates.index') }}" class="text-xs text-brand-500 hover:text-brand-700 ml-auto">Reset filters</a>
+            </div>
+
+            @if($statusParam || $clientIdParam)
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="text-brand-400 uppercase tracking-wide">Active Filters</span>
+                    @if($statusParam)
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-50 text-brand-900 border border-brand-200">
+                            Status: {{ ucfirst($statusParam) }}
+                            <a href="{{ request()->fullUrlWithQuery(['status' => null, 'page' => null]) }}" class="text-brand-600 hover:text-brand-900" aria-label="Remove status filter">&times;</a>
+                        </span>
+                    @endif
+                    @if($clientIdParam)
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-50 text-brand-900 border border-brand-200">
+                            Client: {{ $clientNameParam ?? $clientIdParam }}
+                            <a href="{{ request()->fullUrlWithQuery(['client_id' => null, 'page' => null]) }}" class="text-brand-600 hover:text-brand-900" aria-label="Remove client filter">&times;</a>
+                        </span>
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        <div class="border-t border-brand-100/60">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-brand-50/80 text-left text-[11px] uppercase tracking-wide text-brand-500">
+                    <tr>
+                        <th class="px-4 py-3"><input type="checkbox" data-action="toggle-all"></th>
+                        <th class="px-4 py-3">Estimate</th>
+                        <th class="px-4 py-3">Client / Property</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Email</th>
+                        <th class="px-4 py-3 text-right">Total</th>
+                        <th class="px-4 py-3">Expires</th>
+                        <th class="px-4 py-3 text-right"></th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-brand-50" id="estimateTbody" data-update-base="{{ url('estimates') }}" data-email-suffix="/email">
+                    @foreach ($estimates as $estimate)
+                        <tr class="transition hover:bg-brand-50/70" data-id="{{ $estimate->id }}" data-status="{{ $estimate->status }}" data-client-id="{{ $estimate->client_id }}" data-update-url="{{ route('estimates.update', $estimate) }}" data-email-url="{{ route('estimates.email', $estimate) }}">
+                            <td class="px-4 py-3 align-top">
+                                <input type="checkbox" data-role="row-check" value="{{ $estimate->id }}">
+                            </td>
+                            <td class="px-4 py-3 align-top">
+                                <p class="font-semibold text-brand-900">{{ $estimate->title }}</p>
+                                <p class="text-xs text-brand-400">Created {{ $estimate->created_at->format('M j, Y') }}</p>
+                            </td>
+                            <td class="px-4 py-3 align-top">
+                                <p class="text-sm text-brand-700 hover:text-brand-900 hover:underline cursor-pointer" data-filter-key="client_id" data-filter-value="{{ $estimate->client_id }}">{{ optional($estimate->client)->name ?? 'Unknown client' }}</p>
+                                <p class="text-xs text-brand-400">{{ optional($estimate->property)->name ?? 'No property' }}</p>
+                            </td>
+                            <td class="px-4 py-3 align-top">
+                                @php
+                                    $statusClass = match($estimate->status) {
+                                        'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
+                                        'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
+                                        'sent' => 'bg-brand-50 text-brand-700 border-brand-200',
+                                        'approved' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                        'rejected' => 'bg-red-100 text-red-700 border-red-200',
+                                        default => 'bg-gray-100 text-gray-700 border-gray-200',
+                                    };
+                                @endphp
+                                <button type="button"
+                                        class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold border hover:ring-2 hover:ring-brand-200 {{ $statusClass }}"
+                                        data-filter-key="status" data-filter-value="{{ $estimate->status }}">
+                                    {{ ucfirst($estimate->status) }}
+                                </button>
+                            </td>
+                            <td class="px-4 py-3 align-top">
+                                @if ($estimate->email_last_sent_at)
+                                    <div class="text-xs font-semibold text-emerald-700">
+                                        Sent {{ $estimate->email_last_sent_at->format('M j, Y') }}
+                                    </div>
+                                    <div class="text-[11px] text-brand-400">
+                                        {{ $estimate->email_send_count }} {{ \Illuminate\Support\Str::plural('time', $estimate->email_send_count) }}
+                                    </div>
+                                @else
+                                    <span class="text-xs text-brand-300">Not sent</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 align-top text-right font-semibold text-brand-900">
+                                {{ $estimate->total ? '$' . number_format($estimate->total, 2) : 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 align-top text-sm text-brand-600">
+                                {{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 align-top text-right">
+                                <x-brand-button href="{{ route('estimates.show', $estimate) }}" variant="outline" size="sm">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    Open
+                                </x-brand-button>
+                            </td>
+                        </tr>
                     @endforeach
-                </optgroup>
-                <option value="send_reminders">Send reminders</option>
-                <option value="lock">Lock estimate</option>
-                <option value="archive">Archive</option>
-            </select>
-            <x-brand-button id="applyBulk" size="sm" disabled>Apply</x-brand-button>
-            <span class="mx-2 text-gray-300">|</span>
-            <button type="button" class="text-xs text-gray-600 hover:underline" data-action="select-page">Select page</button>
-            <button type="button" class="text-xs text-gray-600 hover:underline" data-action="clear-selection">Clear selection</button>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <span class="ml-auto inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-brand-100 text-brand-800 hidden" data-role="selected-count">0 selected</span>
-    </div>
 
-    @php
-        $statusParam = request('status');
-        $clientIdParam = request('client_id');
-        $clientNameParam = optional(($clients ?? collect())->firstWhere('id', $clientIdParam))->name;
-    @endphp
-    @if($statusParam || $clientIdParam)
-        <div class="bg-white rounded-lg shadow p-2 flex flex-wrap items-center gap-2">
-            <span class="text-xs text-gray-600">Filters:</span>
-            @if($statusParam)
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-brand-50 text-brand-800 border border-brand-200">Status: {{ ucfirst($statusParam) }}
-                    <a href="{{ request()->fullUrlWithQuery(['status' => null, 'page' => null]) }}" class="ml-1 text-brand-700 hover:underline" aria-label="Remove status filter">✕</a>
-                </span>
+        @php $totalCount = method_exists($estimates, 'total') ? $estimates->total() : null; @endphp
+        <div id="selectAllBanner" class="hidden border-t border-brand-100/60 bg-brand-50 px-5 py-3 text-xs text-brand-900 flex items-center gap-2">
+            <span>All {{ $pageCount }} estimates on this page are selected.</span>
+            @if($totalCount && $totalCount > $pageCount)
+                <span class="text-brand-500">Selection persists across pages. Navigate pages to select more (total {{ $totalCount }}).</span>
             @endif
-            @if($clientIdParam)
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-brand-50 text-brand-800 border border-brand-200">Client: {{ $clientNameParam ?? $clientIdParam }}
-                    <a href="{{ request()->fullUrlWithQuery(['client_id' => null, 'page' => null]) }}" class="ml-1 text-brand-700 hover:underline" aria-label="Remove client filter">✕</a>
-                </span>
-            @endif
-            <a href="{{ route('estimates.index') }}" class="ml-auto text-xs text-gray-600 hover:underline">Clear all</a>
+            <button type="button" class="text-brand-700 hover:underline ml-auto" data-action="clear-page-selection">Clear</button>
         </div>
-    @endif
 
-    <div class="bg-white rounded-lg shadow overflow-x-auto">
-        <table class="min-w-full text-sm">
-            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-            <tr>
-                <th class="px-4 py-3"><input type="checkbox" data-action="toggle-all"></th>
-                <th class="px-4 py-3">Estimate</th>
-                <th class="px-4 py-3">Client / Property</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3">Email</th>
-                <th class="px-4 py-3 text-right">Total</th>
-                <th class="px-4 py-3">Expires</th>
-                <th class="px-4 py-3"></th>
-            </tr>
-            </thead>
-            <tbody class="divide-y" id="estimateTbody" data-update-base="{{ url('estimates') }}" data-email-suffix="/email">
-            @foreach ($estimates as $estimate)
-                <tr class="hover:bg-brand-50/50" data-id="{{ $estimate->id }}" data-status="{{ $estimate->status }}" data-client-id="{{ $estimate->client_id }}" data-update-url="{{ route('estimates.update', $estimate) }}" data-email-url="{{ route('estimates.email', $estimate) }}">
-                    <td class="px-4 py-3"><input type="checkbox" data-role="row-check" value="{{ $estimate->id }}"></td>
-                    <td class="px-4 py-3">
-                        <p class="font-semibold text-gray-900">{{ $estimate->title }}</p>
-                        <p class="text-xs text-gray-500">Created {{ $estimate->created_at->format('M j, Y') }}</p>
-                    </td>
-                    <td class="px-4 py-3">
-                        <p class="text-sm text-brand-700 hover:text-brand-900 hover:underline cursor-pointer" data-filter-key="client_id" data-filter-value="{{ $estimate->client_id }}">{{ optional($estimate->client)->name ?? 'Unknown client' }}</p>
-                        <p class="text-xs text-gray-500">{{ optional($estimate->property)->name ?? 'No property' }}</p>
-                    </td>
-                    <td class="px-4 py-3">
-                        @php
-                            $statusClass = match($estimate->status) {
-                                'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
-                                'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
-                                'sent' => 'bg-brand-100 text-brand-700 border-brand-200',
-                                'approved' => 'bg-green-100 text-green-700 border-green-200',
-                                'rejected' => 'bg-red-100 text-red-700 border-red-200',
-                                default => 'bg-gray-100 text-gray-700 border-gray-200',
-                            };
-                        @endphp
-                        <button type="button"
-                                class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold border hover:ring-2 hover:ring-brand-300 {{ $statusClass }}"
-                                data-filter-key="status" data-filter-value="{{ $estimate->status }}">
-                            {{ ucfirst($estimate->status) }}
-                        </button>
-                    </td>
-                    <td class="px-4 py-3">
-                        @if ($estimate->email_last_sent_at)
-                            <div class="text-xs font-semibold text-green-700">
-                                Sent {{ $estimate->email_last_sent_at->format('M j, Y') }}
-                            </div>
-                            <div class="text-[11px] text-gray-500">
-                                {{ $estimate->email_send_count }} {{ \Illuminate\Support\Str::plural('time', $estimate->email_send_count) }}
-                            </div>
-                        @else
-                            <span class="text-xs text-gray-400">Not sent</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 text-right font-semibold text-gray-900">
-                        {{ $estimate->total ? '$' . number_format($estimate->total, 2) : '—' }}
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600">
-                        {{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}
-                    </td>
-                    <td class="px-4 py-3 text-right">
-                        <x-brand-button href="{{ route('estimates.show', $estimate) }}" variant="outline" size="sm">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                            Open
-                        </x-brand-button>
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    @php $totalCount = method_exists($estimates, 'total') ? $estimates->total() : null; $pageCount = $estimates->count(); @endphp
-    <div id="selectAllBanner" class="hidden mt-2 bg-brand-50 border border-brand-200 rounded px-3 py-2 text-xs text-brand-900 flex items-center gap-2">
-        <span>All {{ $pageCount }} estimates on this page are selected.</span>
-        @if($totalCount && $totalCount > $pageCount)
-            <span class="text-gray-600">Selection persists across pages. Navigate pages to select more (total {{ $totalCount }}).</span>
-        @endif
-        <button type="button" class="text-brand-700 hover:underline" data-action="clear-page-selection">Clear</button>
-    </div>
-
-    <div>
-        {{ $estimates->links() }}
-    </div>
+        <div class="px-5 py-4 border-t border-brand-100/60">
+            {{ $estimates->links() }}
+        </div>
+    </section>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-// Feature 1: Click-to-filter (status, client) only
-// Safe, minimal JS with a basic fallback for older browsers
 (function(){
   function initFilter(){
     var tbody = document.getElementById('estimateTbody');
     if (!tbody) return;
     tbody.addEventListener('click', function(e){
       var el = e.target;
-      // Walk up DOM until an element node with the attribute is found or tbody reached
       while (el && el !== tbody && (el.nodeType !== 1 || !el.hasAttribute('data-filter-key'))) {
         el = el.parentNode;
       }
@@ -167,7 +221,6 @@
         url.searchParams.delete('page');
         window.location.href = url.toString();
       } catch (err) {
-        // Fallback for environments without URL API
         var qs = window.location.search.replace(/^\?/, '');
         var params = qs ? qs.split('&') : [];
         var found = false;
@@ -191,4 +244,3 @@
 })();
 </script>
 @endpush
-

@@ -1,11 +1,11 @@
                 <!-- SALES BUDGET -->
                 <section x-data="salesEditor($root)" x-show="section==='Sales Budget'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <h2 class="text-2xl font-semibold text-brand-900 mb-5 flex items-center gap-2">
                         <svg class="h-5 w-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
                         <span>SALES BUDGET</span>
 
                     </h2>
-                    <div class="rounded border p-4">
+                    <div class="rounded-[32px] border border-brand-100/80 bg-white/95 shadow-sm p-5 space-y-5">
                         <!-- Graphics Row -->
                         <div class="grid md:grid-cols-3 gap-4 mb-4">
                             <!-- Pie: Divisional Sales -->
@@ -25,7 +25,7 @@
                                                 <span x-text="seg.percent.toFixed(0) + '%'" class="tabular-nums"></span>
                                             </div>
                                         </template>
-                                        <div x-show="divisionSegments().length === 0" class="text-gray-500">No data</div>
+                                        <div x-show="divisionSegments().length === 0" class="text-brand-400">No data</div>
                                     </div>
                                 </div>
                             </x-panel-card>
@@ -39,8 +39,8 @@
                                         <span>Previous</span>
                                         <span x-text="formatMoney(prevTotal())"></span>
                                     </div>
-                                    <div class="h-2 rounded bg-gray-200 overflow-hidden">
-                                        <div class="h-2 bg-gray-500" :style="{ width: barWidth(prevTotal()) }"></div>
+                                    <div class="h-2 rounded bg-brand-100 overflow-hidden">
+                                        <div class="h-2 bg-brand-500" :style="{ width: barWidth(prevTotal()) }"></div>
                                     </div>
                                     <div class="flex items-center justify-between text-xs">
                                         <span>Forecast</span>
@@ -62,7 +62,7 @@
                                             <span x-text="(changePercent() >= 0 ? '+' : '') + changePercent().toFixed(1) + '%' "></span>
                                         </div>
                                     </div>
-                                    <div class="text-xs text-gray-700">
+                                    <div class="text-xs text-brand-600">
                                         <div class="font-semibold" x-text="(changePercent() >= 0 ? 'Increase' : 'Decrease')"></div>
                                         <div>Total Prev: <span class="font-semibold" x-text="formatMoney(prevTotal())"></span></div>
                                         <div>Total Forecast: <span class="font-semibold" x-text="formatMoney(forecastTotal())"></span></div>
@@ -71,7 +71,7 @@
                             </x-panel-card>
                         </div>
                         <!-- Header Row -->
-                        <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-gray-600 border-b pb-2">
+                        <div class="hidden md:grid grid-cols-12 gap-3 text-xs font-medium text-brand-500 border-b pb-2">
                             <div class="col-span-2">Acct. ID</div>
                             <div class="col-span-2">Division</div>
                             <div class="col-span-2">Previous $</div>
@@ -86,32 +86,32 @@
                             <div class="grid grid-cols-12 gap-3 items-center py-2 border-b">
                                 <!-- Acct. ID -->
                                 <div class="col-span-12 md:col-span-2">
-                                    <label class="md:hidden block text-xs text-gray-500">Acct. ID</label>
+                                    <label class="md:hidden block text-xs text-brand-400">Acct. ID</label>
                                     <input type="text" class="form-input w-full" x-model="row.account_id" :name="'inputs[sales][rows]['+idx+'][account_id]'" placeholder="e.g., 4001">
                                 </div>
                                 <!-- Division -->
                                 <div class="col-span-12 md:col-span-2">
-                                    <label class="md:hidden block text-xs text-gray-500">Division</label>
+                                    <label class="md:hidden block text-xs text-brand-400">Division</label>
                                     <input type="text" class="form-input w-full" x-model="row.division" :name="'inputs[sales][rows]['+idx+'][division]'" placeholder="e.g., Maintenance">
                                 </div>
                                 <!-- Previous $ -->
                                 <div class="col-span-6 md:col-span-2">
-                                    <label class="md:hidden block text-xs text-gray-500">Previous $</label>
+                                    <label class="md:hidden block text-xs text-brand-400">Previous $</label>
                                     <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.previous" :name="'inputs[sales][rows]['+idx+'][previous]'" placeholder="0.00">
                                 </div>
                                 <!-- Forecast $ -->
                                 <div class="col-span-6 md:col-span-2">
-                                    <label class="md:hidden block text-xs text-gray-500">Forecast $</label>
+                                    <label class="md:hidden block text-xs text-brand-400">Forecast $</label>
                                     <input type="number" step="0.01" min="0" inputmode="decimal" class="form-input w-full" x-model="row.forecast" :name="'inputs[sales][rows]['+idx+'][forecast]'" placeholder="0.00">
                                 </div>
                                 <!-- % Diff -->
                                 <div class="col-span-6 md:col-span-1">
-                                    <label class="md:hidden block text-xs text-gray-500">% Diff</label>
-                                    <input type="text" class="form-input w-full bg-gray-50" :value="computeDiff(row)" readonly tabindex="-1">
+                                    <label class="md:hidden block text-xs text-brand-400">% Diff</label>
+                                    <input type="text" class="form-input w-full bg-brand-50/70" :value="computeDiff(row)" readonly tabindex="-1">
                                 </div>
                                 <!-- Comments -->
                                 <div class="col-span-6 md:col-span-2">
-                                    <label class="md:hidden block text-xs text-gray-500">Comments</label>
+                                    <label class="md:hidden block text-xs text-brand-400">Comments</label>
                                     <input type="text" class="form-input w-full" x-model="row.comments" :name="'inputs[sales][rows]['+idx+'][comments]'" placeholder="Notes">
                                 </div>
                                 <!-- Actions -->

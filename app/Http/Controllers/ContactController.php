@@ -25,7 +25,8 @@ class ContactController extends Controller
             ->orderBy('company_name')
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         return view('contacts.index', ['contacts' => $contacts, 'search' => $search, 'type' => $type]);
     }

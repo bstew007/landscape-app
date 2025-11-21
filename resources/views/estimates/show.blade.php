@@ -6,23 +6,48 @@
 @endphp
 
 @section('content')
+
+@push('styles')
+<style>
+@keyframes estimatePulseHighlight {
+    0% { background-color: rgba(253, 230, 138, 0.8); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+    100% { background-color: transparent; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+.estimate-highlight {
+    animation: estimatePulseHighlight 1.8s ease-out;
+}
+</style>
+@endpush
+@php
+    $calcRoutes = [
+        'mulching' => Route::has('calculators.mulching.form') ? route('calculators.mulching.form') : null,
+        'weeding' => Route::has('calculators.weeding.form') ? route('calculators.weeding.form') : null,
+        'planting' => Route::has('calculators.planting.form') ? route('calculators.planting.form') : null,
+        'turf_mowing' => Route::has('calculators.turf_mowing.form') ? route('calculators.turf_mowing.form') : null,
+        'retaining_wall' => Route::has('calculators.wall.form') ? route('calculators.wall.form') : null,
+        'paver_patio' => Route::has('calculators.patio.form') ? route('calculators.patio.form') : null,
+        'fence' => Route::has('calculators.fence.form') ? route('calculators.fence.form') : null,
+        'syn_turf' => Route::has('calculators.syn_turf.form') ? route('calculators.syn_turf.form') : null,
+        'pruning' => Route::has('calculators.pruning.form') ? route('calculators.pruning.form') : null,
+    ];
+    $templatesRoute = Route::has('estimates.calculator.templates') ? route('estimates.calculator.templates', $estimate) : null;
+    $importRoute = Route::has('estimates.calculator.import') ? route('estimates.calculator.import', $estimate) : null;
+    $galleryRoute = Route::has('calculator.templates.gallery') ? route('calculator.templates.gallery') : '#';
+    $previewEmailRoute = Route::has('estimates.preview-email') ? route('estimates.preview-email', $estimate) : null;
+    $printRoute = Route::has('estimates.print') ? route('estimates.print', $estimate) : null;
+@endphp
+
 <script>
     // Provide minimal globals for the JS module
-    window.__calcRoutes = {
-        mulching: '{{ route('calculators.mulching.form') }}',
-        weeding: '{{ route('calculators.weeding.form') }}',
-        planting: '{{ route('calculators.planting.form') }}',
-        turf_mowing: '{{ route('calculators.turf_mowing.form') }}',
-        retaining_wall: '{{ route('calculators.wall.form') }}',
-        paver_patio: '{{ route('calculators.patio.form') }}',
-        fence: '{{ route('calculators.fence.form') }}',
-        syn_turf: '{{ route('calculators.syn_turf.form') }}',
-        pruning: '{{ route('calculators.pruning.form') }}'
-    };
-    window.__estimateTemplatesUrl = "{{ route('estimates.calculator.templates', $estimate) }}";
-    window.__estimateImportUrl = "{{ route('estimates.calculator.import', $estimate) }}";
+    window.__calcRoutes = @json($calcRoutes);
+    window.__estimateTemplatesUrl = @json($templatesRoute);
+    window.__estimateImportUrl = @json($importRoute);
     window.__estimateItemsBaseUrl = "{{ url('estimates/'.$estimate->id.'/items') }}";
-    window.__galleryUrl = "{{ route('calculator.templates.gallery') }}";
+    window.__galleryUrl = @json($galleryRoute);
+    window.__estimateAreaReorderUrl = "{{ url('estimates/'.$estimate->id.'/areas/reorder') }}";
+    window.__estimateItemsReorderUrl = "{{ url('estimates/'.$estimate->id.'/items/reorder') }}";
+    window.__estimateItemsUpdateBaseUrl = "{{ url('estimates/'.$estimate->id.'/items') }}/";
+    window.__estimateRemoveCalcBaseUrl = "{{ url('estimates/'.$estimate->id.'/remove-calculation') }}/";
     window.__estimateSetup = {
         estimateId: {{ (int) $estimate->id }},
         areas: @json($estimate->areas->map(fn($a)=>['id'=>$a->id,'name'=>$a->name]))
@@ -36,7 +61,46 @@
     </div>
 </div>
 
-<div class="space-y-6" x-data="{ tab: 'work', activeArea: 'all', showAddItems: false, addItemsTab: 'materials' }">
+@php
+    $reopenAddItems = session('reopen_add_items', false);
+    $addItemsTabSeed = session('add_items_tab', 'materials');
+    $initialState = [
+        'tab' => 'work',
+        'activeArea' => 'all',
+        'showAddItems' => (bool) $reopenAddItems,
+        'addItemsTab' => $addItemsTabSeed,
+    ];
+@endphp
+
+<script>
+    window.estimateShowComponent = window.estimateShowComponent || function(el) {
+        let initial = {};
+        try {
+            initial = el?.dataset?.estimateShowInitial ? JSON.parse(el.dataset.estimateShowInitial) : {};
+        } catch (_) {
+            initial = {};
+        }
+        return {
+            tab: initial.tab || 'work',
+            activeArea: initial.activeArea || 'all',
+            showAddItems: Boolean(initial.showAddItems),
+            addItemsTab: initial.addItemsTab || 'materials',
+            openAddItems(tab = 'labor') {
+                this.addItemsTab = tab;
+                this.showAddItems = true;
+            },
+            closeAddItems() {
+                this.showAddItems = false;
+            },
+        };
+    };
+</script>
+
+<div class="space-y-6"
+     data-estimate-show-root
+     data-estimate-show-initial='@json($initialState)'
+     data-highlight-item="{{ session('recent_item_id') }}"
+     x-data="estimateShowComponent($el)">
     <x-page-header title="{{ $estimate->title }}" eyebrow="Estimate" subtitle="{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}" variant="compact">
         <x-slot:leading>
             <div class="h-12 w-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-semibold shadow-sm">
@@ -52,18 +116,22 @@
                 @method('DELETE')
                 <x-brand-button type="submit" variant="outline" class="border-red-300 text-red-700 hover:bg-red-50">Delete</x-brand-button>
             </form>
-            <x-brand-button href="{{ route('estimates.preview-email', $estimate) }}" variant="outline">Preview Email</x-brand-button>
+            @if($previewEmailRoute)
+                <x-brand-button href="{{ $previewEmailRoute }}" variant="outline">Preview Email</x-brand-button>
+            @endif
             <form action="{{ route('estimates.invoice', $estimate) }}" method="POST">
                 @csrf
                 <x-brand-button type="submit" variant="outline">Create Invoice</x-brand-button>
             </form>
-            <x-brand-button href="{{ route('estimates.print', $estimate) }}" target="_blank" variant="outline">Print</x-brand-button>
+            @if($printRoute)
+                <x-brand-button href="{{ $printRoute }}" target="_blank" variant="outline">Print</x-brand-button>
+            @endif
             <x-brand-button type="button" id="openCalcDrawerBtn" class="ml-2">+ Add via Calculator</x-brand-button>
         </x-slot:actions>
     </x-page-header>
 
     <!-- Add via Calculator Slide-over (controlled by JS module) -->
-    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;" x-data="{ itemsTab: 'labor' }">
+    <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;" x-data="{ itemsTab: 'labor' }" x-on:set-calc-tab.window="itemsTab = $event.detail || 'labor'">
         <div id="calcDrawerOverlay" class="absolute inset-0 bg-black/30"></div>
         <div class="absolute right-0 top-0 h-full w-full sm:max-w-2xl bg-white shadow-xl flex flex-col">
             <div class="flex items-center justify-between px-4 py-3 border-b">
@@ -153,12 +221,24 @@
                     <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
                         @foreach ($laborCatalog as $labor)
                             @php $rate = $labor->average_wage ?? $labor->base_rate; @endphp
-                            <div class="px-3 py-2 text-sm flex items-center justify-between">
+                            <div class="px-3 py-2 text-sm flex items-center justify-between gap-4">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ $labor->name }}</div>
-                                    <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} • {{ $labor->unit }}</div>
+                                    <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} ? {{ $labor->unit }}</div>
                                 </div>
-                                <div class="text-xs text-gray-600">Avg Wage: ${{ number_format($rate, 2) }}</div>
+                                <div class="flex flex-col items-end text-right gap-1">
+                                    <div class="text-xs text-gray-600">Avg Wage: ${{ number_format($rate, 2) }}</div>
+                                    <button type="button"
+                                            class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white hover:bg-brand-700 transition"
+                                            data-action="drawer-add"
+                                            data-item-type="labor"
+                                            data-catalog-id="{{ $labor->id }}"
+                                            data-catalog-name="{{ $labor->name }}"
+                                            data-catalog-unit="{{ $labor->unit }}"
+                                            data-catalog-cost="{{ number_format($rate, 2, '.', '') }}">
+                                        Add
+                                    </button>
+                                </div>
                             </div>
                         @endforeach
                         @if($laborCatalog->isEmpty())
@@ -577,7 +657,11 @@
                 $price = $areaItems->sum('line_total');
                 $profit = $price - $cogs;
             @endphp
-            <div x-data="{ open: true, tab: 'pricing', menuOpen: false }" class="mb-6 border rounded-lg bg-white work-area overflow-visible" data-area-id="{{ $area->id }}" data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
+            <div x-data="{ open: true, tab: 'pricing', menuOpen: false }"
+                 x-on:force-open-area.window="if (Number($event.detail?.areaId) === {{ $area->id }}) open = true"
+                 class="mb-6 border rounded-lg bg-white work-area overflow-visible"
+                 data-area-id="{{ $area->id }}"
+                 data-sort-order="{{ $area->sort_order ?? $loop->iteration }}">
                     <div class="px-4 py-3 border-b border-slate-200 bg-slate-100">
                         <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-3">
                             @csrf
@@ -676,7 +760,12 @@
                                 <tbody>
                                     @forelse ($areaItems as $item)
                                         @php $rowProfit = $item->margin_total; @endphp
-                                        <tr class="border-t">
+                                        <tr class="border-t"
+                                            data-item-id="{{ $item->id }}"
+                                            data-item-type="{{ $item->item_type }}"
+                                            data-area-id="{{ $area->id }}"
+                                            data-quantity="{{ $item->quantity }}"
+                                            id="estimate-item-{{ $item->id }}">
                                             <td class="px-3 py-2">
                                                 <form method="POST" action="{{ route('estimates.items.update', [$estimate, $item]) }}" class="contents">
                                                     @csrf
@@ -770,6 +859,8 @@
                         @csrf
                         <input type="hidden" name="item_type" value="fee">
                         <input type="hidden" name="catalog_type" value="equipment">
+                        <input type="hidden" name="stay_in_add_items" value="1">
+                        <input type="hidden" name="add_items_tab" value="equipment">
                         <div>
                             <label class="block text-sm font-semibold mb-1">Equipment</label>
                             <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search equipment..." data-role="filter">
@@ -825,6 +916,8 @@
                         @csrf
                         <input type="hidden" name="item_type" value="fee">
                         <input type="hidden" name="catalog_type" value="subcontractor">
+                        <input type="hidden" name="stay_in_add_items" value="1">
+                        <input type="hidden" name="add_items_tab" value="subs">
                         <div>
                             <label class="block text-sm font-semibold mb-1">Vendor</label>
                             <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search vendors..." data-role="filter">
@@ -890,6 +983,8 @@
                 @csrf
                 <input type="hidden" name="item_type" value="material">
                 <input type="hidden" name="catalog_type" value="material">
+                <input type="hidden" name="stay_in_add_items" value="1">
+                <input type="hidden" name="add_items_tab" value="materials">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Material</label>
                     <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search materials..." data-role="filter">
@@ -951,6 +1046,8 @@
                 @csrf
                 <input type="hidden" name="item_type" value="labor">
                 <input type="hidden" name="catalog_type" value="labor">
+                <input type="hidden" name="stay_in_add_items" value="1">
+                <input type="hidden" name="add_items_tab" value="labor">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Labor</label>
                     <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search labor..." data-role="filter">
@@ -1010,6 +1107,8 @@
                     <h4 class="text-md font-semibold">Add Custom Line Item</h4>
             <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="customItemForm" data-form-type="custom">
                 @csrf
+                <input type="hidden" name="stay_in_add_items" value="1">
+                <input type="hidden" name="add_items_tab" value="other">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Type</label>
                     <select name="item_type" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500">
@@ -1127,575 +1226,4 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-// Minimal wiring to open/close the Calculator drawer and switch tabs (no network calls)
-(function(){
-  function init(){
-    var drawer = document.getElementById('calcDrawer');
-    if (!drawer) return;
-    var overlay = document.getElementById('calcDrawerOverlay');
-    var openBtn = document.getElementById('openCalcDrawerBtn');
-    var closeBtn = document.getElementById('calcDrawerCloseBtn');
-    var createPane = document.getElementById('calcCreatePane');
-    var templatesPane = document.getElementById('calcTemplatesPane');
-    var tabCreate = document.getElementById('calcTabCreateBtn');
-    var tabTemplates = document.getElementById('calcTabTemplatesBtn');
 
-    function setTab(which){
-      var createActive = which === 'create';
-      var tplActive = which === 'templates';
-      if (createPane) createPane.style.display = createActive ? '' : 'none';
-      if (templatesPane) templatesPane.style.display = tplActive ? '' : 'none';
-      if (tabCreate) tabCreate.classList.toggle('bg-gray-100', createActive);
-      if (tabTemplates) tabTemplates.classList.toggle('bg-gray-100', tplActive);
-    }
-    function onKey(e){ if (e.key === 'Escape') closeDrawer(); }
-    function openDrawer(defaultTab){ if (!drawer) return; drawer.style.display='block'; setTab(defaultTab||'templates'); document.addEventListener('keydown', onKey); }
-    function closeDrawer(){ if (!drawer) return; drawer.style.display='none'; document.removeEventListener('keydown', onKey); }
-
-    if (openBtn) openBtn.addEventListener('click', function(){ openDrawer('templates'); });
-    if (overlay) overlay.addEventListener('click', closeDrawer);
-    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
-    if (tabCreate) tabCreate.addEventListener('click', function(){ setTab('create'); });
-    if (tabTemplates) tabTemplates.addEventListener('click', function(){ setTab('templates'); });
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-})();
-</script>
-@endpush
-
-@push('scripts')
-<script>
-// Minimal init only; disable heavy inline JS to restore rendering
-window.estimatePage = function(){ return { tab: 'work', activeArea: 'all', showAddItems: false }; };
-
-/* Disabled interactive script for stability
-// document.addEventListener('DOMContentLoaded', () => {
-        // Spinner + auto-refresh helpers
-        const overlay = document.getElementById('pageLoadingOverlay');
-        function showPageSpinner(){ if (overlay) overlay.classList.remove('hidden'); }
-        function hidePageSpinner(){ if (overlay) overlay.classList.add('hidden'); }
-        function autoRefresh(delay = 150){ showPageSpinner(); setTimeout(() => window.location.reload(), delay); }
-
-        // ===============
-        // Add via Calculator Drawer wiring
-        // ===============
-        (function initCalcDrawer(){
-            const drawer = document.getElementById('calcDrawer');
-            const overlayEl = document.getElementById('calcDrawerOverlay');
-            const openBtn = document.getElementById('openCalcDrawerBtn');
-            const closeBtn = document.getElementById('calcDrawerCloseBtn');
-            const createPane = document.getElementById('calcCreatePane');
-            const templatesPane = document.getElementById('calcTemplatesPane');
-            const tabCreate = document.getElementById('calcTabCreateBtn');
-            const tabTemplates = document.getElementById('calcTabTemplatesBtn');
-            const typeSelectCreate = document.getElementById('calcTypeSelect');
-            const typeSelectTpl = document.getElementById('calcTypeSelectTpl');
-            const openTemplateModeLink = document.getElementById('openTemplateModeLink');
-            const listEl = document.getElementById('calcTplList');
-            const loadingEl = document.getElementById('calcTplLoading');
-            const refreshBtnTpl = document.getElementById('calcTplRefresh');
-            const openGalleryLink = document.getElementById('calcTplOpenGallery');
-
-            const estimateId = window.__estimateSetup?.estimateId;
-            const routes = window.__calcRoutes || {};
-
-            function setTab(which){
-                if (!drawer) return;
-                const activeCreate = which === 'create';
-                const activeTemplates = which === 'templates';
-                if (createPane) createPane.style.display = activeCreate ? '' : 'none';
-                if (templatesPane) templatesPane.style.display = activeTemplates ? '' : 'none';
-                if (tabCreate) tabCreate.classList.toggle('bg-gray-100', activeCreate);
-                if (tabTemplates) tabTemplates.classList.toggle('bg-gray-100', activeTemplates);
-                if (activeTemplates) {
-                    updateGalleryLink();
-                    loadTemplates();
-                }
-            }
-
-            function openDrawer(defaultTab = 'templates'){
-                if (!drawer) return;
-                drawer.style.display = 'block';
-                setTab(defaultTab);
-                updateOpenTemplateLink();
-                document.addEventListener('keydown', onKeydown);
-            }
-
-            function closeDrawer(){
-                if (!drawer) return;
-                drawer.style.display = 'none';
-                document.removeEventListener('keydown', onKeydown);
-            }
-
-            function onKeydown(e){ if (e.key === 'Escape') closeDrawer(); }
-
-            function updateOpenTemplateLink(){
-                const type = (typeSelectCreate?.value || 'mulching');
-                const base = routes[type];
-                if (openTemplateModeLink) {
-                    if (base) {
-                        const sep = base.includes('?') ? '&' : '?';
-                        openTemplateModeLink.href = `${base}${sep}mode=template&estimate_id=${encodeURIComponent(estimateId)}`;
-                        openTemplateModeLink.classList.remove('opacity-50','pointer-events-none');
-                        openTemplateModeLink.setAttribute('aria-disabled','false');
-                    } else {
-                        openTemplateModeLink.href = '#';
-                        openTemplateModeLink.classList.add('opacity-50','pointer-events-none');
-                        openTemplateModeLink.setAttribute('aria-disabled','true');
-                    }
-                }
-            }
-
-            function updateGalleryLink(){
-                const type = (typeSelectTpl?.value || '').trim();
-                if (openGalleryLink) {
-                    const base = window.__galleryUrl || '#';
-                    openGalleryLink.href = type ? `${base}?type=${encodeURIComponent(type)}` : base;
-                }
-            }
-
-            async function loadTemplates(){
-                if (!listEl || !loadingEl) return;
-                const type = (typeSelectTpl?.value || 'mulching');
-                listEl.innerHTML = '';
-                loadingEl.style.display = '';
-                updateGalleryLink();
-                try {
-                    const url = `${window.__estimateTemplatesUrl}?type=${encodeURIComponent(type)}`;
-                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                    if (!res.ok) throw new Error('Failed to load templates');
-                    const json = await res.json();
-                    const templates = json.templates || [];
-                    if (!templates.length) {
-                        listEl.innerHTML = '<p class="text-sm text-gray-500">No templates yet for this type.</p>';
-                    } else {
-                        templates.forEach(t => listEl.appendChild(renderTemplateRow(t)));
-                    }
-                } catch (e) {
-                    listEl.innerHTML = '<p class="text-sm text-red-600">Error loading templates.</p>';
-                } finally {
-                    loadingEl.style.display = 'none';
-                }
-            }
-
-            function escapeHtml(str){
-                const div = document.createElement('div');
-                div.textContent = String(str ?? '');
-                return div.innerHTML;
-            }
-            function renderTemplateRow(t){
-                const wrap = document.createElement('div');
-                wrap.className = 'flex items-center justify-between border rounded p-2';
-                const dt = t.created_at ? new Date(t.created_at) : null;
-                const dateTxt = dt ? dt.toLocaleString() : '';
-                wrap.innerHTML = `
-                    <div>
-                        <div class="font-medium">${escapeHtml(t.template_name || '(Untitled)')}</div>
-                        <div class="text-xs text-gray-500">${dateTxt}</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="px-2 py-1 text-xs rounded border hover:bg-gray-50" data-role="tpl-append" data-id="${t.id}">Import (Append)</button>
-                        <button class="px-2 py-1 text-xs rounded border hover:bg-gray-50" data-role="tpl-replace" data-id="${t.id}">Import (Replace)</button>
-                    </div>
-                `;
-                wrap.querySelector('[data-role="tpl-append"]').addEventListener('click', () => importTemplate(t.id, false));
-                wrap.querySelector('[data-role="tpl-replace"]').addEventListener('click', () => importTemplate(t.id, true));
-                return wrap;
-            }
-
-            async function importTemplate(templateId, replaceFlag){
-                try {
-                    showPageSpinner();
-                    const res = await fetch(window.__estimateImportUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({ template_id: templateId, replace: !!replaceFlag })
-                    });
-                    if (!res.ok) throw await res.json().catch(()=>({ message: 'Import failed' }));
-                    const data = await res.json();
-                    if (data?.totals) window.updateSummary?.(data.totals);
-                    showToast('Template imported', 'success');
-                    closeDrawer();
-                    autoRefresh(200);
-                } catch(err){
-                    showToast('Failed to import template', 'error');
-                    hidePageSpinner();
-                }
-            }
-
-            if (openBtn) openBtn.addEventListener('click', () => openDrawer('templates'));
-            if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
-            if (overlayEl) overlayEl.addEventListener('click', closeDrawer);
-            if (tabCreate) tabCreate.addEventListener('click', () => setTab('create'));
-            if (tabTemplates) tabTemplates.addEventListener('click', () => setTab('templates'));
-            if (typeSelectTpl) typeSelectTpl.addEventListener('change', () => { updateGalleryLink(); loadTemplates(); });
-            if (refreshBtnTpl) refreshBtnTpl.addEventListener('click', () => loadTemplates());
-            if (typeSelectCreate) typeSelectCreate.addEventListener('change', updateOpenTemplateLink);
-
-            // Initialize default state
-            updateOpenTemplateLink();
-        })();
-
-        // Refresh button to reload the page and pick up any changes
-        const refreshBtn = document.getElementById('estimateRefreshBtn');
-
-        // === Wire Work Area manual ordering via Order input ===
-        (function wireAreaOrdering(){
-            const container = document.getElementById('areasContainer');
-            if (!container) return;
-            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const baseUrl = "{{ url('estimates/'.$estimate->id.'/areas/reorder') }}";
-
-            function readRows() {
-                return Array.from(container.querySelectorAll('.work-area'));
-            }
-            function getOrderFromRow(row){
-                const input = row.querySelector('input[name="sort_order"]');
-                const v = input ? parseInt(input.value, 10) : NaN;
-                return Number.isFinite(v) ? v : parseInt(row.getAttribute('data-sort-order') || '0', 10);
-            }
-            function applyDomOrder(){
-                const rows = readRows();
-                rows.sort((a,b) => getOrderFromRow(a) - getOrderFromRow(b));
-                rows.forEach(r => container.appendChild(r));
-            }
-            function payload(){
-                return readRows().map(r => ({ id: r.getAttribute('data-area-id'), sort_order: getOrderFromRow(r) }));
-            }
-            async function persist(){
-                try {
-                    await fetch(baseUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                        body: JSON.stringify({ areas: payload() }),
-                    });
-                } catch(e) {/* non-blocking */}
-            }
-            container.addEventListener('change', (e) => {
-                const t = e.target;
-                if (t && t.name === 'sort_order') {
-                    applyDomOrder();
-                    persist();
-                }
-            });
-        })();
-        if (refreshBtn) refreshBtn.addEventListener('click', () => autoRefresh());
-
-        // Save All: submits all area + item update forms
-        const saveAllBtn = document.getElementById('saveAllBtn');
-        if (saveAllBtn) {
-            saveAllBtn.addEventListener('click', async () => {
-                try {
-                    showPageSpinner();
-                    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const scope = document.querySelector('[x-show="tab===\'work\'"]') || document;
-                    // Area update forms (PATCH /areas/{id})
-                    const areaForms = Array.from(document.querySelectorAll('form[action*="/areas/"] input[name="_method"][value="PATCH"]')).map(i => i.closest('form'));
-                    // Item update forms (PATCH /items/{id})
-                    const itemForms = Array.from(document.querySelectorAll('form[action*="/items/"] input[name="_method"][value="PATCH"]')).map(i => i.closest('form'));
-
-                    const forms = [...new Set([...areaForms, ...itemForms])];
-
-                    for (const form of forms) {
-                        const action = form.getAttribute('action');
-                        const fd = new FormData(form);
-                        const res = await fetch(action, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                            body: fd,
-                        });
-                        // If a single update fails, continue saving others, then refresh
-                    }
-                    showToast('All changes saved', 'success');
-                    autoRefresh(200);
-                } catch (e) {
-                    hidePageSpinner();
-                    showToast('Save failed', 'error');
-                }
-            });
-        }
-        // Build collapsible headers per area with subtotals
-        function buildAreaHeaders() { return; // legacy table area headers removed
-            // Remove existing
-            tbody.querySelectorAll('tr[data-role="area-header"]').forEach(el => el.remove());
-            const rows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
-            const groups = new Map();
-            rows.forEach(r => {
-                const aid = r.getAttribute('data-area-id') || '0';
-                if (!groups.has(aid)) groups.set(aid, []);
-                groups.get(aid).push(r);
-            });
-            // Build area id -> name map from bootstrap data
-            const areaMap = new Map((window.__estimateSetup?.areas || []).map(a => [String(a.id), a.name]));
-            groups.forEach((list, aid) => {
-                if (!list || !list.length) return;
-                let subtotal = 0;
-                list.forEach(row => {
-                    const cell = row.querySelector('[data-col="line_total"]');
-                    if (cell) subtotal += parseFloat((cell.textContent || '').replace(/[^0-9.\-]/g,'')) || 0;
-                });
-                const label = (aid === '0') ? 'Unassigned' : (areaMap.get(String(aid)) || `Area ${aid}`);
-                const header = document.createElement('tr');
-                header.className = 'bg-gray-100';
-                header.setAttribute('data-role','area-header');
-                header.setAttribute('data-area-id', aid);
-                header.innerHTML = `
-                    <td colspan="7" class="px-3 py-2 text-gray-700 font-semibold">
-                        <button data-action="toggle-area" data-area-id="${aid}" class="mr-2 text-xs px-2 py-0.5 rounded border">Toggle</button>
-                        ${label}
-                    </td>
-                    <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="area-subtotal">$${subtotal.toFixed(2)}</td>
-                    <td class="px-3 py-2 text-right text-sm">
-                        <button class="text-gray-600 hover:underline text-xs" data-action="collapse-all">Collapse All</button>
-                        <button class="text-gray-600 hover:underline text-xs ml-2" data-action="expand-all">Expand All</button>
-                    </td>`;
-                tbody.insertBefore(header, list[0]);
-            });
-        }
-        buildAreaHeaders();
-
-        document.addEventListener('click', (e) => {
-            const t = e.target;
-            const toggle = t.closest('[data-action="toggle-area"]');
-            if (toggle) {
-                const aid = toggle.getAttribute('data-area-id');
-                const tbody = document.querySelector('table tbody');
-                tbody.querySelectorAll(`tr[data-item-id][data-area-id="${aid}"]`).forEach(r => {
-                    r.style.display = (r.style.display === 'none') ? '' : 'none';
-                });
-                return;
-            }
-            if (t.closest('[data-action="collapse-all"]')) {
-                document.querySelectorAll('tr[data-item-id]').forEach(r => r.style.display = 'none');
-                return;
-            }
-            if (t.closest('[data-action="expand-all"]')) {
-                document.querySelectorAll('tr[data-item-id]').forEach(r => r.style.display = '');
-                return;
-            }
-        });
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        const reorderUrl = "{{ url('estimates/'.$estimate->id.'/items/reorder') }}";
-        const updateBaseUrl = "{{ url('estimates/'.$estimate->id.'/items') }}/";
-        const removeCalcBaseUrl = "{{ url('estimates/'.$estimate->id.'/remove-calculation') }}/";
-
-        const parseNumber = (value, fallback = 0) => {
-            if (value === null || value === undefined) return fallback;
-            if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
-            const cleaned = String(value).replace(/[^0-9.\-]/g, '');
-            const num = parseFloat(cleaned);
-            return Number.isFinite(num) ? num : fallback;
-        };
-
-        const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
-
-        const formatMoney = (val) => {
-            const num = parseNumber(val, 0);
-            return `$${num.toFixed(2)}`;
-        };
-
-        const formatPercent = (val, decimals = 2) => {
-            const num = parseNumber(val, 0);
-            return `${num.toFixed(decimals)}%`;
-        };
-
-        const setText = (target, value) => {
-            const el = typeof target === 'string' ? document.getElementById(target) : target;
-            if (el) el.textContent = value;
-        };
-
-        const setBarWidth = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.style.width = `${clamp(value, 0, 100)}%`;
-        };
-
-        function updateSummary(totals) {
-            if (!totals) return;
-
-            const materialRevenue = parseNumber(totals.material_subtotal);
-            const materialCost = parseNumber(totals.material_cost_total);
-            const materialProfit = parseNumber(totals.material_profit_total);
-
-            const laborRevenue = parseNumber(totals.labor_subtotal);
-            const laborCost = parseNumber(totals.labor_cost_total);
-            const laborProfit = parseNumber(totals.labor_profit_total);
-
-            const feeRevenue = parseNumber(totals.fee_total);
-            const feeCost = parseNumber(totals.fee_cost_total);
-            const feeProfit = parseNumber(totals.fee_profit_total);
-
-            const discountRevenue = parseNumber(totals.discount_total);
-            const discountCost = parseNumber(totals.discount_cost_total);
-            const discountProfit = parseNumber(totals.discount_profit_total);
-
-            const revenue = parseNumber(totals.revenue_total);
-            const costs = parseNumber(totals.cost_total);
-            const grossProfit = parseNumber(totals.profit_total);
-            const netProfit = parseNumber(totals.net_profit_total);
-            const grossMargin = parseNumber(totals.profit_margin);
-            const netMargin = parseNumber(totals.net_margin);
-            const taxTotal = parseNumber(totals.tax_total);
-            const grandTotal = parseNumber(totals.grand_total);
-
-            setText('summary-material', formatMoney(materialRevenue));
-            setText('summary-material-cost', formatMoney(materialCost));
-            setText('summary-labor', formatMoney(laborRevenue));
-            setText('summary-labor-cost', formatMoney(laborCost));
-            setText('summary-fees', formatMoney(feeRevenue - discountRevenue));
-            setText('summary-tax', formatMoney(taxTotal));
-            setText('summary-revenue', formatMoney(revenue));
-            setText('summary-cost', formatMoney(costs));
-            setText('summary-profit', formatMoney(grossProfit));
-            setText('summary-net', formatMoney(netProfit));
-            setText('summary-profit-margin', grossMargin.toFixed(2));
-            setText('summary-net-margin', netMargin.toFixed(2));
-            setText('summary-grand', formatMoney(grandTotal));
-
-            // Work & Pricing top cards
-            setText('work-total-cost', formatMoney(costs));
-            setText('work-subtotal', formatMoney(revenue));
-            setText('work-total-price', formatMoney(grandTotal));
-            setText('work-net-profit', formatMoney(netProfit));
-            setText('work-net-margin', netMargin.toFixed(2));
-            // Also set gross profit
-            setText('work-gross-profit', formatMoney(grossProfit));
-            setText('work-gross-margin', grossMargin.toFixed(2));
-            const breakeven = Math.max(0, grandTotal - netProfit);
-            setText('work-breakeven', formatMoney(breakeven));
-            // Man hours computed from DOM rows
-            computeManHours();
-
-            setText('snapshot-revenue', formatMoney(revenue));
-            setText('snapshot-costs', formatMoney(costs));
-            const costPercent = revenue > 0 ? clamp((costs / revenue) * 100, 0, 100) : 0;
-            const grossPercent = revenue > 0 ? clamp((grossProfit / revenue) * 100, 0, 100) : 0;
-            const netPercent = revenue > 0 ? clamp((netProfit / revenue) * 100, 0, 100) : 0;
-            setText('snapshot-cost-percent', costPercent.toFixed(1));
-            setText('snapshot-cost-percent-inline', costPercent.toFixed(1));
-            setText('snapshot-gross-profit', formatMoney(grossProfit));
-            setText('snapshot-net-profit', formatMoney(netProfit));
-            setText('snapshot-gross-percent', `${grossMargin.toFixed(2)}% margin`);
-            setText('snapshot-net-percent', `${netMargin.toFixed(2)}% margin`);
-            setText('snapshot-gross-margin', `${grossMargin.toFixed(2)}%`);
-            setText('snapshot-net-margin', `${netMargin.toFixed(2)}%`);
-            setText('snapshot-gross-percent-inline', grossPercent.toFixed(1));
-            setText('snapshot-net-percent-inline', netPercent.toFixed(1));
-            setBarWidth('snapshot-cost-bar', costPercent);
-            setBarWidth('snapshot-gross-bar', grossPercent);
-            setBarWidth('snapshot-net-bar', netPercent);
-
-            const breakdowns = [
-                { key: 'material', revenue: materialRevenue, cost: materialCost, profit: materialProfit },
-                { key: 'labor', revenue: laborRevenue, cost: laborCost, profit: laborProfit },
-                { key: 'fee', revenue: feeRevenue, cost: feeCost, profit: feeProfit },
-                { key: 'discount', revenue: discountRevenue, cost: discountCost, profit: discountProfit },
-            ];
-
-            breakdowns.forEach((entry) => {
-                const key = entry.key;
-                const revenue = entry.revenue;
-                const cost = entry.cost;
-                const profit = entry.profit;
-                setText(`breakdown-${key}-revenue`, formatMoney(revenue));
-                setText(`breakdown-${key}-cost`, formatMoney(cost));
-                setText(`breakdown-${key}-profit`, formatMoney(profit));
-                const margin = revenue !== 0 ? ((profit / Math.abs(revenue)) * 100) : 0;
-                setText(`breakdown-${key}-margin`, margin.toFixed(1));
-            });
-        }
-        // Expose for Alpine handlers
-        window.updateSummary = updateSummary;
-
-        function computeManHours() {
-            const rows = document.querySelectorAll('tr[data-item-id]');
-            let hours = 0;
-            rows.forEach(r => {
-                const type = (r.dataset.itemType || '').toLowerCase();
-                if (type === 'labor') {
-                    hours += parseNumber(r.dataset.quantity, 0);
-                }
-            });
-            setText('work-man-hours', (hours || 0).toFixed(2));
-        }
-
-        function wireCatalogForm(formSelector, selectSelector, unitSelector, costSelector, taxSelector) {
-            const form = document.querySelector(formSelector);
-            if (!form) return;
-            const select = form.querySelector(selectSelector);
-            const unitInput = unitSelector ? form.querySelector(unitSelector) : null;
-            const costInput = costSelector ? form.querySelector(costSelector) : null;
-            const taxInput = taxSelector ? form.querySelector(taxSelector) : null;
-
-            if (select) {
-                select.addEventListener('change', () => {
-                    const option = select.options[select.selectedIndex];
-                    if (!option) return;
-                    if (unitInput) unitInput.value = option.dataset.unit || '';
-                    if (costInput) {
-                        costInput.value = option.dataset.cost || 0;
-                        const unitPriceInput = form.querySelector('[data-role="unit-price"]');
-                        if (unitPriceInput && unitPriceInput.dataset.manualOverride !== '1') {
-                            unitPriceInput.value = option.dataset.cost || 0;
-                        }
-                    }
-                    if (taxInput) taxInput.value = option.dataset.tax || 0;
-                    updateFormState(form);
-                });
-            }
-
-            const filterInput = form.querySelector('[data-role="filter"]');
-            if (filterInput && select) {
-                filterInput.addEventListener('input', () => {
-                    const query = filterInput.value.toLowerCase().trim();
-                    Array.from(select.options).forEach((opt, idx) => {
-                        if (idx === 0) return;
-                        const match = (opt.textContent || '').toLowerCase().includes(query);
-                        opt.hidden = query ? !match : false;
-                    });
-                });
-            }
-        }
-
-        wireCatalogForm('#materialCatalogForm', '[data-role="material-select"]', '[data-role="material-unit"]', '[data-role="material-cost"]', '[data-role="material-tax"]');
-        wireCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]');
-
-
-        const forms = ['#materialCatalogForm', '#laborCatalogForm', '#customItemForm'].map(sel => document.querySelector(sel)).filter(Boolean);
-        forms.forEach(bindForm);
-
-        function bindForm(form) {
-            setInitialFinancialState(form);
-            const inputs = form.querySelectorAll('input, select, textarea');
-            inputs.forEach(el => el.addEventListener('input', () => handleFormChange(form, el)));
-            inputs.forEach(el => el.addEventListener('change', () => handleFormChange(form, el)));
-            form.addEventListener('submit', (event) => handleFormSubmit(event, form));
-            updateFormState(form);
-        }
-
-        function setInitialFinancialState(form) {
-            const unitPriceInput = form.querySelector('[data-role="unit-price"]');
-            if (unitPriceInput && !unitPriceInput.dataset.manualOverride) {
-                unitPriceInput.dataset.manualOverride = '0';
-            }
-        }
-
-        function handleFormChange(form, el) {
-            if (el.matches('[data-role="unit-price"]')) {
-                el.dataset.manualOverride = '1';
-            }
-            if (el.matches('[data-role="margin-percent"]')) {
-                const priceInput = form.querySelector('[data-role="unit-price"]');
-                if (priceInput) priceInput.dataset.manualOverride = '0';
-            }
-            updateFormState(form);
-        }
-
-*/
-</script>
-@endpush

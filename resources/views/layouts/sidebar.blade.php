@@ -8,6 +8,36 @@
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo.svg') }}" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .sidebar-accordion summary::-webkit-details-marker { display: none; }
+        .sidebar-accordion summary {
+            position: relative;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sidebar-accordion summary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 0.5rem;
+            opacity: 0;
+            background: linear-gradient(120deg, rgba(16,185,129,0.15), rgba(59,130,246,0.12));
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+        .sidebar-accordion summary:hover::after {
+            opacity: 1;
+        }
+        .sidebar-panel {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.25s ease;
+        }
+        .sidebar-accordion[open] .sidebar-panel {
+            max-height: 600px;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body class="bg-brand-900 text-brand-900 font-sans antialiased" x-data="{ sidebarOpen: false }">
 
@@ -21,30 +51,46 @@
 
         {{-- Client Hub (moved to top) --}}
         <nav class="mt-4 px-4 space-y-6 text-sm">
-            <details class="group" open>
-                <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
-                    <span class="inline-flex items-center">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 13a4 4 0 0 0-3-3.87"/></svg>
-                        <span>CRM</span>
-                    </span>
-                    <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
-                </summary>
-                <div class="ml-4 mt-1 space-y-1">
-                    <a href="{{ route('contacts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="3"/><path d="M2 21c0-3.314 2.686-6 6-6h2M22 21c0-3.314-2.686-6-6-6h-2"/></svg><span>Contacts</span></span>
-                    </a>
-                    <a href="{{ route('site-visit.select') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 10h-3l-3 10-4-18-3 8H3"/></svg><span>Site Visits</span></span>
-                    </a>
-                </div>
-            </details>
+            <div class="space-y-2">
+                <details class="group sidebar-accordion" open>
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 13a4 4 0 0 0-3-3.87"/></svg>
+                            <span>CRM</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('contacts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
+                            <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="3"/><path d="M2 21c0-3.314 2.686-6 6-6h2M22 21c0-3.314-2.686-6-6-6h-2"/></svg><span>Contacts</span></span>
+                        </a>
+                        <a href="{{ route('site-visit.select') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
+                            <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 10h-3l-3 10-4-18-3 8H3"/></svg><span>Site Visits</span></span>
+                        </a>
+                        <a href="{{ route('todos.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
+                            <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg><span>To-Do Board</span></span>
+                        </a>
+                    </div>
+                </details>
+
+                <details class="group sidebar-accordion" open>
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg>
+                            <span>ESTIMATES</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('estimates.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Estimates List</a>
+                    </div>
+                </details>
+            </div>
 
             <div>
                 <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Client Hub</h3>
                 <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3L3 10v11h7v-7h4v7h7V10l-9-7z"/></svg><span>Home Dashboard</span></span></a>
                 <a href="{{ route('calendar.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Schedule</span></span></a>
-                <a href="{{ route('todos.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg><span>To-Do Board</span></span></a>
-                <a href="{{ route('estimates.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg><span>Estimates</span></span></a>
                 <a href="{{ route('calculator.templates.gallery') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg><span>Calculator Templates</span></span></a>
             </div>
 
@@ -75,7 +121,7 @@
                 </li>
 
                 <li>
-                    <details class="group">
+                    <details class="group sidebar-accordion">
                         <summary class="list-none px-4 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                             <span class="inline-flex items-center">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
@@ -83,14 +129,14 @@
                             </span>
                             <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                         </summary>
-                        <div class="ml-6 mt-1 space-y-1">
+                        <div class="ml-6 mt-1 space-y-1 sidebar-panel">
                             <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials Catalog</a>
                             <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor Catalog</a>
                         </div>
                     </details>
                 </li>
                 <li>
-                    <details class="group">
+                    <details class="group sidebar-accordion">
                         <summary class="list-none px-4 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                             <span class="inline-flex items-center">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
@@ -98,7 +144,7 @@
                             </span>
                             <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                         </summary>
-                        <div class="ml-6 mt-1 space-y-1">
+                        <div class="ml-6 mt-1 space-y-1 sidebar-panel">
                             @can('manage-users')
                             <a href="{{ route('admin.users.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Users</a>
                             @endcan
@@ -136,29 +182,44 @@
                 <a href="{{ route('admin.budgets.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60">💼 Budget</a>
                 <a href="{{ route('materials.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60">🧱 Materials Catalog</a>
             </div>
-            <details class="group" open>
-                <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
-                    <span class="inline-flex items-center">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 13a4 4 0 0 0-3-3.87"/></svg>
-                        <span>CRM</span>
-                    </span>
-                    <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
-                </summary>
-                <div class="ml-4 mt-1 space-y-1">
-                    <a href="{{ route('contacts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="3"/><path d="M2 21c0-3.314 2.686-6 6-6h2M22 21c0-3.314-2.686-6-6-6h-2"/></svg><span>Contacts</span></span>
-                    </a>
-                    <a href="{{ route('site-visit.select') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
-                        <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 10h-3l-3 10-4-18-3 8H3"/></svg><span>Site Visits</span></span>
-                    </a>
-                </div>
-            </details>
+            <div class="space-y-2">
+                <details class="group sidebar-accordion" open>
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 13a4 4 0 0 0-3-3.87"/></svg>
+                            <span>CRM</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('contacts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
+                            <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="3"/><path d="M2 21c0-3.314 2.686-6 6-6h2M22 21c0-3.314-2.686-6-6-6h-2"/></svg><span>Contacts</span></span>
+                        </a>
+                        <a href="{{ route('site-visit.select') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
+                            <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 10h-3l-3 10-4-18-3 8H3"/></svg><span>Site Visits</span></span>
+                        </a>
+                        <a href="{{ route('todos.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">
+                            <span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg><span>To-Do Board</span></span>
+                        </a>
+                    </div>
+                </details>
+                <details class="group sidebar-accordion" open>
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg>
+                            <span>ESTIMATES</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('estimates.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Estimates List</a>
+                    </div>
+                </details>
+            </div>
             <div>
                 <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Client Hub</h3>
                 <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3L3 10v11h7v-7h4v7h7V10l-9-7z"/></svg><span>Dashboard</span></span></a>
                 <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Schedule</span></span></a>
-                <a href="{{ route('todos.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 12l2 2 4-4"/></svg><span>To-Do Board</span></span></a>
-                <a href="{{ route('estimates.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg><span>Estimates</span></span></a>
             </div>
 
             <div>

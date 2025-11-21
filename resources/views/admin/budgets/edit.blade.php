@@ -24,112 +24,150 @@
 @php($initialSubcontractingRows = old('inputs.subcontracting.rows', data_get($budget->inputs, 'subcontracting.rows', [])))
 @php($activeBudget = app(\App\Services\BudgetService::class)->active(false))
 @php($desiredMarginSeed = $budget->desired_profit_margin ?? data_get($activeBudget, 'desired_profit_margin') ?? 0.2)
-<div class="max-w-7xl mx-auto py-6 text-sm" data-theme="compact" x-data="budgetEditor()">
-    <x-page-header title="{{ $budget->exists ? 'Budget' : 'New Budget' }}" eyebrow="Admin" variant="compact">
-        <x-slot:leading>
-            <div class="h-10 w-10 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-sm">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="14" rx="2"></rect>
-                    <path d="M8 10h8M8 14h5"></path>
-                    <path d="M12 2v2M7 2v2M17 2v2"></path>
-                </svg>
+@php($effectiveDateDisplay = optional($budget->effective_from)->format('M j, Y'))
+@php($lastTouchDisplay = optional($budget->updated_at ?? $budget->created_at)->diffForHumans())
+<div class="-m-4 sm:-m-6 lg:-m-8">
+    <div class="min-h-full px-4 sm:px-6 lg:px-10 py-8 space-y-8 text-sm" data-theme="compact" x-data="budgetEditor()">
+    <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-10 shadow-2xl border border-brand-900/40 relative overflow-hidden">
+        <div class="flex flex-wrap items-start gap-6">
+            <div class="space-y-3 max-w-4xl">
+                <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Admin / Budget</p>
+                <h1 class="text-3xl sm:text-4xl font-semibold">{{ $budget->exists ? 'Budget Editor' : 'Create Budget' }}</h1>
+                <p class="text-sm text-brand-100/85">Tune revenue, labor, and overhead inputs inside a single interactive workspace. These settings cascade across pricing calculators and estimate defaults.</p>
             </div>
-        </x-slot:leading>
-        <x-slot:actions>
-            <x-brand-button href="{{ route('admin.budgets.index') }}">Back</x-brand-button>
-            <div class="hidden md:flex items-center gap-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(netIncome())" x-show="section==='Profit/Loss'"></span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="netIncome() >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="netIncomePct().toFixed(1) + '%'" x-show="section==='Profit/Loss'"></span>
+            <div class="flex flex-wrap gap-2 ml-auto">
+                <x-brand-button href="{{ route('admin.budgets.index') }}" variant="muted">
+                    Back
+                </x-brand-button>
+                <x-brand-button type="submit" form="companyBudgetForm">
+                    Save Budget
+                </x-brand-button>
             </div>
-            <x-brand-button type="submit" form="companyBudgetForm">Save</x-brand-button>
-        </x-slot:actions>
-    </x-page-header>
-
-    @if ($errors->any())
-        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded mb-4">
-            <ul class="list-disc list-inside text-sm">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
         </div>
-    @endif
+        <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 text-sm text-brand-100">
+            <div class="rounded-3xl bg-white/10 border border-white/20 p-4 space-y-1.5">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Desired Margin</dt>
+                <dd class="text-2xl font-semibold text-white mt-1">{{ number_format($desiredMarginSeed * 100, 1) }}%</dd>
+                <p class="text-xs text-brand-100/70">Live net <span class="font-semibold" x-text="netIncomePct().toFixed(1) + '%'" aria-live="polite">&mdash;</span></p>
+            </div>
+            <div class="rounded-3xl bg-white/10 border border-white/20 p-4 space-y-1.5">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Effective From</dt>
+                <dd class="text-2xl font-semibold text-white mt-1">{!! $effectiveDateDisplay ?? '&mdash;' !!}</dd>
+                <p class="text-xs text-brand-100/70">Applies to new work once approved.</p>
+            </div>
+            <div class="rounded-3xl bg-white/10 border border-white/20 p-4 space-y-1.5">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Status</dt>
+                <dd class="text-2xl font-semibold text-white mt-1">
+                    {{ old('is_active', $budget->is_active) ? 'Active' : 'Draft' }}
+                </dd>
+                <p class="text-xs text-brand-100/70">{{ $lastTouchDisplay ? 'Last updated '.$lastTouchDisplay : 'New record' }}</p>
+            </div>
+            <div class="rounded-3xl bg-white/10 border border-white/20 p-4 space-y-1.5">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Net Income</dt>
+                <dd class="text-2xl font-semibold text-white mt-1" x-text="formatMoney(netIncome())" aria-live="polite">&mdash;</dd>
+                <p class="text-xs text-brand-100/70">Targets {{ number_format($desiredMarginSeed * 100, 1) }}% margin.</p>
+            </div>
+        </dl>
+    </section>
 
+    <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
+        @if ($errors->any())
+            <div class="bg-red-50 border-b border-red-200 text-red-800 px-6 py-4">
+                <ul class="list-disc list-inside text-sm space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-    <form id="companyBudgetForm" method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="bg-white rounded shadow overflow-hidden text-sm">
+        <form id="companyBudgetForm" method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="text-sm">
         @csrf
         <input type="hidden" name="section" :value="section">
         @if ($budget->exists)
             @method('PUT')
         @endif
-        <input type="hidden" name="section" :value="section">
-        <div class="flex">
+        <div class="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 lg:p-8 bg-brand-50/40">
             <!-- Left Nav -->
-            <aside class="w-56 md:w-64 border-r bg-gray-50">
-                <nav class="p-2">
-                    @foreach (['Budget Info','Sales Budget','Field Labor','Equipment','Materials','Subcontracting','Overhead','Profit/Loss','OH Recovery','Analysis'] as $s)
-                        <button type="button"
-                                @click="section='{{ $s }}'"
-                                :class="{'bg-white text-brand-700 border-brand-300': section==='{{ $s }}'}"
-                                class="w-full px-3 py-2 text-sm rounded border hover:bg-white mb-1 flex items-center justify-between">
-                            @if ($s === 'Sales Budget')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(forecastTotal())"></span>
-                            @elseif ($s === 'Field Labor')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(fieldPayroll())"></span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'" title="Field Labor Ratio"></span>
-                                </span>
-                            @elseif ($s === 'Equipment')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(equipmentExpensesTotal())"></span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'" title="Equipment Ratio"></span>
-                                </span>
-                            @elseif ($s === 'Materials')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(materialsCurrentTotal())"></span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%' "></span>
-                                </span>
-                            @elseif ($s === 'Subcontracting')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(subcCurrentTotal())"></span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" x-text="subcRatio().toFixed(1) + '%'"></span>
-                                </span>
-                            @elseif ($s === 'Overhead')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(overheadCurrentTotal())"></span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span>
-                                </span>
-                            @elseif ($s === 'Profit/Loss')
-                                <span>{{ $s }}</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800" x-text="formatMoney(netIncome())"></span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="netIncome() >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="netIncomePct().toFixed(1) + '%'"></span>
-                                </span>
-                            @else
-                                <span>{{ $s }}</span>
-                            @endif
-                        </button>
-                    @endforeach
-                    <div class="mt-3 pt-3 border-t">
-                        <label class="inline-flex items-center text-sm">
-                            <input type="checkbox" name="is_active" value="1" class="mr-2" {{ old('is_active', $budget->is_active) ? 'checked' : '' }}>
-                            Active Budget
+            <aside class="lg:w-72 flex-none">
+                <div class="rounded-[28px] border border-brand-100/80 bg-white/80 shadow-sm p-4 space-y-4 lg:sticky lg:top-6">
+                    <div class="space-y-1">
+                        <p class="text-xs uppercase tracking-wide text-brand-500">Sections</p>
+                        <p class="text-xs text-brand-400">Jump between budget inputs.</p>
+                    </div>
+                    <nav class="space-y-1">
+                        @foreach (['Budget Info','Sales Budget','Field Labor','Equipment','Materials','Subcontracting','Overhead','Profit/Loss','OH Recovery','Analysis'] as $s)
+                            <button type="button"
+                                    @click="section='{{ $s }}'"
+                                    :class="section==='{{ $s }}' ? 'bg-white text-brand-900 border-brand-200 shadow-sm' : 'text-brand-500 border-transparent hover:border-brand-100 hover:bg-white/70'"
+                                    class="w-full px-4 py-3 rounded-2xl border transition flex items-center justify-between gap-3 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white">
+                                @if ($s === 'Sales Budget')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(forecastTotal())"></span>
+                                @elseif ($s === 'Field Labor')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(fieldPayroll())"></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="laborPillClass()" x-text="laborRatio().toFixed(1) + '%'" title="Field Labor Ratio"></span>
+                                    </span>
+                                @elseif ($s === 'Equipment')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(equipmentExpensesTotal())"></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="equipmentPillClass()" x-text="equipmentRatio().toFixed(1) + '%'" title="Equipment Ratio"></span>
+                                    </span>
+                                @elseif ($s === 'Materials')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(materialsCurrentTotal())"></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="materialsPillClass()" x-text="materialsRatio().toFixed(1) + '%' "></span>
+                                    </span>
+                                @elseif ($s === 'Subcontracting')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(subcCurrentTotal())"></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100" x-text="subcRatio().toFixed(1) + '%'"></span>
+                                    </span>
+                                @elseif ($s === 'Overhead')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(overheadCurrentTotal())"></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="overheadPillClass()" x-text="overheadRatio().toFixed(1) + '%'"></span>
+                                    </span>
+                                @elseif ($s === 'Profit/Loss')
+                                    <span>{{ $s }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-100/80 text-brand-900" x-text="formatMoney(netIncome())"></span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" :class="netIncome() >= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'" x-text="netIncomePct().toFixed(1) + '%'"></span>
+                                    </span>
+                                @else
+                                    <span>{{ $s }}</span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </nav>
+                    <div class="pt-4 border-t border-brand-100/60 space-y-2">
+                        <p class="text-xs uppercase tracking-wide text-brand-500">Status</p>
+                        <label class="flex items-start gap-3 text-sm text-brand-900">
+                            <input type="checkbox" name="is_active" value="1" class="mt-1 h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500" {{ old('is_active', $budget->is_active) ? 'checked' : '' }}>
+                            <span>
+                                <span class="font-semibold block">Active Budget</span>
+                                <span class="text-xs text-brand-500">Active budgets feed calculators and default pricing.</span>
+                            </span>
                         </label>
                     </div>
-                </nav>
+                </div>
             </aside>
 
             <!-- Main Panel -->
-            <div class="flex-1 p-4 space-y-4 text-sm">
+            <div class="flex-1 min-w-0">
+                <div class="rounded-[32px] border border-brand-100/80 bg-white shadow-sm p-5 sm:p-6 lg:p-8 space-y-8 text-sm">
                 <!-- BUDGET INFO -->
                 <section x-show="section==='Budget Info'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Budget Info</h2>
+                    <div class="mb-4">
+                        <p class="text-xs uppercase tracking-wide text-brand-500">Setup</p>
+                        <h2 class="text-2xl font-semibold text-brand-900">Budget Info</h2>
+                    </div>
                     <div class="grid md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium">Name</label>
@@ -149,12 +187,12 @@
                             <label class="block text-sm font-medium">Desired Profit Margin (%)</label>
                             <input type="number" step="0.1" max="99.9" name="desired_profit_margin_percent" class="form-input w-full mt-1" value="{{ old('desired_profit_margin_percent', number_format($desiredMarginSeed * 100, 1)) }}">
                             <input type="hidden" name="desired_profit_margin" value="{{ old('desired_profit_margin', $desiredMarginSeed) }}" id="desired_profit_margin_hidden">
-                            <p class="text-xs text-gray-500 mt-1">Target company profit margin used in pricing.</p>
+                            <p class="text-xs text-brand-500 mt-1">Target company profit margin used in pricing.</p>
                         </div>
                         <div class="md:col-span-2">
-                            <div class="rounded border p-3 bg-gray-50 text-sm text-gray-700">
-                                Define revenue goals, pricing strategy, and global assumptions here.
-                                We’ll expand this section with forecast and sales mix inputs.
+                            <div class="rounded-2xl border border-brand-100/80 bg-brand-50/70 p-4 text-sm text-brand-700 leading-snug">
+                                <p>Define revenue goals, pricing strategy, and global assumptions here.</p>
+                                <p class="mt-1">We'll expand this section with forecast and sales mix inputs.</p>
                             </div>
                         </div>
                     </div>
@@ -999,23 +1037,26 @@
 
                 <!-- ANALYSIS -->
                 <section x-show="section==='Analysis'" x-cloak>
-                    <h2 class="text-lg font-semibold mb-3">Analysis</h2>
+                    <div class="mb-4">
+                        <p class="text-xs uppercase tracking-wide text-brand-500">Outputs</p>
+                        <h2 class="text-2xl font-semibold text-brand-900">Analysis</h2>
+                    </div>
                     <div class="grid md:grid-cols-4 gap-4 text-sm">
-                        <div class="rounded border p-3">
-                            <p class="text-gray-600">Direct Labor Cost</p>
-                            <p class="font-semibold">${{ number_format(data_get($budget->outputs ?? [], 'labor.dlc', 0), 2) }}/hr</p>
+                        <div class="rounded-2xl border border-brand-100/80 bg-brand-50/50 p-4 shadow-sm space-y-1.5">
+                            <p class="text-brand-500">Direct Labor Cost</p>
+                            <p class="text-xl font-semibold text-brand-900">${{ number_format(data_get($budget->outputs ?? [], 'labor.dlc', 0), 2) }}/hr</p>
                         </div>
-                        <div class="rounded border p-3">
-                            <p class="text-gray-600">Overhead / Prod. Hour</p>
-                            <p class="font-semibold">${{ number_format(data_get($budget->outputs ?? [], 'labor.ohr', 0), 2) }}/hr</p>
+                        <div class="rounded-2xl border border-brand-100/80 bg-brand-50/50 p-4 shadow-sm space-y-1.5">
+                            <p class="text-brand-500">Overhead / Prod. Hour</p>
+                            <p class="text-xl font-semibold text-brand-900">${{ number_format(data_get($budget->outputs ?? [], 'labor.ohr', 0), 2) }}/hr</p>
                         </div>
-                        <div class="rounded border p-3">
-                            <p class="text-gray-600">Burdened Labor Cost</p>
-                            <p class="font-semibold">${{ number_format(data_get($budget->outputs ?? [], 'labor.blc', 0), 2) }}/hr</p>
+                        <div class="rounded-2xl border border-brand-100/80 bg-brand-50/50 p-4 shadow-sm space-y-1.5">
+                            <p class="text-brand-500">Burdened Labor Cost</p>
+                            <p class="text-xl font-semibold text-brand-900">${{ number_format(data_get($budget->outputs ?? [], 'labor.blc', 0), 2) }}/hr</p>
                         </div>
-                        <div class="rounded border p-3">
-                            <p class="text-gray-600">Productive Hours (annual)</p>
-                            <p class="font-semibold">{{ number_format(data_get($budget->outputs ?? [], 'labor.plh', 0), 0) }}</p>
+                        <div class="rounded-2xl border border-brand-100/80 bg-brand-50/50 p-4 shadow-sm space-y-1.5">
+                            <p class="text-brand-500">Productive Hours (annual)</p>
+                            <p class="text-xl font-semibold text-brand-900">{{ number_format(data_get($budget->outputs ?? [], 'labor.plh', 0), 0) }}</p>
                         </div>
                     </div>
                 </section>
@@ -1023,7 +1064,10 @@
 
             </div>
         </div>
+        </div>
     </form>
+    </section>
+    </div>
 </div>
 @endsection
 
