@@ -68,6 +68,7 @@ This document captures the current UI theme choices so we can keep everything co
   - Needs Sync → amber badge.
   - Synced → accent badge.
   - Not Linked → brand badge.
+- **Badge shape:** use the shared `.badge` class for all chip/label styles – inline-flex, `px-3 py-1`, `rounded-lg`, uppercase tracking. Apply color utilities on top for each status/type so every label keeps the same geometry.
 
 ## Future Additions
 

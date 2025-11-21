@@ -19,10 +19,10 @@
 
     <div class="rounded-lg bg-white shadow-sm border border-brand-100 p-6 space-y-6">
         <form method="GET" action="{{ route('contacts.index') }}" class="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-            @php $types = ['lead','client','vendor','owner']; @endphp
+            @php $types = ['all','lead','client','vendor','owner']; @endphp
             <select name="type" class="form-select border-brand-300 rounded focus:ring-brand-500 focus:border-brand-500 w-full sm:w-48">
                 @foreach ($types as $t)
-                    <option value="{{ $t }}" {{ ($type ?? 'client') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+                    <option value="{{ $t }}" {{ ($type ?? 'all') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
                 @endforeach
             </select>
             <div class="flex flex-1 items-center gap-3">
@@ -105,7 +105,21 @@
                                         <div class="text-sm text-gray-500">{{ $contact->postal_code }}</div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 border border-brand-200 capitalize">{{ $contact->contact_type ?? 'client' }}</td>
+                                <td class="px-6 py-4 border border-brand-200">
+                                    @php
+                                        $typeColors = [
+                                            'client' => 'bg-accent-50 text-accent-800 border border-accent-200',
+                                            'lead' => 'bg-amber-50 text-amber-800 border border-amber-200',
+                                            'vendor' => 'bg-blue-50 text-blue-800 border border-blue-200',
+                                            'owner' => 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+                                        ];
+                                        $contactType = strtolower($contact->contact_type ?? 'client');
+                                        $pillClass = $typeColors[$contactType] ?? 'bg-brand-50 text-brand-700 border border-brand-200';
+                                    @endphp
+                                    <span class="badge text-sm {{ $pillClass }}">
+                                        {{ ucfirst($contactType) }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 border border-brand-200">
                                     {{ $contact->mobile ?? 'N/A' }}
                                     @if($contact->phone2)

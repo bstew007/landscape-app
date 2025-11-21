@@ -10,10 +10,10 @@ class ContactController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
-        $type = $request->query('type', 'client');
+        $type = $request->query('type', 'all');
 
         $contacts = Contact::query()
-            ->when($type, fn($q) => $q->where('contact_type', $type))
+            ->when($type && $type !== 'all', fn($q) => $q->where('contact_type', $type))
             ->when($search, function ($query, $term) {
                 $query->where(function ($q) use ($term) {
                     $q->where('first_name', 'like', "%{$term}%")
