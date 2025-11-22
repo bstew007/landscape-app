@@ -12,12 +12,9 @@ use App\Services\BudgetService;
 
 class EstimateItemService
 {
-    public function __construct(protected ?BudgetService $budgetService = null)
+    public function __construct()
     {
-        // Optional DI; if not provided, resolve on demand
-        if (!$this->budgetService) {
-            $this->budgetService = app(BudgetService::class);
-        }
+        // Shell mode: no budget dependency here
     }
     public function syncFromLegacyLineItems(Estimate $estimate, ?array $lineItems): void
     {
@@ -237,23 +234,19 @@ class EstimateItemService
 
     public function resolveCatalogDefaults(string $catalogType, int $catalogId): array
     {
-        // Use active budget to prefill default margin or labor charge rate when applicable
-        $activeBudget = $this->budgetService?->active();
-        $defaultMargin = (float) (($activeBudget?->desired_profit_margin) ?? 0.2);
-        $recommended = $activeBudget ? $this->budgetService->recommendedRates($activeBudget) : null;
-        $laborChargeRate = (float) ($recommended['charge_out_rate'] ?? 0);
-        $laborBurdenCost = (float) (data_get($activeBudget?->outputs, 'labor.blc', 0));
-
+        // Shell mode: pull values directly from the catalog records only
         if ($catalogType === 'material') {
             $material = Material::find($catalogId);
             if (!$material) return [];
+            $unitCost = (float) $material->unit_cost;
+            // Default: if no price provided by UI, mirror cost (0 margin) until user edits
             return [
                 'name' => $material->name,
                 'unit' => $material->unit,
-                'unit_cost' => $material->unit_cost,
-                'unit_price' => round($material->unit_cost * (1 + $defaultMargin), 2),
-                'margin_rate' => $defaultMargin,
-                'tax_rate' => $material->is_taxable ? $material->tax_rate : 0,
+                'unit_cost' => $unitCost,
+                'unit_price' => $unitCost,
+                'margin_rate' => 0.0,
+                'tax_rate' => $material->is_taxable ? (float) $material->tax_rate : 0.0,
                 'description' => $material->description,
                 'catalog_type' => Material::class,
             ];
@@ -262,18 +255,17 @@ class EstimateItemService
         if ($catalogType === 'labor') {
             $labor = LaborItem::find($catalogId);
             if (!$labor) return [];
-            // Prefer budget-derived burdened cost and charge-out rate
-            $unitCost = $laborBurdenCost ?: $labor->base_rate;
-            $unitPrice = $laborChargeRate ?: round($unitCost * (1 + $defaultMargin), 2);
-            $marginRate = $unitCost > 0 ? (($unitPrice - $unitCost) / $unitCost) : $defaultMargin;
-
+            // Use catalog’s base_rate as both cost and price by default (0 margin) so the UI remains simple.
+            $unitCost = (float) ($labor->base_rate ?? 0);
+            $unitPrice = $unitCost;
+            $marginRate = 0.0;
             return [
                 'name' => $labor->name,
                 'unit' => $labor->unit,
                 'unit_cost' => $unitCost,
                 'unit_price' => $unitPrice,
                 'margin_rate' => $marginRate,
-                'tax_rate' => 0,
+                'tax_rate' => 0.0,
                 'description' => $labor->notes,
                 'catalog_type' => LaborItem::class,
             ];

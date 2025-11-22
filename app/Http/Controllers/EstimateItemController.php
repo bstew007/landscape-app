@@ -39,8 +39,15 @@ class EstimateItemController extends Controller
 
         if ($request->ajax() || $request->wantsJson()) {
             $estimate->refresh();
+            $rowHtml = view('estimates.partials.item-row', [
+                'estimate' => $estimate,
+                'item' => $item,
+                'areaId' => $item->area_id,
+            ])->render();
+
             return response()->json([
                 'item' => $item,
+                'row_html' => $rowHtml,
                 'totals' => $this->summarizeTotals($estimate),
             ]);
         }
@@ -191,6 +198,7 @@ class EstimateItemController extends Controller
             'unit_price' => ['nullable', 'numeric', 'min:0'],
             'margin_rate' => ['nullable', 'numeric', 'min:-0.99', 'max:10'],
             'tax_rate' => ['nullable', 'numeric', 'min:0'],
+            'area_id' => ['nullable', 'integer', 'exists:estimate_areas,id'],
         ], [
             'name.required' => 'Please enter a name for the item or choose one from the catalog.',
             'unit_cost.required' => 'Please enter a unit cost or choose from the catalog to auto-fill pricing.',
@@ -212,6 +220,7 @@ class EstimateItemController extends Controller
             'margin_rate' => $data['margin_rate'] ?? null,
             'tax_rate' => $data['tax_rate'] ?? 0,
             'description' => $data['description'] ?? null,
+            'area_id' => $data['area_id'] ?? null,
         ];
 
         if ($catalogType && $catalogId) {

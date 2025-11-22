@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Estimate;
 use App\Models\EstimateArea;
+use App\Models\CostCode;
 use Illuminate\Http\Request;
 
 class EstimateAreaController extends Controller
@@ -26,7 +27,14 @@ class EstimateAreaController extends Controller
         ]);
 
         if ($request->wantsJson()) {
-            return response()->json(['area' => $area]);
+            $costCodes = CostCode::orderBy('code')->get();
+            $areaHtml = view('estimates.partials.area', [
+                'estimate' => $estimate,
+                'area' => $area,
+                'allItems' => $estimate->items,
+                'costCodes' => $costCodes,
+            ])->render();
+            return response()->json(['area' => $area, 'area_html' => $areaHtml]);
         }
         return back()->with('success', 'Work area added.');
     }

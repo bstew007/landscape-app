@@ -5,7 +5,7 @@ const DEFAULT_STATE = {
     tab: 'work',
     activeArea: 'all',
     showAddItems: false,
-    addItemsTab: 'materials',
+    addItemsTab: 'labor',
 };
 
 const safeJsonParse = (value, fallback) => {
@@ -19,18 +19,52 @@ const safeJsonParse = (value, fallback) => {
 export function initEstimateShow() {
     window.estimateShowComponent = function (el) {
         const initial = safeJsonParse(el?.dataset.estimateShowInitial, DEFAULT_STATE);
+        const setupAreas = window.__estimateSetup?.areas || [];
+        const fallbackAreaId = setupAreas.length ? String(setupAreas[0].id) : '';
+        const resolvedInitialArea =
+            initial?.activeArea && initial.activeArea !== 'all'
+                ? String(initial.activeArea)
+                : fallbackAreaId;
         return {
             tab: initial?.tab || 'work',
             activeArea: initial?.activeArea || 'all',
             showAddItems: !!initial?.showAddItems,
             addItemsTab: initial?.addItemsTab || 'materials',
-            openAddItems(tab = 'labor') {
+            addItemsArea: resolvedInitialArea,
+            defaultAreaId: fallbackAreaId,
+            init() {
+                this.syncAddItemsAreaInputs();
+            },
+            openAddItems(tab = 'labor', areaId = undefined) {
+                if (areaId !== undefined) {
+                    this.setAddItemsArea(areaId);
+                }
                 this.addItemsTab = tab;
                 this.showAddItems = true;
                 window.dispatchEvent(new CustomEvent('set-calc-tab', { detail: tab }));
             },
             closeAddItems() {
                 this.showAddItems = false;
+            },
+            handleAddItemsOpen(event) {
+                const detail = event?.detail || {};
+                this.openAddItems(detail.tab || 'labor', detail.areaId ?? '');
+            },
+            setAddItemsArea(areaId) {
+                this.addItemsArea = this.normalizeAreaId(areaId);
+                this.syncAddItemsAreaInputs();
+            },
+            normalizeAreaId(areaId) {
+                if (areaId === null || areaId === undefined || areaId === '' || areaId === 'all') {
+                    return this.defaultAreaId;
+                }
+                return String(areaId);
+            },
+            syncAddItemsAreaInputs() {
+                const value = this.addItemsArea || this.defaultAreaId || '';
+                document.querySelectorAll('[data-role="add-items-area-id"]').forEach((input) => {
+                    input.value = value;
+                });
             },
         };
     };

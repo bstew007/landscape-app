@@ -5,6 +5,12 @@
 - **Key Screens:** `/labor` (catalog index), `/labor/create`, `/labor/{id}/edit`, `/labor/{id}` destroy action.
 - **Core Model:** `App\Models\LaborItem` persisted in `labor_catalog` table with normalized numeric columns (wage, burden, unbillable %, etc.).
 
+## Estimate Add Items Drawer Integration
+- **Surface:** Estimate detail view -> `Add Items` slide-over -> `Labor` tab.
+- **Work Area Select:** A `Work Area` dropdown sits directly above the labor catalog dropdown. It auto-populates with every active area tied to the estimate, and the form now sends `area_id` so the async handler inserts the row into the chosen area immediately.
+- **Usage Flow:** Open the drawer, switch to the `Labor` tab, choose the target work area, select a catalog labor entry, set quantity/price, and submit.
+- **Empty State:** When an estimate has zero areas the drawer shows a yellow "Create a work area before adding catalog labor" alert instead of the selector; add an area and refresh to see the dropdown.
+
 ## Catalog Index (`resources/views/labor/index.blade.php`)
 - **Header:** Uses the compact `x-page-header` with a 🛠️ icon for quick context; only a `+ New` CTA (no import/export buttons).
 - **Summary Cards:**
@@ -42,3 +48,4 @@
 5. **Audit Trail:** Track who last edited each labor item (timestamps + user) so teams can trace changes after updates.
 6. **Validation Messages:** Surface inline validation hints for null numeric fields (currently coerced to 0 silently).
 7. **Accessibility:** Ensure the price radio group and editable input announce state changes (ARIA live regions or `aria-describedby`).
+npm

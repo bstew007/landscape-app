@@ -71,7 +71,7 @@
                 <input type="hidden" name="type" value="{{ old('type','crew') }}">
                 <!-- Base rate follows the Price Calculator -->
                 <input type="hidden" name="base_rate" :value="price().toFixed(2)">
-                <input type="hidden" name="pricing_mode" id="pricing_mode" value="budget">
+                <input type="hidden" name="pricing_mode" x-model="mode" value="budget">
 
                 <!-- Two-column layout: left = Item Information, right = Calculators -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -142,17 +142,12 @@
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
                                 <div class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">OH Markup</div>
-                                <div class="sm:col-span-2 text-gray-900">{{ number_format($ohr, 2) }}</div>
+                                <div class="sm:col-span-2 text-gray-900">$<span x-text="Number(overhead).toFixed(2)"></span><span class="text-gray-500">/hr</span></div>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
                                 <label class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Breakeven</label>
                                 <div class="sm:col-span-2 text-gray-900">
-                                    <span
-                                        id="breakeven_display"
-                                        data-overhead="{{ number_format($ohr, 2, '.', '') }}"
-                                        class="inline-block text-right sm:text-left w-full sm:w-32">
-                                        {{ number_format(((float) old('average_wage', 0)) + $ohr, 2, '.', '') }}
-                                    </span>
+                                    <span class="inline-block text-right sm:text-left w-full sm:w-32">$<span x-text="breakeven().toFixed(2)"></span></span>
                                 </div>
                             </div>
 
@@ -177,24 +172,22 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-3">
                                     <div class="text-gray-600 text-sm whitespace-nowrap">Profit Margin</div>
                                     <div class="sm:col-span-2 flex items-center gap-3">
-                                        <div class="relative inline-flex items-center" id="pm-budget-wrap">
+                                        <div class="relative inline-flex items-center" x-show="mode !== 'custom-margin'">
                                             <input
                                                 type="text"
                                                 class="form-input w-32 pr-7 bg-gray-50 text-right"
-                                                id="budget_margin_value"
-                                                value="{{ number_format($budgetMargin * 100, 1, '.', '') }}"
+                                                x-bind:value="Number(budgetMargin).toFixed(1)"
                                                 readonly
                                                 aria-label="Budget profit margin">
                                             <span class="absolute right-2 text-gray-500 pointer-events-none">%</span>
                                         </div>
-                                        <div class="relative inline-flex items-center" id="pm-custom-wrap" style="display:none">
+                                        <div class="relative inline-flex items-center" x-show="mode === 'custom-margin'">
                                             <input
                                                 type="number"
                                                 step="0.1"
                                                 min="0"
                                                 max="99.9"
                                                 class="form-input w-32 pr-7 text-right"
-                                                id="custom_margin_value"
                                                 x-model.number="customMargin"
                                                 x-ref="customMarginInput"
                                                 aria-label="Custom profit margin percent">
@@ -209,17 +202,18 @@
                                             <span class="absolute inset-y-0 left-2 flex items-center text-sm text-gray-500">$</span>
                                             <input
                                                 id="price_display"
-                                                data-overhead="{{ number_format($ohr, 2, '.', '') }}"
-                                                type="text"
-                                                class="form-input w-full text-right bg-gray-50 pl-6"
-                                                value="{{ number_format(((float) old('average_wage', 0)) + $ohr, 2, '.', '') }}"
-                                                readonly
+                                                type="number"
+                                                step="0.01"
+                                                class="form-input w-full text-right pl-6"
+                                                :readonly="mode !== 'custom-price'"
+                                                :class="mode !== 'custom-price' ? 'bg-gray-50' : ''"
+                                                :value="mode !== 'custom-price' ? price().toFixed(2) : (Number(customPrice)||0).toFixed(2)"
+                                                @input="if (mode === 'custom-price') { customPrice = parseFloat($event.target.value) || 0 }"
                                                 title="Breakeven ÷ (1 - profit margin)">
                                         </div>
                                         <span class="text-sm text-gray-600">/ man hr.</span>
                                     </div>
                                 </div>
-                                <input type="hidden" id="custom_price_input" x-model.number="customPrice">
                             </div>
                         </x-panel-card>
                     </div>
@@ -416,159 +410,7 @@ function wageCalcTopModal(){
     }
 }
 </script>
-<script>
-    // Simple DOM toggler for budget/custom profit margin display
-    document.addEventListener('DOMContentLoaded', function(){
-        const budgetWrap = document.getElementById('pm-budget-wrap');
-        const customWrap = document.getElementById('pm-custom-wrap');
-        const customInput = document.getElementById('custom_margin_value');
-        const radios = document.querySelectorAll('input[name="pricing_mode_choice"]');
-        const hiddenMode = document.getElementById('pricing_mode');
-        const budgetVal = '{{ number_format($budgetMargin * 100, 1, '.', '') }}';
-        const apply = (val) => {
-            const isCustom = val === 'custom-margin';
-            if (budgetWrap) budgetWrap.style.display = isCustom ? 'none' : 'inline-flex';
-            if (customWrap) customWrap.style.display = isCustom ? 'inline-flex' : 'none';
-            if (!isCustom && customInput) customInput.value = budgetVal;
-            if (hiddenMode) hiddenMode.value = val;
-        };
-        radios.forEach(r => r.addEventListener('change', e => apply(e.target.value)));
-        const checked = document.querySelector('input[name="pricing_mode_choice"]:checked');
-        apply(checked ? checked.value : 'budget');
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const wageInput = document.getElementById('average_wage');
-        const priceInput = document.getElementById('price_display');
-        const customPriceInput = document.getElementById('custom_price_input');
-        const breakevenDisplay = document.getElementById('breakeven_display');
-        const otInput = document.getElementById('overtime_factor');
-        const unbillInput = document.getElementById('unbillable_percentage');
-        const burdenInput = document.getElementById('labor_burden_percentage');
-        const marginRadios = document.querySelectorAll('input[name="pricing_mode_choice"]');
-        const budgetMarginInput = document.getElementById('budget_margin_value');
-        const customMarginInput = document.getElementById('custom_margin_value');
-        const baseRateField = document.querySelector('input[name="base_rate"]');
 
-        let overhead = 0;
-        [priceInput, breakevenDisplay].some(el => {
-            if (!el) return false;
-            const val = parseFloat(el.getAttribute('data-overhead'));
-            if (Number.isFinite(val)) {
-                overhead = val;
-                return true;
-            }
-            return false;
-        });
 
-        const readNumber = (input, fallback = 0) => {
-            if (!input) return fallback;
-            const val = parseFloat(input.value);
-            return Number.isFinite(val) ? val : fallback;
-        };
-
-        const computeBreakeven = (baseWage) => {
-            const otFactorRaw = readNumber(otInput, 0);
-            const otPercent = Math.max(0, otFactorRaw);
-            const otFactor = 1 + (otPercent / 100); // convert % to multiplier
-            const burdenPct = Math.max(0, readNumber(burdenInput, 0));
-            const unbillPct = Math.min(99.9, Math.max(0, readNumber(unbillInput, 0)));
-
-            const effectiveWage = baseWage * otFactor;
-            const loadedWage = effectiveWage * (1 + (burdenPct / 100));
-            const billableFraction = Math.max(0.01, 1 - (unbillPct / 100));
-
-            return (loadedWage / billableFraction) + Math.max(0, overhead);
-        };
-
-        const clampMargin = (val) => Math.min(99.9, Math.max(0, val));
-
-        const marginMode = () => {
-            const checked = document.querySelector('input[name="pricing_mode_choice"]:checked');
-            return checked ? checked.value : 'budget';
-        };
-
-        const budgetMarginPct = () => clampMargin(readNumber(budgetMarginInput, 0));
-
-        const activeMarginPct = () => {
-            const mode = marginMode();
-            if (mode === 'custom-price') return null;
-            if (mode === 'custom-margin') {
-                const custom = readNumber(customMarginInput, NaN);
-                if (Number.isFinite(custom)) return clampMargin(custom);
-                return budgetMarginPct();
-            }
-            return budgetMarginPct();
-        };
-
-        const readCustomPrice = () => {
-            const val = readNumber(customPriceInput, NaN);
-            return Number.isFinite(val) ? Math.max(0, val) : null;
-        };
-
-        const computePriceWithMargin = (breakevenVal) => {
-            const marginPct = activeMarginPct();
-            if (marginPct === null) {
-                const custom = readCustomPrice();
-                return (custom ?? breakevenVal).toFixed(2);
-            }
-            const pct = clampMargin(marginPct);
-            const decimal = pct / 100;
-            if (decimal >= 0.999) return breakevenVal.toFixed(2);
-            return (breakevenVal / (1 - decimal)).toFixed(2);
-        };
-
-        const syncFields = () => {
-            const wage = Math.max(0, readNumber(wageInput, 0));
-            const breakeven = computeBreakeven(wage);
-            const breakevenFormatted = breakeven.toFixed(2);
-            const finalPrice = computePriceWithMargin(breakeven);
-            const mode = marginMode();
-            const isCustomPrice = mode === 'custom-price';
-
-            if (priceInput) {
-                if (isCustomPrice) {
-                    priceInput.removeAttribute('readonly');
-                    priceInput.classList.remove('bg-gray-50');
-                    let customVal = readCustomPrice();
-                    if (!Number.isFinite(customVal)) {
-                        customVal = breakeven;
-                        if (customPriceInput) {
-                            customPriceInput.value = customVal.toFixed(2);
-                            customPriceInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    }
-                    priceInput.value = (Number.isFinite(customVal) ? customVal : breakeven).toFixed(2);
-                } else {
-                    priceInput.setAttribute('readonly', 'readonly');
-                    priceInput.classList.add('bg-gray-50');
-                    priceInput.value = finalPrice;
-                }
-            }
-
-            if (breakevenDisplay) breakevenDisplay.textContent = breakevenFormatted;
-            if (baseRateField) baseRateField.value = finalPrice;
-        };
-
-        [wageInput, otInput, unbillInput, burdenInput, customMarginInput, customPriceInput].forEach(input => {
-            if (!input) return;
-            ['input', 'change'].forEach(evt => input.addEventListener(evt, syncFields));
-        });
-
-        marginRadios.forEach(radio => radio.addEventListener('change', syncFields));
-
-        if (priceInput) {
-            ['input', 'change'].forEach(evt => priceInput.addEventListener(evt, () => {
-                if (marginMode() !== 'custom-price') return;
-                if (!customPriceInput) return;
-                customPriceInput.value = priceInput.value;
-                customPriceInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }));
-        }
-
-        syncFields();
-    });
-</script>
 </div>
 @endsection
