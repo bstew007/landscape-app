@@ -133,6 +133,15 @@ class LaborController extends Controller
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $labor = LaborItem::create($data);
 
+        // Return JSON for AJAX requests (modal mode)
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Labor item '{$labor->name}' created.",
+                'labor' => $labor,
+            ]);
+        }
+
         $returnTo = $request->input('return_to');
         if ($returnTo) {
             return redirect($returnTo)->with('success', "Labor item '{$labor->name}' created.");

@@ -46,7 +46,7 @@
   }
 @endphp
 
-<div class="p-4 space-y-4" data-theme="compact">
+<div class="p-4 space-y-4" data-theme="compact" x-data="{ isModal: {{ request()->has('modal') ? 'true' : 'false' }} }">
     @if ($errors->any())
         <div class="max-w-2xl mx-auto mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
             <ul class="list-disc pl-5 text-sm space-y-1">
@@ -59,14 +59,19 @@
 
     <x-modal name="labor-create" :show="true" maxWidth="3xl">
         <div x-data="laborCreateForm()" x-init="mode = 'budget'" class="p-4">
-            <x-page-header title="Add Labor" eyebrow="Catalogs" variant="compact" class="mb-4 shadow-sm">
+            <x-page-header title="Add Labor" eyebrow="Catalogs" variant="compact" class="mb-4 shadow-sm" x-show="!isModal">
                 <x-slot:actions>
                     <a href="{{ route('labor.index') }}" class="inline-flex items-center h-9 px-3 rounded border text-sm hover:bg-gray-50">Cancel</a>
                     <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save</button>
                 </x-slot:actions>
             </x-page-header>
+            
+            <!-- Modal mode header/buttons -->
+            <div x-show="isModal" class="flex items-center justify-end gap-2 mb-4">
+                <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save Labor</button>
+            </div>
 
-            <form id="laborCreateForm" method="POST" action="{{ route('labor.store') }}" class="space-y-6 mt-4">
+            <form id="laborCreateForm" method="POST" action="{{ route('labor.store') }}" class="space-y-6 mt-4" @submit="if (isModal) { $event.preventDefault(); submitInModalMode($event.target); }">
                 @csrf
                 <input type="hidden" name="type" value="{{ old('type','crew') }}">
                 <!-- Base rate follows the Price Calculator -->
@@ -304,6 +309,25 @@
                     },
                     ensureCustomPriceSeed(){
                         if (!this.customPrice) this.customPrice = this.price();
+                    },
+                    submitInModalMode(form){
+                        const fd = new FormData(form);
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                            body: fd
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (window.parent && window.parent !== window) {
+                                window.parent.postMessage({ type: 'labor:saved', labor: data }, '*');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Save failed', err);
+                            alert('Failed to save labor item');
+                        });
                     },
                     fmtMoney(v){ const n = Number(v)||0; return '$' + n.toFixed(2); },
                     // Wage modal helpers

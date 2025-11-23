@@ -63,6 +63,7 @@
 
 @php
     $reopenAddItems = session('reopen_add_items', false);
+    $recentAreaId = session('recent_area_id');
     $addItemsTabSeed = session('add_items_tab', 'labor');
     $initialState = [
         'tab' => 'work',
@@ -231,13 +232,30 @@
     </div>
 
     <!-- Tabs Bar -->
-    <div class="bg-white rounded shadow p-3">
-        <div class="inline-flex rounded-md border bg-gray-50 overflow-x-auto">
-            <button class="px-3 py-1.5 text-base rounded-l-md hover:bg-gray-100 text-gray-700" :class="{ 'bg-gray-200 text-gray-900' : tab==='overview' }" @click="tab='overview'">Customer Info</button>
-            <button class="px-3 py-1.5 text-base hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='work' }" @click="tab='work'">Work & Pricing</button>
-            <button class="px-3 py-1.5 text-base hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='crew' }" @click="tab='crew'">Crew Notes</button>
-            <button class="px-3 py-1.5 text-base rounded-r-md hover:bg-gray-100 text-gray-700 border-l" :class="{ 'bg-gray-200 text-gray-900' : tab==='files' }" @click="tab='files'">Files</button>
-        </div>
+    <nav class="flex flex-wrap border-b border-gray-200 text-sm font-medium text-gray-600">
+        <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
+            :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='overview', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='overview' }"
+            @click="tab='overview'">
+            Customer Info
+        </button>
+        <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
+            :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='work', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='work' }"
+            @click="tab='work'">
+            Work & Pricing
+        </button>
+        <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
+            :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='crew', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='crew' }"
+            @click="tab='crew'">
+            Crew Notes
+        </button>
+        <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
+            :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='files', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='files' }"
+            @click="tab='files'">
+            Files
+        </button>
+    </nav>
+    <div class="mt-4">
+        @include('estimates.partials.summary-cards', ['estimate' => $estimate])
     </div>
 
     <section class="bg-white rounded-lg shadow p-6 space-y-4" x-show="tab==='overview'">
@@ -251,28 +269,71 @@
     @php $hasWorkAreas = $estimate->areas->isNotEmpty(); @endphp
     <section class="space-y-4" x-show="tab==='work'">
         <div class="bg-white rounded-lg shadow overflow-hidden" id="workAreasCard">
-            <div class="flex flex-col gap-2 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-900">Work Areas</h2>
-                    <p class="text-sm text-gray-500">Each area groups the labor, materials, and pricing for a portion of the estimate.</p>
-                </div>
-                <x-brand-button type="button" size="sm"
+            @php
+                $stubButtonClasses = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium bg-white text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1';
+                $stubPrimaryClasses = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold bg-brand-600 text-white border border-brand-600 shadow-sm hover:bg-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1';
+            @endphp
+            <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 bg-gray-200 px-4 py-4">
+                <button type="button" class="{{ $stubPrimaryClasses }}"
                     @click="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'add-work-area' }))">
-                    + Add Work Area
-                </x-brand-button>
+                    <svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M4 10h12M10 4v12" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Add Work Area
+                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="{{ $stubButtonClasses }}">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 10h12M10 4v12" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Auto ID
+                    </button>
+                    <button type="button" class="{{ $stubButtonClasses }}">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 3v18m0 0l-5-5m5 5l5-5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Import
+                    </button>
+                    <button type="button" class="{{ $stubButtonClasses }}">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 12h16" stroke-linecap="round" />
+                            <path d="M8 16h8" stroke-linecap="round" />
+                            <path d="M6 8h12" stroke-linecap="round" />
+                        </svg>
+                        Set Profit
+                    </button>
+                    <button type="button" class="{{ $stubButtonClasses }}">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 4h7v7H4zM13 13h7v7h-7z" stroke-linejoin="round" />
+                            <path d="M4 15l3 3 4-4M13 9l4-4 3 3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Refresh Pricing
+                    </button>
+                    <button type="button" class="{{ $stubButtonClasses }}">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 11l9-7 9 7-9 7-9-7z" stroke-linejoin="round" />
+                            <path d="M5 13.5l7 5 7-5" stroke-linejoin="round" />
+                        </svg>
+                        Measure Site
+                    </button>
+                </div>
             </div>
             <div id="workAreasEmpty" @class([
-                'px-6 py-10 text-center text-gray-500 border-t border-gray-100',
+                'px-3 py-4 text-center text-gray-500 border-t border-gray-100',
                 'hidden' => $hasWorkAreas,
             ])>
                 <p class="font-medium text-gray-700">No work areas yet.</p>
                 <p class="text-sm text-gray-500">Use “Add Work Area” to create the first area and begin adding items.</p>
             </div>
             <div id="workAreasListWrapper" @class([
-                'bg-slate-50 px-4 py-4 space-y-6',
+                'bg-gray-200 px-2.5 pt-2 pb-2.5',
                 'hidden' => ! $hasWorkAreas,
             ])>
-                @include('estimates.partials.work-areas', ['estimate' => $estimate, 'costCodes' => $costCodes ?? []])
+                @include('estimates.partials.work-areas', [
+                    'estimate' => $estimate,
+                    'costCodes' => $costCodes ?? [],
+                    'recentAreaId' => $recentAreaId ?? null,
+                ])
             </div>
         </div>
 
@@ -320,4 +381,3 @@
 
 </div>
 @endsection
-

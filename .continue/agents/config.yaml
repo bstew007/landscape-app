@@ -1,0 +1,48 @@
+name: cfl-code-models--Local
+version: 1.0.8
+schema: v1
+
+models:
+  - uses: anthropic/claude-sonnet-4-5
+    with:
+      apiKey: ${ANTHROPIC_API_KEY}
+    override:
+      roles:
+        - chat
+        - edit
+
+  - uses: inception/mercury-coder
+    with:
+      apiKey: ${INCEPTION_API_KEY}
+    override:
+      roles:
+        - autocomplete
+        - apply
+
+  - uses: openai/gpt-5
+    with:
+      apiKey: ${OPENAI_API_KEY}
+    override:
+      roles:
+        - chat
+        - edit
+
+  - uses: amazon/us-anthropic-claude-sonnet-4-20250514-v1
+    with:
+      region: ${AWS_REGION}
+      profile: ${AWS_PROFILE}
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+
+  - uses: xai/grok-4
+    with:
+      apiKey: ${XAI_API_KEY}
+
+context:
+  - uses: continuedev/diff-context
+  - uses: continuedev/terminal-context
+  - uses: continuedev/file-context
+
+mcpServers:
+  - uses: upstash/context7-mcp
+

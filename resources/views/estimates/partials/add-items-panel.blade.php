@@ -51,7 +51,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold mb-1">Margin %</label>
-                            <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                                                        <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
                             <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
                         </div>
                         <div>
@@ -78,9 +78,67 @@
                 </form>
             </div>
 
-            <div x-show="addItemsTab==='labor'" class="bg-white rounded-lg border p-4 space-y-4">
-                <h4 class="text-md font-semibold">Add Labor from Catalog</h4>
-                <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="laborCatalogForm" data-form-type="labor">
+                        <div x-show="addItemsTab==='labor'" class="bg-white rounded-lg border p-4 space-y-4" x-data="{ showLaborForm: false }">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-md font-semibold">Labor Catalog</h4>
+                    <x-brand-button type="button" size="sm" @click="showLaborForm = true">New Labor</x-brand-button>
+                </div>
+                
+                                                <!-- Labor Create Form Overlay -->
+                <div x-show="showLaborForm" 
+                     class="fixed inset-0 z-50 flex items-center justify-center p-2" 
+                     style="display: none;"
+                     @keydown.escape.window="showLaborForm = false">
+                    <div class="absolute inset-0 bg-black/50" @click="showLaborForm = false"></div>
+                    <div class="relative bg-white rounded-lg shadow-2xl w-full max-w-7xl h-[98vh] flex flex-col">
+                        <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+                            <h3 class="text-lg font-semibold">New Labor Item</h3>
+                            <button type="button" class="text-gray-500 hover:text-gray-700" @click="showLaborForm = false">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-hidden">
+                            <iframe 
+                                x-show="showLaborForm"
+                                :src="showLaborForm ? '{{ route('labor.create') }}?modal=1' : ''"
+                                class="w-full h-full border-0"
+                                @load="$event.target.contentWindow.postMessage({type: 'labor:modal-mode'}, '*')"
+                            ></iframe>
+                        </div>
+                    </div>
+                </div>
+                <div class="max-h-96 overflow-y-auto border rounded bg-white divide-y">
+                    @foreach ($laborCatalog as $labor)
+                        @php $rate = $labor->average_wage ?? $labor->base_rate; @endphp
+                        <div class="px-3 py-2 text-sm flex items-center justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">{{ $labor->name }}</div>
+                                <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} · {{ $labor->unit }}</div>
+                            </div>
+                            <div class="flex flex-col items-end text-right gap-1">
+                                <div class="text-xs text-gray-600">Avg Wage: ${{ number_format($rate, 2) }}</div>
+                                <button type="button"
+                                        class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white hover:bg-brand-700 transition"
+                                        data-action="drawer-add"
+                                        data-item-type="labor"
+                                        data-catalog-id="{{ $labor->id }}"
+                                        data-catalog-name="{{ $labor->name }}"
+                                        data-catalog-unit="{{ $labor->unit }}"
+                                        data-catalog-cost="{{ number_format($rate, 2, '.', '') }}">
+                                    + Add
+                                </button>
+                            </div>
+                        </div>
+                                        @endforeach
+                    @if($laborCatalog->isEmpty())
+                        <div class="px-3 py-3 text-sm text-gray-500">No labor items yet.</div>
+                    @endif
+                </div>
+                
+                <!-- Form removed - using list-based add with + Add buttons -->
+                <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="laborCatalogForm" data-form-type="labor" style="display:none;">
                     @csrf
                     <input type="hidden" name="item_type" value="labor">
                     <input type="hidden" name="catalog_type" value="labor">
@@ -115,7 +173,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold mb-1">Margin %</label>
-                            <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
+                                                        <input type="number" step="0.1" min="-99" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ number_format($defaultMarginPercent ?? 20, 1) }}" data-role="margin-percent">
                             <input type="hidden" name="margin_rate" value="{{ number_format($defaultMarginRate ?? 0.2, 4) }}" data-role="margin-rate">
                         </div>
                         <div>
@@ -141,10 +199,6 @@
                     @error('unit_cost')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
                 </form>
             </div>
-            </div>
-
-
-
         </div>
     </div>
 </div>

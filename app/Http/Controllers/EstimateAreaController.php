@@ -33,10 +33,17 @@ class EstimateAreaController extends Controller
                 'area' => $area,
                 'allItems' => $estimate->items,
                 'costCodes' => $costCodes,
+                'initiallyOpen' => true,
             ])->render();
-            return response()->json(['area' => $area, 'area_html' => $areaHtml]);
+            return response()->json([
+                'area' => $area,
+                'area_html' => $areaHtml,
+                'recent_area_id' => $area->id,
+            ]);
         }
-        return back()->with('success', 'Work area added.');
+        return back()
+            ->with('success', 'Work area added.')
+            ->with('recent_area_id', $area->id);
     }
 
     public function update(Request $request, Estimate $estimate, EstimateArea $area)

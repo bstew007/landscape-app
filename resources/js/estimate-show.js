@@ -101,8 +101,7 @@ class EstimateShowController {
         this.initCalcDrawer();
         this.initRefreshButton();
         this.wireAreaOrdering();
-        this.buildAreaHeaders();
-        this.wireAreaHeaderToggles();
+        this.wireWorkAreaForm();
         this.wireSaveAllButton();
         this.wireCatalogForms();
         this.wireDrawerAddButtons();
@@ -279,62 +278,84 @@ class EstimateShowController {
         });
     }
 
-    buildAreaHeaders() {
-        const tbody = document.querySelector('table tbody');
-        if (!tbody) return;
-        tbody.querySelectorAll('tr[data-role="area-header"]').forEach((header) => header.remove());
-        const rows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
-        const groups = new Map();
-        rows.forEach((row) => {
-            const areaId = row.getAttribute('data-area-id') || '0';
-            if (!groups.has(areaId)) groups.set(areaId, []);
-            groups.get(areaId).push(row);
-        });
-        const areaMap = new Map((this.setup.areas || []).map((a) => [String(a.id), a.name]));
-        groups.forEach((list, areaId) => {
-            if (!list?.length) return;
-            let subtotal = 0;
-            list.forEach((row) => {
-                const cell = row.querySelector('[data-col="line_total"]');
-                if (cell) subtotal += this.parseNumber(cell.textContent, 0);
-            });
-            const label = areaId === '0' ? 'Unassigned' : (areaMap.get(String(areaId)) || `Area ${areaId}`);
-            const header = document.createElement('tr');
-            header.className = 'bg-gray-100';
-            header.dataset.role = 'area-header';
-            header.dataset.areaId = areaId;
-            header.innerHTML = `
-                <td colspan="7" class="px-3 py-2 text-gray-700 font-semibold">
-                    <button data-action="toggle-area" data-area-id="${areaId}" class="mr-2 text-xs px-2 py-0.5 rounded border">Toggle</button>
-                    ${label}
-                </td>
-                <td class="px-3 py-2 text-right font-semibold text-gray-900" data-role="area-subtotal">$${subtotal.toFixed(2)}</td>
-                <td class="px-3 py-2 text-right text-sm">
-                    <button class="text-gray-600 hover:underline text-xs" data-action="collapse-all">Collapse All</button>
-                    <button class="text-gray-600 hover:underline text-xs ml-2" data-action="expand-all">Expand All</button>
-                </td>`;
-            tbody.insertBefore(header, list[0]);
-        });
-    }
+    wireWorkAreaForm() {
+        const form = document.getElementById('addWorkAreaForm');
+        if (!form || !this.csrf) return;
 
-    wireAreaHeaderToggles() {
-        document.addEventListener('click', (event) => {
-            const tbody = document.querySelector('table tbody');
-            if (!tbody) return;
-            const toggle = event.target.closest('[data-action="toggle-area"]');
-            if (toggle) {
-                const areaId = toggle.getAttribute('data-area-id');
-                tbody.querySelectorAll(`tr[data-item-id][data-area-id="${areaId}"]`).forEach((row) => {
-                    row.style.display = row.style.display === 'none' ? '' : 'none';
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50');
+            }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrf,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
                 });
-                return;
-            }
-            if (event.target.closest('[data-action="collapse-all"]')) {
-                tbody.querySelectorAll('tr[data-item-id]').forEach((row) => (row.style.display = 'none'));
-                return;
-            }
-            if (event.target.closest('[data-action="expand-all"]')) {
-                tbody.querySelectorAll('tr[data-item-id]').forEach((row) => (row.style.display = ''));
+
+                if (!response.ok) {
+                    throw new Error('Failed to create work area');
+                }
+
+                const json = await response.json();
+                
+                // Close modal
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'add-work-area' }));
+                
+                // Insert the new area HTML
+                if (json.area_html) {
+                    const container = document.getElementById('areasContainer');
+                    const emptyMsg = document.getElementById('workAreasEmpty');
+                    const wrapper = document.getElementById('workAreasListWrapper');
+                    
+                    if (container) {
+                        // Create a temporary div to parse the HTML
+                        const temp = document.createElement('div');
+                        temp.innerHTML = json.area_html;
+                        const newArea = temp.firstElementChild;
+                        
+                        if (newArea) {
+                            container.appendChild(newArea);
+                            
+                            // Show wrapper, hide empty message
+                            if (emptyMsg) emptyMsg.classList.add('hidden');
+                            if (wrapper) wrapper.classList.remove('hidden');
+                            
+                            // Trigger exclusive open for new area
+                            if (json.recent_area_id) {
+                                setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('work-area-exclusive-open', {
+                                        detail: { areaId: json.recent_area_id }
+                                    }));
+                                }, 100);
+                            }
+                            
+                            // Scroll to new area
+                            newArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }
+                
+                // Reset form
+                form.reset();
+                this.toast('Work area added', 'success');
+                
+            } catch (error) {
+                console.error(error);
+                this.toast('Failed to add work area', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50');
+                }
             }
         });
     }
@@ -488,47 +509,59 @@ class EstimateShowController {
     }
 
     wireDrawerAddButtons() {
-        const buttons = document.querySelectorAll('[data-action="drawer-add"]');
-        if (!buttons.length || !this.itemsBaseUrl || !this.csrf) return;
-        buttons.forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                if (btn.disabled) return;
-                const catalogId = btn.dataset.catalogId;
-                const itemType = btn.dataset.itemType || 'labor';
-                if (!catalogId) return;
-                btn.disabled = true;
-                btn.classList.add('opacity-50');
-                try {
-                    const formData = new FormData();
-                    formData.append('item_type', itemType);
-                    formData.append('catalog_type', itemType);
-                    formData.append('catalog_id', catalogId);
-                    formData.append('quantity', '1');
-                    formData.append('source', 'drawer');
-                    const response = await fetch(this.itemsBaseUrl, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': this.csrf,
-                            'Accept': 'application/json',
-                        },
-                        body: formData,
-                    });
-                    const json = await response.json().catch(() => ({}));
-                    if (!response.ok) throw json;
-                    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-                        tab: itemType,
-                        highlightItemId: json?.item?.id || null,
-                    }));
-                    this.showSpinner();
-                    window.location.reload();
-                } catch (error) {
-                    console.error(error);
-                    this.toast('Unable to add item. Please try again.', 'error');
-                } finally {
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50');
+        // Use event delegation to handle dynamically added buttons
+        if (!this.itemsBaseUrl || !this.csrf) return;
+        
+        document.addEventListener('click', async (event) => {
+            const btn = event.target.closest('[data-action="drawer-add"]');
+            if (!btn) return;
+            
+            if (btn.disabled) return;
+            const catalogId = btn.dataset.catalogId;
+            const itemType = btn.dataset.itemType || 'labor';
+            if (!catalogId) return;
+            
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            
+            try {
+                // Get area_id from the add-items panel or fallback to first area
+                const areaInput = document.querySelector('[data-role="add-items-area-id"]');
+                const areaId = areaInput?.value || this.setup.areas?.[0]?.id || null;
+                
+                const formData = new FormData();
+                formData.append('item_type', itemType);
+                formData.append('catalog_type', itemType);
+                formData.append('catalog_id', catalogId);
+                formData.append('quantity', '1');
+                formData.append('source', 'drawer');
+                if (areaId) {
+                    formData.append('area_id', areaId);
                 }
-            });
+                
+                const response = await fetch(this.itemsBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrf,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+                const json = await response.json().catch(() => ({}));
+                if (!response.ok) throw json;
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    tab: itemType,
+                    highlightItemId: json?.item?.id || null,
+                }));
+                this.showSpinner();
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                this.toast('Unable to add item. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
         });
     }
 

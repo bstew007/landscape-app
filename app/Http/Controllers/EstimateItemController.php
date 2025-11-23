@@ -56,6 +56,11 @@ class EstimateItemController extends Controller
             ->with('success', 'Line item added.')
             ->with('recent_item_id', $item->id);
 
+        // Keep the area open that received the new item
+        if ($item->area_id) {
+            $response->with('recent_area_id', $item->area_id);
+        }
+
         if ($request->boolean('stay_in_add_items')) {
             $response->with('reopen_add_items', true)
                 ->with('add_items_tab', $request->input('add_items_tab', $payload['item_type'] ?? 'materials'));
