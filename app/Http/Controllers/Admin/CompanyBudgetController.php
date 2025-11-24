@@ -58,30 +58,70 @@ class CompanyBudgetController extends Controller
 
     public function update(Request $request, CompanyBudget $budget)
     {
+        // Debug: Log EVERYTHING being submitted
+        \Log::info('Budget Update Raw Request', [
+            'all_input' => $request->all(),
+        ]);
+        
         $data = $this->validatePayload($request);
         // Preserve existing inputs and only overwrite changed keys (deep merge)
         $mergedInputs = array_replace_recursive($budget->inputs ?? [], $data['inputs'] ?? []);
+        
         // For list arrays that support deletions, overwrite the entire list with the posted value
-        // Equipment rows: overwrite the entire list so deletions persist (treat missing as empty)
-        $postedEquipmentRows = data_get($data, 'inputs.equipment.rows', null);
-        if ($postedEquipmentRows === null) {
-            $mergedInputs['equipment']['rows'] = [];
-        } else {
+        // This ensures deletions persist and prevents stale data from deep merge
+        
+        // Sales Budget rows
+        $postedSalesRows = data_get($data, 'inputs.sales.rows');
+        if ($postedSalesRows !== null) {
+            $mergedInputs['sales']['rows'] = array_values($postedSalesRows);
+        }
+        
+        // Field Labor - Hourly rows
+        $postedHourlyRows = data_get($data, 'inputs.labor.hourly.rows');
+        if ($postedHourlyRows !== null) {
+            $mergedInputs['labor']['hourly']['rows'] = array_values($postedHourlyRows);
+        }
+        
+        // Field Labor - Salary rows
+        $postedSalaryRows = data_get($data, 'inputs.labor.salary.rows');
+        if ($postedSalaryRows !== null) {
+            $mergedInputs['labor']['salary']['rows'] = array_values($postedSalaryRows);
+        }
+        
+        // Equipment rows
+        $postedEquipmentRows = data_get($data, 'inputs.equipment.rows');
+        if ($postedEquipmentRows !== null) {
             $mergedInputs['equipment']['rows'] = array_values($postedEquipmentRows);
         }
-        // Overhead equipment rows: overwrite list to persist deletions (treat missing as empty)
-        $postedOverheadEquipRows = data_get($data, 'inputs.overhead.equipment.rows', null);
-        if ($postedOverheadEquipRows === null) {
-            $mergedInputs['overhead']['equipment']['rows'] = [];
-        } else {
-            $mergedInputs['overhead']['equipment']['rows'] = array_values($postedOverheadEquipRows);
+        
+        // Materials rows
+        $postedMaterialsRows = data_get($data, 'inputs.materials.rows');
+        if ($postedMaterialsRows !== null) {
+            $mergedInputs['materials']['rows'] = array_values($postedMaterialsRows);
         }
-        // Subcontracting rows: overwrite list so deletions persist (treat missing as empty)
-        $postedSubcontractingRows = data_get($data, 'inputs.subcontracting.rows', null);
-        if ($postedSubcontractingRows === null) {
-            $mergedInputs['subcontracting']['rows'] = [];
-        } else {
+        
+        // Subcontracting rows
+        $postedSubcontractingRows = data_get($data, 'inputs.subcontracting.rows');
+        if ($postedSubcontractingRows !== null) {
             $mergedInputs['subcontracting']['rows'] = array_values($postedSubcontractingRows);
+        }
+        
+        // Overhead - Expenses rows
+        $postedOverheadExpensesRows = data_get($data, 'inputs.overhead.expenses.rows');
+        if ($postedOverheadExpensesRows !== null) {
+            $mergedInputs['overhead']['expenses']['rows'] = array_values($postedOverheadExpensesRows);
+        }
+        
+        // Overhead - Wages rows
+        $postedOverheadWagesRows = data_get($data, 'inputs.overhead.wages.rows');
+        if ($postedOverheadWagesRows !== null) {
+            $mergedInputs['overhead']['wages']['rows'] = array_values($postedOverheadWagesRows);
+        }
+        
+        // Overhead - Equipment rows
+        $postedOverheadEquipRows = data_get($data, 'inputs.overhead.equipment.rows');
+        if ($postedOverheadEquipRows !== null) {
+            $mergedInputs['overhead']['equipment']['rows'] = array_values($postedOverheadEquipRows);
         }
 
         // Calculate and save the overhead recovery rate in inputs for easy access
@@ -104,6 +144,15 @@ class CompanyBudgetController extends Controller
         }
 
         Cache::forget(\App\Services\BudgetService::CACHE_KEY);
+        
+        \Log::info('Budget Update Success', [
+            'budget_id' => $budget->id,
+            'labor_hourly_saved' => count(data_get($budget->inputs, 'labor.hourly.rows', [])),
+            'labor_salary_saved' => count(data_get($budget->inputs, 'labor.salary.rows', [])),
+            'equipment_saved' => count(data_get($budget->inputs, 'equipment.rows', [])),
+            'materials_saved' => count(data_get($budget->inputs, 'materials.rows', [])),
+        ]);
+        
         return redirect()->route('admin.budgets.edit', ['budget' => $budget->id, 'section' => $request->input('section', 'Budget Info')])
             ->with('success', 'Budget updated.');
     }

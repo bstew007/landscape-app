@@ -1,5 +1,5 @@
                 <!-- OVERHEAD -->
-                <section x-data="overheadEditor($root)" x-show="section==='Overhead'" x-cloak>
+                <section x-show="section==='Overhead'" x-cloak>
                     <h2 class="text-2xl font-semibold text-brand-900 mb-5 flex items-center gap-2">Overhead</h2>
                     <div class="rounded-[32px] border border-brand-100/80 bg-white/95 shadow-sm p-5 space-y-5">
                         <!-- Graphics Row -->

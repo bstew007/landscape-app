@@ -1,5 +1,5 @@
                 <!-- MATERIALS -->
-                <section x-data="materialsEditor($root)" x-show="section==='Materials'" x-cloak>
+                <section x-show="section==='Materials'" x-cloak>
                     <h2 class="text-2xl font-semibold text-brand-900 mb-5 flex items-center gap-2">Materials
 
 
