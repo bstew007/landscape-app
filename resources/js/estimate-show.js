@@ -738,9 +738,12 @@ window.lineItemCalculator = function(config) {
         taxRate: config.taxRate || 0,
         breakeven: config.breakeven || 0,
         profitPercent: 0,
-        totalProfit: 0,
         catalogType: null,
         catalogId: null,
+        
+        get totalProfit() {
+            return (this.unitPrice - this.breakeven) * this.quantity;
+        },
         
         init() {
             // Store catalog info from the row's data attributes
@@ -757,15 +760,6 @@ window.lineItemCalculator = function(config) {
                 console.warn('Suspicious catalogId detected:', this.catalogId);
                 this.catalogId = null;
             }
-            
-            console.log('Line item initialized:', {
-                itemId: row.dataset.itemId,
-                catalogType: this.catalogType,
-                catalogId: this.catalogId,
-                itemType: this.itemType,
-                rawCatalogType: row.dataset.catalogType,
-                rawCatalogId: row.dataset.catalogId
-            });
             
             // Calculate initial values
             this.calculateBreakeven();
@@ -808,35 +802,19 @@ window.lineItemCalculator = function(config) {
         },
 
         recalculateFromCost() {
-            this.breakeven = this.calculateBreakeven();
+            this.calculateBreakeven();
             this.calculateProfitFromPrice();
         },
 
         recalculateFromPrice() {
-            this.breakeven = this.calculateBreakeven();
+            this.calculateBreakeven();
             this.calculateProfitFromPrice();
-            // Auto-focus the input when entering edit mode
-            this.$nextTick(() => {
-                const priceInput = this.$refs.priceInput;
-                if (priceInput) {
-                    priceInput.focus();
-                    priceInput.select();
-                }
-            });
         },
 
         recalculateFromProfit() {
             this.profitPercent = Math.round(this.profitPercent * 10) / 10;
-            this.breakeven = this.calculateBreakeven();
+            this.calculateBreakeven();
             this.calculatePriceFromProfit();
-            // Auto-focus the input when entering edit mode
-            this.$nextTick(() => {
-                const profitInput = this.$refs.profitInput;
-                if (profitInput) {
-                    profitInput.focus();
-                    profitInput.select();
-                }
-            });
         },
         
         async resetToCatalogDefaults() {
