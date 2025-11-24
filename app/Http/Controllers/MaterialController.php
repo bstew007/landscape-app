@@ -173,7 +173,12 @@ class MaterialController extends Controller
         $data = $this->validateMaterial($request);
         $data['is_taxable'] = (bool) ($data['is_taxable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
-        Material::create($data);
+        $material = Material::create($data);
+
+        // Sync categories
+        if ($request->has('categories')) {
+            $material->categories()->sync($request->input('categories', []));
+        }
 
         return redirect()
             ->route('materials.index')
@@ -191,6 +196,11 @@ class MaterialController extends Controller
         $data['is_taxable'] = (bool) ($data['is_taxable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $material->update($data);
+
+        // Sync categories
+        if ($request->has('categories')) {
+            $material->categories()->sync($request->input('categories', []));
+        }
 
         return redirect()
             ->route('materials.index')

@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>{{ config('app.name', 'CFL') }}</title>
+
+    <title>@yield('title', config('app.name', 'CFL'))</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo.svg') }}" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -37,20 +38,39 @@
             max-height: 600px;
             opacity: 1;
         }
+        /* Tablet-specific hamburger button */
+        @media (min-width: 640px) and (max-width: 1023px) {
+            .tablet-menu-btn {
+                position: fixed;
+                top: 1rem;
+                left: 1rem;
+                z-index: 60;
+            }
+        }
     </style>
 </head>
 <body class="bg-brand-900 text-brand-900 font-sans antialiased" x-data="{ sidebarOpen: false }">
 
 <div class="min-h-screen flex">
 
-    {{-- Sidebar --}}
-    <aside class="w-64 bg-brand-900 text-brand-50 shadow-lg hidden md:block">
-                <div class="p-6 font-bold text-lg text-white">
+    <!-- Mobile/Tablet Menu Button (visible on small and medium screens) -->
+    <button @click="sidebarOpen = !sidebarOpen" 
+            class="lg:hidden fixed top-4 left-4 z-50 h-12 w-12 rounded-lg bg-brand-800 text-white flex items-center justify-center shadow-lg hover:bg-brand-700 transition tablet-menu-btn">
+        <svg x-show="!sidebarOpen" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        <svg x-show="sidebarOpen" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+
+    {{-- Desktop Sidebar (hidden on mobile/tablet) --}}
+    <aside class="w-64 bg-brand-900 text-brand-50 shadow-lg hidden lg:block overflow-y-auto">
+        <div class="p-6 font-bold text-lg text-white">
             🌿 CFL Landscape
         </div>
 
-        {{-- Client Hub (moved to top) --}}
-        <nav class="mt-4 px-4 space-y-6 text-sm">
+        <nav class="mt-4 px-4 space-y-6 text-sm pb-8">
             <div class="space-y-2">
                 <details class="group sidebar-accordion" open>
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
@@ -144,10 +164,12 @@
                             </span>
                             <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                         </summary>
-                        <div class="ml-6 mt-1 space-y-1 sidebar-panel">
+                                                <div class="ml-6 mt-1 space-y-1 sidebar-panel">
                             @can('manage-users')
                             <a href="{{ route('admin.users.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Users</a>
                             @endcan
+                            <div class="px-2 pt-2 text-xs uppercase tracking-wide text-brand-300">Catalogs</div>
+                            <a href="{{ route('admin.material-categories.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Material Categories</a>
                             <div class="px-2 pt-2 text-xs uppercase tracking-wide text-brand-300">Estimates</div>
                             <a href="{{ route('admin.divisions.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Divisions</a>
                             <a href="{{ route('admin.cost-codes.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Cost Codes</a>
@@ -165,17 +187,19 @@
     {{-- Mobile Sidebar --}}
     <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40" x-show="sidebarOpen" @click="sidebarOpen = false"></div>
 
-    <aside class="fixed inset-y-0 left-0 bg-brand-900 text-brand-50 w-64 shadow-lg  z-50 transform transition-transform duration-300 md:hidden"
-           x-show="sidebarOpen"
-           x-transition:enter="transform transition-transform duration-300"
-           x-transition:enter-start="-translate-x-full"
-           x-transition:enter-end="translate-x-0"
-           x-transition:leave="transform transition-transform duration-300"
-           x-transition:leave-start="translate-x-0"
-           x-transition:leave-end="-translate-x-full">
-        <div class="p-6 font-bold text-lg  text-white">🌿 CFL Landscape</div>
+    <aside class="fixed inset-y-0 left-0 bg-brand-900 text-brand-50 shadow-xl z-50 transform transition-transform duration-300 lg:hidden overflow-y-auto"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+           class="w-72 sm:w-80">
+        <div class="p-6 font-bold text-lg text-white flex items-center justify-between">
+            <span>🌿 CFL Landscape</span>
+            <button @click="sidebarOpen = false" class="h-8 w-8 rounded flex items-center justify-center hover:bg-brand-800">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
 
-        <nav class="mt-4 px-4 space-y-6 text-sm">
+        <nav class="mt-4 px-4 space-y-6 text-sm pb-8">
             <div>
                 <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Admin</h3>
                 <a href="{{ route('production-rates.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">⚙️ Production Rates</a>
@@ -245,9 +269,9 @@
             </div>
         @endisset
 
-        {{-- Main Page Content --}}
-        <main class="flex-1 p-2 sm:p-4 lg:p-6">
-            <div class="h-full w-full rounded-[28px] bg-brand-50 p-4 sm:p-6 lg:p-8 shadow-2xl">
+        {{-- Main Page Content with responsive padding --}}
+        <main class="flex-1 p-2 sm:p-4 md:p-5 lg:p-6">
+            <div class="h-full w-full rounded-[28px] sm:rounded-[32px] bg-brand-50 p-4 sm:p-6 md:p-7 lg:p-8 shadow-2xl">
                 @yield('content')
             </div>
         </main>

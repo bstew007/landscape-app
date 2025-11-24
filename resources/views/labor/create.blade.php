@@ -329,8 +329,11 @@ return {
                 <p class="text-xs text-gray-600">Choose employees and counts to compute a weighted average.</p>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" class="inline-flex items-center h-9 px-3 rounded border text-sm hover:bg-gray-50" @click="close()">Cancel</button>
-                <button type="button" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700" @click="apply()">Apply Average</button>
+                <x-secondary-button type="button" @click="close()">Cancel</x-secondary-button>
+                <x-brand-button type="button" @click="apply()">
+                    <svg class="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Apply Average
+                </x-brand-button>
             </div>
         </div>
         <div class="mt-3">

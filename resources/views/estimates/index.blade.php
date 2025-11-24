@@ -17,7 +17,7 @@
 @endphp
 
 <div class="space-y-8">
-    <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
+    <section class="rounded-[20px] sm:rounded-[28px] lg:rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-4 sm:p-6 lg:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
         <div class="flex flex-wrap items-start gap-6">
             <div class="space-y-2 max-w-2xl">
                 <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Estimates</p>
@@ -54,11 +54,12 @@
         </dl>
     </section>
 
-    <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
-        <div class="p-5 sm:p-7 space-y-5">
-            <div class="flex flex-wrap items-center gap-3 text-sm">
+    <section class="rounded-[20px] sm:rounded-[28px] lg:rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
+        <div class="p-4 sm:p-5 lg:p-7 space-y-4 sm:space-y-5">
+            {{-- Bulk actions - stack vertically on mobile --}}
+            <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 text-sm">
                 <span class="text-xs uppercase tracking-wide text-brand-400">Bulk Actions</span>
-                <select id="bulkAction" class="min-w-[160px] rounded-full border-brand-200 bg-white text-sm px-3 py-1.5 focus:ring-brand-500 focus:border-brand-500">
+                <select id="bulkAction" class="w-full sm:min-w-[160px] sm:w-auto rounded-full border-brand-200 bg-white text-sm px-3 py-1.5 focus:ring-brand-500 focus:border-brand-500">
                     <option value="">Choose...</option>
                     <optgroup label="Update status">
                         @foreach (\App\Models\Estimate::STATUSES as $option)
@@ -69,15 +70,21 @@
                     <option value="lock">Lock estimate</option>
                     <option value="archive">Archive</option>
                 </select>
-                <x-brand-button id="applyBulk" size="sm" disabled>Apply</x-brand-button>
-                <span class="mx-2 text-brand-200">|</span>
-                <button type="button" class="text-xs text-brand-600 hover:text-brand-800" data-action="select-page">Select page</button>
-                <button type="button" class="text-xs text-brand-600 hover:text-brand-800" data-action="clear-selection">Clear selection</button>
+                <x-brand-button id="applyBulk" size="sm" disabled class="w-full sm:w-auto justify-center">
+                    <svg class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Apply
+                </x-brand-button>
+                <span class="hidden sm:inline mx-2 text-brand-200">|</span>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="flex-1 sm:flex-none text-xs text-brand-600 hover:text-brand-800 px-3 py-1.5 border rounded-full sm:border-0 sm:p-0" data-action="select-page">Select page</button>
+                    <button type="button" class="flex-1 sm:flex-none text-xs text-brand-600 hover:text-brand-800 px-3 py-1.5 border rounded-full sm:border-0 sm:p-0" data-action="clear-selection">Clear</button>
+                </div>
                 <span class="ml-auto inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200 hidden" data-role="selected-count">0 selected</span>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs uppercase tracking-wide text-brand-400">Quick Filter</span>
+            {{-- Quick filters - horizontal scroll on mobile --}}
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
+                <span class="text-xs uppercase tracking-wide text-brand-400 flex-shrink-0">Quick Filter</span>
                 @foreach (\App\Models\Estimate::STATUSES as $option)
                     @php $isActive = $statusParam === $option; @endphp
                     <a href="{{ request()->fullUrlWithQuery(['status' => $isActive ? null : $option, 'page' => null]) }}"
@@ -108,7 +115,45 @@
         </div>
 
         <div class="border-t border-brand-100/60">
-            <div class="overflow-x-auto">
+            {{-- Mobile card view (phones) --}}
+            <div class="md:hidden divide-y divide-brand-100">
+                @foreach ($estimates as $estimate)
+                    <div class="p-4 hover:bg-brand-50/50 transition" data-id="{{ $estimate->id }}">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" data-role="row-check" value="{{ $estimate->id }}" class="mt-1">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-brand-900 truncate">{{ $estimate->title }}</p>
+                                <p class="text-sm text-brand-600 mt-1">{{ optional($estimate->client)->name ?? 'Unknown' }}</p>
+                                @php
+                                    $statusClass = match($estimate->status) {
+                                        'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
+                                        'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
+                                        'sent' => 'bg-brand-50 text-brand-700 border-brand-200',
+                                        'approved' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                        'rejected' => 'bg-red-100 text-red-700 border-red-200',
+                                        default => 'bg-gray-100 text-gray-700 border-gray-200',
+                                    };
+                                    $displayTotal = $estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total;
+                                @endphp
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold border {{ $statusClass }}">
+                                        {{ ucfirst($estimate->status) }}
+                                    </span>
+                                    <span class="text-sm font-semibold text-brand-900">
+                                        {{ $displayTotal !== null ? '$' . number_format($displayTotal, 2) : 'N/A' }}
+                                    </span>
+                                </div>
+                                <x-brand-button href="{{ route('estimates.show', $estimate) }}" variant="outline" size="sm" class="mt-3 w-full justify-center">
+                                    Open
+                                </x-brand-button>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Tablet/Desktop table view --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-brand-50/80 text-left text-[11px] uppercase tracking-wide text-brand-500">
                     <tr>

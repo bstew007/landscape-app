@@ -95,6 +95,8 @@ class EstimateShowController {
         this.highlightItemId = root.dataset.highlightItem || '';
         this.areaReorderUrl = window.__estimateAreaReorderUrl || '';
         this.itemsBaseUrl = window.__estimateItemsBaseUrl || '';
+        this.hasUnsavedChanges = false;
+        this.warningBanner = null;
     }
 
     init() {
@@ -108,6 +110,7 @@ class EstimateShowController {
         this.restoreDrawerState();
         this.highlightRecentItem();
         this.exposeSummaryHelpers();
+        this.initUnsavedChangesTracking();
     }
 
     initCalcDrawer() {
@@ -360,16 +363,211 @@ class EstimateShowController {
         });
     }
 
+    initUnsavedChangesTracking() {
+        // Don't show banner if we just saved successfully
+        const justSaved = sessionStorage.getItem('estimate:justSaved');
+        if (justSaved === 'true') {
+            sessionStorage.removeItem('estimate:justSaved');
+            return; // Skip banner creation
+        }
+        
+        // Create warning banner (hidden by default)
+        this.createWarningBanner();
+        
+        // Track changes on all forms
+        this.trackFormChanges();
+        
+        // Warn before navigation
+        this.setupNavigationWarning();
+    }
+
+    createWarningBanner() {
+        const banner = document.createElement('div');
+        banner.id = 'unsavedChangesBanner';
+        banner.className = 'fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-white px-4 py-3 shadow-lg transform -translate-y-full transition-transform duration-300';
+        banner.innerHTML = `
+            <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span class="font-semibold">You have unsaved changes</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="saveChangesBtn" class="px-4 py-1.5 bg-white text-amber-600 rounded-lg text-sm font-semibold hover:bg-amber-50 transition">
+                        Save Now
+                    </button>
+                    <button type="button" id="dismissWarningBtn" class="px-3 py-1.5 text-white hover:text-amber-100 transition" title="Dismiss warning (changes still unsaved)">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(banner);
+        this.warningBanner = banner;
+
+        // Wire up banner buttons
+        banner.querySelector('#saveChangesBtn').addEventListener('click', () => {
+            document.getElementById('saveAllBtn')?.click();
+        });
+
+        banner.querySelector('#dismissWarningBtn').addEventListener('click', () => {
+            // Permanently dismiss until next change
+            this.markAsSaved();
+        });
+    }
+
+    showWarningBanner() {
+        if (this.warningBanner) {
+            this.warningBanner.classList.remove('-translate-y-full');
+            this.warningBanner.classList.add('translate-y-0');
+        }
+    }
+
+    hideWarningBanner() {
+        if (this.warningBanner) {
+            this.warningBanner.classList.remove('translate-y-0');
+            this.warningBanner.classList.add('-translate-y-full');
+        }
+    }
+
+    markAsChanged() {
+        if (!this.hasUnsavedChanges) {
+            this.hasUnsavedChanges = true;
+            this.showWarningBanner();
+            this.updateSaveButton(true);
+        }
+    }
+
+    markAsSaved() {
+        this.hasUnsavedChanges = false;
+        this.hideWarningBanner();
+        this.updateSaveButton(false);
+    }
+
+    updateSaveButton(hasChanges) {
+        const saveBtn = document.getElementById('saveAllBtn');
+        if (!saveBtn) return;
+
+        if (hasChanges) {
+            saveBtn.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2');
+            saveBtn.classList.remove('bg-white', 'text-brand-900');
+            saveBtn.classList.add('bg-amber-500', 'text-white');
+        } else {
+            saveBtn.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2', 'bg-amber-500', 'text-white');
+            saveBtn.classList.add('bg-white', 'text-brand-900');
+        }
+    }
+
+    trackFormChanges() {
+        // More aggressive tracking - listen to ALL inputs on the page
+        // and check if they're inside an area/item form
+        const checkIfEstimateInput = (target) => {
+            if (!target) return false;
+            
+            // Check if input is inside a form that affects areas or items
+            const form = target.closest('form');
+            if (!form) return false;
+            
+            const action = form.getAttribute('action') || '';
+            
+            // Match any form that modifies areas or items
+            return action.includes('/areas/') || 
+                   action.includes('/items/') ||
+                   action.includes('/estimate-areas/') ||
+                   action.includes('/estimate-items/');
+        };
+
+        // Track on input (fires while typing)
+        document.addEventListener('input', (e) => {
+            if (checkIfEstimateInput(e.target)) {
+                this.markAsChanged();
+            }
+        }, true); // Use capture phase to catch events early
+
+        // Track on change (fires on blur, select change, etc)
+        document.addEventListener('change', (e) => {
+            if (checkIfEstimateInput(e.target)) {
+                this.markAsChanged();
+            }
+        }, true);
+
+        // Also track Alpine.js reactive changes (for x-model bindings)
+        // These fire when Alpine updates values programmatically
+        document.addEventListener('alpine:init', () => {
+            // Watch for any Alpine component that might affect estimates
+            Alpine.effect(() => {
+                // This will re-run whenever any reactive data changes
+                // We'll set a flag to mark changes on next tick
+                requestAnimationFrame(() => {
+                    const forms = document.querySelectorAll('form[action*="/areas/"], form[action*="/items/"]');
+                    if (forms.length > 0) {
+                        this.markAsChanged();
+                    }
+                });
+            });
+        });
+    }
+
+    setupNavigationWarning() {
+        // Warn on page unload
+        window.addEventListener('beforeunload', (e) => {
+            if (this.hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+
+        // Warn on link clicks
+        document.addEventListener('click', (e) => {
+            if (!this.hasUnsavedChanges) return;
+
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+
+            // Ignore same-page anchors
+            const href = link.getAttribute('href');
+            if (href.startsWith('#')) return;
+
+            // Ignore save/refresh buttons
+            if (link.id === 'saveAllBtn' || link.id === 'estimateRefreshBtn') return;
+
+            // Confirm navigation
+            if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
+                e.preventDefault();
+            }
+        });
+    }
+
     wireSaveAllButton() {
         const saveAllBtn = document.getElementById('saveAllBtn');
         if (!saveAllBtn || !this.csrf) return;
 
         saveAllBtn.addEventListener('click', async () => {
             try {
+                // Mark as saved IMMEDIATELY
+                this.hasUnsavedChanges = false;
+                
+                // Force-hide the banner instantly (no transition)
+                if (this.warningBanner) {
+                    this.warningBanner.remove(); // Completely remove from DOM
+                }
+                
+                // Set flag to prevent banner from showing after reload
+                sessionStorage.setItem('estimate:justSaved', 'true');
+                
                 this.showSpinner();
+                
                 const forms = new Set();
                 document.querySelectorAll('form[action*="/areas/"] input[name="_method"][value="PATCH"]').forEach((input) => forms.add(input.closest('form')));
                 document.querySelectorAll('form[action*="/items/"] input[name="_method"][value="PATCH"]').forEach((input) => forms.add(input.closest('form')));
+                
                 for (const form of forms) {
                     if (!form) continue;
                     const action = form.getAttribute('action');
@@ -381,11 +579,24 @@ class EstimateShowController {
                         body: fd,
                     });
                 }
+                
                 this.toast('All changes saved', 'success');
-                this.autoRefresh(200);
+                
+                // Reload immediately
+                window.location.reload();
+                
             } catch (error) {
                 console.error(error);
                 this.hideSpinner();
+                
+                // Clear the save flag on error
+                sessionStorage.removeItem('estimate:justSaved');
+                
+                // Re-create banner on error
+                if (!this.warningBanner) {
+                    this.createWarningBanner();
+                }
+                this.markAsChanged();
                 this.toast('Save failed', 'error');
             }
         });
@@ -621,11 +832,40 @@ class EstimateShowController {
         const revenue = this.parseNumber(totals.revenue_total);
         const costs = this.parseNumber(totals.cost_total);
         const grossProfit = this.parseNumber(totals.profit_total);
-        const netProfit = this.parseNumber(totals.net_profit_total);
         const grossMargin = this.parseNumber(totals.profit_margin);
-        const netMargin = this.parseNumber(totals.net_margin);
         const taxTotal = this.parseNumber(totals.tax_total);
         const grandTotal = this.parseNumber(totals.grand_total);
+
+        // Calculate man hours from labor items
+        const manHours = this.computeManHours();
+
+        // Calculate breakeven based on overhead recovery method
+        let breakeven = costs;
+        const overheadRecoveryModel = this.getOverheadRecoveryModel();
+        const overheadRate = this.getOverheadRate();
+        
+        if (overheadRecoveryModel === 'Labor Hours') {
+            // Breakeven = Cost + (Hours × OH Rate)
+            breakeven = costs + (manHours * overheadRate);
+        } else if (overheadRecoveryModel === 'Revenue (SORS)') {
+            // Breakeven = Cost / (1 - OH%)
+            const ohPercent = this.getRevenueOHPercent();
+            breakeven = ohPercent >= 0.999 ? costs : (costs / (1 - ohPercent));
+        } else if (overheadRecoveryModel === 'Dual-Base') {
+            // Dual method: use the higher of the two calculations
+            const laborPortion = this.getDualLaborPortion();
+            const revenuePortion = 1 - laborPortion;
+            
+            const laborBreakeven = costs + (manHours * overheadRate * laborPortion);
+            const ohPercent = this.getDualRevenueOHPercent();
+            const revenueBreakeven = ohPercent >= 0.999 ? costs : (costs / (1 - ohPercent * revenuePortion));
+            
+            breakeven = Math.max(laborBreakeven, revenueBreakeven);
+        }
+
+        // Calculate Net Profit = Grand Total - Breakeven
+        const netProfit = grandTotal - breakeven;
+        const netMargin = grandTotal > 0 ? (netProfit / grandTotal) * 100 : 0;
 
         this.setText('summary-material', this.formatMoney(materialRevenue));
         this.setText('summary-material-cost', this.formatMoney(materialCost));
@@ -634,7 +874,42 @@ class EstimateShowController {
         this.setText('summary-fees', this.formatMoney(feeRevenue - discountRevenue));
         this.setText('summary-tax', this.formatMoney(taxTotal));
         this.setText('summary-revenue', this.formatMoney(revenue));
-        this.setText('summary-cost', this.formatMoney(costs));
+        
+        // Update total-cost with the actual cost total
+        const totalCostEl = document.querySelector('[data-summary-card="total-cost"]');
+        if (totalCostEl) {
+            totalCostEl.textContent = this.formatMoney(costs);
+        }
+        
+        // Update breakeven with calculated value (no rounding, 2 decimals)
+        const breakevenEl = document.querySelector('[data-summary-card="breakeven"]');
+        if (breakevenEl) {
+            breakevenEl.textContent = this.formatMoney(breakeven);
+        }
+        
+        // Update Subtotal card (revenue before tax)
+        const subtotalEl = document.querySelector('[data-summary-card="subtotal"]');
+        if (subtotalEl) {
+            subtotalEl.textContent = this.formatMoney(revenue);
+        }
+        
+        // Update Total card (grand total including tax)
+        const grandTotalEl = document.querySelector('[data-summary-card="grand-total"]');
+        if (grandTotalEl) {
+            grandTotalEl.textContent = this.formatMoney(grandTotal);
+        }
+        
+        // Update Net Profit card (Grand Total - Breakeven)
+        const netProfitAmountEl = document.querySelector('[data-summary-card="net-profit-amount"]');
+        if (netProfitAmountEl) {
+            netProfitAmountEl.textContent = this.formatMoney(netProfit);
+        }
+        
+        const netProfitPercentEl = document.querySelector('[data-summary-card="net-profit-percent"]');
+        if (netProfitPercentEl) {
+            netProfitPercentEl.textContent = `${netMargin.toFixed(1)}%`;
+        }
+        
         this.setText('summary-profit', this.formatMoney(grossProfit));
         this.setText('summary-net', this.formatMoney(netProfit));
         this.setText('summary-profit-margin', grossMargin.toFixed(2));
@@ -648,7 +923,7 @@ class EstimateShowController {
         this.setText('work-net-margin', netMargin.toFixed(2));
         this.setText('work-gross-profit', this.formatMoney(grossProfit));
         this.setText('work-gross-margin', grossMargin.toFixed(2));
-        this.setText('work-breakeven', this.formatMoney(Math.max(0, grandTotal - netProfit)));
+        this.setText('work-breakeven', this.formatMoney(breakeven));
 
         const costPercent = revenue > 0 ? this.clamp((costs / revenue) * 100) : 0;
         const grossPercent = revenue > 0 ? this.clamp((grossProfit / revenue) * 100) : 0;
@@ -682,7 +957,9 @@ class EstimateShowController {
             this.setText(`breakdown-${entry.key}-margin`, margin.toFixed(1));
         });
 
-        this.computeManHours();
+        // Update man hours in summary card
+        this.setText('man-hours', manHours.toFixed(2));
+        this.setText('work-man-hours', manHours.toFixed(2));
     }
 
     computeManHours() {
@@ -693,7 +970,7 @@ class EstimateShowController {
                 hours += this.parseNumber(row.dataset.quantity, 0);
             }
         });
-        this.setText('work-man-hours', hours.toFixed(2));
+        return hours;
     }
 
     parseNumber(value, fallback = 0) {

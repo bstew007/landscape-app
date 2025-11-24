@@ -13,6 +13,7 @@ class Material extends Model
         'name',
         'sku',
         'category',
+        'category_id',
         'cost_code_id',
         'unit',
         'unit_cost',
@@ -30,5 +31,16 @@ class Material extends Model
         'is_taxable' => 'boolean',
         'is_active' => 'boolean',
         'cost_code_id' => 'integer',
+        'category_id' => 'integer',
     ];
+
+    public function materialCategory()
+    {
+        return $this->belongsTo(MaterialCategory::class, 'category_id');
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(MaterialCategory::class, 'material_material_category');
+    }
 }

@@ -11,24 +11,24 @@
 @endphp
 
 <div class="space-y-8">
-    <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
-        <div class="flex flex-wrap items-start gap-6">
-            <div class="space-y-3 max-w-2xl">
+    <section class="rounded-[20px] sm:rounded-[28px] lg:rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-4 sm:p-6 lg:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
+        <div class="flex flex-wrap items-start gap-4 sm:gap-6">
+            <div class="space-y-2 sm:space-y-3 max-w-2xl">
                 <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">CRM</p>
-                <h1 class="text-3xl sm:text-4xl font-semibold">Contacts Command Center</h1>
-                <p class="text-sm text-brand-100/85">Search, tag, and action every relationship&mdash;from lead intake to vendor coordination&mdash;without leaving the CRM hub.</p>
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-semibold">Contacts Command Center</h1>
+                <p class="text-xs sm:text-sm text-brand-100/85">Search, tag, and action every relationship&mdash;from lead intake to vendor coordination&mdash;without leaving the CRM hub.</p>
             </div>
-            <div class="flex flex-wrap gap-3 ml-auto">
-                <x-secondary-button as="a" href="{{ route('contacts.qbo.search') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20">
-                    Import From QBO
+            <div class="flex flex-wrap gap-2 sm:gap-3 ml-auto w-full sm:w-auto">
+                <x-secondary-button as="a" href="{{ route('contacts.qbo.search') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
+                    Import QBO
                 </x-secondary-button>
-                <x-brand-button href="{{ route('contacts.create') }}" variant="muted">
+                <x-brand-button href="{{ route('contacts.create') }}" variant="muted" class="flex-1 sm:flex-none justify-center">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     New Contact
                 </x-brand-button>
             </div>
         </div>
-        <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 text-sm text-brand-100">
+        <dl class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 text-sm text-brand-100">
             <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
                 <dt class="text-xs uppercase tracking-wide text-brand-200">On This Page</dt>
                 <dd class="text-2xl font-semibold text-white mt-2">{{ number_format($pageCount) }}</dd>
@@ -48,8 +48,8 @@
         </dl>
     </section>
 
-    <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
-        <div class="p-5 sm:p-7 space-y-6">
+    <section class="rounded-[20px] sm:rounded-[28px] lg:rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
+        <div class="p-4 sm:p-5 lg:p-7 space-y-4 sm:space-y-6">
             <form method="GET" action="{{ route('contacts.index') }}" class="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="type" value="{{ $type ?? 'all' }}">
                 <div class="flex items-center gap-3 flex-1 min-w-[240px]">
@@ -64,7 +64,10 @@
                     @if(!empty($search))
                         <x-secondary-button as="a" href="{{ route('contacts.index', array_filter(['type' => ($type ?? 'all') !== 'all' ? $type : null], fn($v) => $v !== null && $v !== '')) }}" size="sm">Clear</x-secondary-button>
                     @endif
-                    <x-brand-button type="submit" size="sm">Find</x-brand-button>
+                    <x-brand-button type="submit" size="sm" variant="outline">
+                        <svg class="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Find
+                    </x-brand-button>
                 </div>
             </form>
 
@@ -112,7 +115,48 @@
 
         <div class="border-t border-brand-100/60">
             @if ($contacts->count())
-                <div class="overflow-x-auto">
+                {{-- Mobile: Card view (visible on phones) --}}
+                <div class="sm:hidden divide-y divide-brand-100">
+                    @foreach ($contacts as $contact)
+                        @php
+                            $contactType = strtolower($contact->contact_type ?? 'client');
+                            $typeColors = [
+                                'client' => 'bg-accent-50 text-accent-800 border border-accent-200',
+                                'lead' => 'bg-amber-50 text-amber-800 border border-amber-200',
+                                'vendor' => 'bg-blue-50 text-blue-800 border border-blue-200',
+                                'owner' => 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+                            ];
+                            $pillClass = $typeColors[$contactType] ?? 'bg-brand-50 text-brand-700 border border-brand-200';
+                        @endphp
+                        <div class="p-4 hover:bg-brand-50/50 transition">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" value="{{ $contact->id }}" data-role="row-check" class="mt-1">
+                                <div class="flex-1 min-w-0">
+                                    <a href="{{ route('contacts.show', $contact) }}" class="font-semibold text-brand-900 hover:text-brand-700 hover:underline block truncate">
+                                        {{ collect([$contact->last_name, $contact->first_name])->filter()->join(', ') ?: $contact->company_name ?: 'Unnamed' }}
+                                    </a>
+                                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $pillClass }}">
+                                            {{ ucfirst($contactType) }}
+                                        </span>
+                                        @if($contact->company_name)
+                                            <span class="text-xs text-brand-500">{{ $contact->company_name }}</span>
+                                        @endif
+                                    </div>
+                                    @if($contact->email)
+                                        <a href="mailto:{{ $contact->email }}" class="text-sm text-brand-700 hover:text-brand-900 hover:underline block mt-2 truncate">{{ $contact->email }}</a>
+                                    @endif
+                                    @if($contact->mobile || $contact->phone)
+                                        <div class="text-sm text-brand-600 mt-1">{{ $contact->mobile ?? $contact->phone }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Tablet/Desktop: Table view (horizontal scroll on tablet) --}}
+                <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-brand-50/80 text-left text-[11px] uppercase tracking-wide text-brand-500">
                         <tr>
@@ -205,7 +249,7 @@
             @endif
         </div>
 
-        <div class="px-5 py-4 border-t border-brand-100/60">
+        <div class="px-4 sm:px-5 py-4 border-t border-brand-100/60">
             {{ $contacts->links() }}
         </div>
     </section>
