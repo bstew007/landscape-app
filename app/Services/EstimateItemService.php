@@ -116,7 +116,9 @@ class EstimateItemService
 
     public function recalculateTotals(Estimate $estimate): void
     {
-        $estimate->loadMissing('items');
+        // Force reload items to ensure we calculate based on current DB state
+        // This fixes issues where deleted items might still be in the loaded relation
+        $estimate->load('items');
 
         $items = $estimate->items;
         $materialItems = $items->where('item_type', 'material');

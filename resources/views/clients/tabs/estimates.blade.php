@@ -41,7 +41,7 @@
                         <td class="px-3 py-2 border border-brand-200">
                             <span class="badge text-xs {{ $statusClass }}">{{ ucfirst($status) }}</span>
                         </td>
-                        <td class="px-3 py-2 border border-brand-200 text-right text-brand-900">${{ number_format($e->grand_total ?? $e->total ?? 0, 2) }}</td>
+                        <td class="px-3 py-2 border border-brand-200 text-right text-brand-900">${{ number_format($e->grand_total > 0 ? $e->grand_total : $e->total, 2) }}</td>
                         <td class="px-3 py-2 border border-brand-200 text-brand-700">{{ optional($e->created_at)->format('M j, Y') }}</td>
                         <td class="px-3 py-2 border border-brand-200 text-right space-x-2">
                             <a href="{{ route('estimates.show', $e) }}" class="text-blue-600 hover:underline">Open</a>

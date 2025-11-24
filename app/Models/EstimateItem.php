@@ -55,4 +55,19 @@ class EstimateItem extends Model
     {
         return $this->belongsTo(Calculation::class);
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($item) {
+            if ($item->estimate) {
+                $item->estimate->recalculate();
+            }
+        });
+
+        static::deleted(function ($item) {
+            if ($item->estimate) {
+                $item->estimate->recalculate();
+            }
+        });
+    }
 }

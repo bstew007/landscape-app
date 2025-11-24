@@ -94,7 +94,8 @@
                             <p class="text-xs text-gray-500">{{ $estimate->client->name }}</p>
                         </div>
                         <div class="text-right text-sm">
-                            <p class="font-semibold">{{ $estimate->total ? '$' . number_format($estimate->total, 2) : 'Pending' }}</p>
+                            @php $estTotal = $estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total; @endphp
+                            <p class="font-semibold">{{ $estTotal ? '$' . number_format($estTotal, 2) : 'Pending' }}</p>
                             <p class="text-xs text-gray-500">{{ ucfirst($estimate->status) }}</p>
                         </div>
                     </div>

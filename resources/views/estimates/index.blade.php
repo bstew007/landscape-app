@@ -5,10 +5,10 @@
     $pageEstimates = collect($estimates->items());
     $pageCount = $pageEstimates->count();
     $pageValue = $pageEstimates->sum(function ($estimate) {
-        return (float) ($estimate->total ?? 0);
+        return (float) ($estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total);
     });
     $approvedValue = $pageEstimates->where('status', 'approved')->sum(function ($estimate) {
-        return (float) ($estimate->total ?? 0);
+        return (float) ($estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total);
     });
     $outstandingCount = $pageEstimates->whereIn('status', ['pending', 'sent'])->count();
     $statusParam = request('status');
@@ -166,7 +166,8 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 align-top text-right font-semibold text-brand-900">
-                                {{ $estimate->total ? '$' . number_format($estimate->total, 2) : 'N/A' }}
+                                @php $displayTotal = $estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total; @endphp
+                                {{ $displayTotal !== null ? '$' . number_format($displayTotal, 2) : 'N/A' }}
                             </td>
                             <td class="px-4 py-3 align-top text-sm text-brand-600">
                                 {{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}

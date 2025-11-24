@@ -256,24 +256,95 @@
                                 </div>
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                <input type="number" step="0.01" min="0" name="unit_price" 
-                                       class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
-                                       x-model.number="unitPrice"
-                                       @input="recalculateFromPrice()">
+                                <div x-data="{ editing: false }" class="flex items-center justify-center gap-1">
+                                    <template x-if="!editing">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-sm font-medium" x-text="'$' + unitPrice.toFixed(2)"></span>
+                                            <button type="button" 
+                                                    @click="editing = true"
+                                                    class="text-blue-600 hover:text-blue-800 transition">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="editing">
+                                        <div class="flex items-center gap-1">
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-2 flex items-center text-xs text-gray-500">$</span>
+                                                <input type="number" 
+                                                       step="0.01" 
+                                                       x-model.number="unitPrice"
+                                                       @input="recalculateFromPrice()"
+                                                       @blur="editing = false"
+                                                       x-ref="priceInput"
+                                                       class="form-input w-24 text-sm pl-5 pr-2 py-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                                            </div>
+                                            <button type="button" 
+                                                    @click="editing = false"
+                                                    class="text-green-600 hover:text-green-800 transition">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                                <input type="hidden" name="unit_price" :value="unitPrice.toFixed(2)">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                <div class="flex items-center justify-center gap-1">
-                                    <input type="number" step="0.1" name="profit_percent" 
-                                           class="form-input w-20 text-center border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
-                                           x-model.number="profitPercent"
-                                           @input="recalculateFromProfit()">
-                                    <span class="text-xs">%</span>
+                                <div x-data="{ editing: false }" class="flex flex-col items-center gap-1">
+                                    <template x-if="!editing">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-sm font-medium" x-text="profitPercent.toFixed(1) + '%'"></span>
+                                            <button type="button" 
+                                                    @click="editing = true"
+                                                    class="text-blue-600 hover:text-blue-800 transition">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="editing">
+                                        <div class="flex items-center gap-1">
+                                            <div class="relative">
+                                                <input type="number" 
+                                                       step="0.1" 
+                                                       x-model.number="profitPercent"
+                                                       @input="profitPercent = Math.round(profitPercent * 10) / 10; recalculateFromProfit()"
+                                                       @blur="editing = false"
+                                                       x-ref="profitInput"
+                                                       class="form-input w-20 text-sm pr-6 py-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
+                                                <span class="absolute inset-y-0 right-2 flex items-center text-xs text-gray-500">%</span>
+                                            </div>
+                                            <button type="button" 
+                                                    @click="editing = false"
+                                                    class="text-green-600 hover:text-green-800 transition">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <div class="text-[10px] font-medium"
+                                             :class="{ 'text-green-600': profitPercent >= 10, 'text-yellow-600': profitPercent >= 0 && profitPercent < 10, 'text-red-600': profitPercent < 0 }"
+                                             x-text="'$' + totalProfit.toFixed(2)"></div>
+                                        <button type="button"
+                                                @click="resetToCatalogDefaults()"
+                                                title="Reset to catalog defaults"
+                                                class="text-gray-400 hover:text-blue-600 transition">
+                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col items-center gap-0.5 mt-1">
-                                    <div class="text-[10px] font-medium"
-                                         :class="{ 'text-green-600': profitPercent >= 10, 'text-yellow-600': profitPercent >= 0 && profitPercent < 10, 'text-red-600': profitPercent < 0 }"
-                                         x-text="'$' + totalProfit.toFixed(2)"></div>
-                                </div>
+                                <input type="hidden" name="profit_percent" :value="profitPercent.toFixed(1)">
                             </td>
                             <td class="px-2.5 py-1.5 text-center text-gray-700" x-text="'$' + (unitCost * quantity).toFixed(2)">
                             </td>

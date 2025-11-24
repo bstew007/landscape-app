@@ -1,5 +1,5 @@
 @php
-    $displayTotal = $estimate->grand_total ?? $estimate->total ?? 0;
+    $displayTotal = $estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total;
     $siteVisitDate = optional(optional($estimate->siteVisit)->visit_date)->format('M j, Y');
 @endphp
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

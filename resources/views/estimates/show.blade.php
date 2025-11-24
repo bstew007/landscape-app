@@ -73,18 +73,102 @@
     ];
 @endphp
 
-
-
 <div class="space-y-6"
      data-estimate-show-root
      data-estimate-show-initial='@json($initialState)'
      data-highlight-item="{{ session('recent_item_id') }}"
      x-data="estimateShowComponent($el)"
      x-on:estimate-open-add-items.window="handleAddItemsOpen($event)">
-    @include('estimates.partials.header', ['estimate' => $estimate, 'previewEmailRoute' => $previewEmailRoute ?? null, 'printRoute' => $printRoute ?? null])
-
-    {{-- Header included above; remove duplicate block below --}}
-
+    
+    <!-- Modern Header -->
+    <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
+        <div class="flex flex-wrap items-start gap-6">
+            <div class="flex items-center gap-4">
+                <div class="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 text-white">
+                        <path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                        <path d="M14 2v5h5"/>
+                    </svg>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Estimate #{{ $estimate->id }}</p>
+                    <h1 class="text-2xl sm:text-3xl font-semibold">{{ $estimate->title }}</h1>
+                    <p class="text-sm text-brand-100/85">{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}</p>
+                </div>
+            </div>
+            <div class="ml-auto flex flex-wrap gap-2">
+                <button type="button" id="estimateRefreshBtn"
+                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                    Refresh
+                </button>
+                <button type="button" id="saveAllBtn"
+                        class="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-white text-brand-900 text-sm font-semibold hover:bg-brand-50 transition shadow-sm">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save All
+                </button>
+                <a href="{{ route('estimates.edit', $estimate) }}"
+                   class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit
+                </a>
+                <form action="{{ route('estimates.destroy', $estimate) }}" method="POST" onsubmit="return confirm('Delete this estimate?');" class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-red-500/10 text-red-100 border-red-400/40 hover:bg-red-500/20 transition">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Delete
+                    </button>
+                </form>
+                @if($previewEmailRoute)
+                    <a href="{{ $previewEmailRoute }}"
+                       class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        Preview Email
+                    </a>
+                @endif
+                <form action="{{ route('estimates.invoice', $estimate) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <path d="M3 9h18"/>
+                            <path d="M9 21V9"/>
+                        </svg>
+                        Create Invoice
+                    </button>
+                </form>
+                @if($printRoute)
+                    <a href="{{ $printRoute }}" target="_blank"
+                       class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9"/>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                            <rect x="6" y="14" width="12" height="8"/>
+                        </svg>
+                        Print
+                    </a>
+                @endif
+            </div>
+        </div>
+    </section>
 
     <!-- Add via Calculator Slide-over (controlled by JS module) -->
     <div id="calcDrawer" class="fixed inset-0 z-40" style="display:none;" x-data="{ itemsTab: 'labor' }" x-on:set-calc-tab.window="itemsTab = $event.detail || 'labor'">

@@ -100,7 +100,16 @@ class Estimate extends Model
 
     public function items()
     {
-        return $this->hasMany(EstimateItem::class)->orderBy('sort_order');
+        return $this->hasMany(EstimateItem::class);
+    }
+
+    /**
+     * Recalculate totals based on line items and save.
+     */
+    public function recalculate()
+    {
+        // Delegate to the comprehensive service method
+        app(\App\Services\EstimateItemService::class)->recalculateTotals($this);
     }
 
     public function areas()

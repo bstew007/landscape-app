@@ -783,47 +783,60 @@ window.lineItemCalculator = function(config) {
         },
         
         calculateProfitFromPrice() {
-            if (this.unitPrice > 0) {
-                this.profitPercent = ((this.unitPrice - this.breakeven) / this.unitPrice) * 100;
-            } else {
+            if (this.unitPrice <= 0) {
                 this.profitPercent = 0;
+                return;
             }
-            this.totalProfit = (this.unitPrice - this.breakeven) * this.quantity;
+            const profit = ((this.unitPrice - this.breakeven) / this.unitPrice) * 100;
+            // Round to 1 decimal place
+            this.profitPercent = Math.round(profit * 10) / 10;
         },
-        
+
         calculatePriceFromProfit() {
-            // Unit Price = Breakeven / (1 - Profit % / 100)
-            if (this.profitPercent >= 100) {
-                // Can't have 100% or more profit
-                this.profitPercent = 99;
-            }
+            // Ensure profit percent is within valid range and rounded to 1 decimal
+            let pp = Math.round(this.profitPercent * 10) / 10;
+            if (pp >= 100) pp = 99.9;
+            if (pp <= -100) pp = -99.9;
+            this.profitPercent = pp;
             
-            if (this.profitPercent <= -99) {
-                // Can't have -100% or less profit
-                this.profitPercent = -99;
-            }
-            
-            const marginRate = this.profitPercent / 100;
+            const marginRate = pp / 100;
             if (marginRate < 1) {
                 this.unitPrice = this.breakeven / (1 - marginRate);
             } else {
                 this.unitPrice = this.breakeven;
             }
-            
-            this.totalProfit = (this.unitPrice - this.breakeven) * this.quantity;
         },
-        
+
         recalculateFromCost() {
-            this.calculateBreakeven();
+            this.breakeven = this.calculateBreakeven();
             this.calculateProfitFromPrice();
         },
-        
+
         recalculateFromPrice() {
+            this.breakeven = this.calculateBreakeven();
             this.calculateProfitFromPrice();
+            // Auto-focus the input when entering edit mode
+            this.$nextTick(() => {
+                const priceInput = this.$refs.priceInput;
+                if (priceInput) {
+                    priceInput.focus();
+                    priceInput.select();
+                }
+            });
         },
-        
+
         recalculateFromProfit() {
+            this.profitPercent = Math.round(this.profitPercent * 10) / 10;
+            this.breakeven = this.calculateBreakeven();
             this.calculatePriceFromProfit();
+            // Auto-focus the input when entering edit mode
+            this.$nextTick(() => {
+                const profitInput = this.$refs.profitInput;
+                if (profitInput) {
+                    profitInput.focus();
+                    profitInput.select();
+                }
+            });
         },
         
         async resetToCatalogDefaults() {
