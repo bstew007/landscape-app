@@ -13,28 +13,15 @@
         open: {{ $initiallyOpen ? 'true' : 'false' }},
         tab: 'pricing',
         menuOpen: false,
-        broadcasting: false,
         toggleOpen() {
-            this.broadcasting = true;
             this.open = !this.open;
-            if (this.open) {
-                this.$nextTick(() => {
-                    window.dispatchEvent(new CustomEvent('work-area-exclusive-open', {
-                        detail: { areaId: {{ $area->id }} }
-                    }));
-                    this.broadcasting = false;
-                });
-            } else {
-                this.broadcasting = false;
-            }
         }
     }"
-     x-init="if (open) { broadcasting = true; $nextTick(() => { window.dispatchEvent(new CustomEvent('work-area-exclusive-open', { detail: { areaId: {{ $area->id }} } })); broadcasting = false; }); }"
-     x-on:force-open-area.window="if (Number($event.detail?.areaId) === {{ $area->id }}) { toggleOpen(); }"
-     x-on:work-area-exclusive-open.window="if (Number($event.detail?.areaId) !== {{ $area->id }} && open && !broadcasting) { open = false; }"
+     x-on:force-open-area.window="if (Number($event.detail?.areaId) === {{ $area->id }} && !open) { toggleOpen(); }"
      class="border rounded-lg bg-white work-area overflow-visible"
      data-area-id="{{ $area->id }}"
      data-sort-order="{{ $area->sort_order ?? 0 }}">
+
     <div class="px-3 py-1.5 border-b border-slate-200 bg-slate-100 cursor-pointer"
          @click.self="toggleOpen()">
         <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-1.5">
@@ -69,7 +56,7 @@
                     </button>
                     <button type="button" 
                             class="flex items-center gap-2 w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50" 
-                            @click="broadcasting = true; open = true; menuOpen = false; $nextTick(() => { if (open) { window.dispatchEvent(new CustomEvent('work-area-exclusive-open', { detail: { areaId: {{ $area->id }} } })); } broadcasting = false; });">
+                            @click="open = true; menuOpen = false;">
                         <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -168,8 +155,9 @@
                         <th class="text-center px-2.5 py-1.5">Qty</th>
                         <th class="text-center px-2.5 py-1.5">Units</th>
                         <th class="text-center px-2.5 py-1.5">Unit Cost</th>
+                        <th class="text-center px-2.5 py-1.5">Breakeven</th>
                         <th class="text-center px-2.5 py-1.5">Unit Price</th>
-                        <th class="text-center px-2.5 py-1.5">Profit</th>
+                        <th class="text-center px-2.5 py-1.5">Profit %</th>
                         <th class="text-center px-2.5 py-1.5">Total Cost</th>
                         <th class="text-right px-2.5 py-1.5">Total Price</th>
                         <th class="px-2.5 py-1.5"></th>
@@ -177,13 +165,63 @@
                 </thead>
                 <tbody>
                     @forelse ($areaItems as $item)
-                        @php $rowProfit = $item->margin_total; @endphp
+                        @php 
+                            $defaultMarginPercent = $defaultMarginPercent ?? 20.0;
+                            $overheadRate = $overheadRate ?? 0.0;
+                            $isLabor = $item->item_type === 'labor';
+                            $isMaterial = $item->item_type === 'material';
+                            
+                            // DEBUG
+                            if ($isLabor && $item->unit_cost == 22) {
+                                \Log::info('Area Item Debug', [
+                                    'item_name' => $item->name,
+                                    'overhead_rate_received' => $overheadRate,
+                                    'unit_cost' => $item->unit_cost,
+                                ]);
+                            }
+                            
+                            // Calculate true breakeven based on item type
+                            if ($isLabor) {
+                                // For labor: breakeven includes overhead
+                                $breakeven = $item->unit_cost + $overheadRate;
+                            } elseif ($isMaterial && $item->tax_rate > 0) {
+                                // For materials: breakeven includes tax if taxable
+                                $breakeven = $item->unit_cost * (1 + $item->tax_rate);
+                            } else {
+                                // For fees, discounts, and non-taxable materials
+                                $breakeven = $item->unit_cost;
+                            }
+                            
+                            // Calculate actual profit % based on breakeven and price
+                            // Profit % = (Price - Breakeven) / Price × 100
+                            $profitPercent = $item->unit_price > 0 
+                                ? round((($item->unit_price - $breakeven) / $item->unit_price) * 100, 1)
+                                : 0.0;
+                            
+                            // Calculate total profit in dollars
+                            $totalProfit = ($item->unit_price - $breakeven) * $item->quantity;
+                        @endphp
                         <tr class="border-t"
                             data-item-id="{{ $item->id }}"
                             data-item-type="{{ $item->item_type }}"
                             data-area-id="{{ $area->id }}"
                             data-quantity="{{ $item->quantity }}"
-                            id="estimate-item-{{ $item->id }}">
+                            data-unit-cost="{{ $item->unit_cost }}"
+                            data-overhead-rate="{{ $overheadRate }}"
+                            data-tax-rate="{{ $item->tax_rate }}"
+                            data-catalog-type="{{ $item->catalog_type ?? '' }}"
+                            data-catalog-id="{{ $item->catalog_id ?? '' }}"
+                            id="estimate-item-{{ $item->id }}"
+                            x-data="lineItemCalculator({
+                                itemType: '{{ $item->item_type }}',
+                                unitCost: {{ $item->unit_cost }},
+                                unitPrice: {{ $item->unit_price }},
+                                quantity: {{ $item->quantity }},
+                                overheadRate: {{ $overheadRate }},
+                                taxRate: {{ $item->tax_rate }},
+                                breakeven: {{ $breakeven }}
+                            })"
+>
                             <td class="px-2.5 py-1.5">
                                 <form method="POST" action="{{ route('estimates.items.update', [$estimate, $item]) }}" class="contents">
                                     @csrf
@@ -198,22 +236,61 @@
                                     <input type="text" name="unit" class="form-input w-24 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ $item->unit }}">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                    <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ $item->unit_cost }}">
+                                <input type="number" step="0.01" min="0" name="unit_cost" 
+                                       class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
+                                       x-model.number="unitCost"
+                                       @input="recalculateFromCost()">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                    <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ $item->unit_price }}">
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <span class="text-gray-700 font-medium" x-text="'$' + breakeven.toFixed(2)"></span>
+                                    @if($isLabor && $overheadRate > 0)
+                                        <div class="text-[10px] text-gray-500" x-bind:title="'Includes $' + overheadRate.toFixed(2) + '/hr overhead'">
+                                            <span x-text="'+$' + overheadRate.toFixed(2) + ' OH'"></span>
+                                        </div>
+                                    @elseif($isMaterial && $item->tax_rate > 0)
+                                        <div class="text-[10px] text-gray-500" x-bind:title="'Includes ' + (taxRate * 100).toFixed(1) + '% tax'">
+                                            <span x-text="'+' + (taxRate * 100).toFixed(1) + '% tax'"></span>
+                                        </div>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-2.5 py-1.5 text-center text-gray-700">
-                                ${{ number_format($rowProfit, 2) }}
+                            <td class="px-2.5 py-1.5 text-center">
+                                <input type="number" step="0.01" min="0" name="unit_price" 
+                                       class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
+                                       x-model.number="unitPrice"
+                                       @input="recalculateFromPrice()">
                             </td>
-                            <td class="px-2.5 py-1.5 text-center text-gray-700">
-                                ${{ number_format($item->cost_total, 2) }}
+                            <td class="px-2.5 py-1.5 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <input type="number" step="0.1" name="profit_percent" 
+                                           class="form-input w-20 text-center border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
+                                           x-model.number="profitPercent"
+                                           @input="recalculateFromProfit()">
+                                    <span class="text-xs">%</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-0.5 mt-1">
+                                    <div class="text-[10px] font-medium"
+                                         :class="{ 'text-green-600': profitPercent >= 10, 'text-yellow-600': profitPercent >= 0 && profitPercent < 10, 'text-red-600': profitPercent < 0 }"
+                                         x-text="'$' + totalProfit.toFixed(2)"></div>
+                                </div>
                             </td>
-                            <td class="px-2.5 py-1.5 text-right font-semibold text-gray-900" data-col="line_total">
-                                ${{ number_format($item->line_total, 2) }}
+                            <td class="px-2.5 py-1.5 text-center text-gray-700" x-text="'$' + (unitCost * quantity).toFixed(2)">
+                            </td>
+                            <td class="px-2.5 py-1.5 text-right font-semibold text-gray-900" data-col="line_total" x-text="'$' + (unitPrice * quantity).toFixed(2)">
                             </td>
                             <td class="px-2.5 py-1.5 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    <button type="button" 
+                                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-white text-blue-700 border border-blue-300 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                            @click="resetToCatalogDefaults()"
+                                            title="Reset to catalog defaults">
+                                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="23 4 23 10 17 10"/>
+                                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                        </svg>
+                                        Reset
+                                    </button>
                                     <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-white text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1">
                                         <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
@@ -239,7 +316,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-3 py-3 text-sm text-gray-500">No items in this work area yet.</td>
+                            <td colspan="10" class="px-3 py-3 text-sm text-gray-500">No items in this work area yet.</td>
                         </tr>
                     @endforelse
                 </tbody>

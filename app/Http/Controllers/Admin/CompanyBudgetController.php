@@ -84,6 +84,9 @@ class CompanyBudgetController extends Controller
             $mergedInputs['subcontracting']['rows'] = array_values($postedSubcontractingRows);
         }
 
+        // Calculate and save the overhead recovery rate in inputs for easy access
+        $this->saveOverheadRecoveryRate($mergedInputs);
+        
         $outputs = $this->budget->computeOutputs($mergedInputs);
 
         $budget->fill([
@@ -261,5 +264,61 @@ class CompanyBudgetController extends Controller
             'inputs.oh_recovery.dual.labor_markup_per_hour' => 'nullable|numeric|min:0',
             'inputs.oh_recovery.dual.revenue_markup_fraction' => 'nullable|numeric|min:0',
         ]);
+    }
+    
+    protected function saveOverheadRecoveryRate(array &$inputs): void
+    {
+        // Calculate total field labor hours
+        $totalFieldHours = 0;
+        $hourlyRows = data_get($inputs, 'labor.hourly.rows', []);
+        foreach ($hourlyRows as $row) {
+            $staff = (float) ($row['staff'] ?? 0);
+            $hrs = (float) ($row['hrs'] ?? 0);
+            $otHrs = (float) ($row['ot_hrs'] ?? 0);
+            $totalFieldHours += ($staff * ($hrs + $otHrs));
+        }
+        $salaryRows = data_get($inputs, 'labor.salary.rows', []);
+        foreach ($salaryRows as $row) {
+            $totalFieldHours += (float) ($row['ann_hrs'] ?? 0);
+        }
+        
+        // Calculate total overhead - match JavaScript overheadCurrentTotal()
+        $totalOverhead = 0;
+        
+        // Overhead expenses (current)
+        $expenseRows = data_get($inputs, 'overhead.expenses.rows', []);
+        foreach ($expenseRows as $row) {
+            $totalOverhead += (float) ($row['current'] ?? 0);
+        }
+        
+        // Overhead wages (forecast)
+        $wageRows = data_get($inputs, 'overhead.wages.rows', []);
+        foreach ($wageRows as $row) {
+            $totalOverhead += (float) ($row['forecast'] ?? 0);
+        }
+        
+        // Overhead equipment rows
+        $equipmentRows = data_get($inputs, 'overhead.equipment.rows', []);
+        foreach ($equipmentRows as $row) {
+            $qty = ($row['qty'] === '' || $row['qty'] === null) ? 1 : (float) ($row['qty'] ?? 0);
+            $costPerYear = (float) ($row['cost_per_year'] ?? 0);
+            $totalOverhead += ($qty * $costPerYear);
+        }
+        
+        // Add general equipment costs (fuel, repairs, insurance/misc)
+        $general = data_get($inputs, 'overhead.equipment.general', []);
+        $totalOverhead += (float) ($general['fuel'] ?? 0);
+        $totalOverhead += (float) ($general['repairs'] ?? 0);
+        $totalOverhead += (float) ($general['insurance_misc'] ?? 0);
+        
+        // Add equipment rentals
+        $totalOverhead += (float) data_get($inputs, 'overhead.equipment.rentals', 0);
+        
+        // Calculate and save overhead recovery rate
+        $overheadRate = $totalFieldHours > 0 ? round($totalOverhead / $totalFieldHours, 2) : 0;
+        
+
+        
+        $inputs['oh_recovery']['labor_hour']['markup_per_hour'] = $overheadRate;
     }
 }

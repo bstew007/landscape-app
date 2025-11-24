@@ -1,15 +1,21 @@
 @php
-    $activeBudgetName = $activeBudgetName
-        ?? data_get($estimate ?? null, 'budget.name')
-        ?? data_get($estimate ?? null, 'activeBudget.name')
-        ?? '—';
+    $activeBudgetName = $activeBudgetName ?? '—';
+    $overheadRecoveryModel = $overheadRecoveryModel ?? '—';
 @endphp
 
 <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-    <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Operating Budget</p>
         <p class="mt-2 text-lg font-semibold text-gray-900" data-summary-card="operating-budget-name">{{ $activeBudgetName }}</p>
-        <p class="text-[11px] text-gray-400">Active budget</p>
+        <p class="text-[11px] text-gray-400">{{ $overheadRecoveryModel }}</p>
+        <p class="text-[11px] text-brand-600 font-medium mt-1">OH: ${{ number_format($overheadRate ?? 0, 2) }}/hr</p>
+        {{-- Debug: show where the value is coming from --}}
+        @if(isset($budget))
+            <p class="text-[9px] text-gray-400 mt-1">
+                From outputs: {{ data_get($budget->outputs, 'labor.ohr', 'null') }}<br>
+                From inputs: {{ data_get($budget->inputs, 'oh_recovery.labor_hour.markup_per_hour', 'null') }}
+            </p>
+        @endif
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Man Hours</p>

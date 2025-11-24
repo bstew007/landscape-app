@@ -727,6 +727,211 @@ class EstimateShowController {
     }
 }
 
+// Alpine.js component for line item reactive calculations
+window.lineItemCalculator = function(config) {
+    return {
+        itemType: config.itemType || 'material',
+        unitCost: config.unitCost || 0,
+        unitPrice: config.unitPrice || 0,
+        quantity: config.quantity || 0,
+        overheadRate: config.overheadRate || 0,
+        taxRate: config.taxRate || 0,
+        breakeven: config.breakeven || 0,
+        profitPercent: 0,
+        totalProfit: 0,
+        catalogType: null,
+        catalogId: null,
+        
+        init() {
+            // Store catalog info from the row's data attributes
+            const row = this.$el;
+            this.catalogType = row.dataset.catalogType || null;
+            this.catalogId = row.dataset.catalogId || null;
+            
+            // Log if catalog values are suspicious
+            if (this.catalogType === 'null' || this.catalogType === 'undefined') {
+                console.warn('Suspicious catalogType detected:', this.catalogType);
+                this.catalogType = null;
+            }
+            if (this.catalogId === 'null' || this.catalogId === 'undefined' || this.catalogId === '0') {
+                console.warn('Suspicious catalogId detected:', this.catalogId);
+                this.catalogId = null;
+            }
+            
+            console.log('Line item initialized:', {
+                itemId: row.dataset.itemId,
+                catalogType: this.catalogType,
+                catalogId: this.catalogId,
+                itemType: this.itemType,
+                rawCatalogType: row.dataset.catalogType,
+                rawCatalogId: row.dataset.catalogId
+            });
+            
+            // Calculate initial values
+            this.calculateBreakeven();
+            this.calculateProfitFromPrice();
+        },
+        
+        calculateBreakeven() {
+            if (this.itemType === 'labor') {
+                this.breakeven = this.unitCost + this.overheadRate;
+            } else if (this.itemType === 'material' && this.taxRate > 0) {
+                this.breakeven = this.unitCost * (1 + this.taxRate);
+            } else {
+                this.breakeven = this.unitCost;
+            }
+        },
+        
+        calculateProfitFromPrice() {
+            if (this.unitPrice > 0) {
+                this.profitPercent = ((this.unitPrice - this.breakeven) / this.unitPrice) * 100;
+            } else {
+                this.profitPercent = 0;
+            }
+            this.totalProfit = (this.unitPrice - this.breakeven) * this.quantity;
+        },
+        
+        calculatePriceFromProfit() {
+            // Unit Price = Breakeven / (1 - Profit % / 100)
+            if (this.profitPercent >= 100) {
+                // Can't have 100% or more profit
+                this.profitPercent = 99;
+            }
+            
+            if (this.profitPercent <= -99) {
+                // Can't have -100% or less profit
+                this.profitPercent = -99;
+            }
+            
+            const marginRate = this.profitPercent / 100;
+            if (marginRate < 1) {
+                this.unitPrice = this.breakeven / (1 - marginRate);
+            } else {
+                this.unitPrice = this.breakeven;
+            }
+            
+            this.totalProfit = (this.unitPrice - this.breakeven) * this.quantity;
+        },
+        
+        recalculateFromCost() {
+            this.calculateBreakeven();
+            this.calculateProfitFromPrice();
+        },
+        
+        recalculateFromPrice() {
+            this.calculateProfitFromPrice();
+        },
+        
+        recalculateFromProfit() {
+            this.calculatePriceFromProfit();
+        },
+        
+        async resetToCatalogDefaults() {
+            console.log('Reset button clicked. Checking catalog linkage:', {
+                catalogType: this.catalogType,
+                catalogId: this.catalogId,
+                rawType: this.$el.dataset.catalogType,
+                rawId: this.$el.dataset.catalogId
+            });
+            
+            // Check if values are empty strings ("" or "null" as string)
+            const hasValidCatalogType = this.catalogType && this.catalogType !== '' && this.catalogType !== 'null';
+            const hasValidCatalogId = this.catalogId && this.catalogId !== '' && this.catalogId !== 'null' && this.catalogId !== '0';
+            
+            if (!hasValidCatalogType || !hasValidCatalogId) {
+                const itemName = this.$el.querySelector('input[name="name"]')?.value || 'This item';
+                alert(`${itemName} is not linked to a catalog item. Cannot reset.\n\nCatalog Type: ${this.catalogType || '(none)'}\nCatalog ID: ${this.catalogId || '(none)'}\n\nTo link this item to the catalog, delete it and re-add from the Add Items panel.`);
+                return;
+            }
+            
+            // Show confirmation
+            if (!confirm(`Reset this ${this.catalogType} item to catalog defaults?`)) {
+                return;
+            }
+            
+            try {
+                // Fetch the catalog item defaults - use absolute URL to avoid routing issues
+                const baseUrl = window.location.origin;
+                const url = `${baseUrl}/api/catalog/${this.catalogType}/${this.catalogId}`;
+                console.log('Fetching catalog defaults from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    let errorMessage = `Server error (${response.status})`;
+                    
+                    // Clone the response so we can read it multiple times if needed
+                    const responseClone = response.clone();
+                    
+                    try {
+                        const errorData = await response.json();
+                        console.error('API Error:', errorData);
+                        
+                        if (response.status === 404) {
+                            // Show detailed message from API
+                            errorMessage = errorData.message || `The catalog ${this.catalogType} item (ID: ${this.catalogId}) no longer exists.\n\nIt may have been deleted.`;
+                            
+                            // Add debug info if available
+                            if (errorData.debug) {
+                                console.log('Debug info:', errorData.debug);
+                                errorMessage += `\n\nPlease check:\n• Database table: ${errorData.debug.table || 'unknown'}\n• Item ID: ${errorData.debug.requested_id || this.catalogId}\n\nYou may need to delete this line item and re-add it from the catalog.`;
+                            }
+                        } else {
+                            errorMessage = errorData.message || errorMessage;
+                        }
+                    } catch (parseError) {
+                        // If JSON parsing fails, try to get text from the clone
+                        try {
+                            const errorText = await responseClone.text();
+                            console.error('API Error (text):', errorText);
+                            errorMessage += '. Check console for details.';
+                        } catch (textError) {
+                            console.error('Could not read error response:', textError);
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const data = await response.json();
+                console.log('Catalog data received:', data);
+                
+                // Update the values
+                if (this.catalogType === 'labor') {
+                    this.unitCost = parseFloat(data.unit_cost || 0);
+                    this.unitPrice = parseFloat(data.unit_price || data.unit_cost || 0);
+                } else if (this.catalogType === 'material') {
+                    this.unitCost = parseFloat(data.unit_cost || 0);
+                    this.unitPrice = parseFloat(data.unit_price || data.unit_cost || 0);
+                }
+                
+                // Recalculate
+                this.recalculateFromCost();
+                
+                alert(`✓ Reset to catalog defaults:\nCost: $${this.unitCost.toFixed(2)}\nPrice: $${this.unitPrice.toFixed(2)}`);
+            } catch (error) {
+                console.error('Reset error:', error);
+                alert(error.message);
+            }
+        },
+        
+        showToast(message, type) {
+            if (window.showToast) {
+                window.showToast(message, type);
+            } else {
+                alert(message);
+            }
+        }
+    };
+};
+
 initEstimateShow();
 
 export default initEstimateShow;

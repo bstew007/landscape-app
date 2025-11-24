@@ -1,6 +1,30 @@
 @php
-    $rowProfit = $item->margin_total;
     $areaId = $areaId ?? $item->area_id;
+    $defaultMarginPercent = $defaultMarginPercent ?? 20.0;
+    $overheadRate = $overheadRate ?? 0.0;
+    $isLabor = $item->item_type === 'labor';
+    $isMaterial = $item->item_type === 'material';
+    
+    // Calculate true breakeven based on item type
+    if ($isLabor) {
+        // For labor: breakeven includes overhead
+        $breakeven = $item->unit_cost + $overheadRate;
+    } elseif ($isMaterial && $item->tax_rate > 0) {
+        // For materials: breakeven includes tax if taxable
+        $breakeven = $item->unit_cost * (1 + $item->tax_rate);
+    } else {
+        // For fees, discounts, and non-taxable materials
+        $breakeven = $item->unit_cost;
+    }
+    
+    // Calculate actual profit % based on breakeven and price
+    // Profit % = (Price - Breakeven) / Price × 100
+    $profitPercent = $item->unit_price > 0 
+        ? round((($item->unit_price - $breakeven) / $item->unit_price) * 100, 1)
+        : 0.0;
+    
+    // Calculate total profit in dollars
+    $totalProfit = ($item->unit_price - $breakeven) * $item->quantity;
 @endphp
 <tr class="border-t"
     data-item-id="{{ $item->id }}"
@@ -25,10 +49,31 @@
             <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->unit_cost }}">
     </td>
     <td class="px-3 py-2 text-center">
+        <div class="flex flex-col items-center gap-0.5">
+            <span class="text-gray-700 font-medium">${{ number_format($breakeven, 2) }}</span>
+            @if($isLabor && $overheadRate > 0)
+                <div class="text-[10px] text-gray-500" title="Includes ${{ number_format($overheadRate, 2) }}/hr overhead">
+                    +${{ number_format($overheadRate, 2) }} OH
+                </div>
+            @elseif($isMaterial && $item->tax_rate > 0)
+                <div class="text-[10px] text-gray-500" title="Includes {{ number_format($item->tax_rate * 100, 1) }}% tax">
+                    +{{ number_format($item->tax_rate * 100, 1) }}% tax
+                </div>
+            @endif
+        </div>
+    </td>
+    <td class="px-3 py-2 text-center">
             <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $item->unit_price }}">
     </td>
-    <td class="px-3 py-2 text-center text-gray-700">
-        ${{ number_format($rowProfit, 2) }}
+    <td class="px-3 py-2 text-center">
+        <div class="flex flex-col items-center gap-0.5">
+            <span class="text-gray-700 font-semibold" :class="{ 'text-green-600': {{ $profitPercent }} >= 10, 'text-yellow-600': {{ $profitPercent }} >= 0 && {{ $profitPercent }} < 10, 'text-red-600': {{ $profitPercent }} < 0 }">
+                {{ number_format($profitPercent, 1) }}%
+            </span>
+            <div class="text-[10px] text-gray-500">
+                ${{ number_format($totalProfit, 2) }}
+            </div>
+        </div>
     </td>
     <td class="px-3 py-2 text-center text-gray-700">
         ${{ number_format($item->cost_total, 2) }}

@@ -13,6 +13,8 @@
             'allItems' => $allItems,
             'costCodes' => $costCodes ?? [],
             'initiallyOpen' => (string) $area->id === (string) $defaultOpenAreaId,
+            'defaultMarginPercent' => $defaultMarginPercent ?? 20.0,
+            'overheadRate' => $overheadRate ?? 0.0,
         ])
     @endforeach
 </div>

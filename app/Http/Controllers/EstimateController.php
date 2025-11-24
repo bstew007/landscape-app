@@ -123,6 +123,40 @@ class EstimateController extends Controller
         $budget = app(\App\Services\BudgetService::class)->active();
         $defaultMarginRate = (float) (($budget->desired_profit_margin ?? 0.2));
         $defaultMarginPercent = round($defaultMarginRate * 100, 1);
+        $activeBudgetName = $budget ? $budget->name : 'No Active Budget';
+        
+        // Overhead recovery rate per hour - use pre-calculated value from budget
+        $overheadRate = 0.0;
+        if ($budget) {
+            // Primary source: saved OH recovery rate (calculated and stored during budget update)
+            $overheadRate = (float) data_get($budget->inputs, 'oh_recovery.labor_hour.markup_per_hour', 0);
+            
+            // Fallback: use outputs if inputs not available (for backwards compatibility)
+            if ($overheadRate == 0 && $budget->outputs) {
+                $outputs = $budget->outputs ?? [];
+                $laborOutputs = $outputs['labor'] ?? [];
+                $overheadRate = (float) ($laborOutputs['ohr'] ?? 0);
+            }
+        }
+        
+        // Debug: Log what we calculated
+        \Log::info('EstimateController overhead rate', [
+            'overhead_rate' => $overheadRate,
+            'budget_id' => $budget?->id,
+        ]);
+        
+        // Overhead recovery model info
+        $overheadRecoveryModel = '—';
+        if ($budget && isset($budget->inputs['oh_recovery'])) {
+            $ohRecovery = $budget->inputs['oh_recovery'];
+            if (($ohRecovery['labor_hours']['activated'] ?? false)) {
+                $overheadRecoveryModel = 'Labor Hours';
+            } elseif (($ohRecovery['revenue']['activated'] ?? false)) {
+                $overheadRecoveryModel = 'Revenue (SORS)';
+            } elseif (($ohRecovery['dual']['activated'] ?? false)) {
+                $overheadRecoveryModel = 'Dual-Base';
+            }
+        }
 
         $itemsByType = $estimate->items->groupBy('item_type');
         $typeBreakdown = [
@@ -164,12 +198,16 @@ class EstimateController extends Controller
 
         return view('estimates.show', [
             'estimate' => $estimate,
+            'budget' => $budget,
             'materials' => $materials,
             'laborCatalog' => $laborCatalog,
             'financialSummary' => $financialSummary,
             'typeBreakdown' => $typeBreakdown,
             'defaultMarginRate' => $defaultMarginRate,
             'defaultMarginPercent' => $defaultMarginPercent,
+            'activeBudgetName' => $activeBudgetName,
+            'overheadRecoveryModel' => $overheadRecoveryModel,
+            'overheadRate' => $overheadRate,
             'statuses' => Estimate::STATUSES,
             // Cost codes for Work Area dialog
             'costCodes' => \App\Models\CostCode::where('is_active', true)->whereNotNull('qbo_item_id')->orderBy('code')->get(),

@@ -46,32 +46,108 @@
   }
 @endphp
 
-<div class="p-4 space-y-4" data-theme="compact" x-data="{ isModal: {{ request()->has('modal') ? 'true' : 'false' }} }">
-    @if ($errors->any())
-        <div class="max-w-2xl mx-auto mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
-            <ul class="list-disc pl-5 text-sm space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+<script>
+function laborCreateForm(){
+return {
+    // Inputs
+    isModal: false,
+    wage: {{ old('average_wage', 0) ?: 0 }},
+    otFactor: {{ old('overtime_factor', 1.00) }},
+    unbillable: {{ old('unbillable_percentage', 0) }},
+    burden: {{ old('labor_burden_percentage', 0) }},
+    overhead: {{ number_format($ohr, 2, '.', '') }},
+    // Pricing
+    mode: 'budget',
+    budgetMargin: {{ number_format($budgetMargin * 100, 1, '.', '') }},
+    customMargin: {{ old('custom_margin', number_format($budgetMargin * 100, 1, '.', '')) }},
+    customPrice: {{ old('base_rate', 0) ?: 0 }},
+    // Derived helpers
+    init(){
+        if (!this.mode) this.mode = 'budget';
+        const cm = Number(this.customMargin);
+        this.customMargin = Number.isFinite(cm) ? cm : (Number(this.budgetMargin) || 0);
+    },
+    effectiveWage(){
+        // otFactor is stored as percentage (e.g., 15 for 15% increase)
+        // Convert to multiplier: 15 / 100 = 0.15, then 1 + 0.15 = 1.15
+        const multiplier = 1 + (this.otFactor / 100);
+        return this.wage * multiplier;
+    },
+    loadedWage(){ 
+        return this.effectiveWage() * (1 + (this.burden / 100)); 
+    },
+    billableFraction(){ 
+        const frac = 1 - (this.unbillable / 100); 
+        return Math.max(0.01, frac); 
+    },
+    breakeven(){ 
+        const loaded = this.loadedWage();
+        const billable = this.billableFraction();
+        return (loaded / billable) + this.overhead;
+    },
+    price(){
+        if (this.mode === 'custom-price') return this.customPrice;
+        const marginPct = this.mode === 'custom-margin' ? this.customMargin : this.budgetMargin;
+        const m = Math.min(99.9, Math.max(0, marginPct)) / 100;
+        const c = this.breakeven();
+        return m >= 0.999 ? c : (c / (1 - m));
+    },
+    ensureCustomPriceSeed(){
+        if (!this.customPrice) this.customPrice = this.price();
+    }
+}
+}
+</script>
 
-    <x-modal name="labor-create" :show="true" maxWidth="3xl">
-        <div x-data="laborCreateForm()" x-init="mode = 'budget'" class="p-4">
-            <x-page-header title="Add Labor" eyebrow="Catalogs" variant="compact" class="mb-4 shadow-sm" x-show="!isModal">
-                <x-slot:actions>
-                    <a href="{{ route('labor.index') }}" class="inline-flex items-center h-9 px-3 rounded border text-sm hover:bg-gray-50">Cancel</a>
-                    <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save</button>
-                </x-slot:actions>
-            </x-page-header>
-            
-            <!-- Modal mode header/buttons -->
-            <div x-show="isModal" class="flex items-center justify-end gap-2 mb-4">
-                <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save Labor</button>
+<div class="space-y-8 max-w-7xl mx-auto p-4">
+    <div x-data="laborCreateForm()" x-init="mode = 'budget'; isModal = {{ request()->has('modal') ? 'true' : 'false' }}">
+        <!-- Hero Header -->
+        <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden" x-show="!isModal">
+            <div class="flex flex-wrap items-start gap-6">
+                <div class="space-y-3 max-w-3xl">
+                    <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Labor Catalog</p>
+                    <h1 class="text-3xl sm:text-4xl font-semibold">Add Labor Item</h1>
+                    <p class="text-sm text-brand-100/85">Create a new labor catalog item with wage calculations, overhead recovery, and profit margins.</p>
+                </div>
+                <div class="ml-auto flex gap-2">
+                    <a href="{{ route('labor.index') }}" class="inline-flex items-center h-9 px-4 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20">Cancel</a>
+                    <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded-lg bg-white text-brand-900 text-sm font-semibold hover:bg-brand-50">Save Labor Item</button>
+                </div>
             </div>
+            <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 text-sm text-brand-100">
+                <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                    <dt class="text-xs uppercase tracking-wide text-brand-200">OH Markup</dt>
+                    <dd class="text-2xl font-semibold text-white mt-2">$<span x-text="Number(overhead).toFixed(2)"></span>/hr</dd>
+                </div>
+                <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                    <dt class="text-xs uppercase tracking-wide text-brand-200">Breakeven</dt>
+                    <dd class="text-2xl font-semibold text-white mt-2">$<span x-text="breakeven().toFixed(2)"></span></dd>
+                </div>
+                <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                    <dt class="text-xs uppercase tracking-wide text-brand-200">Price</dt>
+                    <dd class="text-2xl font-semibold text-white mt-2">$<span x-text="price().toFixed(2)"></span></dd>
+                </div>
+            </dl>
+        </section>
+        
+        <!-- Modal mode header/buttons -->
+        <div x-show="isModal" class="flex items-center justify-end gap-2 mb-4">
+            <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save Labor</button>
+        </div>
 
-            <form id="laborCreateForm" method="POST" action="{{ route('labor.store') }}" class="space-y-6 mt-4" @submit="if (isModal) { $event.preventDefault(); submitInModalMode($event.target); }">
+        <!-- Main Content Card -->
+        <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 p-6 sm:p-8 space-y-6">
+            @if ($errors->any())
+                <div class="p-4 bg-red-50 text-red-900 rounded-2xl border border-red-200 text-sm">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form id="laborCreateForm" method="POST" action="{{ route('labor.store') }}" class="space-y-6" @submit="if (isModal) { $event.preventDefault(); submitInModalMode($event.target); }">
                 @csrf
                 <input type="hidden" name="type" value="{{ old('type','crew') }}">
                 <!-- Base rate follows the Price Calculator -->
@@ -164,11 +240,11 @@
                                     <input type="radio" name="pricing_mode_choice" value="budget" x-model="mode" checked>
                                     <span>Use Profit Margin from Budget</span>
                                 </label>
-                                <label class="inline-flex items-center gap-2 text-sm">
+                                <label class="flex items-center gap-2 text-sm">
                                     <input type="radio" name="pricing_mode_choice" value="custom-margin" x-model="mode">
                                     <span>Set a Custom Profit Margin</span>
                                 </label>
-                                <label class="inline-flex items-center gap-2 text-sm">
+                                <label class="flex items-center gap-2 text-sm">
                                     <input type="radio" name="pricing_mode_choice" value="custom-price" x-model="mode" @change="ensureCustomPriceSeed()">
                                     <span>Set a Custom Price</span>
                                 </label>
@@ -240,103 +316,9 @@
                 <input type="hidden" name="overtime_rate" value="{{ old('overtime_rate') }}">
                 <input type="hidden" name="cost_code_id" value="{{ old('cost_code_id') }}">
             </form>
-
-
-        </div>
-        <script>
-            function laborCreateForm(){
-            return {
-                // Inputs
-                wage: Number({{ json_encode(old('average_wage', '')) }}) || 0,
-                otFactor: Number({{ json_encode(old('overtime_factor', 1.00)) }}) || 1,
-                unbillable: Number({{ json_encode(old('unbillable_percentage', 0)) }}) || 0,
-                burden: Number({{ json_encode(old('labor_burden_percentage', 0)) }}) || 0,
-                overhead: Number({{ json_encode(number_format($ohr, 2, '.', '')) }}) || 0,
-                    // Pricing
-                    mode: 'budget',
-                    budgetMargin: (parseFloat('{{ number_format($budgetMargin * 100, 1, '.', '') }}') || 0), // %
-                    customMargin: (() => {
-                        const oldVal = parseFloat('{{ old('custom_margin', number_format($budgetMargin * 100, 1, '.', '')) }}');
-                        const seed = parseFloat('{{ number_format($budgetMargin * 100, 1, '.', '') }}') || 0;
-                        return Number.isFinite(oldVal) ? oldVal : seed;
-                    })(), // %
-                customPrice: Number({{ json_encode(old('base_rate', '')) }}) || 0,
-                    // Wage modal data (no longer used inside nested modal)
-                    // employees: {!! json_encode($employeeRows) !!},
-                    // Derived helpers
-                    init(){
-                        // Ensure default mode is budget on load
-                        if (!this.mode) this.mode = 'budget';
-                        // Seed custom margin to budget margin on load if empty/invalid
-                        const cm = Number(this.customMargin);
-                        this.customMargin = Number.isFinite(cm) ? cm : (Number(this.budgetMargin) || 0);
-                        // When switching to custom-margin, seed from budget if customMargin isn't valid yet
-                        this.$watch('mode', (val) => {
-                            try { document.querySelector('input[name="pricing_mode"]').value = val; } catch(_) {}
-                            if (val === 'custom-margin') {
-                                const cv = Number(this.customMargin);
-                                if (!Number.isFinite(cv)) {
-                                    this.customMargin = Number(this.budgetMargin) || 0;
-                                }
-                                // Focus the input when entering custom-margin
-                                this.$nextTick(() => { try { this.$refs.customMarginInput && this.$refs.customMarginInput.focus(); this.$refs.customMarginInput.select?.(); } catch(_) {} });
-                            }
-                        });
-                    },
-                effectiveWage(){
-                    const f = this.otFactor && this.otFactor > 0 ? this.otFactor : 1;
-                    return this.wage * f;
-                },
-                    loadedWage(){ return (this.effectiveWage()) * (1 + ((Number(this.burden)||0)/100)); },
-                    billableFraction(){ const frac = 1 - ((Number(this.unbillable)||0) / 100); return Math.max(0.01, frac); },
-                    breakeven(){ return (this.loadedWage() / this.billableFraction()) + (Number(this.overhead)||0); },
-                    selectedMargin(){
-                        if (this.mode === 'custom-price') {
-                            const p = Number(this.customPrice)||0; const c = this.breakeven();
-                            if (p <= 0) return 0;
-                            const m = (p - c) / p;
-                            return Math.max(-100, Math.min(100, m * 100));
-                        }
-                        if (this.mode === 'custom-margin') return Number(this.customMargin)||0;
-                        return Number(this.budgetMargin)||0;
-                    },
-                    price(){
-                        if (this.mode === 'custom-price') return Number(this.customPrice)||0;
-                        const marginPct = this.mode === 'custom-margin' ? (Number(this.customMargin)||0) : (Number(this.budgetMargin)||0);
-                        const m = Math.min(99.9, Math.max(0, marginPct)) / 100; // 0-0.999
-                        const c = this.breakeven();
-                        return m >= 0.999 ? c : (c / (1 - m));
-                    },
-                    ensureCustomPriceSeed(){
-                        if (!this.customPrice) this.customPrice = this.price();
-                    },
-                    submitInModalMode(form){
-                        const fd = new FormData(form);
-                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        fetch(form.action, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                            body: fd
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (window.parent && window.parent !== window) {
-                                window.parent.postMessage({ type: 'labor:saved', labor: data }, '*');
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Save failed', err);
-                            alert('Failed to save labor item');
-                        });
-                    },
-                    fmtMoney(v){ const n = Number(v)||0; return '$' + n.toFixed(2); },
-                    // Wage modal helpers
-                    openWageCalc(){ try { window.dispatchEvent(new CustomEvent('open-modal', { detail: 'wage-calc' })); } catch(_) {} },
-                }
-            }
-
-        </script>
-    </x-modal>
+        </section>
+    </div>
+</div>
 
 <!-- Wage Calculator Modal (top-level) -->
 <x-modal name="wage-calc" :show="false" maxWidth="xl">
@@ -425,7 +407,9 @@ function wageCalcTopModal(){
             const ratio = this.otFactor();
             const elOT = document.querySelector('input[name="overtime_factor"]');
             if (elOT && ratio > 0) {
-                elOT.value = Number(ratio).toFixed(4);
+                // Convert ratio to percentage increase: (1.15 - 1) * 100 = 15
+                const percentIncrease = (ratio - 1) * 100;
+                elOT.value = percentIncrease.toFixed(2);
                 elOT.dispatchEvent(new Event('input', { bubbles: true }));
                 elOT.dispatchEvent(new Event('change', { bubbles: true }));
             }

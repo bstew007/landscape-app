@@ -176,14 +176,24 @@
                     </div>
                     <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
                         @foreach ($laborCatalog as $labor)
-                            @php $rate = $labor->average_wage ?? $labor->base_rate; @endphp
+                            @php 
+                                $wage = (float) ($labor->average_wage ?? 0);
+                                $otMult = max(1, (float) ($labor->overtime_factor ?? 1));
+                                $burdenPct = max(0, (float) ($labor->labor_burden_percentage ?? 0));
+                                $unbillPct = min(99.9, max(0, (float) ($labor->unbillable_percentage ?? 0)));
+                                $effectiveWage = $wage * $otMult;
+                                $costPerHour = $effectiveWage * (1 + ($burdenPct / 100));
+                                $billableFraction = max(0.01, 1 - ($unbillPct / 100));
+                                $laborOverheadRate = $overheadRate ?? 0; // Use the overhead rate from controller
+                                $breakeven = ($costPerHour / $billableFraction) + $laborOverheadRate;
+                            @endphp
                             <div class="px-3 py-2 text-sm flex items-center justify-between gap-4">
                                 <div>
                                     <div class="font-medium text-gray-900">{{ $labor->name }}</div>
-                                    <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} ? {{ $labor->unit }}</div>
+                                    <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} · {{ $labor->unit }}</div>
                                 </div>
                                 <div class="flex flex-col items-end text-right gap-1">
-                                    <div class="text-xs text-gray-600">Avg Wage: ${{ number_format($rate, 2) }}</div>
+                                    <div class="text-xs text-gray-600">Cost/Hr: ${{ number_format($costPerHour, 2) }}</div>
                                     <button type="button"
                                             class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white hover:bg-brand-700 transition"
                                             data-action="drawer-add"
@@ -191,7 +201,7 @@
                                             data-catalog-id="{{ $labor->id }}"
                                             data-catalog-name="{{ $labor->name }}"
                                             data-catalog-unit="{{ $labor->unit }}"
-                                            data-catalog-cost="{{ number_format($rate, 2, '.', '') }}">
+                                            data-catalog-cost="{{ number_format($costPerHour, 2, '.', '') }}">
                                         Add
                                     </button>
                                 </div>
@@ -333,6 +343,8 @@
                     'estimate' => $estimate,
                     'costCodes' => $costCodes ?? [],
                     'recentAreaId' => $recentAreaId ?? null,
+                    'defaultMarginPercent' => $defaultMarginPercent ?? 20.0,
+                    'overheadRate' => $overheadRate ?? 0.0,
                 ])
             </div>
         </div>

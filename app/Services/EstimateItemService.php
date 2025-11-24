@@ -248,17 +248,19 @@ class EstimateItemService
                 'margin_rate' => 0.0,
                 'tax_rate' => $material->is_taxable ? (float) $material->tax_rate : 0.0,
                 'description' => $material->description,
-                'catalog_type' => Material::class,
+                'catalog_type' => 'material',
             ];
         }
 
         if ($catalogType === 'labor') {
             $labor = LaborItem::find($catalogId);
             if (!$labor) return [];
-            // Use catalog’s base_rate as both cost and price by default (0 margin) so the UI remains simple.
-            $unitCost = (float) ($labor->base_rate ?? 0);
-            $unitPrice = $unitCost;
-            $marginRate = 0.0;
+            // Use average_wage (wage/hr) as the unit cost
+            $unitCost = (float) ($labor->average_wage ?? 0);
+            // Use base_rate as the default unit price (billable rate)
+            $unitPrice = (float) ($labor->base_rate ?? $unitCost);
+            // Calculate margin rate based on cost and price
+            $marginRate = $unitCost > 0 ? (($unitPrice - $unitCost) / $unitCost) : 0.0;
             return [
                 'name' => $labor->name,
                 'unit' => $labor->unit,
@@ -267,7 +269,7 @@ class EstimateItemService
                 'margin_rate' => $marginRate,
                 'tax_rate' => 0.0,
                 'description' => $labor->notes,
-                'catalog_type' => LaborItem::class,
+                'catalog_type' => 'labor',
             ];
         }
 

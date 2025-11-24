@@ -8,40 +8,50 @@
     $profitMarginPct = $profitMarginPct ?? null;
 @endphp
 
-<div class="space-y-8 max-w-7xl mx-auto">
-    <x-page-header eyebrow="Catalogs" class="shadow-sm">
-        <x-slot:leading>
-            <div class="h-10 w-10 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg">🛠️</div>
-        </x-slot:leading>
-        <x-slot:title>
-            <div class="flex items-center gap-2">
-                <span class="text-2xl font-semibold text-gray-900">Labor Catalog</span>
+<div class="space-y-8 max-w-7xl mx-auto p-4">
+    <!-- Hero Header -->
+    <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
+        <div class="flex flex-wrap items-start gap-6">
+            <div class="space-y-3 max-w-3xl">
+                <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Catalogs</p>
+                <h1 class="text-3xl sm:text-4xl font-semibold">Labor Catalog</h1>
+                <p class="text-sm text-brand-100/85">Manage your labor items with wage calculations, overhead recovery, and profit margins based on your active budget.</p>
             </div>
-        </x-slot:title>
-    </x-page-header>
-
-    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-4">
-            <p class="text-xs uppercase tracking-wide text-gray-500">Budget</p>
-            <p class="text-lg font-semibold text-gray-900 mt-1">{{ $budgetName ?? 'No active budget' }}</p>
+            <div class="ml-auto">
+                <a href="{{ route('labor.create') }}" class="inline-flex items-center h-10 px-5 rounded-lg bg-white text-brand-900 text-sm font-semibold hover:bg-brand-50 shadow-lg">
+                    <svg class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                    </svg>
+                    New Labor Item
+                </a>
+            </div>
         </div>
-        <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-4">
-            <p class="text-xs uppercase tracking-wide text-gray-500">Overhead</p>
-            <p class="text-lg font-semibold text-gray-900 mt-1">${{ number_format($overheadRate ?? 0, 2) }}/hr</p>
-        </div>
-        <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-4">
-            <p class="text-xs uppercase tracking-wide text-gray-500">Profit</p>
-            <p class="text-lg font-semibold text-gray-900 mt-1">{{ isset($profitMarginPct) ? number_format($profitMarginPct, 1) . '%' : '—' }}</p>
-        </div>
+        <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 text-sm text-brand-100">
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Active Budget</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">{{ $budgetName ?? 'No active budget' }}</dd>
+            </div>
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Overhead Rate</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">${{ number_format($overheadRate ?? 0, 2) }}/hr</dd>
+            </div>
+            <div class="rounded-2xl bg-white/10 border border-white/20 p-4">
+                <dt class="text-xs uppercase tracking-wide text-brand-200">Profit Margin</dt>
+                <dd class="text-2xl font-semibold text-white mt-2">{{ isset($profitMarginPct) ? number_format($profitMarginPct, 1) . '%' : '—' }}</dd>
+            </div>
+        </dl>
     </section>
 
+    <!-- Main Content Card -->
     <section class="rounded-[32px] bg-white shadow-2xl border border-brand-100/60 overflow-hidden">
         <div class="p-5 sm:p-7 border-b border-brand-100/60">
             <form method="GET" class="flex flex-col sm:flex-row gap-3 items-center justify-between">
-                <input type="text" name="search" value="{{ $search }}" placeholder="Search by name or type" class="form-input w-full sm:max-w-xs rounded-full border-brand-200 focus:ring-brand-500 focus:border-brand-500">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Search by name or type" class="form-input w-full sm:max-w-xs rounded-xl border-brand-200 focus:ring-brand-500 focus:border-brand-500">
                 <div class="flex items-center gap-3">
-                    <x-brand-button type="submit" size="sm">Search</x-brand-button>
-                    <x-brand-button as="a" href="{{ route('labor.create') }}" variant="muted" size="sm">+ New</x-brand-button>
+                    <button type="submit" class="inline-flex items-center h-9 px-4 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700">Search</button>
+                    @if($search)
+                        <a href="{{ route('labor.index') }}" class="inline-flex items-center h-9 px-4 rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50">Clear</a>
+                    @endif
                 </div>
             </form>
         </div>
@@ -63,7 +73,6 @@
             @forelse ($labor as $entry)
                 @php
                     $wage = (float) ($entry->average_wage ?? 0);
-                    // Treat overtime_factor as a multiplier (e.g., 1.5), not a percent
                     $otMult = max(1, (float) ($entry->overtime_factor ?? 1));
                     $burdenPct = max(0, (float) ($entry->labor_burden_percentage ?? 0));
                     $unbillPct = min(99.9, max(0, (float) ($entry->unbillable_percentage ?? 0)));

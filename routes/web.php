@@ -84,6 +84,125 @@ Route::middleware('auth')->group(function () {
     });
 
     // Read-only catalogs for non-admin users could be added here if desired
+    
+    // API endpoint for catalog defaults (used by estimate line items)
+    Route::get('/api/catalog/{type}/{id}', function ($type, $id) {
+        // Normalize type (handle both 'labor' and 'App\Models\LaborItem')
+        $type = strtolower($type);
+        if (strpos($type, 'laboritem') !== false || $type === 'labor') {
+            $type = 'labor';
+        } elseif (strpos($type, 'material') !== false) {
+            $type = 'material';
+        }
+        
+        if ($type === 'labor') {
+            // Look for the labor item, including inactive ones
+            $item = \App\Models\LaborItem::find($id);
+            
+            // Debug logging
+            \Log::info('Catalog API lookup', [
+                'type' => 'labor',
+                'id' => $id,
+                'found' => $item ? 'yes' : 'no',
+                'is_active' => $item ? $item->is_active : null,
+                'name' => $item ? $item->name : null,
+            ]);
+            
+            if (!$item) {
+                return response()->json([
+                    'error' => 'Labor item not found',
+                    'message' => "Labor catalog item with ID {$id} does not exist in the database. It may have been deleted.",
+                    'debug' => [
+                        'requested_id' => $id,
+                        'type' => 'labor',
+                        'table' => 'labor_catalog',
+                    ]
+                ], 404);
+            }
+            
+            // Warn if inactive but still return data
+            if (!$item->is_active) {
+                \Log::warning('Catalog item is inactive', ['type' => 'labor', 'id' => $id, 'name' => $item->name]);
+            }
+            
+            $wage = (float) ($item->average_wage ?? 0);
+            $otMult = max(1, (float) ($item->overtime_factor ?? 1));
+            $burdenPct = max(0, (float) ($item->labor_burden_percentage ?? 0));
+            $unbillPct = min(99.9, max(0, (float) ($item->unbillable_percentage ?? 0)));
+            $effectiveWage = $wage * $otMult;
+            $unitCost = $effectiveWage * (1 + ($burdenPct / 100));
+            $billableFraction = max(0.01, 1 - ($unbillPct / 100));
+            $unitCostPerBillableHour = $unitCost / $billableFraction;
+            
+            // Get overhead rate from active budget
+            $budget = app(\App\Services\BudgetService::class)->active();
+            $overheadRate = 0.0;
+            if ($budget) {
+                $overheadRate = (float) data_get($budget->inputs, 'oh_recovery.labor_hour.markup_per_hour', 0);
+                if ($overheadRate == 0 && $budget->outputs) {
+                    $overheadRate = (float) data_get($budget->outputs, 'labor.ohr', 0);
+                }
+            }
+            
+            $breakeven = $unitCostPerBillableHour + $overheadRate;
+            $defaultMarginRate = (float) ($budget->desired_profit_margin ?? 0.2);
+            $unitPrice = $breakeven / (1 - $defaultMarginRate);
+            
+            return response()->json([
+                'unit_cost' => round($unitCostPerBillableHour, 2),
+                'unit_price' => round($unitPrice, 2),
+                'overhead_rate' => $overheadRate,
+                'name' => $item->name,
+                'unit' => $item->unit,
+            ]);
+        } elseif ($type === 'material') {
+            // Look for the material, including inactive ones
+            $item = \App\Models\Material::find($id);
+            
+            // Debug logging
+            \Log::info('Catalog API lookup', [
+                'type' => 'material',
+                'id' => $id,
+                'found' => $item ? 'yes' : 'no',
+                'is_active' => $item ? $item->is_active : null,
+                'name' => $item ? $item->name : null,
+            ]);
+            
+            if (!$item) {
+                return response()->json([
+                    'error' => 'Material not found',
+                    'message' => "Material catalog item with ID {$id} does not exist in the database. It may have been deleted.",
+                    'debug' => [
+                        'requested_id' => $id,
+                        'type' => 'material',
+                        'table' => 'materials',
+                    ]
+                ], 404);
+            }
+            
+            // Warn if inactive but still return data
+            if (!$item->is_active) {
+                \Log::warning('Catalog item is inactive', ['type' => 'material', 'id' => $id, 'name' => $item->name]);
+            }
+            
+            $budget = app(\App\Services\BudgetService::class)->active();
+            $defaultMarginRate = (float) ($budget->desired_profit_margin ?? 0.2);
+            $unitCost = (float) $item->unit_cost;
+            $taxRate = (float) ($item->tax_rate ?? 0);
+            $breakeven = $unitCost * (1 + $taxRate);
+            $unitPrice = $breakeven / (1 - $defaultMarginRate);
+            
+            return response()->json([
+                'unit_cost' => round($unitCost, 2),
+                'unit_price' => round($unitPrice, 2),
+                'tax_rate' => $taxRate,
+                'name' => $item->name,
+                'unit' => $item->unit,
+            ]);
+        }
+        
+        return response()->json(['error' => 'Invalid type'], 400);
+    })->name('api.catalog.defaults');
 
     // ✅ Save calculation to site visit
     Route::post('/site-visits/calculation', [SiteVisitController::class, 'storeCalculation'])
