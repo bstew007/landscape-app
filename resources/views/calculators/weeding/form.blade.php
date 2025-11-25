@@ -8,7 +8,7 @@
 
     @if(($mode ?? null) !== 'template' && $siteVisit)
         @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
-    @else
+    @elseif(($mode ?? null) === 'template')
         <div class="bg-white p-4 rounded border mb-6">
             <p class="text-sm text-gray-700">Template Mode — build a Weeding template without a site visit.</p>
             @if(!empty($estimateId))
@@ -30,7 +30,7 @@
         @endif
 
         {{-- Required --}}
-        @if(($mode ?? null) !== 'template')
+        @if(($mode ?? null) !== 'template' && $siteVisitId)
             <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @endif
 
@@ -58,6 +58,14 @@
                     ->get();
             @endphp
 
+            @if ($rates->isEmpty())
+                <div class="p-4 rounded bg-yellow-100 border border-yellow-300 text-sm text-yellow-900 mb-4">
+                    <strong>No weeding production rates found.</strong> Please add weeding rates in 
+                    <a href="{{ route('production-rates.index', ['calculator' => 'weeding']) }}" class="underline font-medium">Production Rates</a>
+                    or run <code class="bg-yellow-200 px-1 rounded">php artisan db:seed --class=ProductionRateSeeder</code>.
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach ($rates as $rate)
                     @php
@@ -83,7 +91,7 @@
         </div>
 
         {{-- Submit --}}
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             @if(($mode ?? null) === 'template')
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
                     <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Basic weeding pass)" value="{{ old('template_name') }}">
@@ -99,7 +107,9 @@
                     {{ $editMode ? '🔄 Recalculate Weeding' : '🧮 Calculate Weeding Data' }}
                 </button>
 
-                <a href="{{ route('clients.show', $siteVisitId) }}" class="btn btn-muted">🔙 Back to Client</a>
+                @if($siteVisit && $siteVisit->client)
+                    <a href="{{ route('clients.show', $siteVisit->client->id) }}" class="btn btn-muted">🔙 Back to Client</a>
+                @endif
             @endif
         </div>
 

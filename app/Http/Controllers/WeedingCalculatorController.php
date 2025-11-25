@@ -37,11 +37,17 @@ class WeedingCalculatorController extends Controller
 
     public function edit(Calculation $calculation)
     {
+        $siteVisit = $calculation->site_visit_id 
+            ? SiteVisit::with('client')->find($calculation->site_visit_id)
+            : null;
+
         return view('calculators.weeding.form', [
             'editMode' => true,
             'formData' => $calculation->data,
             'calculation' => $calculation,
             'siteVisitId' => $calculation->site_visit_id,
+            'siteVisit' => $siteVisit,
+            'clientId' => $siteVisit?->client?->id,
             'mode' => $calculation->is_template ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
         ]);

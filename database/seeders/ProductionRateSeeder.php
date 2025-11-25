@@ -70,6 +70,23 @@ class ProductionRateSeeder extends Seeder
             );
         }
 
+        // Add these weeding production rates if they don't exist
+        $weedingRates = [
+            ['calculator' => 'weeding', 'task' => 'bed_weeding', 'unit' => 'sqft', 'rate' => 0.0033, 'note' => 'Standard bed weeding'],
+            ['calculator' => 'weeding', 'task' => 'bed_weeding_light', 'unit' => 'sqft', 'rate' => 0.002, 'note' => 'Light weeding - minimal weeds'],
+            ['calculator' => 'weeding', 'task' => 'bed_weeding_heavy', 'unit' => 'sqft', 'rate' => 0.005, 'note' => 'Heavy weeding - overgrown beds'],
+            ['calculator' => 'weeding', 'task' => 'bed_edging', 'unit' => 'linear ft', 'rate' => 0.01, 'note' => 'Bed edge cleanup'],
+            ['calculator' => 'weeding', 'task' => 'tree_ring_weeding', 'unit' => 'each', 'rate' => 0.1, 'note' => 'Per tree ring'],
+            ['calculator' => 'weeding', 'task' => 'shrub_weeding', 'unit' => 'each', 'rate' => 0.05, 'note' => 'Around individual shrubs'],
+        ];
+
+        foreach ($weedingRates as $rate) {
+            \App\Models\ProductionRate::updateOrCreate(
+                ['calculator' => $rate['calculator'], 'task' => $rate['task']],
+                $rate
+            );
+        }
+
         $this->command?->info('Production rates seeded successfully!');
     }
 }
