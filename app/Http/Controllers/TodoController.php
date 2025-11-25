@@ -15,9 +15,16 @@ class TodoController extends Controller
         $priority = $request->get('priority');
         $clientId = $request->get('client_id');
         
-        // Default both filters to true (checked) when not explicitly set
-        $hideFuture = $request->has('hide_future') ? $request->boolean('hide_future') : true;
-        $hideCompleted = $request->has('hide_completed') ? $request->boolean('hide_completed') : true;
+        // Check if hide_future or hide_completed were explicitly set in query string
+        // The hidden input always sends "0", checkbox sends "1" when checked
+        // If neither key exists in query, it's a fresh page load - use defaults (both hidden)
+        $hideFutureParam = $request->query('hide_future');
+        $hideCompletedParam = $request->query('hide_completed');
+        
+        // Fresh load = no explicit params = default to hiding both
+        // Form submit = params exist = use submitted values ("1" = hide, "0" = show)
+        $hideFuture = $hideFutureParam === null ? true : $hideFutureParam === '1';
+        $hideCompleted = $hideCompletedParam === null ? true : $hideCompletedParam === '1';
 
         $query = Todo::with(['client', 'property'])
             ->when($priority && in_array($priority, Todo::PRIORITIES, true), fn ($q) => $q->where('priority', $priority))
