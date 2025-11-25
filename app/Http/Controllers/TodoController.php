@@ -14,8 +14,10 @@ class TodoController extends Controller
         $viewMode = $request->get('view', 'kanban');
         $priority = $request->get('priority');
         $clientId = $request->get('client_id');
-        $hideFuture = (bool) $request->boolean('hide_future');
-        $hideCompleted = (bool) $request->boolean('hide_completed');
+        
+        // Default both filters to true (checked) when not explicitly set
+        $hideFuture = $request->has('hide_future') ? $request->boolean('hide_future') : true;
+        $hideCompleted = $request->has('hide_completed') ? $request->boolean('hide_completed') : true;
 
         $query = Todo::with(['client', 'property'])
             ->when($priority && in_array($priority, Todo::PRIORITIES, true), fn ($q) => $q->where('priority', $priority))

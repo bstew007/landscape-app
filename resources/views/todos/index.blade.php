@@ -105,11 +105,11 @@
                 </div>
                 <div class="flex flex-col gap-2 justify-end">
                     <label class="inline-flex items-center gap-2 text-sm text-brand-700 cursor-pointer hover:text-brand-900 transition">
-                        <input type="checkbox" name="hide_future" value="1" class="rounded border-brand-300 text-brand-600 focus:ring-brand-500 focus:ring-2" {{ request()->boolean('hide_future') ? 'checked' : '' }}>
+                        <input type="checkbox" name="hide_future" value="1" class="rounded border-brand-300 text-brand-600 focus:ring-brand-500 focus:ring-2" {{ $hideFuture ? 'checked' : '' }}>
                         <span class="font-medium">Hide Future</span>
                     </label>
                     <label class="inline-flex items-center gap-2 text-sm text-brand-700 cursor-pointer hover:text-brand-900 transition">
-                        <input type="checkbox" name="hide_completed" value="1" class="rounded border-brand-300 text-brand-600 focus:ring-brand-500 focus:ring-2" {{ request()->boolean('hide_completed') ? 'checked' : '' }}>
+                        <input type="checkbox" name="hide_completed" value="1" class="rounded border-brand-300 text-brand-600 focus:ring-brand-500 focus:ring-2" {{ $hideCompleted ? 'checked' : '' }}>
                         <span class="font-medium">Hide Completed</span>
                     </label>
                 </div>
