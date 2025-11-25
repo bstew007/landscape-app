@@ -221,33 +221,30 @@ class EstimateController extends Controller
 
     public function update(Request $request, Estimate $estimate)
     {
-        $data = $this->validateEstimate($request);
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'status' => 'sometimes|required|in:draft,pending,sent,approved,rejected',
+            'client_id' => 'sometimes|required|exists:clients,id',
+            'property_id' => 'sometimes|nullable|exists:properties,id',
+            'site_visit_id' => 'sometimes|nullable|exists:site_visits,id',
+            'expires_at' => 'sometimes|nullable|date',
+            'notes' => 'sometimes|nullable|string',
+            'terms' => 'sometimes|nullable|string',
+            'division_id' => 'sometimes|nullable|exists:divisions,id',
+            'cost_code_id' => 'sometimes|nullable|exists:cost_codes,id',
+            'estimate_type' => 'sometimes|required|in:design_build,maintenance',
+        ]);
 
-        $lineItems = $data['site_visit_id']
-            ? $this->buildLineItemsFromSiteVisit($data['site_visit_id'])
-            : null;
+        $estimate->update($validated);
 
-        try {
-            $this->assertMinimumProfit($lineItems);
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
+        if ($request->wantsJson()) {
+            return response()->json([
+                'estimate' => $estimate,
+                'message' => 'Estimate updated successfully'
+            ]);
         }
 
-        $estimate->update($data);
-        if ($data['site_visit_id']) {
-            $siteVisit = SiteVisit::with('calculations')->find($data['site_visit_id']);
-            if ($siteVisit) {
-                $this->calculationImporter->importSiteVisitCalculations($estimate->fresh(), $siteVisit, true);
-            } else {
-                $this->itemService->recalculateTotals($estimate->fresh());
-            }
-        } elseif ($lineItems) {
-            $this->itemService->syncFromLegacyLineItems($estimate->fresh(), $lineItems);
-        } else {
-            $this->itemService->recalculateTotals($estimate->fresh());
-        }
-
-        return redirect()->route('estimates.show', $estimate)->with('success', 'Estimate updated.');
+        return redirect()->route('estimates.show', $estimate)->with('success', 'Estimate updated');
     }
 
     public function destroy(Estimate $estimate)
@@ -499,5 +496,23 @@ class EstimateController extends Controller
         $decoded = json_decode($payload, true);
 
         return is_array($decoded) ? $decoded : null;
+    }
+
+    public function bulkUpdateStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'estimate_ids' => 'required|array',
+            'estimate_ids.*' => 'exists:estimates,id',
+            'status' => 'required|in:draft,pending,sent,approved,rejected',
+        ]);
+
+        $count = \App\Models\Estimate::whereIn('id', $validated['estimate_ids'])
+            ->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'success' => true,
+            'count' => $count,
+            'message' => "Updated {$count} estimate(s) to " . ucfirst($validated['status']),
+        ]);
     }
 }

@@ -5,7 +5,7 @@
     $categories = \App\Models\MaterialCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
 @endphp
 
-<div class="space-y-8">
+<div class="space-y-8 max-w-7xl mx-auto p-4">
     <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
         <div class="flex flex-wrap items-start gap-6">
             <div class="space-y-2 max-w-2xl">
@@ -76,17 +76,6 @@
                         @endforeach
                     </div>
                 @endif
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center gap-3 pt-6 mt-6 border-t border-gray-200">
-                <x-brand-button type="submit">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    Create Material
-                </x-brand-button>
-                <x-secondary-button as="a" href="{{ route('materials.index') }}">
-                    Cancel
-                </x-secondary-button>
             </div>
         </form>
     </section>

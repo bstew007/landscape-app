@@ -9,6 +9,14 @@ use App\Models\EstimateItem;
 
 class Estimate extends Model
 {
+    public const STATUSES = [
+        'draft',
+        'pending',
+        'sent',
+        'approved',
+        'rejected',
+    ];
+    
     use HasFactory;
 
     protected $fillable = [
@@ -75,8 +83,6 @@ class Estimate extends Model
         'cost_code_id' => 'integer',
         'estimate_type' => 'string',
     ];
-
-    public const STATUSES = ['draft', 'pending', 'sent', 'approved', 'rejected'];
 
     public function client()
     {

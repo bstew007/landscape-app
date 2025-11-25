@@ -50,10 +50,11 @@
             <form method="GET" class="flex flex-wrap items-center gap-3">
                 <input type="text" name="search" value="{{ $search }}" placeholder="Search categories..."
                        class="flex-1 min-w-[200px] rounded-full border-brand-200 bg-white text-sm px-4 py-2 focus:ring-brand-500 focus:border-brand-500">
-                <x-brand-button type="submit" size="sm">
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-brand-600 text-white text-sm font-semibold shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 transition disabled:opacity-50">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     Search
-                </x-brand-button>
+                </button>
                 @if($search)
                     <a href="{{ route('admin.material-categories.index') }}" class="text-xs text-brand-500 hover:text-brand-700">Clear</a>
                 @endif
@@ -100,18 +101,26 @@
                             </td>
                             <td class="px-4 py-3 align-top text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <x-brand-button href="{{ route('admin.material-categories.edit', $category) }}" variant="outline" size="sm">
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                        Edit
-                                    </x-brand-button>
+                                    <a href="{{ route('admin.material-categories.edit', $category) }}"
+                                       class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-brand-200 text-brand-600 hover:text-brand-900 hover:border-brand-400 hover:bg-brand-50 transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1"
+                                       aria-label="Edit category">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                    </a>
                                     <form action="{{ route('admin.material-categories.destroy', $category) }}" method="POST" class="inline"
                                           onsubmit="return confirm('Delete this category? This cannot be undone.')">
                                         @csrf
                                         @method('DELETE')
-                                        <x-danger-button type="submit" size="sm">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                            Delete
-                                        </x-danger-button>
+                                        <button type="submit"
+                                                class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-red-200 text-red-600 hover:text-red-800 hover:border-red-400 hover:bg-red-50 transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                                                aria-label="Delete category">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
                                     </form>
                                 </div>
                             </td>

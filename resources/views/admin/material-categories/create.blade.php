@@ -1,7 +1,7 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="space-y-8">
+<div class="space-y-8 max-w-7xl mx-auto p-4">
     <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
         <div class="flex flex-wrap items-start gap-6">
             <div class="space-y-2 max-w-2xl">

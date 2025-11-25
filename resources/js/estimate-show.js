@@ -364,89 +364,28 @@ class EstimateShowController {
     }
 
     initUnsavedChangesTracking() {
-        // Don't show banner if we just saved successfully
+        // Don't show banner - we'll just highlight the save button
         const justSaved = sessionStorage.getItem('estimate:justSaved');
         if (justSaved === 'true') {
             sessionStorage.removeItem('estimate:justSaved');
-            return; // Skip banner creation
         }
-        
-        // Create warning banner (hidden by default)
-        this.createWarningBanner();
         
         // Track changes on all forms
         this.trackFormChanges();
         
-        // Warn before navigation
+        // Warn before navigation (browser prompt only)
         this.setupNavigationWarning();
-    }
-
-    createWarningBanner() {
-        const banner = document.createElement('div');
-        banner.id = 'unsavedChangesBanner';
-        banner.className = 'fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-white px-4 py-3 shadow-lg transform -translate-y-full transition-transform duration-300';
-        banner.innerHTML = `
-            <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span class="font-semibold">You have unsaved changes</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" id="saveChangesBtn" class="px-4 py-1.5 bg-white text-amber-600 rounded-lg text-sm font-semibold hover:bg-amber-50 transition">
-                        Save Now
-                    </button>
-                    <button type="button" id="dismissWarningBtn" class="px-3 py-1.5 text-white hover:text-amber-100 transition" title="Dismiss warning (changes still unsaved)">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(banner);
-        this.warningBanner = banner;
-
-        // Wire up banner buttons
-        banner.querySelector('#saveChangesBtn').addEventListener('click', () => {
-            document.getElementById('saveAllBtn')?.click();
-        });
-
-        banner.querySelector('#dismissWarningBtn').addEventListener('click', () => {
-            // Permanently dismiss until next change
-            this.markAsSaved();
-        });
-    }
-
-    showWarningBanner() {
-        if (this.warningBanner) {
-            this.warningBanner.classList.remove('-translate-y-full');
-            this.warningBanner.classList.add('translate-y-0');
-        }
-    }
-
-    hideWarningBanner() {
-        if (this.warningBanner) {
-            this.warningBanner.classList.remove('translate-y-0');
-            this.warningBanner.classList.add('-translate-y-full');
-        }
     }
 
     markAsChanged() {
         if (!this.hasUnsavedChanges) {
             this.hasUnsavedChanges = true;
-            this.showWarningBanner();
             this.updateSaveButton(true);
         }
     }
 
     markAsSaved() {
         this.hasUnsavedChanges = false;
-        this.hideWarningBanner();
         this.updateSaveButton(false);
     }
 
@@ -455,12 +394,12 @@ class EstimateShowController {
         if (!saveBtn) return;
 
         if (hasChanges) {
-            saveBtn.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2');
-            saveBtn.classList.remove('bg-white', 'text-brand-900');
-            saveBtn.classList.add('bg-amber-500', 'text-white');
+            // Make button more prominent with orange color and pulse animation
+            saveBtn.classList.remove('bg-brand-600', 'hover:bg-brand-700');
+            saveBtn.classList.add('bg-orange-500', 'hover:bg-orange-600', 'ring-2', 'ring-orange-400', 'ring-offset-2', 'animate-pulse');
         } else {
-            saveBtn.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2', 'bg-amber-500', 'text-white');
-            saveBtn.classList.add('bg-white', 'text-brand-900');
+            saveBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600', 'ring-2', 'ring-orange-400', 'ring-offset-2', 'animate-pulse');
+            saveBtn.classList.add('bg-brand-600', 'hover:bg-brand-700');
         }
     }
 
@@ -515,34 +454,8 @@ class EstimateShowController {
     }
 
     setupNavigationWarning() {
-        // Warn on page unload
-        window.addEventListener('beforeunload', (e) => {
-            if (this.hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        });
-
-        // Warn on link clicks
-        document.addEventListener('click', (e) => {
-            if (!this.hasUnsavedChanges) return;
-
-            const link = e.target.closest('a[href]');
-            if (!link) return;
-
-            // Ignore same-page anchors
-            const href = link.getAttribute('href');
-            if (href.startsWith('#')) return;
-
-            // Ignore save/refresh buttons
-            if (link.id === 'saveAllBtn' || link.id === 'estimateRefreshBtn') return;
-
-            // Confirm navigation
-            if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
-                e.preventDefault();
-            }
-        });
+        // No warnings - just visual indicator on save button
+        // Users can navigate freely
     }
 
     wireSaveAllButton() {
@@ -553,13 +466,9 @@ class EstimateShowController {
             try {
                 // Mark as saved IMMEDIATELY
                 this.hasUnsavedChanges = false;
+                this.updateSaveButton(false);
                 
-                // Force-hide the banner instantly (no transition)
-                if (this.warningBanner) {
-                    this.warningBanner.remove(); // Completely remove from DOM
-                }
-                
-                // Set flag to prevent banner from showing after reload
+                // Set flag to prevent changes marker from showing after reload
                 sessionStorage.setItem('estimate:justSaved', 'true');
                 
                 this.showSpinner();
@@ -591,11 +500,6 @@ class EstimateShowController {
                 
                 // Clear the save flag on error
                 sessionStorage.removeItem('estimate:justSaved');
-                
-                // Re-create banner on error
-                if (!this.warningBanner) {
-                    this.createWarningBanner();
-                }
                 this.markAsChanged();
                 this.toast('Save failed', 'error');
             }

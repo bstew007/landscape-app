@@ -83,10 +83,3 @@
         <span class="ml-2 text-sm">Active</span>
     </label>
 </div>
-
-<div class="flex gap-3 mt-3">
-    <button class="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-        {{ $labor ? 'Update Labor Entry' : 'Create Labor Entry' }}
-    </button>
-    <a href="{{ route('labor.index') }}" class="px-5 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</a>
-</div>

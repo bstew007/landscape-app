@@ -11,11 +11,19 @@
             </div>
             <div class="ml-auto flex gap-2">
                 <a href="{{ route('estimates.show', $estimate) }}" 
-                   class="inline-flex items-center h-9 px-4 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                   class="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
                     Cancel
                 </a>
                 <button form="estimateEditForm" type="submit" 
-                        class="inline-flex items-center h-9 px-4 rounded-lg bg-white text-brand-900 text-sm font-semibold hover:bg-brand-50 transition shadow-sm">
+                        class="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-white text-brand-900 text-sm font-semibold hover:bg-brand-50 transition shadow-sm">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
                     Save Changes
                 </button>
             </div>
@@ -144,12 +152,22 @@
                     <p class="text-xs mt-1">After saving, return to the <a href="{{ route('estimates.show', $estimate) }}" class="text-brand-700 hover:text-brand-900 underline">estimate builder</a> to add or modify work areas and line items.</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <x-secondary-button as="a" href="{{ route('estimates.show', $estimate) }}">
+                    <a href="{{ route('estimates.show', $estimate) }}"
+                       class="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border text-sm bg-white text-gray-700 border-gray-300 hover:bg-gray-50 transition shadow-sm">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
                         Cancel
-                    </x-secondary-button>
-                    <x-brand-button type="submit">
+                    </a>
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition shadow-sm">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
                         Save Changes
-                    </x-brand-button>
+                    </button>
                 </div>
             </div>
         </form>

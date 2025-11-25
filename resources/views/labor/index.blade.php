@@ -6,9 +6,10 @@
     $overheadRate = $overheadRate ?? 0;
     $overheadHours = $overheadHours ?? 0;
     $profitMarginPct = $profitMarginPct ?? null;
+    $isPublicCatalog = $isPublicCatalog ?? false;
 @endphp
 
-<div class="space-y-8 max-w-7xl mx-auto p-4">
+<div class="space-y-8 w-full p-4">
     <!-- Hero Header -->
     <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
         <div class="flex flex-wrap items-start gap-6">

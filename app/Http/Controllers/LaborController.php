@@ -257,6 +257,7 @@ class LaborController extends Controller
 
         return $data;
     }
+
     protected function computeBudgetStats(): array
     {
         $activeBudget = app(BudgetService::class)->active(false);

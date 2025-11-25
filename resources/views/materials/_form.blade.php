@@ -76,8 +76,7 @@
         <span class="ml-2 text-sm">Active</span>
     </label>
 </div>
-
-<div class="flex gap-3">
+<div class="flex gap-3 mt-4">
     <button class="px-5 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">
         {{ $material ? 'Update Material' : 'Create Material' }}
     </button>

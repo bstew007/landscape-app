@@ -35,6 +35,8 @@ Route::get('/dashboard', fn () => view('dashboard'))
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// Route::get('/public/labor', [LaborController::class, 'publicIndex'])->name('public.labor.index');
+
 // Public legal pages (for integrations like QBO)
 Route::view('/legal/eula', 'legal.eula')->name('legal.eula');
 Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
@@ -408,7 +410,10 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('site-visits/{site_visit}/estimate-line-items', [EstimateController::class, 'siteVisitLineItems'])->name('site-visits.estimate-line-items');
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
+    Route::post('estimates/bulk-update-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-update-status');
     Route::resource('estimates', EstimateController::class);
+    Route::post('estimates/bulk-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-status');
+    Route::post('estimates/bulk-update-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-update-status');
 
     // Invoices -> QBO actions
     Route::post('invoices/{invoice}/qbo/create', [\App\Http\Controllers\InvoiceQboController::class, 'create'])->name('invoices.qbo.create');

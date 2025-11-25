@@ -83,16 +83,16 @@
     <!-- Modern Header -->
     <section class="rounded-[32px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40 relative overflow-hidden">
         <div class="flex flex-wrap items-start gap-6">
-            <div class="flex items-center gap-4">
-                <div class="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+            <div class="flex items-center gap-4 flex-1 min-w-0">
+                <div class="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8 text-white">
                         <path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
                         <path d="M14 2v5h5"/>
                     </svg>
                 </div>
-                <div class="space-y-1">
+                <div class="space-y-1 flex-1 min-w-0">
                     <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Estimate #{{ $estimate->id }}</p>
-                    <h1 class="text-2xl sm:text-3xl font-semibold">{{ $estimate->title }}</h1>
+                    <h1 class="text-2xl sm:text-3xl font-semibold text-white">{{ $estimate->title }}</h1>
                     <p class="text-sm text-brand-100/85">{{ $estimate->client->name }} · {{ $estimate->property->name ?? 'No property' }}</p>
                 </div>
             </div>
@@ -121,18 +121,6 @@
                     </svg>
                     Edit
                 </a>
-                <form action="{{ route('estimates.destroy', $estimate) }}" method="POST" onsubmit="return confirm('Delete this estimate?');" class="inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit"
-                            class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-red-500/10 text-red-100 border-red-400/40 hover:bg-red-500/20 transition">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                        Delete
-                    </button>
-                </form>
                 @if($previewEmailRoute)
                     <a href="{{ $previewEmailRoute }}"
                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
@@ -140,21 +128,9 @@
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
-                        Preview Email
+                        Email
                     </a>
                 @endif
-                <form action="{{ route('estimates.invoice', $estimate) }}" method="POST" class="inline">
-                    @csrf
-                    <button type="submit"
-                            class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                            <path d="M3 9h18"/>
-                            <path d="M9 21V9"/>
-                        </svg>
-                        Create Invoice
-                    </button>
-                </form>
                 @if($printRoute)
                     <a href="{{ $printRoute }}" target="_blank"
                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm bg-white/10 text-white border-white/40 hover:bg-white/20 transition">

@@ -51,10 +51,11 @@
             <form method="GET" class="flex flex-wrap items-center gap-3">
                 <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, SKU, category"
                        class="flex-1 min-w-[200px] rounded-full border-brand-200 bg-white text-sm px-4 py-2 focus:ring-brand-500 focus:border-brand-500">
-                <x-brand-button type="submit" size="sm">
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-brand-600 text-white text-sm font-semibold shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 transition disabled:opacity-50">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     Search
-                </x-brand-button>
+                </button>
                 @if($search)
                     <a href="{{ route('materials.index') }}" class="text-xs text-brand-500 hover:text-brand-700">Clear</a>
                 @endif
