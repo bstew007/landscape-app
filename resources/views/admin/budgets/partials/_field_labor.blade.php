@@ -81,33 +81,41 @@
                                 <div class="grid grid-cols-12 gap-2 items-center py-2 border-b">
                                     <div class="col-span-12 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Employee Type</label>
-                                        <input type="text" class="form-input w-full" x-model="row.type" :name="'inputs[labor][hourly][rows]['+idx+'][type]'" placeholder="e.g., Crew Lead">
+                                        <input type="text" class="form-input w-full" x-model="row.type" :name="`inputs[labor][hourly][rows][${idx}][type]`" placeholder="e.g., Crew Lead">
                                     </div>
                                     <div class="col-span-6 md:col-span-1">
                                         <label class="md:hidden block text-xs text-brand-400"># Staff</label>
-                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.staff" :name="'inputs[labor][hourly][rows]['+idx+'][staff]'" placeholder="0">
+                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.staff" :name="`inputs[labor][hourly][rows][${idx}][staff]`" placeholder="0">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Hrs/Yr (Ea)</label>
-                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.hrs" :name="'inputs[labor][hourly][rows]['+idx+'][hrs]'" placeholder="2080">
+                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.hrs" :name="`inputs[labor][hourly][rows][${idx}][hrs]`" placeholder="2080">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">OT Hrs (Ea)</label>
-                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.ot_hrs" :name="'inputs[labor][hourly][rows]['+idx+'][ot_hrs]'" placeholder="0">
+                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.ot_hrs" :name="`inputs[labor][hourly][rows][${idx}][ot_hrs]`" placeholder="0">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Avg Wage</label>
-                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.avg_wage" :name="'inputs[labor][hourly][rows]['+idx+'][avg_wage]'" placeholder="0.00">
+                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.avg_wage" :name="`inputs[labor][hourly][rows][${idx}][avg_wage]`" placeholder="0.00">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Bonus</label>
-                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.bonus" :name="'inputs[labor][hourly][rows]['+idx+'][bonus]'" placeholder="0.00">
+                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.bonus" :name="`inputs[labor][hourly][rows][${idx}][bonus]`" placeholder="0.00">
                                     </div>
                                     <div class="col-span-10 md:col-span-1 text-right font-semibold">
                                         <span x-text="formatMoney(wagesHourlyRow(row))"></span>
                                     </div>
                                     <div class="col-span-2 md:col-span-12 md:text-right">
-                                        <x-danger-button size="sm" type="button" @click="removeHourlyRow(idx)">Delete</x-danger-button>
+                                        <button type="button"
+                                                class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-brand-100 bg-brand-50 text-brand-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition"
+                                                aria-label="Delete row"
+                                                @click="removeHourlyRow(idx)">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                             </template>
@@ -130,29 +138,37 @@
                                 <div class="grid grid-cols-12 gap-2 items-center py-2 border-b">
                                     <div class="col-span-12 md:col-span-3">
                                         <label class="md:hidden block text-xs text-brand-400">Employee Type</label>
-                                        <input type="text" class="form-input w-full" x-model="row.type" :name="'inputs[labor][salary][rows]['+idx+'][type]" placeholder="e.g., Supervisor">
+                                        <input type="text" class="form-input w-full" x-model="row.type" :name="`inputs[labor][salary][rows][${idx}][type]`" placeholder="e.g., Supervisor">
                                     </div>
                                     <div class="col-span-6 md:col-span-1">
                                         <label class="md:hidden block text-xs text-brand-400"># Staff</label>
-                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.staff" :name="'inputs[labor][salary][rows]['+idx+'][staff]'" placeholder="0">
+                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.staff" :name="`inputs[labor][salary][rows][${idx}][staff]`" placeholder="0">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Ann Hrs (Ea)</label>
-                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.ann_hrs" :name="'inputs[labor][salary][rows]['+idx+'][ann_hrs]'" placeholder="2080">
+                                        <input type="number" step="1" min="0" class="form-input w-full" x-model="row.ann_hrs" :name="`inputs[labor][salary][rows][${idx}][ann_hrs]`" placeholder="2080">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Ann Salary (Ea)</label>
-                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.ann_salary" :name="'inputs[labor][salary][rows]['+idx+'][ann_salary]'" placeholder="0.00">
+                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.ann_salary" :name="`inputs[labor][salary][rows][${idx}][ann_salary]`" placeholder="0.00">
                                     </div>
                                     <div class="col-span-6 md:col-span-2">
                                         <label class="md:hidden block text-xs text-brand-400">Bonus</label>
-                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.bonus" :name="'inputs[labor][salary][rows]['+idx+'][bonus]'" placeholder="0.00">
+                                        <input type="number" step="0.01" min="0" class="form-input w-full" x-model="row.bonus" :name="`inputs[labor][salary][rows][${idx}][bonus]`" placeholder="0.00">
                                     </div>
                                     <div class="col-span-10 md:col-span-2 text-right font-semibold">
                                         <span x-text="formatMoney(wagesSalaryRow(row))"></span>
                                     </div>
                                     <div class="col-span-2 md:col-span-12 md:text-right">
-                                        <x-danger-button size="sm" type="button" @click="removeSalaryRow(idx)">Delete</x-danger-button>
+                                        <button type="button"
+                                                class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-brand-100 bg-brand-50 text-brand-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition"
+                                                aria-label="Delete row"
+                                                @click="removeSalaryRow(idx)">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                             </template>

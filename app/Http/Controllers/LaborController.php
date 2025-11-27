@@ -223,6 +223,8 @@ class LaborController extends Controller
             'type' => ['required', 'string', 'max:100'],
             'unit' => ['required', 'string', 'max:50'],
             'base_rate' => ['required', 'numeric', 'min:0'],
+            'breakeven' => ['nullable', 'numeric', 'min:0'],
+            'profit_percent' => ['nullable', 'numeric'],
             'overtime_rate' => ['nullable', 'numeric', 'min:0'],
             'burden_percentage' => ['nullable', 'numeric', 'min:0'],
             'labor_burden_percentage' => ['nullable', 'numeric', 'min:0'],

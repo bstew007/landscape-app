@@ -132,7 +132,7 @@ return {
         
         <!-- Modal mode header/buttons -->
         <div x-show="isModal" class="flex items-center justify-end gap-2 mb-4">
-            <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-green-600 text-white text-sm hover:bg-green-700">Save Labor</button>
+            <button form="laborCreateForm" type="submit" class="inline-flex items-center h-9 px-4 rounded bg-brand-800 text-white text-sm hover:bg-brand-900 focus:ring-2 focus:ring-brand-700 focus:outline-none">Save Labor</button>
         </div>
 
         <!-- Main Content Card -->
@@ -152,6 +152,8 @@ return {
                 <input type="hidden" name="type" value="{{ old('type','crew') }}">
                 <!-- Base rate follows the Price Calculator -->
                 <input type="hidden" name="base_rate" :value="price().toFixed(2)">
+                <input type="hidden" name="breakeven" :value="breakeven().toFixed(2)">
+                <input type="hidden" name="profit_percent" :value="((breakeven() > 0 ? ((price() - breakeven()) / price()) * 100 : 0)).toFixed(2)">
                 <input type="hidden" name="pricing_mode" x-model="mode" value="budget">
 
                 <!-- Two-column layout: left = Item Information, right = Calculators -->

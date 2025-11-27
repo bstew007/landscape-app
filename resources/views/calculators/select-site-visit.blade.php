@@ -69,7 +69,10 @@
                     @if(!empty($search))
                         <x-secondary-button as="a" href="{{ route('site-visit.select', array_filter(['redirect_to' => $redirectTo], fn($v) => $v)) }}" size="sm">Clear</x-secondary-button>
                     @endif
-                    <x-brand-button type="submit" size="sm">Search</x-brand-button>
+                    <x-brand-button type="submit" size="sm" variant="outline">
+                        <svg class="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Search
+                    </x-brand-button>
                 </div>
             </form>
 

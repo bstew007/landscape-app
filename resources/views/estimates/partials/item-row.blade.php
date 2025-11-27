@@ -5,25 +5,25 @@
     $isLabor = $item->item_type === 'labor';
     $isMaterial = $item->item_type === 'material';
     
-    // Calculate true breakeven based on item type
-    if ($isLabor) {
-        // For labor: breakeven includes overhead
-        $breakeven = $item->unit_cost + $overheadRate;
+    // NO CALCULATIONS - just use the stored values
+    // For items from catalog: unit_cost = breakeven (stored in database)
+    // For manual items: may need to add tax for materials
+    if ($item->catalog_type === 'material' || $item->catalog_type === 'labor') {
+        // From catalog - unit_cost IS the breakeven
+        $breakeven = $item->unit_cost;
     } elseif ($isMaterial && $item->tax_rate > 0) {
-        // For materials: breakeven includes tax if taxable
+        // Manual material with tax
         $breakeven = $item->unit_cost * (1 + $item->tax_rate);
     } else {
-        // For fees, discounts, and non-taxable materials
+        // Manual items or non-taxable
         $breakeven = $item->unit_cost;
     }
     
-    // Calculate actual profit % based on breakeven and price
-    // Profit % = (Price - Breakeven) / Price × 100
+    // Calculate profit % from breakeven and price
     $profitPercent = $item->unit_price > 0 
         ? round((($item->unit_price - $breakeven) / $item->unit_price) * 100, 1)
         : 0.0;
     
-    // Calculate total profit in dollars
     $totalProfit = ($item->unit_price - $breakeven) * $item->quantity;
 @endphp
 <tr class="border-t"

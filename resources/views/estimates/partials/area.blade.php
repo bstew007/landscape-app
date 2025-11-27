@@ -1,4 +1,31 @@
-﻿@php
+﻿{{--
+    ESTIMATE AREA COMPONENT
+    
+    This component displays a work area within an estimate with its line items.
+    
+    DATA FLOW:
+    1. Area-level calculations (top summary):
+       - laborHours: Sum of labor item quantities
+       - cogs: Sum of cost_total for labor + materials
+       - price: Sum of line_total for all items
+       - profit: price - cogs
+    
+    2. Line item data (from database):
+       - unit_cost: For catalog items, this IS the breakeven. For manual items, this is raw cost.
+       - unit_price: The selling price (always from database, never calculated here)
+       - quantity: Number of units
+       - tax_rate: Only used for manual materials to calculate breakeven
+    
+    3. Line item calculations:
+       - breakeven: For catalog items = unit_cost. For manual materials = unit_cost * (1 + tax_rate)
+       - profitPercent: (unit_price - breakeven) / unit_price * 100
+       - totalCost: unit_cost * quantity
+       - totalPrice: unit_price * quantity
+       - totalProfit: totalPrice - totalCost
+    
+    IMPORTANT: Unit prices are NEVER calculated in this view - they come directly from the database.
+--}}
+@php
     /** @var \App\Models\Estimate $estimate */
     /** @var \App\Models\EstimateArea $area */
     $allItems = $allItems ?? $estimate->items;
@@ -155,7 +182,6 @@
                         <th class="text-center px-2.5 py-1.5">Qty</th>
                         <th class="text-center px-2.5 py-1.5">Units</th>
                         <th class="text-center px-2.5 py-1.5">Unit Cost</th>
-                        <th class="text-center px-2.5 py-1.5">Breakeven</th>
                         <th class="text-center px-2.5 py-1.5">Unit Price</th>
                         <th class="text-center px-2.5 py-1.5">Profit %</th>
                         <th class="text-center px-2.5 py-1.5">Total Cost</th>
@@ -166,40 +192,47 @@
                 <tbody>
                     @forelse ($areaItems as $item)
                         @php 
-                            $defaultMarginPercent = $defaultMarginPercent ?? 20.0;
+                            // ============================================
+                            // VALUES FROM DATABASE (NO CALCULATIONS)
+                            // ============================================
+                            // $item->unit_cost    = Breakeven from catalog OR raw cost for manual items
+                            // $item->unit_price   = Selling price (from catalog or manually set)
+                            // $item->quantity     = Quantity of units
+                            // $item->tax_rate     = Tax rate for material (only for manual materials)
+                            // $item->catalog_type = 'material', 'labor', or null for manual items
+                            
                             $overheadRate = $overheadRate ?? 0.0;
-                            $isLabor = $item->item_type === 'labor';
                             $isMaterial = $item->item_type === 'material';
                             
-                            // DEBUG
-                            if ($isLabor && $item->unit_cost == 22) {
-                                \Log::info('Area Item Debug', [
-                                    'item_name' => $item->name,
-                                    'overhead_rate_received' => $overheadRate,
-                                    'unit_cost' => $item->unit_cost,
-                                ]);
-                            }
+                            // ============================================
+                            // BREAKEVEN CALCULATION
+                            // ============================================
+                            // For catalog items: unit_cost already IS the breakeven (stored from catalog)
+                            // For manual materials with tax: apply tax to unit_cost to get breakeven
+                            // For all others: breakeven = unit_cost
                             
-                            // Calculate true breakeven based on item type
-                            if ($isLabor) {
-                                // For labor: breakeven includes overhead
-                                $breakeven = $item->unit_cost + $overheadRate;
+                            if ($item->catalog_type === 'material' || $item->catalog_type === 'labor') {
+                                $breakeven = $item->unit_cost;  // Already is breakeven from catalog
                             } elseif ($isMaterial && $item->tax_rate > 0) {
-                                // For materials: breakeven includes tax if taxable
-                                $breakeven = $item->unit_cost * (1 + $item->tax_rate);
+                                $breakeven = $item->unit_cost * (1 + $item->tax_rate);  // Manual material with tax
                             } else {
-                                // For fees, discounts, and non-taxable materials
-                                $breakeven = $item->unit_cost;
+                                $breakeven = $item->unit_cost;  // Everything else
                             }
                             
-                            // Calculate actual profit % based on breakeven and price
-                            // Profit % = (Price - Breakeven) / Price × 100
+                            // ============================================
+                            // PROFIT CALCULATIONS
+                            // ============================================
+                            // Profit % = (Price - Breakeven) / Price * 100
                             $profitPercent = $item->unit_price > 0 
                                 ? round((($item->unit_price - $breakeven) / $item->unit_price) * 100, 1)
                                 : 0.0;
                             
-                            // Calculate total profit in dollars
-                            $totalProfit = ($item->unit_price - $breakeven) * $item->quantity;
+                            // ============================================
+                            // TOTALS (Qty × Unit Values)
+                            // ============================================
+                            $totalCost = $item->unit_cost * $item->quantity;
+                            $totalPrice = $item->unit_price * $item->quantity;
+                            $totalProfit = $totalPrice - $totalCost;
                         @endphp
                         <tr class="border-t"
                             data-item-id="{{ $item->id }}"
@@ -238,25 +271,12 @@
                             <td class="px-2.5 py-1.5 text-center">
                                 <input type="number" step="0.01" min="0" name="unit_cost" 
                                        class="form-input w-28 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
+                                       value="{{ $item->unit_cost }}"
                                        x-model.number="unitCost"
                                        @input="recalculateFromCost()">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                <div class="flex flex-col items-center gap-0.5">
-                                    <span class="text-gray-700 font-medium" x-text="'$' + breakeven.toFixed(2)"></span>
-                                    @if($isLabor && $overheadRate > 0)
-                                        <div class="text-[10px] text-gray-500" x-bind:title="'Includes $' + overheadRate.toFixed(2) + '/hr overhead'">
-                                            <span x-text="'+$' + overheadRate.toFixed(2) + ' OH'"></span>
-                                        </div>
-                                    @elseif($isMaterial && $item->tax_rate > 0)
-                                        <div class="text-[10px] text-gray-500" x-bind:title="'Includes ' + (taxRate * 100).toFixed(1) + '% tax'">
-                                            <span x-text="'+' + (taxRate * 100).toFixed(1) + '% tax'"></span>
-                                        </div>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-2.5 py-1.5 text-center">
-                                <div x-data="{ editing: false }" class="flex items-center justify-center gap-1">
+                                <div x-data="{ editing: false, unitPrice: {{ $item->unit_price }} }" class="flex items-center justify-center gap-1">
                                     <template x-if="!editing">
                                         <div class="flex items-center gap-1">
                                             <span class="text-sm font-medium" x-text="'$' + unitPrice.toFixed(2)"></span>
@@ -277,7 +297,6 @@
                                                 <input type="number" 
                                                        step="0.01" 
                                                        x-model.number="unitPrice"
-                                                       @input="recalculateFromPrice()"
                                                        @blur="editing = false"
                                                        x-ref="priceInput"
                                                        class="form-input w-24 text-sm pl-5 pr-2 py-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
@@ -291,11 +310,11 @@
                                             </button>
                                         </div>
                                     </template>
+                                    <input type="hidden" name="unit_price" x-model="unitPrice">
                                 </div>
-                                <input type="hidden" name="unit_price" :value="unitPrice.toFixed(2)">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                <div x-data="{ editing: false }" class="flex flex-col items-center gap-1">
+                                <div x-data="{ editing: false, profitPercent: {{ $profitPercent }} }" class="flex flex-col items-center gap-1">
                                     <template x-if="!editing">
                                         <div class="flex items-center gap-1">
                                             <span class="text-sm font-medium" x-text="profitPercent.toFixed(1) + '%'"></span>
@@ -315,7 +334,7 @@
                                                 <input type="number" 
                                                        step="0.1" 
                                                        x-model.number="profitPercent"
-                                                       @input="profitPercent = Math.round(profitPercent * 10) / 10; recalculateFromProfit()"
+                                                       @input="profitPercent = Math.round(profitPercent * 10) / 10"
                                                        @blur="editing = false"
                                                        x-ref="profitInput"
                                                        class="form-input w-20 text-sm pr-6 py-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
@@ -332,23 +351,22 @@
                                     </template>
                                     <div class="flex items-center gap-1 mt-1">
                                         <div class="text-[10px] font-medium"
-                                             :class="{ 'text-green-600': profitPercent >= 10, 'text-yellow-600': profitPercent >= 0 && profitPercent < 10, 'text-red-600': profitPercent < 0 }"
-                                             x-text="'$' + totalProfit.toFixed(2)"></div>
-                                        <button type="button"
-                                                @click="resetToCatalogDefaults()"
-                                                title="Reset to catalog defaults"
-                                                class="text-gray-400 hover:text-blue-600 transition">
-                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                            </svg>
-                                        </button>
+                                             @class([
+                                                 'text-green-600' => $profitPercent >= 10,
+                                                 'text-yellow-600' => $profitPercent >= 0 && $profitPercent < 10,
+                                                 'text-red-600' => $profitPercent < 0
+                                             ])>
+                                            ${{ number_format($totalProfit, 2) }}
+                                        </div>
                                     </div>
+                                    <input type="hidden" name="profit_percent" x-model="profitPercent">
                                 </div>
-                                <input type="hidden" name="profit_percent" :value="profitPercent.toFixed(1)">
                             </td>
-                            <td class="px-2.5 py-1.5 text-center text-gray-700" x-text="'$' + (unitCost * quantity).toFixed(2)">
+                            <td class="px-2.5 py-1.5 text-center text-gray-700">
+                                ${{ number_format($totalCost, 2) }}
                             </td>
-                            <td class="px-2.5 py-1.5 text-right font-semibold text-gray-900" data-col="line_total" x-text="'$' + (unitPrice * quantity).toFixed(2)">
+                            <td class="px-2.5 py-1.5 text-right font-semibold text-gray-900" data-col="line_total">
+                                ${{ number_format($totalPrice, 2) }}
                             </td>
                             <td class="px-2.5 py-1.5 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
@@ -369,7 +387,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-3 py-3 text-sm text-gray-500">No items in this work area yet.</td>
+                            <td colspan="9" class="px-3 py-3 text-sm text-gray-500">No items in this work area yet.</td>
                         </tr>
                     @endforelse
                 </tbody>

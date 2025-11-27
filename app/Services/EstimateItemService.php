@@ -133,18 +133,18 @@ class EstimateItemService
         $feeTotal = $feeItems->sum('line_total');
         $discountTotal = $discountItems->sum('line_total');
 
-        $taxTotal = $items->sum(function (EstimateItem $item) {
-            return $item->tax_rate > 0 ? round($item->line_total * $item->tax_rate, 2) : 0;
-        });
+        // Note: tax_rate on materials is PURCHASE tax (already included in cost/breakeven)
+        // Not sales tax charged to customer, so we don't add it to grand total
+        $taxTotal = 0;
 
         $revenueSubtotal = $materialSubtotal + $laborSubtotal + $feeTotal - $discountTotal;
         $costTotal = $items->sum('cost_total');
         $profitTotal = $items->sum('margin_total');
-        $grandTotal = $revenueSubtotal + $taxTotal;
-        $netProfitTotal = $profitTotal - $taxTotal;
+        $grandTotal = $revenueSubtotal; // No sales tax added
+        $netProfitTotal = $profitTotal; // No tax to subtract from profit
 
         $profitMargin = $revenueSubtotal > 0 ? round(($profitTotal / $revenueSubtotal) * 100, 2) : 0;
-        $netMargin = $revenueSubtotal > 0 ? round(($netProfitTotal / $revenueSubtotal) * 100, 2) : 0;
+        $netMargin = $profitMargin; // Same as profit margin since no sales tax
 
         $estimate->forceFill([
             'material_subtotal' => $materialSubtotal,
@@ -167,19 +167,16 @@ class EstimateItemService
 
     protected function computeFinancials(string $itemType, array $data): array
     {
+        // NO CALCULATIONS on unit values - just use what's provided
+        // ONLY calculate the totals (quantity × unit values)
+        
         $quantity = max(0, (float) Arr::get($data, 'quantity', 0));
         $unitCost = max(0, (float) Arr::get($data, 'unit_cost', 0));
-        $marginRateInput = Arr::get($data, 'margin_rate');
-        $unitPriceInput = Arr::get($data, 'unit_price');
-
-        $marginRate = is_numeric($marginRateInput) ? (float) $marginRateInput : null;
-        $unitPrice = is_numeric($unitPriceInput) ? (float) $unitPriceInput : null;
+        $unitPrice = max(0, (float) Arr::get($data, 'unit_price', 0));
+        $marginRate = (float) Arr::get($data, 'margin_rate', 0);
 
         if ($itemType === 'discount') {
-            $unitPrice = $unitPrice ?? $unitCost;
-            $unitPrice = max(0, $unitPrice);
             $lineTotal = round($quantity * $unitPrice, 2);
-
             return [
                 'quantity' => $quantity,
                 'unit_cost' => $unitCost,
@@ -191,34 +188,7 @@ class EstimateItemService
             ];
         }
 
-        if ($unitPrice !== null) {
-            $unitPrice = max(0, $unitPrice);
-            if ($unitCost > 0) {
-                $marginRate = ($unitPrice - $unitCost) / $unitCost;
-            } elseif ($unitPrice === 0.0) {
-                $marginRate = 0.0;
-            } else {
-                $marginRate = $marginRate ?? 0.0;
-            }
-        } elseif ($marginRate !== null) {
-            $unitPrice = $unitCost * (1 + $marginRate);
-        } else {
-            $marginRate = 0.0;
-            $unitPrice = $unitCost;
-        }
-
-        if ($unitPrice === null) {
-            $unitPrice = $unitCost;
-        }
-
-        if ($marginRate === null && $unitCost > 0) {
-            $marginRate = ($unitPrice - $unitCost) / $unitCost;
-        }
-
-        $marginRate = $marginRate ?? 0.0;
-        $marginRate = max(-0.99, min(10, $marginRate));
-
-        $unitPrice = round(max(0, $unitPrice), 2);
+        // Simple totals calculation - NO modifications to unit values
         $lineTotal = round($quantity * $unitPrice, 2);
         $costTotal = round($quantity * $unitCost, 2);
         $marginTotal = round($lineTotal - $costTotal, 2);
@@ -236,17 +206,18 @@ class EstimateItemService
 
     public function resolveCatalogDefaults(string $catalogType, int $catalogId): array
     {
-        // Shell mode: pull values directly from the catalog records only
+        // NO CALCULATIONS - just pull values directly from the catalog database
         if ($catalogType === 'material') {
             $material = Material::find($catalogId);
             if (!$material) return [];
-            $unitCost = (float) $material->unit_cost;
-            // Default: if no price provided by UI, mirror cost (0 margin) until user edits
+            
+            // NO CALCULATIONS - just use the exact values from the database
+            // Store breakeven as unit_cost (same pattern as labor)
             return [
                 'name' => $material->name,
                 'unit' => $material->unit,
-                'unit_cost' => $unitCost,
-                'unit_price' => $unitCost,
+                'unit_cost' => (float) ($material->breakeven ?? $material->unit_cost), // breakeven from DB
+                'unit_price' => (float) ($material->unit_price ?? $material->unit_cost),
                 'margin_rate' => 0.0,
                 'tax_rate' => $material->is_taxable ? (float) $material->tax_rate : 0.0,
                 'description' => $material->description,
@@ -257,18 +228,17 @@ class EstimateItemService
         if ($catalogType === 'labor') {
             $labor = LaborItem::find($catalogId);
             if (!$labor) return [];
-            // Use average_wage (wage/hr) as the unit cost
-            $unitCost = (float) ($labor->average_wage ?? 0);
-            // Use base_rate as the default unit price (billable rate)
-            $unitPrice = (float) ($labor->base_rate ?? $unitCost);
-            // Calculate margin rate based on cost and price
-            $marginRate = $unitCost > 0 ? (($unitPrice - $unitCost) / $unitCost) : 0.0;
+            
+            // NO CALCULATIONS - just use the exact values from the database
+            // breakeven is stored in the database
+            // profit_percent is stored in the database  
+            // base_rate is stored in the database
             return [
                 'name' => $labor->name,
                 'unit' => $labor->unit,
-                'unit_cost' => $unitCost,
-                'unit_price' => $unitPrice,
-                'margin_rate' => $marginRate,
+                'unit_cost' => (float) ($labor->breakeven ?? 0),  // breakeven from DB
+                'unit_price' => (float) ($labor->base_rate ?? 0), // base_rate from DB
+                'margin_rate' => 0.0,  // Not used, profit_percent will be calculated from the above
                 'tax_rate' => 0.0,
                 'description' => $labor->notes,
                 'catalog_type' => 'labor',

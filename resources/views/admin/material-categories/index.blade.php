@@ -69,7 +69,6 @@
                         <th class="px-4 py-3">Category</th>
                         <th class="px-4 py-3">Description</th>
                         <th class="px-4 py-3 text-center">Materials</th>
-                        <th class="px-4 py-3 text-center">Sort Order</th>
                         <th class="px-4 py-3 text-center">Status</th>
                         <th class="px-4 py-3 text-right"></th>
                     </tr>
@@ -88,9 +87,6 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
                                     {{ $category->materials_count ?? $category->materials()->count() }}
                                 </span>
-                            </td>
-                            <td class="px-4 py-3 align-top text-center text-brand-700">
-                                {{ $category->sort_order }}
                             </td>
                             <td class="px-4 py-3 align-top text-center">
                                 @if ($category->is_active)
@@ -127,7 +123,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-brand-400">
+                            <td colspan="5" class="px-4 py-8 text-center text-brand-400">
                                 <svg class="h-12 w-12 mx-auto text-brand-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
                                 <p class="text-sm font-medium">No categories found.</p>
                                 <p class="text-xs mt-1">Create your first category to organize materials.</p>

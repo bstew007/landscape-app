@@ -14,9 +14,11 @@ class Material extends Model
         'sku',
         'category',
         'category_id',
-        'cost_code_id',
         'unit',
         'unit_cost',
+        'unit_price',
+        'breakeven',
+        'profit_percent',
         'tax_rate',
         'vendor_name',
         'vendor_sku',
@@ -27,10 +29,12 @@ class Material extends Model
 
     protected $casts = [
         'unit_cost' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'breakeven' => 'decimal:2',
+        'profit_percent' => 'decimal:2',
         'tax_rate' => 'decimal:4',
         'is_taxable' => 'boolean',
         'is_active' => 'boolean',
-        'cost_code_id' => 'integer',
         'category_id' => 'integer',
     ];
 

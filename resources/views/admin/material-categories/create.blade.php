@@ -42,13 +42,6 @@
                     <p class="text-xs text-gray-500 mt-1">Provide additional context or notes about this category.</p>
                 </div>
 
-                <div>
-                    <label for="sort_order" class="block text-sm font-semibold text-gray-900 mb-2">Sort Order</label>
-                    <input type="number" id="sort_order" name="sort_order" value="{{ old('sort_order', 0) }}" min="0"
-                           class="form-input w-32 rounded-lg border-brand-200 focus:border-brand-500 focus:ring-brand-500">
-                    <p class="text-xs text-gray-500 mt-1">Lower numbers appear first in lists (0 = first).</p>
-                </div>
-
                 <div class="flex items-center gap-2">
                     <input type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}
                            class="form-checkbox rounded border-brand-300 text-brand-600 focus:ring-brand-500">

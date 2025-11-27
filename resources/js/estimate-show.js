@@ -531,7 +531,46 @@ class EstimateShowController {
         });
 
         this.wireCatalogForm('#materialCatalogForm', '[data-role="material-select"]', '[data-role="material-unit"]', '[data-role="material-cost"]', '[data-role="material-tax"]');
-        this.wireCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]');
+        this.wireLaborCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]', '[data-role="profit-percent"]', '[data-role="unit-price"]');
+    }
+
+    wireLaborCatalogForm(formSelector, selectSelector, unitSelector, breakevenSelector, profitSelector, priceSelector) {
+        const form = document.querySelector(formSelector);
+        if (!form) return;
+        const select = form.querySelector(selectSelector);
+        const unitInput = unitSelector ? form.querySelector(unitSelector) : null;
+        const breakevenInput = breakevenSelector ? form.querySelector(breakevenSelector) : null;
+        const profitInput = profitSelector ? form.querySelector(profitSelector) : null;
+        const priceInput = priceSelector ? form.querySelector(priceSelector) : null;
+
+        if (select) {
+            select.addEventListener('change', () => {
+                const option = select.options[select.selectedIndex];
+                if (!option || !option.value) return;
+                
+                console.log('Labor option selected:', option.dataset);
+                
+                // NO CALCULATIONS - just copy the values directly from the database
+                if (unitInput) unitInput.value = option.dataset.unit || '';
+                if (breakevenInput) breakevenInput.value = option.dataset.breakeven || '0';
+                if (profitInput) profitInput.value = option.dataset.profit || '0';
+                if (priceInput) priceInput.value = option.dataset.price || '0';
+                
+                this.updateFormState(form);
+            });
+        }
+
+        const filterInput = form.querySelector('[data-role="filter"]');
+        if (filterInput && select) {
+            filterInput.addEventListener('input', () => {
+                const query = filterInput.value.toLowerCase().trim();
+                Array.from(select.options).forEach((opt, idx) => {
+                    if (idx === 0) return;
+                    const match = (opt.textContent || '').toLowerCase().includes(query);
+                    opt.hidden = !!query && !match;
+                });
+            });
+        }
     }
 
     wireCatalogForm(formSelector, selectSelector, unitSelector, costSelector, taxSelector) {
@@ -541,20 +580,28 @@ class EstimateShowController {
         const unitInput = unitSelector ? form.querySelector(unitSelector) : null;
         const costInput = costSelector ? form.querySelector(costSelector) : null;
         const taxInput = taxSelector ? form.querySelector(taxSelector) : null;
+        const breakevenInput = form.querySelector('[data-role="material-breakeven"]');
+        const profitInput = form.querySelector('[data-role="material-profit"]');
+        const priceInput = form.querySelector('[data-role="unit-price"]');
 
         if (select) {
             select.addEventListener('change', () => {
                 const option = select.options[select.selectedIndex];
-                if (!option) return;
+                if (!option || !option.value) return;
+                
+                // NO CALCULATIONS - just copy the values directly from the database
+                // Pull database breakeven into unit_cost, and database price into unit_price
                 if (unitInput) unitInput.value = option.dataset.unit || '';
-                if (costInput) {
-                    costInput.value = option.dataset.cost || 0;
-                    const unitPriceInput = form.querySelector('[data-role="unit-price"]');
-                    if (unitPriceInput && unitPriceInput.dataset.manualOverride !== '1') {
-                        unitPriceInput.value = option.dataset.cost || 0;
-                    }
+                if (costInput) costInput.value = option.dataset.breakeven || '0'; // Use breakeven from DB
+                if (breakevenInput) breakevenInput.value = option.dataset.breakeven || '0';
+                if (profitInput) profitInput.value = option.dataset.profit || '0';
+                if (priceInput) {
+                    priceInput.value = option.dataset.price || '0';
+                    // Mark as manual override so updateFormState doesn't recalculate it
+                    priceInput.dataset.manualOverride = '1';
                 }
-                if (taxInput) taxInput.value = option.dataset.tax || 0;
+                if (taxInput) taxInput.value = option.dataset.tax || '0';
+                
                 this.updateFormState(form);
             });
         }
@@ -948,7 +995,11 @@ window.lineItemCalculator = function(config) {
         },
         
         calculateBreakeven() {
-            if (this.itemType === 'labor') {
+            // NO CALCULATIONS for labor from catalog - breakeven is already in unit_cost
+            if (this.itemType === 'labor' && this.catalogType === 'labor') {
+                this.breakeven = this.unitCost; // Already breakeven from catalog database
+            } else if (this.itemType === 'labor') {
+                // For manual labor items, add overhead
                 this.breakeven = this.unitCost + this.overheadRate;
             } else if (this.itemType === 'material' && this.taxRate > 0) {
                 this.breakeven = this.unitCost * (1 + this.taxRate);

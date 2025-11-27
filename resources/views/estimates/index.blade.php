@@ -132,6 +132,22 @@
                                 <x-brand-button href="{{ route('estimates.show', $estimate) }}" variant="outline" size="sm" class="mt-3 w-full justify-center">
                                     Open
                                 </x-brand-button>
+                                <form method="POST" action="{{ route('estimates.destroy', $estimate) }}" class="mt-2">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            onclick="return confirm('Delete this estimate? This cannot be undone.');"
+                                            class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-semibold">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                            <path d="M14 10v8" />
+                                            <path d="M10 10v8" />
+                                            <path d="M5 6l1-3h12l1 3" />
+                                        </svg>
+                                        Delete
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -206,11 +222,29 @@
                             <td class="px-4 py-3 align-top text-sm text-brand-600">
                                 {{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}
                             </td>
-                            <td class="px-4 py-3 align-top text-right">
-                                <x-brand-button href="{{ route('estimates.show', $estimate) }}" variant="outline" size="sm">
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    Open
-                                </x-brand-button>
+                            <td class="px-4 py-3 align-top">
+                                <div class="flex items-center justify-end gap-2">
+                                    <x-brand-button href="{{ route('estimates.show', $estimate) }}" variant="outline" size="sm">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        Open
+                                    </x-brand-button>
+                                    <form method="POST" action="{{ route('estimates.destroy', $estimate) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                onclick="return confirm('Delete this estimate? This cannot be undone.');"
+                                                class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                                                aria-label="Delete estimate">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                                <path d="M14 10v8" />
+                                                <path d="M10 10v8" />
+                                                <path d="M5 6l1-3h12l1 3" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

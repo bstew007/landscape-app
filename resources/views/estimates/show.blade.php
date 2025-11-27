@@ -237,25 +237,36 @@
                     <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
                         @foreach ($laborCatalog as $labor)
                             @php 
+                                // Use stored values from catalog database
+                                $breakeven = (float) ($labor->breakeven ?? 0);
+                                $price = (float) ($labor->base_rate ?? 0);
+                                $profitMargin = (float) ($labor->profit_percent ?? 0);
+                                
+                                // For backward compatibility with wage calculations
                                 $wage = (float) ($labor->average_wage ?? 0);
-                                $otMult = max(1, (float) ($labor->overtime_factor ?? 1));
+                                $otFactorPct = (float) ($labor->overtime_factor ?? 0);
                                 $burdenPct = max(0, (float) ($labor->labor_burden_percentage ?? 0));
-                                $unbillPct = min(99.9, max(0, (float) ($labor->unbillable_percentage ?? 0)));
-                                $effectiveWage = $wage * $otMult;
+                                $effectiveWage = $wage * (1 + ($otFactorPct / 100));
                                 $costPerHour = $effectiveWage * (1 + ($burdenPct / 100));
-                                $billableFraction = max(0.01, 1 - ($unbillPct / 100));
-                                $laborOverheadRate = $overheadRate ?? 0; // Use the overhead rate from controller
-                                $breakeven = ($costPerHour / $billableFraction) + $laborOverheadRate;
                             @endphp
                             <div class="px-3 py-2 text-sm flex items-center justify-between gap-4">
-                                <div>
+                                <div class="flex-1">
                                     <div class="font-medium text-gray-900">{{ $labor->name }}</div>
                                     <div class="text-xs text-gray-500">{{ ucfirst($labor->type) }} · {{ $labor->unit }}</div>
                                 </div>
-                                <div class="flex flex-col items-end text-right gap-1">
-                                    <div class="text-xs text-gray-600">Cost/Hr: ${{ number_format($costPerHour, 2) }}</div>
+                                <div class="flex flex-col items-end text-right gap-1 min-w-[140px]">
+                                    <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs w-full">
+                                        <div class="text-gray-500">Breakeven:</div>
+                                        <div class="font-medium text-gray-700">${{ number_format($breakeven, 2) }}</div>
+                                        
+                                        <div class="text-gray-500">Profit:</div>
+                                        <div class="font-medium text-gray-700">{{ number_format($profitMargin, 1) }}%</div>
+                                        
+                                        <div class="text-gray-500">Price:</div>
+                                        <div class="font-semibold text-brand-700">${{ number_format($price, 2) }}</div>
+                                    </div>
                                     <button type="button"
-                                            class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white hover:bg-brand-700 transition"
+                                            class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white hover:bg-brand-700 transition mt-1"
                                             data-action="drawer-add"
                                             data-item-type="labor"
                                             data-catalog-id="{{ $labor->id }}"
@@ -427,7 +438,7 @@
             @include('labor._form')
             <div class="flex items-center justify-end gap-2">
                 <x-secondary-button type="button" @click="$dispatch('close-modal','new-labor')">Cancel</x-secondary-button>
-                <x-brand-button type="submit">Save</x-brand-button>
+                <x-brand-button type="submit" class="bg-brand-800 hover:bg-brand-900 focus:ring-brand-700 border border-brand-800">Save</x-brand-button>
             </div>
         </form>
     </div>
@@ -445,7 +456,7 @@
             @include('materials._form')
             <div class="flex items-center justify-end gap-2">
                 <x-secondary-button type="button" @click="$dispatch('close-modal','new-material')">Cancel</x-secondary-button>
-                <x-brand-button type="submit">Save</x-brand-button>
+                <x-brand-button type="submit" class="bg-brand-800 hover:bg-brand-900 focus:ring-brand-700 border border-brand-800">Save</x-brand-button>
             </div>
         </form>
     </div>

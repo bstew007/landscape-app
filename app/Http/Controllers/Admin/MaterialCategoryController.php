@@ -17,8 +17,7 @@ class MaterialCategoryController extends Controller
                 $query->where('name', 'like', "%{$term}%")
                     ->orWhere('description', 'like', "%{$term}%");
             })
-            ->orderBy('sort_order')
-            ->orderBy('name')
+            ->orderBy('name', 'asc')
             ->paginate(20)
             ->withQueryString();
 

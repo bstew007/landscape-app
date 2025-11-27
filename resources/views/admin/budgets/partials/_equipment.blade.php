@@ -314,7 +314,15 @@
                                                         <span x-text="formatMoney(computeGroupItemAnnual(it))"></span>
                                                     </div>
                                                     <div class="col-span-12 md:col-span-12 md:text-right">
-                                                        <x-danger-button size="sm" type="button" @click="removeGroupItem(row, gi)">Delete</x-danger-button>
+                                                        <button type="button"
+                                                                class="inline-flex items-center justify-center h-8 w-8 rounded-full border border-brand-100 bg-brand-50 text-brand-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition"
+                                                                aria-label="Delete item"
+                                                                @click="removeGroupItem(row, gi)">
+                                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </template>

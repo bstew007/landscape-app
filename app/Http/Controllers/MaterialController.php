@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Material;
+use App\Models\MaterialCategory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -11,18 +12,36 @@ class MaterialController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        $category = $request->query('category');
+
+        $categories = MaterialCategory::orderBy('name', 'asc')->pluck('name');
 
         $materials = Material::query()
+            ->with('categories')
             ->when($search, function ($query, $term) {
                 $query->where('name', 'like', "%{$term}%")
                     ->orWhere('sku', 'like', "%{$term}%")
                     ->orWhere('category', 'like', "%{$term}%");
             })
+            ->when($category, function ($query, $cat) {
+                if ($cat === '_none') {
+                    $query->where(function ($q) {
+                        $q->whereNull('category')->orWhere('category', '');
+                    })->whereDoesntHave('categories');
+                } else {
+                    $query->where(function ($q) use ($cat) {
+                        $q->where('category', $cat)
+                          ->orWhereHas('categories', function ($subq) use ($cat) {
+                              $subq->where('name', $cat);
+                          });
+                    });
+                }
+            })
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();
 
-        return view('materials.index', compact('materials', 'search'));
+        return view('materials.index', compact('materials', 'search', 'categories', 'category'));
     }
 
     public function importForm()
@@ -90,8 +109,8 @@ class MaterialController extends Controller
             $attrs = [
                 'category' => $row['category'] ?? null,
                 'unit' => $row['unit'] ?? 'ea',
-                'unit_cost' => (float) ($row['unit_cost'] ?? 0),
-                'tax_rate' => (float) ($row['tax_rate'] ?? 0),
+                'unit_cost' => $this->normalizeNumber($row['unit_cost'] ?? 0),
+                'tax_rate' => $this->normalizeNumber($row['tax_rate'] ?? 0),
                 'vendor_name' => $row['vendor_name'] ?? null,
                 'vendor_sku' => $row['vendor_sku'] ?? null,
                 'description' => $row['description'] ?? null,
@@ -134,7 +153,7 @@ class MaterialController extends Controller
             }
             // Map common column aliases
             $map = [
-                'name' => ['name','material','item'],
+                'name' => ['name','material','item','material name','item name','material_name','item_name'],
                 'sku' => ['sku','code'],
                 'category' => ['category','cat'],
                 'unit' => ['unit','uom'],
@@ -153,14 +172,33 @@ class MaterialController extends Controller
                 }
             }
             // Casts
-            if (isset($normalized['unit_cost'])) $normalized['unit_cost'] = (float) $normalized['unit_cost'];
-            if (isset($normalized['tax_rate'])) $normalized['tax_rate'] = (float) $normalized['tax_rate'];
+            if (isset($normalized['unit_cost'])) $normalized['unit_cost'] = $this->normalizeNumber($normalized['unit_cost']);
+            if (isset($normalized['tax_rate'])) $normalized['tax_rate'] = $this->normalizeNumber($normalized['tax_rate']);
             if (isset($normalized['is_taxable'])) $normalized['is_taxable'] = filter_var($normalized['is_taxable'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
             if (isset($normalized['is_active'])) $normalized['is_active'] = filter_var($normalized['is_active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
-            $rows[] = $normalized + ['name' => $row['name'] ?? ($row['material'] ?? '')];
+            // Ensure a name by falling back to the first non-empty column if needed
+            $fallbackName = $row['name'] ?? ($row['material'] ?? ($row['item'] ?? ''));
+            if (empty($fallbackName)) {
+                foreach ($row as $val) {
+                    if (is_string($val) && trim($val) !== '') { $fallbackName = $val; break; }
+                }
+            }
+            $rows[] = $normalized + ['name' => $fallbackName];
         }
         fclose($handle);
         return $rows;
+    }
+
+    protected function normalizeNumber(mixed $value): float
+    {
+        if (is_numeric($value)) return (float) $value;
+        if (is_string($value)) {
+            // Strip currency symbols, percent signs, commas, and whitespace
+            $clean = preg_replace('/[^0-9.\-]/', '', $value);
+            if ($clean === '' || $clean === null) return 0.0;
+            return (float) $clean;
+        }
+        return 0.0;
     }
 
     public function create()
@@ -246,9 +284,32 @@ class MaterialController extends Controller
 
         if ($action === 'set_category') {
             $cat = $data['category'] ?? null;
+            if ($cat === '_none') {
+                $materials = Material::whereIn('id', $ids)->get();
+                foreach ($materials as $material) {
+                    $material->category = null;
+                    $material->save();
+                    $material->categories()->detach();
+                }
+                return back()->with('success', "Cleared categories for {$materials->count()} material(s).");
+            }
+
             if (!$cat) return back()->withErrors(['category' => 'Category is required for this action.']);
-            $count = Material::whereIn('id', $ids)->update(['category' => $cat]);
-            return back()->with('success', "Updated category for {$count} material(s).");
+            // Ensure category exists (case-insensitive)
+            $existing = \App\Models\MaterialCategory::whereRaw('LOWER(name) = ?', [strtolower($cat)])->first();
+            $categoryModel = $existing ?? \App\Models\MaterialCategory::create([
+                'name' => $cat,
+                'is_active' => true,
+                'sort_order' => \App\Models\MaterialCategory::max('sort_order') + 1,
+            ]);
+
+            $materials = Material::whereIn('id', $ids)->get();
+            foreach ($materials as $material) {
+                $material->category = $cat;
+                $material->save();
+                $material->categories()->sync([$categoryModel->id]);
+            }
+            return back()->with('success', "Updated category for {$materials->count()} material(s).");
         }
 
         return back()->with('success', 'No changes applied.');
@@ -267,6 +328,9 @@ class MaterialController extends Controller
             'category' => ['nullable', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:50'],
             'unit_cost' => ['required', 'numeric', 'min:0'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
+            'breakeven' => ['nullable', 'numeric', 'min:0'],
+            'profit_percent' => ['nullable', 'numeric'],
             'tax_rate' => ['nullable', 'numeric', 'min:0'],
             'vendor_name' => ['nullable', 'string', 'max:255'],
             'vendor_sku' => ['nullable', 'string', 'max:255'],

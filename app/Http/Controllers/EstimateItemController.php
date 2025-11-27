@@ -241,6 +241,10 @@ class EstimateItemController extends Controller
             $payload['unit_price'] = round(((float) $payload['unit_cost']) * (1 + (float) ($payload['margin_rate'] ?? 0)), 2);
         }
 
+        // Form values override catalog defaults for these fields
+        if (array_key_exists('unit_cost', $data)) {
+            $payload['unit_cost'] = $data['unit_cost'];
+        }
         if (array_key_exists('margin_rate', $data)) {
             $payload['margin_rate'] = $data['margin_rate'];
         }

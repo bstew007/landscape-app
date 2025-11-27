@@ -81,7 +81,7 @@
             </div>
         @endif
 
-        <form id="companyBudgetForm" method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="text-sm">
+        <form id="companyBudgetForm" method="POST" action="{{ $budget->exists ? route('admin.budgets.update', $budget) : route('admin.budgets.store') }}" class="text-sm" novalidate>
         @csrf
         <input type="hidden" name="section" :value="section">
         @if ($budget->exists)
@@ -1543,6 +1543,7 @@
 
         // Append close=1 to action so server can redirect away after save
         const form = document.getElementById('companyBudgetForm');
+        console.log('📋 Budget form script loaded, form found:', !!form);
         if (form) {
             // Ensure there is a hidden input to store selected OH recovery method
             const ensureHidden = (name) => {
@@ -1571,6 +1572,149 @@
             updateMethod();
 
             form.addEventListener('submit', () => {
+                // Ensure all dynamic rows always serialize (even if dynamic name bindings misbehave)
+                try {
+                    const d = window.__budgetRoot || {};
+                    console.log('🔍 Budget Root Data:', {
+                        hasRoot: !!window.__budgetRoot,
+                        hourlyRows: d.hourlyRows?.length || 0,
+                        salaryRows: d.salaryRows?.length || 0,
+                        equipmentRows: d.equipmentRows?.length || 0,
+                        materialsRows: d.materialsRows?.length || 0,
+                        subcontractingRows: d.subcontractingRows?.length || 0,
+                        overheadExpensesRows: d.overheadExpensesRows?.length || 0,
+                        overheadWagesRows: d.overheadWagesRows?.length || 0,
+                        overheadEquipmentRows: d.overheadEquipmentRows?.length || 0
+                    });
+                    // Remove any previously injected helpers
+                    form.querySelectorAll('input.__dynamic-hidden').forEach(el => el.remove());
+                    
+                    // Helper to create hidden input
+                    const createHidden = (name, value) => {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.className = '__dynamic-hidden';
+                        inp.name = name;
+                        inp.value = (value ?? '') === null ? '' : value;
+                        form.appendChild(inp);
+                    };
+                    
+                    // Labor Hourly
+                    const hourlyList = Array.isArray(d.hourlyRows) ? d.hourlyRows : [];
+                    console.log('💼 Serializing hourly rows:', hourlyList.length);
+                    hourlyList.forEach((row, i) => {
+                        createHidden(`inputs[labor][hourly][rows][${i}][type]`, row?.type ?? '');
+                        createHidden(`inputs[labor][hourly][rows][${i}][staff]`, row?.staff ?? '');
+                        createHidden(`inputs[labor][hourly][rows][${i}][hrs]`, row?.hrs ?? '');
+                        createHidden(`inputs[labor][hourly][rows][${i}][ot_hrs]`, row?.ot_hrs ?? '');
+                        createHidden(`inputs[labor][hourly][rows][${i}][avg_wage]`, row?.avg_wage ?? '');
+                        createHidden(`inputs[labor][hourly][rows][${i}][bonus]`, row?.bonus ?? '');
+                    });
+                    
+                    // Labor Salary
+                    const salaryList = Array.isArray(d.salaryRows) ? d.salaryRows : [];
+                    salaryList.forEach((row, i) => {
+                        createHidden(`inputs[labor][salary][rows][${i}][type]`, row?.type ?? '');
+                        createHidden(`inputs[labor][salary][rows][${i}][staff]`, row?.staff ?? '');
+                        createHidden(`inputs[labor][salary][rows][${i}][ann_hrs]`, row?.ann_hrs ?? '');
+                        createHidden(`inputs[labor][salary][rows][${i}][ann_salary]`, row?.ann_salary ?? '');
+                        createHidden(`inputs[labor][salary][rows][${i}][bonus]`, row?.bonus ?? '');
+                    });
+                    
+                    // Equipment
+                    const equipmentList = Array.isArray(d.equipmentRows) ? d.equipmentRows : [];
+                    equipmentList.forEach((row, i) => {
+                        createHidden(`inputs[equipment][rows][${i}][type]`, row?.type ?? '');
+                        createHidden(`inputs[equipment][rows][${i}][qty]`, row?.qty ?? '');
+                        createHidden(`inputs[equipment][rows][${i}][class]`, row?.class ?? '');
+                        createHidden(`inputs[equipment][rows][${i}][description]`, row?.description ?? '');
+                        createHidden(`inputs[equipment][rows][${i}][cost_per_year]`, row?.cost_per_year ?? '');
+                        // Owned fields
+                        if (row?.owned) {
+                            createHidden(`inputs[equipment][rows][${i}][owned][replacement_value]`, row.owned.replacement_value ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][owned][fees]`, row.owned.fees ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][owned][years]`, row.owned.years ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][owned][salvage_value]`, row.owned.salvage_value ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][owned][months_per_year]`, row.owned.months_per_year ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][owned][division_months]`, row.owned.division_months ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][owned][interest_rate_pct]`, row.owned.interest_rate_pct ?? '');
+                        }
+                        // Leased fields
+                        if (row?.leased) {
+                            createHidden(`inputs[equipment][rows][${i}][leased][monthly_payment]`, row.leased.monthly_payment ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][leased][payments_per_year]`, row.leased.payments_per_year ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][leased][months_per_year]`, row.leased.months_per_year ?? '');
+                            createHidden(`inputs[equipment][rows][${i}][leased][division_months]`, row.leased.division_months ?? '');
+                        }
+                    });
+                    
+                    // Materials
+                    const materialsList = Array.isArray(d.materialsRows) ? d.materialsRows : [];
+                    materialsList.forEach((row, i) => {
+                        createHidden(`inputs[materials][rows][${i}][account_id]`, row?.account_id ?? '');
+                        createHidden(`inputs[materials][rows][${i}][expense]`, row?.expense ?? '');
+                        createHidden(`inputs[materials][rows][${i}][previous]`, row?.previous ?? '');
+                        createHidden(`inputs[materials][rows][${i}][current]`, row?.current ?? '');
+                        createHidden(`inputs[materials][rows][${i}][comments]`, row?.comments ?? '');
+                    });
+                    
+                    // Subcontracting
+                    const subcontractingList = Array.isArray(d.subcontractingRows) ? d.subcontractingRows : [];
+                    subcontractingList.forEach((row, i) => {
+                        createHidden(`inputs[subcontracting][rows][${i}][account_id]`, row?.account_id ?? '');
+                        createHidden(`inputs[subcontracting][rows][${i}][expense]`, row?.expense ?? '');
+                        createHidden(`inputs[subcontracting][rows][${i}][previous]`, row?.previous ?? '');
+                        createHidden(`inputs[subcontracting][rows][${i}][current]`, row?.current ?? '');
+                        createHidden(`inputs[subcontracting][rows][${i}][comments]`, row?.comments ?? '');
+                    });
+                    
+                    // Overhead Expenses
+                    const overheadExpensesList = Array.isArray(d.overheadExpensesRows) ? d.overheadExpensesRows : [];
+                    overheadExpensesList.forEach((row, i) => {
+                        createHidden(`inputs[overhead][expenses][rows][${i}][account_id]`, row?.account_id ?? '');
+                        createHidden(`inputs[overhead][expenses][rows][${i}][expense]`, row?.expense ?? '');
+                        createHidden(`inputs[overhead][expenses][rows][${i}][previous]`, row?.previous ?? '');
+                        createHidden(`inputs[overhead][expenses][rows][${i}][current]`, row?.current ?? '');
+                        createHidden(`inputs[overhead][expenses][rows][${i}][comments]`, row?.comments ?? '');
+                    });
+                    
+                    // Overhead Wages
+                    const overheadWagesList = Array.isArray(d.overheadWagesRows) ? d.overheadWagesRows : [];
+                    overheadWagesList.forEach((row, i) => {
+                        createHidden(`inputs[overhead][wages][rows][${i}][title]`, row?.title ?? '');
+                        createHidden(`inputs[overhead][wages][rows][${i}][previous]`, row?.previous ?? '');
+                        createHidden(`inputs[overhead][wages][rows][${i}][forecast]`, row?.forecast ?? '');
+                        createHidden(`inputs[overhead][wages][rows][${i}][comments]`, row?.comments ?? '');
+                    });
+                    
+                    // Overhead Equipment
+                    const overheadEquipmentList = Array.isArray(d.overheadEquipmentRows) ? d.overheadEquipmentRows : [];
+                    overheadEquipmentList.forEach((row, i) => {
+                        createHidden(`inputs[overhead][equipment][rows][${i}][type]`, row?.type ?? '');
+                        createHidden(`inputs[overhead][equipment][rows][${i}][qty]`, row?.qty ?? '');
+                        createHidden(`inputs[overhead][equipment][rows][${i}][class]`, row?.class ?? '');
+                        createHidden(`inputs[overhead][equipment][rows][${i}][description]`, row?.description ?? '');
+                        createHidden(`inputs[overhead][equipment][rows][${i}][cost_per_year]`, row?.cost_per_year ?? '');
+                        // Owned fields
+                        if (row?.owned) {
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][replacement_value]`, row.owned.replacement_value ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][fees]`, row.owned.fees ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][years]`, row.owned.years ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][salvage_value]`, row.owned.salvage_value ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][months_per_year]`, row.owned.months_per_year ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][division_months]`, row.owned.division_months ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][owned][interest_rate_pct]`, row.owned.interest_rate_pct ?? '');
+                        }
+                        // Leased fields
+                        if (row?.leased) {
+                            createHidden(`inputs[overhead][equipment][rows][${i}][leased][monthly_payment]`, row.leased.monthly_payment ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][leased][payments_per_year]`, row.leased.payments_per_year ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][leased][months_per_year]`, row.leased.months_per_year ?? '');
+                            createHidden(`inputs[overhead][equipment][rows][${i}][leased][division_months]`, row.leased.division_months ?? '');
+                        }
+                    });
+                } catch (e) { /* ignore */ }
+
                 try {
                     const url = new URL(form.action, window.location.origin);
                     url.searchParams.set('close', '1');

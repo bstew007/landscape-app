@@ -16,20 +16,6 @@
                value="{{ old('sku', $material->sku ?? '') }}">
     </div>
     <div>
-        <label class="block text-sm font-semibold mb-1">Category</label>
-        <input type="text" name="category" class="form-input w-full"
-               value="{{ old('category', $material->category ?? '') }}">
-    </div>
-    <div>
-        <label class="block text-sm font-semibold mb-1">Cost Code</label>
-        <select name="cost_code_id" class="form-select w-full">
-            <option value="">—</option>
-            @foreach(\App\Models\CostCode::orderBy('code')->get() as $cc)
-                <option value="{{ $cc->id }}" @selected(old('cost_code_id', $material->cost_code_id ?? null) == $cc->id)>{{ $cc->code }} — {{ $cc->name }}</option>
-            @endforeach
-        </select>
-    </div>
-    <div>
         <label class="block text-sm font-semibold mb-1">Unit</label>
         <input type="text" name="unit" class="form-input w-full"
                value="{{ old('unit', $material->unit ?? 'ea') }}" required>
@@ -76,9 +62,11 @@
         <span class="ml-2 text-sm">Active</span>
     </label>
 </div>
+@if(($show_actions ?? true))
 <div class="flex gap-3 mt-4">
     <button class="px-5 py-2 bg-brand-700 text-white rounded hover:bg-brand-800">
         {{ $material ? 'Update Material' : 'Create Material' }}
     </button>
     <a href="{{ route('materials.index') }}" class="px-5 py-2 border border-brand-300 text-brand-700 rounded hover:bg-brand-50">Cancel</a>
 </div>
+@endif

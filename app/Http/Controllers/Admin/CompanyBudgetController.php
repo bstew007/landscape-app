@@ -163,7 +163,7 @@ class CompanyBudgetController extends Controller
             'name' => 'required|string|max:255',
             'year' => 'nullable|integer|min:2000|max:2100',
             'effective_from' => 'nullable|date',
-            'desired_profit_margin' => 'required|numeric|max:0.999',
+            'desired_profit_margin' => 'required|numeric|min:0|max:1.0',
             'is_active' => 'sometimes|boolean',
             'inputs' => 'nullable|array',
             // Sales Budget rows

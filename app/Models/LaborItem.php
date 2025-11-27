@@ -17,6 +17,8 @@ class LaborItem extends Model
         'cost_code_id',
         'unit',
         'base_rate',
+        'breakeven',
+        'profit_percent',
         'overtime_rate',
         'burden_percentage', // legacy
         'labor_burden_percentage',
@@ -32,6 +34,8 @@ class LaborItem extends Model
 
     protected $casts = [
         'base_rate' => 'decimal:2',
+        'breakeven' => 'decimal:2',
+        'profit_percent' => 'decimal:2',
         'overtime_rate' => 'decimal:2',
         'burden_percentage' => 'decimal:2',
         'labor_burden_percentage' => 'decimal:2',
