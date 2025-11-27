@@ -80,11 +80,6 @@ class EstimateController extends Controller
 
         $estimate = Estimate::create($data);
 
-        // Auto-create a default General work area for Design/Build only
-        if (($estimate->estimate_type ?? 'design_build') === 'design_build' && $estimate->areas()->count() === 0) {
-            $estimate->areas()->create(['name' => 'General', 'sort_order' => 1]);
-        }
-
         if ($data['site_visit_id']) {
             // Prefer structured import from calculations so budget margins apply per line item
             $siteVisit = SiteVisit::with('calculations')->find($data['site_visit_id']);
