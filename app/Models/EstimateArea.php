@@ -17,4 +17,17 @@ class EstimateArea extends Model
     {
         return $this->belongsTo(Estimate::class);
     }
+
+    public function items()
+    {
+        return $this->hasMany(EstimateItem::class, 'area_id');
+    }
+
+    protected static function booted()
+    {
+        // When an area is deleted, delete all associated items
+        static::deleting(function ($area) {
+            $area->items()->delete();
+        });
+    }
 }

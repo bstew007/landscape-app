@@ -1,15 +1,11 @@
 @php
     $activeBudgetName = $activeBudgetName ?? '—';
     $overheadRecoveryModel = $overheadRecoveryModel ?? '—';
-    // Calculate initial man hours from estimate items
+    
+    // Use the already-calculated database values (recalculated when items are added/removed)
+    // This ensures consistency and avoids double-counting or stale relationship data
     $manHours = $estimate->items->where('item_type', 'labor')->sum('quantity');
-    
-    // Breakeven = sum of all line item cost_total
-    // For catalog items: cost_total = breakeven × qty (overhead already included)
-    // For manual items: cost_total = unit_cost × qty
-    $initialBreakeven = $estimate->items->sum('cost_total');
-    
-    // Calculate initial totals for the cards
+    $initialBreakeven = $estimate->cost_total ?? 0;  // Use the database column, not recalculating
     $initialSubtotal = $estimate->revenue_total ?? 0;
     $initialGrandTotal = $estimate->grand_total ?? 0;
     
@@ -39,7 +35,7 @@
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Subtotal</p>
-        <p class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums" data-summary-card="breakeven">${{ number_format($initialSubtotal, 2) }}</p>
+        <p class="mt-2 text-2xl font-semibold text-gray-900 tabular-nums" data-summary-card="subtotal">${{ number_format($initialSubtotal, 2) }}</p>
         <p class="text-[11px] text-gray-400">Sum of line item revenue</p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">

@@ -325,9 +325,19 @@
             Work & Pricing
         </button>
         <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
+            :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='client-notes', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='client-notes' }"
+            @click="tab='client-notes'">
+            Client Notes
+        </button>
+        <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
             :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='crew', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='crew' }"
             @click="tab='crew'">
             Crew Notes
+        </button>
+        <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
+            :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='print', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='print' }"
+            @click="tab='print'">
+            Print Documents
         </button>
         <button class="px-4 py-2 -mb-px border-b-2 transition-colors"
             :class="{ 'border-brand-500 text-brand-700 font-semibold' : tab==='files', 'border-transparent hover:text-gray-900 hover:border-gray-300' : tab!=='files' }"
@@ -344,6 +354,32 @@
         <div class="grid md:grid-cols-2 gap-6">
             @include('estimates.partials.project-info', ['estimate' => $estimate, 'statuses' => $statuses])
             @include('estimates.partials.client-info', ['estimate' => $estimate])
+        </div>
+    </section>
+
+    <!-- Client Notes Tab Content -->
+    <div x-show="tab==='client-notes'">
+        @include('estimates.partials.notes', ['estimate' => $estimate])
+    </div>
+
+    <!-- Crew Notes Tab Content -->
+    <div x-show="tab==='crew'">
+        @include('estimates.partials.crew-notes', ['estimate' => $estimate])
+    </div>
+
+    <!-- Print Documents Tab Content -->
+    <div x-show="tab==='print'">
+        @include('estimates.partials.print-documents', ['estimate' => $estimate])
+    </div>
+
+    <!-- Files Tab Content -->
+    <section class="bg-white rounded-lg shadow p-6 space-y-4" x-show="tab==='files'">
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No files yet</h3>
+            <p class="mt-1 text-sm text-gray-500">File management coming soon.</p>
         </div>
     </section>
 

@@ -230,6 +230,7 @@ class EstimateController extends Controller
             'expires_at' => 'sometimes|nullable|date',
             'notes' => 'sometimes|nullable|string',
             'terms' => 'sometimes|nullable|string',
+            'crew_notes' => 'sometimes|nullable|string',
             'division_id' => 'sometimes|nullable|exists:divisions,id',
             'cost_code_id' => 'sometimes|nullable|exists:cost_codes,id',
             'estimate_type' => 'sometimes|required|in:design_build,maintenance',
@@ -431,14 +432,46 @@ class EstimateController extends Controller
         return back()->with('success', "Invoice #{$invoice->id} generated and stored.");
     }
 
-    public function print(Estimate $estimate)
+    public function print(Estimate $estimate, Request $request)
     {
+        $template = $request->query('template', 'full-detail');
+        $download = $request->query('download', false);
+        
+        // Validate template
+        $validTemplates = ['full-detail', 'proposal', 'materials-only', 'labor-only', 'summary'];
+        if (!in_array($template, $validTemplates)) {
+            $template = 'full-detail';
+        }
+        
         $scopeSummaries = ScopeSummaryBuilder::fromEstimate($estimate);
+        
+        // Group items by work area
+        $itemsByArea = $estimate->items->groupBy('area_id');
+        
+        // Filter items based on template (proposal shows all items, just hides prices in view)
+        $filteredItemsByArea = $itemsByArea->map(function ($items) use ($template) {
+            if ($template === 'materials-only') {
+                return $items->where('item_type', 'material');
+            } elseif ($template === 'labor-only') {
+                return $items->where('item_type', 'labor');
+            }
+            return $items;
+        });
 
-        return view('estimates.print', [
+        $viewData = [
             'estimate' => $estimate,
             'scopeSummaries' => $scopeSummaries,
-        ]);
+            'template' => $template,
+            'itemsByArea' => $filteredItemsByArea,
+        ];
+        
+        // Use template-specific view if it exists, otherwise use default
+        $viewName = "estimates.print-templates.{$template}";
+        if (!view()->exists($viewName)) {
+            $viewName = 'estimates.print';
+        }
+        
+        return view($viewName, $viewData);
     }
 
     public function siteVisitLineItems(SiteVisit $siteVisit): JsonResponse

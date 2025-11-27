@@ -397,9 +397,13 @@
             <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="space-y-2">
                 @csrf
                 @method('PATCH')
+                <input type="hidden" name="name" value="{{ $area->name }}">
+                <input type="hidden" name="identifier" value="{{ $area->identifier }}">
+                <input type="hidden" name="cost_code_id" value="{{ $area->cost_code_id }}">
+                <input type="hidden" name="sort_order" value="{{ $area->sort_order ?? 0 }}">
                 <label class="block text-sm font-medium text-gray-700">Notes</label>
                 <textarea name="description" rows="5" class="form-textarea w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500">{{ old('description', $area->description) }}</textarea>
-                <p class="text-xs text-gray-500">Use “Save All” at the top to save changes.</p>
+                <p class="text-xs text-gray-500">Use "Save All" at the top to save changes.</p>
             </form>
         </div>
     </div>
