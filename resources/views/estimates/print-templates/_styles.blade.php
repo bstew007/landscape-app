@@ -187,14 +187,9 @@
     tbody tr {
         border-bottom: 1px solid #e5e7eb;
     }
-    }
     
     tbody tr:nth-child(even) {
         background: #f9fafb;
-    }
-    
-    tbody tr:hover {
-        background: #d1fae5;
     }
     
     td {
@@ -229,50 +224,54 @@
         color: #111827;
     }
     
-    /* Totals section */
+    /* Totals section - table-based for PDF */
     .totals-section {
         margin-top: 30px;
-        float: right;
+        width: 100%;
+    }
+    
+    .totals-section table {
         width: 350px;
+        margin-left: auto;
+        border-collapse: collapse;
     }
     
     .totals-row {
-        overflow: hidden;
         padding: 10px 0;
         border-bottom: 1px solid #e5e7eb;
     }
     
     .totals-label {
-        float: left;
         font-size: 14px;
         color: #6b7280;
         font-weight: 500;
+        text-align: left;
+        padding: 8px 10px;
     }
     
     .totals-value {
-        float: right;
         font-size: 14px;
         color: #111827;
         font-weight: 600;
+        text-align: right;
+        padding: 8px 10px;
     }
     
     .grand-total {
-        background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+        background: #047857;
         color: white;
         padding: 16px 20px;
         margin-top: 8px;
-        border-radius: 6px;
-        overflow: hidden;
     }
     
     .grand-total .totals-label {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
         color: white;
     }
     
     .grand-total .totals-value {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 700;
         color: white;
     }
@@ -283,7 +282,6 @@
         border-left: 4px solid #10b981;
         padding: 20px;
         margin: 30px 0;
-        border-radius: 4px;
     }
     
     .notes-section h3 {
@@ -313,7 +311,6 @@
         padding: 16px;
         background: #f9fafb;
         border: 2px solid #10b981;
-        border-radius: 6px;
         margin-bottom: 20px;
     }
     
@@ -332,12 +329,6 @@
         text-align: center;
         font-size: 11px;
         color: #9ca3af;
-    }
-    
-    /* Page breaks */
-    .page-break {
-        page-break-before: always;
-        margin-top: 40px;
     }
     
     /* Print optimization */
@@ -364,12 +355,6 @@
     }
     
     /* Utility classes */
-    .clearfix::after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-    
     .text-right {
         text-align: right;
     }

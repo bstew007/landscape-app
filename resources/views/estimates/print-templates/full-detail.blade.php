@@ -120,24 +120,26 @@
 @endforeach
 
 <!-- Summary Totals -->
-<div class="clearfix" style="margin-top: 40px;">
+<div style="margin-top: 40px;">
     <div class="totals-section">
-        <div class="totals-row">
-            <span class="totals-label">Subtotal</span>
-            <span class="totals-value">${{ number_format($estimate->revenue_total, 2) }}</span>
-        </div>
-        
-        @if($estimate->tax_total > 0)
-        <div class="totals-row">
-            <span class="totals-label">Tax</span>
-            <span class="totals-value">${{ number_format($estimate->tax_total, 2) }}</span>
-        </div>
-        @endif
-        
-        <div class="grand-total">
-            <span class="totals-label">TOTAL</span>
-            <span class="totals-value">${{ number_format($estimate->grand_total, 2) }}</span>
-        </div>
+        <table>
+            <tr class="totals-row">
+                <td class="totals-label">Subtotal</td>
+                <td class="totals-value">${{ number_format($estimate->revenue_total, 2) }}</td>
+            </tr>
+            
+            @if($estimate->tax_total > 0)
+            <tr class="totals-row">
+                <td class="totals-label">Tax</td>
+                <td class="totals-value">${{ number_format($estimate->tax_total, 2) }}</td>
+            </tr>
+            @endif
+            
+            <tr class="grand-total">
+                <td class="totals-label">TOTAL</td>
+                <td class="totals-value">${{ number_format($estimate->grand_total, 2) }}</td>
+            </tr>
+        </table>
     </div>
 </div>
 
