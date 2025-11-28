@@ -430,7 +430,7 @@ class EstimateController extends Controller
     public function print(Estimate $estimate, Request $request)
     {
         $template = $request->query('template', 'full-detail');
-        $download = $request->query('download', false);
+        $download = $request->boolean('download', false);
         
         // Validate template
         $validTemplates = ['full-detail', 'proposal', 'materials-only', 'labor-only', 'summary'];
@@ -464,6 +464,13 @@ class EstimateController extends Controller
         $viewName = "estimates.print-templates.{$template}";
         if (!view()->exists($viewName)) {
             $viewName = 'estimates.print';
+        }
+        
+        // If download is requested, generate PDF
+        if ($download) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, $viewData);
+            $filename = "Estimate-{$estimate->id}-" . ucfirst(str_replace('-', '_', $template)) . ".pdf";
+            return $pdf->download($filename);
         }
         
         return view($viewName, $viewData);

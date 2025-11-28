@@ -3,73 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <title>Estimate #{{ $estimate->id }} - Full Detail</title>
-    <style>
-        body { font-family: system-ui, sans-serif; padding: 40px; color: #1f2937; }
-        .header { display: flex; justify-content: space-between; align-items: start; gap: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 30px; }
-        .header-left { flex: 1; }
-        .header-right { text-align: right; }
-        h1 { margin: 0 0 10px 0; font-size: 28px; color: #111827; }
-        .estimate-id { font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
-        .client-info { margin: 20px 0; }
-        .client-info p { margin: 5px 0; }
-        .section-title { font-size: 18px; font-weight: 600; margin: 30px 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #059669; color: #059669; }
-        .work-area { margin-bottom: 30px; page-break-inside: avoid; }
-        .work-area-header { background: #f3f4f6; padding: 12px 15px; font-weight: 600; font-size: 16px; border-left: 4px solid #059669; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        th { background: #f9fafb; font-weight: 600; font-size: 12px; text-transform: uppercase; color: #6b7280; }
-        td { font-size: 14px; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .total-row { background: #f9fafb; font-weight: 600; }
-        .grand-total { background: #059669; color: white; font-size: 16px; padding: 15px; margin-top: 20px; }
-        .notes { margin-top: 30px; padding: 20px; background: #f9fafb; border-left: 4px solid #3b82f6; }
-        .notes h3 { margin-top: 0; color: #1f2937; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #6b7280; }
-        @media print {
-            body { padding: 20px; }
-            .no-print { display: none; }
-        }
-    </style>
+    @include('estimates.print-templates._styles')
 </head>
 <body>
+<div class="page">
 
-<!-- Header -->
-<div class="header">
-    <div class="header-left">
-        <p class="estimate-id">Estimate #{{ $estimate->id }}</p>
-        <h1>{{ $estimate->title }}</h1>
-    </div>
-    <div class="header-right">
-        <p><strong>Date:</strong> {{ $estimate->created_at->format('M j, Y') }}</p>
-        <p><strong>Status:</strong> {{ ucfirst($estimate->status) }}</p>
-        @if($estimate->expires_at)
-            <p><strong>Expires:</strong> {{ $estimate->expires_at->format('M j, Y') }}</p>
-        @endif
+@include('estimates.print-templates._header')
+
+<!-- Document Title -->
+<div class="document-title clearfix">
+    <h1>Landscape Estimate</h1>
+    <div class="subtitle">Estimate #{{ $estimate->id }} • {{ $estimate->title }}</div>
+    <span class="template-badge">Full Detail</span>
+</div>
+
+<!-- Client & Estimate Information -->
+<div class="info-section clearfix">
+    <div class="info-grid">
+        <div class="info-col">
+            <div class="info-label">Client</div>
+            <div class="info-value">{{ $estimate->client->name }}</div>
+            
+            @if($estimate->property)
+                <div class="info-label">Property</div>
+                <div class="info-value">{{ $estimate->property->name }}</div>
+                
+                @if($estimate->property->address)
+                    <div class="info-label">Location</div>
+                    <div class="info-value">
+                        {{ $estimate->property->address }}<br>
+                        {{ $estimate->property->city }}, {{ $estimate->property->state }} {{ $estimate->property->postal_code }}
+                    </div>
+                @endif
+            @endif
+        </div>
+        
+        <div class="info-col">
+            <div class="info-label">Estimate Date</div>
+            <div class="info-value">{{ $estimate->created_at->format('F j, Y') }}</div>
+            
+            <div class="info-label">Status</div>
+            <div class="info-value">{{ ucfirst($estimate->status) }}</div>
+            
+            @if($estimate->expires_at)
+                <div class="info-label">Valid Until</div>
+                <div class="info-value">{{ $estimate->expires_at->format('F j, Y') }}</div>
+            @endif
+        </div>
     </div>
 </div>
 
-<!-- Client Information -->
-<div class="client-info">
-    <p><strong>Client:</strong> {{ $estimate->client->name }}</p>
-    @if($estimate->property)
-        <p><strong>Property:</strong> {{ $estimate->property->name }}</p>
-        @if($estimate->property->address)
-            <p><strong>Address:</strong> {{ $estimate->property->address }}, {{ $estimate->property->city }}, {{ $estimate->property->state }} {{ $estimate->property->postal_code }}</p>
-        @endif
-    @endif
-</div>
-
-<!-- Client Notes -->
+<!-- Project Notes -->
 @if($estimate->notes)
-<div class="notes" style="margin-top: 20px;">
-    <h3>Project Notes</h3>
-    <p style="line-height: 1.6; white-space: pre-wrap;">{{ $estimate->notes }}</p>
+<div class="notes-section">
+    <h3>Project Overview</h3>
+    <p>{{ $estimate->notes }}</p>
 </div>
 @endif
 
 <!-- Work Areas & Line Items -->
-<h2 class="section-title">Work Areas & Pricing</h2>
+<h2>Work Areas & Detailed Pricing</h2>
 
 @foreach($estimate->areas as $area)
     @php
@@ -82,16 +75,18 @@
     @endphp
     
     <div class="work-area">
-        <div class="work-area-header">{{ $area->name }}</div>
-        
         @if($area->description)
-        <div style="background: #fffbeb; padding: 10px 15px; margin-bottom: 10px; border-left: 3px solid #f59e0b; font-size: 14px; color: #78350f; line-height: 1.5;">
-            <strong>Work Area Notes:</strong> {{ $area->description }}
+        <div class="notes-section" style="margin-bottom: 15px; background: #fffbeb; border-left-color: #f59e0b;">
+            <h3 style="color: #78350f; font-size: 12px;">{{ $area->name }} - Work Area Notes</h3>
+            <p style="color: #78350f;">{{ $area->description }}</p>
         </div>
         @endif
         
         <table>
             <thead>
+                <tr class="area-header">
+                    <th colspan="5">{{ $area->name }}</th>
+                </tr>
                 <tr>
                     <th>Item</th>
                     <th class="text-center">Qty</th>
@@ -103,21 +98,21 @@
             <tbody>
                 @foreach($areaItems as $item)
                     <tr>
-                        <td>
+                        <td class="font-medium">
                             {{ $item->name }}
                             @if($item->description)
-                                <br><small style="color: #6b7280;">{{ $item->description }}</small>
+                                <br><small style="color: #6b7280; font-weight: normal;">{{ $item->description }}</small>
                             @endif
                         </td>
                         <td class="text-center">{{ number_format($item->quantity, 2) }}</td>
                         <td class="text-center">{{ $item->unit }}</td>
                         <td class="text-right">${{ number_format($item->unit_price, 2) }}</td>
-                        <td class="text-right">${{ number_format($item->quantity * $item->unit_price, 2) }}</td>
+                        <td class="text-right font-medium">${{ number_format($item->quantity * $item->unit_price, 2) }}</td>
                     </tr>
                 @endforeach
-                <tr class="total-row">
-                    <td colspan="4" class="text-right">{{ $area->name }} Subtotal:</td>
-                    <td class="text-right">${{ number_format($areaTotal, 2) }}</td>
+                <tr class="area-total">
+                    <td colspan="4" class="text-right"><strong>{{ $area->name }} Subtotal</strong></td>
+                    <td class="text-right"><strong>${{ number_format($areaTotal, 2) }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -125,36 +120,62 @@
 @endforeach
 
 <!-- Summary Totals -->
-<table style="margin-top: 30px;">
-    <tr>
-        <td class="text-right" style="border: none; padding-right: 20px;"><strong>Subtotal:</strong></td>
-        <td class="text-right" style="border: none; width: 150px;">${{ number_format($estimate->revenue_total, 2) }}</td>
-    </tr>
-    @if($estimate->tax_total > 0)
-    <tr>
-        <td class="text-right" style="border: none; padding-right: 20px;"><strong>Tax:</strong></td>
-        <td class="text-right" style="border: none;">${{ number_format($estimate->tax_total, 2) }}</td>
-    </tr>
-    @endif
-    <tr class="grand-total">
-        <td class="text-right" style="padding-right: 20px; border: none;">TOTAL:</td>
-        <td class="text-right" style="border: none;">${{ number_format($estimate->grand_total, 2) }}</td>
-    </tr>
-</table>
+<div class="clearfix" style="margin-top: 40px;">
+    <div class="totals-section">
+        <div class="totals-row">
+            <span class="totals-label">Subtotal</span>
+            <span class="totals-value">${{ number_format($estimate->revenue_total, 2) }}</span>
+        </div>
+        
+        @if($estimate->tax_total > 0)
+        <div class="totals-row">
+            <span class="totals-label">Tax</span>
+            <span class="totals-value">${{ number_format($estimate->tax_total, 2) }}</span>
+        </div>
+        @endif
+        
+        <div class="grand-total">
+            <span class="totals-label">TOTAL</span>
+            <span class="totals-value">${{ number_format($estimate->grand_total, 2) }}</span>
+        </div>
+    </div>
+</div>
 
 <!-- Terms & Conditions -->
 @if($estimate->terms)
-<div class="notes" style="border-left-color: #6b7280;">
+<div class="notes-section clearfix" style="margin-top: 60px;">
     <h3>Terms & Conditions</h3>
-    <p style="line-height: 1.6; white-space: pre-wrap;">{{ $estimate->terms }}</p>
+    <p>{{ $estimate->terms }}</p>
 </div>
 @endif
 
-<!-- Footer -->
-<div class="footer">
-    <p>Thank you for your business!</p>
-    <p>This estimate is valid for 30 days from the date above.</p>
+<!-- Acceptance Section -->
+<div class="acceptance-section">
+    <h2>Acceptance & Authorization</h2>
+    <div class="acceptance-checkbox">
+        @php $company = \App\Models\CompanySetting::getSettings(); @endphp
+        <input type="checkbox" style="width:18px; height:18px; margin-right:10px; vertical-align: middle;">
+        <span style="font-weight: 600;">I accept this estimate as quoted and authorize {{ $company->company_name }} to proceed with the work described above.</span>
+    </div>
+    
+    <p style="margin: 20px 0 10px 0;"><strong>Client Signature:</strong> <span class="signature-line"></span></p>
+    <p style="margin: 10px 0;"><strong>Date:</strong> <span class="signature-line" style="width: 200px;"></span></p>
 </div>
 
+<!-- Footer -->
+<div class="footer">
+    @php $company = \App\Models\CompanySetting::getSettings(); @endphp
+    <p><strong>{{ $company->company_name }}</strong></p>
+    @if($company->phone || $company->email)
+        <p>
+            @if($company->phone) {{ $company->phone }} @endif
+            @if($company->phone && $company->email) • @endif
+            @if($company->email) {{ $company->email }} @endif
+        </p>
+    @endif
+    <p style="margin-top: 8px;">Thank you for your business! This estimate is valid for 30 days.</p>
+</div>
+
+</div>
 </body>
 </html>
