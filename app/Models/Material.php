@@ -14,6 +14,7 @@ class Material extends Model
         'sku',
         'category',
         'category_id',
+        'supplier_id',
         'unit',
         'unit_cost',
         'unit_price',
@@ -43,8 +44,85 @@ class Material extends Model
         return $this->belongsTo(MaterialCategory::class, 'category_id');
     }
 
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
     public function categories()
     {
         return $this->belongsToMany(MaterialCategory::class, 'material_material_category');
+    }
+
+    /**
+     * Scope: Search materials by name (fuzzy).
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $name
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearchByName($query, string $name)
+    {
+        return $query->where('name', 'LIKE', '%' . $name . '%');
+    }
+
+    /**
+     * Scope: Search materials by SKU (exact or fuzzy).
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $sku
+     * @param bool $exact
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearchBySku($query, string $sku, bool $exact = false)
+    {
+        if ($exact) {
+            return $query->where('sku', $sku);
+        }
+        
+        return $query->where('sku', 'LIKE', '%' . $sku . '%');
+    }
+
+    /**
+     * Scope: Filter by supplier.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param int $supplierId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeBySupplier($query, int $supplierId)
+    {
+        return $query->where('supplier_id', $supplierId);
+    }
+
+    /**
+     * Scope: Only active materials.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Helper: Check if material has a supplier assigned.
+     *
+     * @return bool
+     */
+    public function hasSupplier(): bool
+    {
+        return !is_null($this->supplier_id);
+    }
+
+    /**
+     * Helper: Get supplier name or default text.
+     *
+     * @return string
+     */
+    public function getSupplierNameAttribute(): string
+    {
+        return $this->supplier?->name ?? 'No Supplier';
     }
 }

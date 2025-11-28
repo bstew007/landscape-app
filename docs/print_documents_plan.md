@@ -129,38 +129,72 @@ Add a comprehensive "Print Documents" tab to the estimates page that provides va
 ### Phase 2: Purchase Order Generation
 **Goal:** Generate and manage material purchase orders
 
+**STATUS: 95% COMPLETE** ✅
+
+#### Completed:
+- ✅ Database tables created (suppliers, estimate_purchase_orders, estimate_purchase_order_items)
+- ✅ Models with relationships and business logic
+- ✅ PurchaseOrderService with PO generation
+- ✅ PurchaseOrderController with CRUD operations
+- ✅ PO management UI in Print Documents tab
+- ✅ PO print template for professional output
+- ✅ Auto-generated PO numbers (PO-YYYY-0001 format)
+- ✅ Status tracking (draft, sent, received, cancelled)
+- ✅ Bulk print functionality
+
+#### 🔜 Next Enhancement - Automatic Vendor Assignment:
+
+**Current Behavior:**
+- PO generation groups materials by `material.supplier_id`
+- Materials without suppliers get grouped into "no_supplier" PO
+- Manual items (non-catalog) don't have vendor association
+
+**Desired Behavior:**
+- When generating POs, match estimate items with database materials by name/SKU
+- Automatically assign the vendor from the matched catalog material
+- One PO per vendor with all their materials
+- Better handling of manual vs. catalog items
+
+**Implementation Steps:**
+
 #### Step 2.1: Database Setup
-- [ ] Create migration for `suppliers` table
-- [ ] Create migration for `estimate_purchase_orders` table
-- [ ] Create migration for `estimate_purchase_order_items` table
-- [ ] Create `Supplier` model
-- [ ] Create `EstimatePurchaseOrder` model
-- [ ] Create `EstimatePurchaseOrderItem` model
+- [ ] ✅ Already complete - supplier_id exists on materials table
 
-#### Step 2.2: Supplier Management
-- [ ] Create suppliers CRUD interface
-- [ ] Link materials to suppliers in catalog
-- [ ] Add supplier field to materials table/model
+#### Step 2.2: Enhanced Material Matching Logic
+- [ ] Update `PurchaseOrderService::groupItemsBySupplier()` to:
+  - First check if item has catalog_id (direct catalog link)
+  - If no catalog_id, attempt fuzzy match by name/SKU
+  - Match against Material model using similarity search
+  - Assign matched material's supplier_id
+  - Track matching confidence for review
 
-#### Step 2.3: PO Generation Logic
-- [ ] Service: `PurchaseOrderService`
-  - Method: `generatePOsFromEstimate(Estimate $estimate)`
-  - Groups materials by supplier
-  - Creates PO records
-  - Populates PO line items
-- [ ] Auto-generate PO numbers (format: PO-{year}-{sequential})
+#### Step 2.3: Matching Service
+- [ ] Create `MaterialMatchingService` with methods:
+  - `findBestMatch($itemName, $itemDescription)` - returns Material or null
+  - `calculateMatchScore($item, $material)` - returns 0-100 confidence
+  - `suggestMatches($item, $limit = 5)` - returns array of possible matches
+  - Consider: Levenshtein distance, fuzzy search, keyword matching
 
-#### Step 2.4: PO Management UI (in Print Documents Tab)
-- [ ] "Generate Purchase Orders" button
-- [ ] List of generated POs
-- [ ] PO status badges (draft, sent, received)
-- [ ] Actions: View, Print, Edit, Delete
-- [ ] Bulk actions: Print all, Send all
+#### Step 2.4: PO Generation Improvements
+- [ ] Enhance `PurchaseOrderService::generatePOsFromEstimate()`:
+  - Use MaterialMatchingService for items without catalog_id
+  - Store matched material_id in purchase_order_items
+  - Log unmatched items for manual review
+  - Group by matched supplier_id
+  - Create "Unassigned Vendor" PO for unmatched items
 
-#### Step 2.5: PO Print Template
-- [ ] `purchase-orders/print.blade.php`
-- [ ] Include: PO number, supplier info, line items, totals
-- [ ] Professional formatting for printing/PDF
+#### Step 2.5: UI Enhancements
+- [ ] Add "Review Matches" step before PO generation (optional)
+- [ ] Show confidence scores for auto-matches
+- [ ] Allow manual vendor assignment before generation
+- [ ] Display warning for items without vendors
+- [ ] Option to assign vendor to multiple items at once
+
+#### Step 2.6: Supplier Management (Optional)
+- [ ] Routes for supplier CRUD
+- [ ] `SuppliersController` with index, create, store, edit, update, destroy
+- [ ] Views: suppliers/index, create, edit
+- [ ] Quick-add supplier from PO interface
 
 **Deliverable:** Generate and print material purchase orders
 
@@ -363,20 +397,21 @@ routes/web.php
 
 ## Next Steps - Implementation Order
 
-### Immediate (Phase 1 - Week 1)
+### ✅ Immediate (Phase 1 - Week 1) - COMPLETED
 1. ✅ Create this plan document
-2. Add Print Documents tab to estimates page
-3. Create print-documents partial
-4. Implement basic print template selection UI
-5. Create enhanced print views (full, materials, labor, summary)
-6. Test print/PDF functionality
+2. ✅ Add Print Documents tab to estimates page
+3. ✅ Create print-documents partial
+4. ✅ Implement basic print template selection UI
+5. ✅ Create enhanced print views (full, materials, labor, summary)
+6. ✅ Test print/PDF functionality
 
-### Short Term (Phase 2 - Week 2)
-7. Create database migrations for suppliers and POs
-8. Build supplier management
-9. Implement PO generation service
-10. Create PO management UI
-11. Create PO print template
+### 🔄 Short Term (Phase 2 - Week 2) - IN PROGRESS
+7. ✅ Create database migrations for suppliers and POs
+8. ⏳ Build supplier management (Optional - deferred)
+9. ✅ Implement PO generation service
+10. ✅ Create PO management UI
+11. ✅ Create PO print template
+12. 🔜 **NEXT: Match materials with database catalog items and assign vendors automatically**
 
 ### Medium Term (Phase 3 - Week 3)
 12. Set up QuickBooks integration
@@ -418,7 +453,38 @@ routes/web.php
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Created:** November 27, 2025  
-**Status:** Planning Phase  
-**Next Review:** After Phase 1 completion
+**Last Updated:** November 27, 2025  
+**Status:** Phase 2 - 95% Complete, Next: Automatic Vendor Assignment  
+**Next Review:** After vendor matching implementation
+
+---
+
+## Current Progress Summary
+
+### ✅ Phase 1: COMPLETE (100%)
+- Print Documents tab with 5 template options
+- Full-detail, materials-only, labor-only, summary, proposal views
+- Print and PDF download functionality working
+
+### 🔄 Phase 2: IN PROGRESS (95%)
+**Completed:**
+- Database schema for suppliers and POs
+- Models with relationships and auto-calculations
+- PO generation service (basic grouping by supplier_id)
+- Full CRUD operations for POs
+- Professional print template
+- UI with generate, view, print, delete, bulk operations
+
+**Next Task:**
+- Implement automatic material matching and vendor assignment
+- Match estimate items with catalog materials by name/SKU
+- Ensure one PO per vendor with all their materials
+- Handle unmatched items gracefully
+
+### ⏳ Phase 3: PENDING
+- QuickBooks Integration (not started)
+
+### ⏳ Phase 4: PENDING
+- Reports & Analytics (not started)

@@ -56,6 +56,37 @@ class EstimateItem extends Model
         return $this->belongsTo(Calculation::class);
     }
 
+    /**
+     * Get the material catalog item.
+     */
+    public function material()
+    {
+        return $this->belongsTo(Material::class, 'catalog_id');
+    }
+
+    /**
+     * Get the labor catalog item.
+     */
+    public function laborItem()
+    {
+        return $this->belongsTo(LaborItem::class, 'catalog_id');
+    }
+
+    /**
+     * Get the catalog item based on catalog_type.
+     * This is an accessor, not a relationship.
+     */
+    public function getCatalogAttribute()
+    {
+        if ($this->catalog_type === 'material') {
+            return $this->material;
+        } elseif ($this->catalog_type === 'labor') {
+            return $this->laborItem;
+        }
+        
+        return null;
+    }
+
     protected static function booted()
     {
         static::saved(function ($item) {

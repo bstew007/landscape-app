@@ -415,6 +415,15 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('estimates/bulk-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-status');
     Route::post('estimates/bulk-update-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-update-status');
 
+    // Purchase Orders
+    Route::get('purchase-orders', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+    Route::get('purchase-orders/{purchaseOrder}', [\App\Http\Controllers\PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+    Route::delete('purchase-orders/{purchaseOrder}', [\App\Http\Controllers\PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
+    Route::get('purchase-orders/{purchaseOrder}/print', [\App\Http\Controllers\PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
+    Route::post('purchase-orders/print-batch', [\App\Http\Controllers\PurchaseOrderController::class, 'printBatch'])->name('purchase-orders.print-batch');
+    Route::post('estimates/{estimate}/generate-purchase-orders', [\App\Http\Controllers\PurchaseOrderController::class, 'generateFromEstimate'])->name('estimates.generate-purchase-orders');
+    Route::patch('purchase-orders/{purchaseOrder}/status', [\App\Http\Controllers\PurchaseOrderController::class, 'updateStatus'])->name('purchase-orders.update-status');
+
     // Invoices -> QBO actions
     Route::post('invoices/{invoice}/qbo/create', [\App\Http\Controllers\InvoiceQboController::class, 'create'])->name('invoices.qbo.create');
     Route::post('invoices/{invoice}/qbo/refresh', [\App\Http\Controllers\InvoiceQboController::class, 'refresh'])->name('invoices.qbo.refresh');

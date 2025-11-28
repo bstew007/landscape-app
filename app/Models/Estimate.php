@@ -123,6 +123,11 @@ class Estimate extends Model
         return $this->hasMany(EstimateArea::class)->orderBy('sort_order');
     }
 
+    public function purchaseOrders()
+    {
+        return $this->hasMany(EstimatePurchaseOrder::class);
+    }
+
     public function files()
     {
         return $this->hasMany(EstimateFile::class)->latest();

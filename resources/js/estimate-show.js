@@ -511,6 +511,24 @@ class EstimateShowController {
             .map((selector) => document.querySelector(selector))
             .filter(Boolean);
         forms.forEach((form) => {
+            // FIX: Reset form state after page reload to prevent stale disabled buttons
+            // When a form submits with stay_in_add_items=1, the page reloads with the panel open.
+            // Browsers may persist the disabled state of the submit button from before reload.
+            // We explicitly re-enable buttons and reset selects to ensure clean state.
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50');
+            }
+            
+            // Reset select dropdowns to empty state
+            const selectInputs = form.querySelectorAll('select');
+            selectInputs.forEach(select => {
+                if (select.value) {
+                    select.value = '';
+                }
+            });
+            
             this.setInitialFinancialState(form);
             form.querySelectorAll('input, select, textarea').forEach((el) => {
                 el.addEventListener('input', () => this.handleFormChange(form, el));
