@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('estimate_purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('estimate_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('supplier_id')->nullable()->constrained('clients')->nullOnDelete();
             $table->string('po_number')->unique();
             $table->enum('status', ['draft', 'sent', 'received', 'cancelled'])->default('draft');
             $table->decimal('total_amount', 10, 2)->default(0);
