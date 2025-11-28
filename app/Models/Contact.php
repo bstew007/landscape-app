@@ -33,6 +33,11 @@ class Contact extends Model
         'qbo_balance',
     ];
 
+    protected $casts = [
+        'qbo_last_synced_at' => 'datetime',
+        'qbo_balance' => 'decimal:2',
+    ];
+
     public function siteVisits()
     {
         return $this->hasMany(SiteVisit::class, 'client_id');

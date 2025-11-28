@@ -361,10 +361,17 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // ✅ Contacts & Site Visits (with legacy redirects)
     // ================================
     // QBO: sync a single contact and import (place before resource to avoid route conflicts)
+    // Customer sync routes
     Route::post('contacts/{client}/qbo-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'sync'])->name('contacts.qbo.sync');
     Route::post('contacts/{client}/qbo-refresh', [\App\Http\Controllers\ContactQboSyncController::class, 'refresh'])->name('contacts.qbo.refresh');
     Route::post('contacts/{client}/qbo-push-names', [\App\Http\Controllers\ContactQboSyncController::class, 'pushNames'])->name('contacts.qbo.push-names');
     Route::post('contacts/{client}/qbo-push-mobile', [\App\Http\Controllers\ContactQboSyncController::class, 'pushMobile'])->name('contacts.qbo.push-mobile');
+    // Vendor sync routes
+    Route::post('contacts/{client}/qbo-vendor-sync', [\App\Http\Controllers\ContactQboSyncController::class, 'syncVendor'])->name('contacts.qbo.vendor.sync');
+    Route::post('contacts/{client}/qbo-vendor-refresh', [\App\Http\Controllers\ContactQboSyncController::class, 'refreshVendor'])->name('contacts.qbo.vendor.refresh');
+    Route::post('contacts/{client}/qbo-vendor-push-names', [\App\Http\Controllers\ContactQboSyncController::class, 'pushVendorNames'])->name('contacts.qbo.vendor.push-names');
+    Route::post('contacts/{client}/qbo-vendor-push-mobile', [\App\Http\Controllers\ContactQboSyncController::class, 'pushVendorMobile'])->name('contacts.qbo.vendor.push-mobile');
+    // Customer import routes
     Route::get('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'search'])->name('contacts.qbo.search');
     Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
     Route::post('contacts/qbo/import/selected', [\App\Http\Controllers\ContactQboImportController::class, 'importSelected'])->name('contacts.qbo.import.selected');

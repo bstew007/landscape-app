@@ -5,19 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Contact;
 use App\Models\QboToken;
 use App\Services\QboCustomerService;
+use App\Services\QboVendorService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class ContactQboSyncController extends Controller
 {
+    // ================================
+    // Customer Sync Methods
+    // ================================
+    
     public function sync(Contact $client, QboCustomerService $svc)
     {
         try {
             $svc->upsert($client);
-            return back()->with('success', 'Synced to QuickBooks');
+            return back()->with('success', 'Synced to QuickBooks as Customer');
         } catch (\Throwable $e) {
-            return back()->with('error', 'QBO sync failed: '.$e->getMessage());
+            return back()->with('error', 'QBO Customer sync failed: '.$e->getMessage());
         }
     }
 
@@ -46,7 +51,7 @@ class ContactQboSyncController extends Controller
     {
         try {
             if (!$client->qbo_customer_id) {
-                return back()->with('error', 'This contact is not linked to QBO.');
+                return back()->with('error', 'This contact is not linked to QBO as a Customer.');
             }
             $token = QboToken::latest('updated_at')->first();
             if (!$token) return back()->with('error', 'QBO not connected.');
@@ -88,11 +93,91 @@ class ContactQboSyncController extends Controller
             $client->qbo_last_synced_at = now();
             $client->save();
 
-            return back()->with('success', 'Refreshed from QuickBooks.');
+            return back()->with('success', 'Refreshed from QuickBooks Customer.');
         } catch (\Throwable $e) {
             return back()->with('error', 'QBO refresh failed: '.$e->getMessage());
         }
     }
+
+    // ================================
+    // Vendor Sync Methods
+    // ================================
+    
+    public function syncVendor(Contact $client, QboVendorService $svc)
+    {
+        try {
+            $svc->upsert($client);
+            return back()->with('success', 'Synced to QuickBooks as Vendor');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'QBO Vendor sync failed: '.$e->getMessage());
+        }
+    }
+
+    public function pushVendorNames(Contact $client, QboVendorService $svc)
+    {
+        try {
+            $svc->updateNames($client);
+            return back()->with('success', 'Vendor names updated in QuickBooks');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'QBO Vendor name update failed: '.$e->getMessage());
+        }
+    }
+
+    public function pushVendorMobile(Contact $client, QboVendorService $svc)
+    {
+        try {
+            $svc->updateMobile($client);
+            return back()->with('success', 'Vendor mobile updated in QuickBooks');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'QBO Vendor mobile update failed: '.$e->getMessage());
+        }
+    }
+
+    // Refresh local contact from QBO Vendor (inbound)
+    public function refreshVendor(Contact $client, QboVendorService $svc)
+    {
+        try {
+            if (!$client->qbo_vendor_id) {
+                return back()->with('error', 'This contact is not linked to QBO as a Vendor.');
+            }
+            
+            $data = $svc->fetch($client);
+            $v = $data['Vendor'] ?? [];
+            if (!$v) return back()->with('error', 'QBO vendor not found.');
+
+            $addr = $v['BillAddr'] ?? [];
+            $email = $v['PrimaryEmailAddr']['Address'] ?? null;
+            $phone = $v['PrimaryPhone']['FreeFormNumber'] ?? null;
+            $mobile = $v['Mobile']['FreeFormNumber'] ?? null;
+            $names = $this->mapVendorNames($v);
+            if (empty($names['first'])) $names['first'] = 'Vendor';
+            if (!array_key_exists('last', $names) || $names['last'] === null) $names['last'] = (string) ($v['Id'] ?? '');
+
+            $client->fill([
+                'first_name' => $names['first'],
+                'last_name' => $names['last'],
+                'company_name' => $names['company'] ?? null,
+                'email' => $email,
+                'phone' => $phone,
+                'mobile' => $mobile,
+                'address' => $addr['Line1'] ?? null,
+                'city' => $addr['City'] ?? null,
+                'state' => $addr['CountrySubDivisionCode'] ?? null,
+                'postal_code' => $addr['PostalCode'] ?? null,
+            ]);
+            $client->qbo_sync_token = $v['SyncToken'] ?? $client->qbo_sync_token;
+            $client->qbo_last_synced_at = now();
+            $client->save();
+
+            return back()->with('success', 'Refreshed from QuickBooks Vendor.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'QBO Vendor refresh failed: '.$e->getMessage());
+        }
+    }
+
+    // ================================
+    // Helper Methods
+    // ================================
 
     protected function baseUrl(string $realmId): string
     {
@@ -145,5 +230,25 @@ class ContactQboSyncController extends Controller
             return ['first'=>$display,'last'=>((string) ($c['Id'] ?? '')),'company'=>null];
         }
         return ['first'=>'Customer','last'=>(string)($c['Id']??''),'company'=>null];
+    }
+
+    protected function mapVendorNames(array $v): array
+    {
+        $display = trim($v['DisplayName'] ?? '');
+        $company = trim($v['CompanyName'] ?? '');
+        $first = trim($v['GivenName'] ?? '');
+        $last = trim($v['FamilyName'] ?? '');
+        if ($company !== '') {
+            $outFirst = $first !== '' ? $first : ($display !== '' ? $display : 'Vendor');
+            $outLast = $last !== '' ? $last : ((string) ($v['Id'] ?? ''));
+            return ['first' => $outFirst, 'last' => $outLast, 'company' => $company];
+        }
+        if ($first !== '' || $last !== '') return ['first' => $first ?: 'Vendor', 'last' => $last ?: ((string) ($v['Id'] ?? '')), 'company' => null];
+        if ($display !== '') {
+            if (str_contains($display, ',')) { [$l,$f] = array_map('trim', explode(',', $display, 2)); return ['first'=>$f?:'Vendor','last'=>$l?:((string) ($v['Id'] ?? '')),'company'=>null]; }
+            $parts = preg_split('/\s+/', $display); if (count($parts)>=2){ $f=array_shift($parts); $l=implode(' ', $parts); return ['first'=>$f?:'Vendor','last'=>$l?:((string) ($v['Id'] ?? '')),'company'=>null]; }
+            return ['first'=>$display,'last'=>((string) ($v['Id'] ?? '')),'company'=>null];
+        }
+        return ['first'=>'Vendor','last'=>(string)($v['Id']??''),'company'=>null];
     }
 }
