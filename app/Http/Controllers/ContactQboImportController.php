@@ -395,4 +395,120 @@ class ContactQboImportController extends Controller
         if ($errorMsg) $msg .= ' Note: '.$errorMsg;
         return redirect()->route('contacts.index')->with('success', $msg);
     }
+
+    // ================================
+    // Customer Linking Methods
+    // ================================
+
+    public function customerLinkPage()
+    {
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) {
+            return redirect()->route('contacts.index')
+                ->with('error', 'QuickBooks not connected. Please connect to QuickBooks first.');
+        }
+
+        // Get all local clients (not vendors)
+        $customers = Contact::whereIn('contact_type', ['client', 'lead'])
+            ->orderByRaw('qbo_customer_id IS NULL DESC')
+            ->orderBy('company_name')
+            ->orderBy('last_name')
+            ->paginate(50);
+
+        $unlinkedCount = Contact::whereIn('contact_type', ['client', 'lead'])
+            ->whereNull('qbo_customer_id')
+            ->count();
+
+        // Fetch ALL QB customers for dropdown
+        $qboCustomers = $this->fetchAllQboCustomers($token);
+        
+        // Get list of already linked QB customer IDs
+        $linkedQboIds = Contact::whereNotNull('qbo_customer_id')
+            ->pluck('qbo_customer_id')
+            ->toArray();
+
+        return view('contacts.customer-qbo-link', compact('customers', 'qboCustomers', 'linkedQboIds', 'unlinkedCount'));
+    }
+
+    protected function fetchAllQboCustomers(QboToken $token): array
+    {
+        $allCustomers = [];
+        $start = 1;
+        $maxResults = 100;
+        
+        try {
+            do {
+                $sql = "SELECT * FROM Customer STARTPOSITION {$start} MAXRESULTS {$maxResults}";
+                
+                $res = Http::withHeaders($this->authHeaders())
+                    ->get($this->baseUrl($token->realm_id).'/query', ['query' => $sql, 'minorversion' => 65]);
+                
+                if ($res->status() === 401) {
+                    $this->refreshTokenIfNeeded();
+                    $res = Http::withHeaders($this->authHeaders())
+                        ->get($this->baseUrl($token->realm_id).'/query', ['query' => $sql, 'minorversion' => 65]);
+                }
+                
+                if (!$res->ok()) {
+                    break;
+                }
+                
+                $data = $res->json();
+                $customers = $data['QueryResponse']['Customer'] ?? [];
+                
+                if (empty($customers)) {
+                    break;
+                }
+                
+                $allCustomers = array_merge($allCustomers, $customers);
+                $start += $maxResults;
+                
+            } while (count($customers) === $maxResults);
+            
+        } catch (\Throwable $e) {
+            \Log::error('Failed to fetch QB customers', ['error' => $e->getMessage()]);
+        }
+        
+        return $allCustomers;
+    }
+
+    public function syncAllCustomers(Request $request)
+    {
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) {
+            return back()->with('error', 'QuickBooks not connected');
+        }
+
+        $unlinked = Contact::whereIn('contact_type', ['client', 'lead'])
+            ->whereNull('qbo_customer_id')
+            ->get();
+
+        if ($unlinked->isEmpty()) {
+            return back()->with('success', 'All customers are already linked to QuickBooks');
+        }
+
+        $synced = 0;
+        $errors = 0;
+        $customerService = app(\App\Services\QboCustomerService::class);
+
+        foreach ($unlinked as $customer) {
+            try {
+                $customerService->upsert($customer);
+                $synced++;
+            } catch (\Throwable $e) {
+                $errors++;
+                \Log::error('Customer sync failed', [
+                    'customer_id' => $customer->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        $message = "Synced {$synced} customer(s) to QuickBooks";
+        if ($errors > 0) {
+            $message .= " ({$errors} failed)";
+        }
+
+        return back()->with('success', $message);
+    }
 }

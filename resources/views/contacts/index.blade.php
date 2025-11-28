@@ -22,6 +22,9 @@
                 <x-secondary-button as="a" href="{{ route('contacts.qbo.search') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
                     Import Customers
                 </x-secondary-button>
+                <x-secondary-button as="a" href="{{ route('contacts.qbo.customer.link-page') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
+                    Link Customers
+                </x-secondary-button>
                 <x-secondary-button as="a" href="{{ route('contacts.qbo.vendor.link-page') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
                     Link Vendors
                 </x-secondary-button>

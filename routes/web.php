@@ -372,6 +372,8 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('contacts/{client}/qbo-vendor-push-names', [\App\Http\Controllers\ContactQboSyncController::class, 'pushVendorNames'])->name('contacts.qbo.vendor.push-names');
     Route::post('contacts/{client}/qbo-vendor-push-mobile', [\App\Http\Controllers\ContactQboSyncController::class, 'pushVendorMobile'])->name('contacts.qbo.vendor.push-mobile');
     // Customer import routes
+    Route::get('contacts/qbo/customers/link', [\App\Http\Controllers\ContactQboImportController::class, 'customerLinkPage'])->name('contacts.qbo.customer.link-page');
+    Route::post('contacts/qbo/customers/sync-all', [\App\Http\Controllers\ContactQboImportController::class, 'syncAllCustomers'])->name('contacts.qbo.customer.sync-all');
     Route::get('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'search'])->name('contacts.qbo.search');
     Route::post('contacts/qbo/import', [\App\Http\Controllers\ContactQboImportController::class, 'import'])->name('contacts.qbo.import');
     Route::post('contacts/qbo/import/selected', [\App\Http\Controllers\ContactQboImportController::class, 'importSelected'])->name('contacts.qbo.import.selected');

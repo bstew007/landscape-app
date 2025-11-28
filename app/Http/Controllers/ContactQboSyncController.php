@@ -16,13 +16,40 @@ class ContactQboSyncController extends Controller
     // Customer Sync Methods
     // ================================
     
-    public function sync(Contact $client, QboCustomerService $svc)
+    public function sync(Contact $client, QboCustomerService $svc, Request $request)
     {
         try {
-            $svc->upsert($client);
-            return back()->with('success', 'Synced to QuickBooks as Customer');
+            \Log::info('Syncing customer to QB', ['customer_id' => $client->id, 'qbo_customer_id' => $client->qbo_customer_id]);
+            $result = $svc->upsert($client);
+            \Log::info('Customer sync successful', ['customer_id' => $client->id, 'result' => $result]);
+            
+            // Check if any fields were skipped
+            $message = 'Synced to QuickBooks as Customer';
+            if (isset($result['skipped'])) {
+                if ($result['skipped'] === 'no_changes') {
+                    $message = 'Customer is already up to date in QuickBooks';
+                } elseif ($result['skipped'] === 'excluded_fields_changed') {
+                    $message = 'Customer synced (Note: Name/Mobile changes require manual update in QuickBooks)';
+                }
+            }
+            
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+            
+            return redirect()->back()->with('success', $message);
         } catch (\Throwable $e) {
-            return back()->with('error', 'QBO Customer sync failed: '.$e->getMessage());
+            \Log::error('Customer sync failed', [
+                'customer_id' => $client->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            
+            return redirect()->back()->with('error', 'QBO Customer sync failed: '.$e->getMessage());
         }
     }
 
