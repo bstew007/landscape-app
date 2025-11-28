@@ -66,7 +66,7 @@
     $recentAreaId = session('recent_area_id');
     $addItemsTabSeed = session('add_items_tab', 'labor');
     $initialState = [
-        'tab' => 'work',
+        'tab' => request('tab', 'work'),
         'activeArea' => 'all',
         'showAddItems' => (bool) $reopenAddItems,
         'addItemsTab' => $addItemsTabSeed,

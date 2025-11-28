@@ -387,15 +387,77 @@ routes/web.php
 ### 🔜 Immediate Next Steps
 15. **Merge duplicate vendors** - consolidate vendors with different spellings
 16. Clean up vendor contact information (addresses, phone, email)
+17. ⚠️ **Fix PO generation redirect** - When "Generate Purchase Orders" button is clicked, user is redirected back to estimates page instead of staying on Print Documents tab or being shown the generated POs
 
-### 🔄 Medium Term (Phase 3 - Week 3) - IN PROGRESS
-12. ✅ Set up QuickBooks Vendor integration (QboVendorService created)
-13. ✅ Implement vendor sync to QB (tested successfully with Martin Marietta, Hoffman Eco Works, SiteOne)
-14. 🔜 Implement estimate sync to QB
-15. 🔜 Implement PO sync to QB
-16. ✅ Add vendor sync routes and controller methods
+### 🔄 Phase 3 Tasks (Medium Term - Week 3) - 50% COMPLETE
 
-### Long Term (Phase 4 - Week 4+)
+## Phase 3: QuickBooks Integration
+
+#### Completed:
+- ✅ QB OAuth authentication setup (QboToken model)
+- ✅ QB environment configuration (sandbox/production)
+- ✅ **QboVendorService** - Full vendor sync with upsert, updateNames, updateMobile
+- ✅ **QboCustomerService** - Full customer sync (existing service enhanced)
+- ✅ **ContactQboSyncController** - Vendor sync methods (syncVendor, refreshVendor, pushVendorNames, pushVendorMobile)
+- ✅ Enhanced customer sync with better logging and contextual messages
+- ✅ Vendor sync routes (7 routes for vendor operations)
+- ✅ Customer sync routes (enhanced existing routes)
+- ✅ Test command `php artisan qbo:test-vendor-sync` (successfully tested)
+- ✅ **Vendor Linking UI** - Match local vendors to QB vendors or create new
+  - ✅ View: `vendor-qbo-link.blade.php` with dropdown matching interface
+  - ✅ Controller: `ContactQboVendorImportController` with linkPage(), syncAll()
+  - ✅ Bulk sync functionality ("Sync All to QB" button)
+  - ✅ Enhanced success/error messages with visual feedback
+  - ✅ Route: `GET /contacts/qbo/vendors/link`
+- ✅ **Customer Linking UI** - Match local customers to QB customers or create new
+  - ✅ View: `customer-qbo-link.blade.php` with dropdown matching interface
+  - ✅ Controller methods: `customerLinkPage()`, `syncAllCustomers()`, `fetchAllQboCustomers()`
+  - ✅ Bulk sync functionality ("Sync All to QB" button)
+  - ✅ Enhanced success/error messages with visual feedback
+  - ✅ Route: `GET /contacts/qbo/customers/link`
+- ✅ **Contacts Index UI Updates**
+  - ✅ "Link Customers" button
+  - ✅ "Link Vendors" button
+  - ✅ QBO status pill now checks both `qbo_customer_id` AND `qbo_vendor_id`
+- ✅ Successfully synced 3 test vendors to QB (Martin Marietta, Hoffman Eco Works, SiteOne)
+
+#### Current Implementation Details:
+
+**Vendor/Customer Linking Workflow:**
+1. User clicks "Link Vendors" or "Link Customers" button
+2. System displays all local vendors/customers with QB dropdown
+3. User can:
+   - Select existing QB vendor/customer from dropdown
+   - Choose "+ Create New in QB" to auto-create
+   - Click "Sync All to QB" for bulk creation
+4. System prevents duplicate linking (disables already-linked QB IDs)
+5. Visual status indicators: ✓ Synced, Needs Sync, Not Linked
+6. Re-sync button updates QB with local changes
+
+**Smart Sync Features:**
+- Detects which fields changed and provides contextual messages
+- Skips unnecessary updates if already in sync
+- Warns when excluded fields changed (names/mobile on vendors - QB restriction)
+- Comprehensive logging for troubleshooting
+
+#### Next Tasks - Estimates & POs:
+- [ ] Create **QboEstimateService** for estimate sync
+- [ ] Create **QboPurchaseOrderService** for PO sync  
+- [ ] Add "Sync to QuickBooks" button on estimate detail page
+- [ ] Add "Sync to QuickBooks" button in PO management UI
+- [ ] Track estimate sync status (qbo_estimate_id, qbo_synced_at)
+- [ ] Track PO sync status (qbo_po_id, qbo_synced_at)
+- [ ] Handle QB estimate → local estimate mapping
+- [ ] Handle QB PO → local PO mapping
+
+#### Known Issues:
+- ⚠️ **PO Generation Redirect Issue**: When "Generate Purchase Orders" button is clicked, user is redirected back to estimates page instead of staying on the Print Documents tab or PO management view. Need to fix redirect to show generated POs.
+
+**Deliverable:** 50% Complete - Vendor & Customer sync working. Estimate & PO sync pending.
+
+---
+
+### Phase 4: Reports & Cost Analysis
 16. Create cost analysis report
 17. Create labor hours summary
 18. Create material requirements report
@@ -456,22 +518,37 @@ routes/web.php
 - Professional print template with batch printing
 - UI with generate, view, print, delete, bulk operations
 
-**Current Task:**
-- Merge duplicate vendors in contacts (different spellings of same company)
+**Known Issues:**
+- ⚠️ **PO Generation Redirect**: When "Generate Purchase Orders" button is clicked, redirects to estimates page instead of showing generated POs
 
-### 🔄 Phase 3: IN PROGRESS (30%)
+**Next Maintenance Tasks:**
+- [ ] Fix PO generation redirect (should stay on Print Documents tab or show PO list)
+- [ ] Merge duplicate vendors in contacts (different spellings of same company)
+
+### 🔄 Phase 3: IN PROGRESS (50%)
 **Completed:**
-- ✅ Created QboVendorService for vendor sync
-- ✅ Added vendor sync routes (sync, refresh, push-names, push-mobile)
-- ✅ Extended ContactQboSyncController with vendor methods
-- ✅ Tested vendor sync successfully (3 vendors synced to QBO)
-- ✅ Created test command `php artisan qbo:test-vendor-sync`
+- ✅ QB OAuth authentication setup (QboToken model)
+- ✅ QB environment configuration (sandbox/production)
+- ✅ Created QboVendorService for vendor sync (upsert, updateNames, updateMobile, fetch)
+- ✅ Enhanced QboCustomerService for customer sync
+- ✅ Extended ContactQboSyncController with vendor sync methods
+- ✅ Enhanced customer sync with better logging and contextual messages
+- ✅ Added vendor sync routes (7 routes: sync, refresh, push-names, push-mobile, etc.)
+- ✅ Created vendor linking UI (`vendor-qbo-link.blade.php`)
+  - Dropdown matching interface, "Create New in QB" option, Bulk sync
+- ✅ Created customer linking UI (`customer-qbo-link.blade.php`)
+  - Dropdown matching interface, "Create New in QB" option, Bulk sync
+- ✅ ContactQboVendorImportController with linkPage(), syncAll(), fetchAllQboVendors()
+- ✅ ContactQboImportController enhanced with customerLinkPage(), syncAllCustomers(), fetchAllQboCustomers()
+- ✅ Updated contacts index with "Link Customers" and "Link Vendors" buttons
+- ✅ Fixed QBO status pill to check both qbo_customer_id AND qbo_vendor_id
+- ✅ Tested vendor sync successfully (3 vendors synced to QB)
 
 **Next Tasks:**
 - 🔜 Create QboEstimateService for estimate sync
 - 🔜 Create QboPurchaseOrderService for PO sync
-- 🔜 Add sync UI buttons to estimates page
-- 🔜 Add sync UI buttons to PO management page
+- 🔜 Add "Sync to QuickBooks" button on estimate detail page
+- 🔜 Add "Sync to QuickBooks" button in PO management UI
 
 ### ⏳ Phase 4: PENDING
 - Reports & Analytics (not started)

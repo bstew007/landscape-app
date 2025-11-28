@@ -141,9 +141,20 @@ return {
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">
-                            <label for="vendor_name" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Vendor</label>
+                            <label for="supplier_id" class="text-sm font-medium text-gray-800 sm:text-right whitespace-nowrap">Vendor</label>
                             <div class="sm:col-span-2">
-                                <input id="vendor_name" type="text" name="vendor_name" class="form-input w-full" value="{{ old('vendor_name', $material->vendor_name) }}">
+                                <select id="supplier_id" name="supplier_id" class="form-select w-full">
+                                    <option value="">— Select Vendor —</option>
+                                    @foreach($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}" {{ old('supplier_id', $material->supplier_id) == $vendor->id ? 'selected' : '' }}>
+                                            {{ $vendor->company_name ?: ($vendor->first_name . ' ' . $vendor->last_name) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Don't see your vendor? 
+                                    <a href="{{ route('contacts.create') }}?type=vendor" target="_blank" class="text-brand-600 hover:underline">Add new vendor</a>
+                                </p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 items-center gap-4">

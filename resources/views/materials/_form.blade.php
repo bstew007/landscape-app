@@ -1,5 +1,6 @@
 @php
     $material = $material ?? null;
+    $vendors = $vendors ?? \App\Models\Contact::where('contact_type', 'vendor')->orderBy('company_name')->orderBy('last_name')->get();
 @endphp
 
 @csrf
@@ -32,8 +33,17 @@
     </div>
     <div>
         <label class="block text-sm font-semibold mb-1">Vendor</label>
-        <input type="text" name="vendor_name" class="form-input w-full"
-               value="{{ old('vendor_name', $material->vendor_name ?? '') }}">
+        <select name="supplier_id" class="form-select w-full">
+            <option value="">— Select Vendor —</option>
+            @foreach($vendors as $vendor)
+                <option value="{{ $vendor->id }}" {{ old('supplier_id', $material->supplier_id ?? null) == $vendor->id ? 'selected' : '' }}>
+                    {{ $vendor->company_name ?: ($vendor->first_name . ' ' . $vendor->last_name) }}
+                </option>
+            @endforeach
+        </select>
+        <p class="text-xs text-gray-500 mt-1">
+            <a href="{{ route('contacts.create') }}?type=vendor" target="_blank" class="text-brand-600 hover:underline">Add new vendor</a>
+        </p>
     </div>
     <div>
         <label class="block text-sm font-semibold mb-1">Vendor SKU</label>

@@ -88,7 +88,7 @@
     </section>
 
     <!-- Purchase Orders Section -->
-    <section class="bg-white rounded-lg shadow overflow-hidden">
+    <section id="purchase-orders" class="bg-white rounded-lg shadow overflow-hidden">
         <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
             <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <svg class="h-5 w-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -148,7 +148,7 @@
                                     </div>
                                     <div class="mt-1 text-sm text-gray-600">
                                         <span class="font-medium">Supplier:</span> 
-                                        {{ $po->supplier ? $po->supplier->display_name : 'No Supplier Assigned' }}
+                                        {{ $po->supplier ? $po->supplier->company_name : 'No Supplier Assigned' }}
                                     </div>
                                     <div class="mt-1 text-sm text-gray-600">
                                         <span class="font-medium">Items:</span> {{ $po->items->count() }} 
@@ -188,6 +188,7 @@
                                       onsubmit="return confirm('Delete this purchase order?')">
                                     @csrf
                                     @method('DELETE')
+                                    <input type="hidden" name="from_print_tab" value="1">
                                     <button type="submit"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

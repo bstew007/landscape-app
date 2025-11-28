@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contact;
 use App\Models\Material;
 use App\Models\MaterialCategory;
 use Illuminate\Http\Request;
@@ -203,7 +204,12 @@ class MaterialController extends Controller
 
     public function create()
     {
-        return view('materials.create');
+        $vendors = Contact::where('contact_type', 'vendor')
+            ->orderBy('company_name')
+            ->orderBy('last_name')
+            ->get();
+        
+        return view('materials.create', compact('vendors'));
     }
 
     public function store(Request $request)
@@ -211,6 +217,15 @@ class MaterialController extends Controller
         $data = $this->validateMaterial($request);
         $data['is_taxable'] = (bool) ($data['is_taxable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
+        
+        // Sync vendor_name with supplier for backward compatibility
+        if (!empty($data['supplier_id'])) {
+            $supplier = Contact::find($data['supplier_id']);
+            if ($supplier) {
+                $data['vendor_name'] = $supplier->company_name ?: ($supplier->first_name . ' ' . $supplier->last_name);
+            }
+        }
+        
         $material = Material::create($data);
 
         // Sync categories
@@ -225,7 +240,12 @@ class MaterialController extends Controller
 
     public function edit(Material $material)
     {
-        return view('materials.edit', compact('material'));
+        $vendors = Contact::where('contact_type', 'vendor')
+            ->orderBy('company_name')
+            ->orderBy('last_name')
+            ->get();
+        
+        return view('materials.edit', compact('material', 'vendors'));
     }
 
     public function update(Request $request, Material $material)
@@ -233,6 +253,18 @@ class MaterialController extends Controller
         $data = $this->validateMaterial($request, $material->id);
         $data['is_taxable'] = (bool) ($data['is_taxable'] ?? false);
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
+        
+        // Sync vendor_name with supplier for backward compatibility
+        if (!empty($data['supplier_id'])) {
+            $supplier = Contact::find($data['supplier_id']);
+            if ($supplier) {
+                $data['vendor_name'] = $supplier->company_name ?: ($supplier->first_name . ' ' . $supplier->last_name);
+            }
+        } elseif (array_key_exists('supplier_id', $data) && is_null($data['supplier_id'])) {
+            // If supplier was cleared, clear vendor_name too
+            $data['vendor_name'] = null;
+        }
+        
         $material->update($data);
 
         // Sync categories
@@ -332,6 +364,7 @@ class MaterialController extends Controller
             'breakeven' => ['nullable', 'numeric', 'min:0'],
             'profit_percent' => ['nullable', 'numeric'],
             'tax_rate' => ['nullable', 'numeric', 'min:0'],
+            'supplier_id' => ['nullable', 'integer', 'exists:clients,id'],
             'vendor_name' => ['nullable', 'string', 'max:255'],
             'vendor_sku' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

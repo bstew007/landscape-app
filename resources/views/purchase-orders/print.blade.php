@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Order {{ $purchaseOrder->po_number }}</title>
+    @php
+        $company = \App\Models\CompanySetting::getSettings();
+    @endphp
     <style>
         * {
             margin: 0;
@@ -21,12 +24,20 @@
         }
         
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
             padding-bottom: 30px;
             border-bottom: 3px solid #10b981;
             margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .company-info {
+            float: left;
+            width: 60%;
+        }
+        
+        .po-info {
+            float: right;
+            width: 38%;
         }
         
         .company-info h1 {
@@ -75,14 +86,23 @@
         }
         
         .addresses {
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
+            width: 100%;
             margin-bottom: 30px;
         }
         
+        .addresses::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
         .address-block {
-            flex: 1;
+            float: left;
+            width: 48%;
+        }
+        
+        .address-block:last-child {
+            float: right;
         }
         
         .address-block h3 {
@@ -238,12 +258,20 @@
     <!-- Header -->
     <div class="header">
         <div class="company-info">
-            <h1>Your Company Name</h1>
+            <h1>{{ $company->company_name ?: config('app.name', 'Your Company') }}</h1>
             <p>
-                123 Business Address<br>
-                City, State 12345<br>
-                Phone: (123) 456-7890<br>
-                Email: orders@company.com
+                @if($company->address)
+                    {{ $company->address }}<br>
+                @endif
+                @if($company->city || $company->state || $company->postal_code)
+                    {{ collect([$company->city, $company->state])->filter()->join(', ') }} {{ $company->postal_code }}<br>
+                @endif
+                @if($company->phone)
+                    Phone: {{ $company->phone }}<br>
+                @endif
+                @if($company->email)
+                    Email: {{ $company->email }}
+                @endif
             </p>
         </div>
         <div class="po-info">
@@ -264,20 +292,20 @@
         <div class="address-block">
             <h3>Vendor</h3>
             @if($purchaseOrder->supplier)
-                <strong>{{ $purchaseOrder->supplier->display_name }}</strong>
-                @if($purchaseOrder->supplier->contact_person)
-                    <p>Attn: {{ $purchaseOrder->supplier->contact_person }}</p>
-                @endif
+                <strong>{{ $purchaseOrder->supplier->company_name ?: ($purchaseOrder->supplier->first_name . ' ' . $purchaseOrder->supplier->last_name) }}</strong>
                 @if($purchaseOrder->supplier->address)
                     <p>{{ $purchaseOrder->supplier->address }}</p>
                 @endif
-                @if($purchaseOrder->supplier->city || $purchaseOrder->supplier->state || $purchaseOrder->supplier->zip)
+                @if($purchaseOrder->supplier->city || $purchaseOrder->supplier->state || $purchaseOrder->supplier->postal_code)
                     <p>
-                        {{ $purchaseOrder->supplier->city }}{{ $purchaseOrder->supplier->state ? ', ' . $purchaseOrder->supplier->state : '' }} {{ $purchaseOrder->supplier->zip }}
+                        {{ collect([$purchaseOrder->supplier->city, $purchaseOrder->supplier->state])->filter()->join(', ') }} {{ $purchaseOrder->supplier->postal_code }}
                     </p>
                 @endif
                 @if($purchaseOrder->supplier->phone)
                     <p>Phone: {{ $purchaseOrder->supplier->phone }}</p>
+                @endif
+                @if($purchaseOrder->supplier->mobile)
+                    <p>Mobile: {{ $purchaseOrder->supplier->mobile }}</p>
                 @endif
                 @if($purchaseOrder->supplier->email)
                     <p>Email: {{ $purchaseOrder->supplier->email }}</p>
@@ -336,16 +364,16 @@
     
     <!-- Totals -->
     <div class="totals">
-        <table class="totals-table">
-            <tr>
-                <td>Subtotal</td>
-                <td>${{ number_format($purchaseOrder->total_amount, 2) }}</td>
-            </tr>
-            <tr class="total">
-                <td>Total</td>
-                <td>${{ number_format($purchaseOrder->total_amount, 2) }}</td>
-            </tr>
-        </table>
+        <div class="totals-table">
+            <div style="padding: 8px 0; overflow: hidden;">
+                <span style="font-weight: 500; color: #6b7280; float: left;">Subtotal</span>
+                <span style="font-weight: 600; color: #1f2937; float: right;">${{ number_format($purchaseOrder->total_amount, 2) }}</span>
+            </div>
+            <div style="padding-top: 12px; margin-top: 8px; border-top: 2px solid #10b981; font-weight: 700; font-size: 16px; color: #047857; overflow: hidden;">
+                <span style="float: left;">Total</span>
+                <span style="float: right;">${{ number_format($purchaseOrder->total_amount, 2) }}</span>
+            </div>
+        </div>
     </div>
     
     <!-- Notes -->

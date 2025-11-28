@@ -54,7 +54,8 @@ class PurchaseOrderController extends Controller
         $purchaseOrders = $this->service->generatePOsFromEstimate($estimate, $replaceExisting);
 
         if ($purchaseOrders->isEmpty()) {
-            return back()->with('error', 'No materials found to create purchase orders.');
+            return redirect()->route('estimates.show', ['estimate' => $estimate->id, 'tab' => 'print'])
+                ->with('error', 'No materials found to create purchase orders.');
         }
 
         $count = $purchaseOrders->count();
@@ -62,7 +63,9 @@ class PurchaseOrderController extends Controller
             ? "Generated 1 purchase order." 
             : "Generated {$count} purchase orders.";
 
-        return back()->with('success', $message);
+        return redirect()->route('estimates.show', ['estimate' => $estimate->id, 'tab' => 'print'])
+            ->with('success', $message)
+            ->withFragment('purchase-orders');
     }
 
     /**
@@ -91,6 +94,14 @@ class PurchaseOrderController extends Controller
             return response()->json(['success' => true]);
         }
 
+        // Check if the request came from the print-documents tab
+        if (request()->input('from_print_tab')) {
+            return redirect()->route('estimates.show', ['estimate' => $estimateId, 'tab' => 'print'])
+                ->with('success', 'Purchase order deleted.')
+                ->withFragment('purchase-orders');
+        }
+
+        // Default: redirect to estimate show page
         return redirect()->route('estimates.show', $estimateId)
             ->with('success', 'Purchase order deleted.');
     }

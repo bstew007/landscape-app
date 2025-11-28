@@ -452,6 +452,9 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::resource('cost-codes', \App\Http\Controllers\Admin\CostCodeController::class)->except(['show']);
         Route::resource('material-categories', \App\Http\Controllers\Admin\MaterialCategoryController::class)->except(['show']);
         Route::get('qbo/items/search', [\App\Http\Controllers\Admin\QboItemLookupController::class, 'search'])->name('qbo.items.search');
+        // Company Settings
+        Route::get('company-settings', [\App\Http\Controllers\Admin\CompanySettingsController::class, 'edit'])->name('company-settings.edit');
+        Route::put('company-settings', [\App\Http\Controllers\Admin\CompanySettingsController::class, 'update'])->name('company-settings.update');
     });
 
     // Integrations: QuickBooks Online
