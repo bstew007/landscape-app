@@ -231,7 +231,7 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 align-top">
-                                    @if($contact->qbo_customer_id)
+                                    @if($contact->qbo_customer_id || $contact->qbo_vendor_id)
                                         @php $needsSync = $contact->qbo_last_synced_at && $contact->updated_at && $contact->updated_at->gt($contact->qbo_last_synced_at); @endphp
                                         @if($needsSync)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs">Needs Sync</span>

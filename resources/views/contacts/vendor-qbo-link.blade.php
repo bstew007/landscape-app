@@ -9,10 +9,14 @@
   />
 
   @if(session('error'))
-    <div class="p-3 rounded border border-red-200 bg-red-50 text-red-900">{{ session('error') }}</div>
+    <div class="p-4 rounded-lg border-2 border-red-300 bg-red-50 text-red-900 font-medium">
+      ❌ {{ session('error') }}
+    </div>
   @endif
   @if(session('success'))
-    <div class="p-3 rounded border border-brand-200 bg-brand-50 text-brand-900">{{ session('success') }}</div>
+    <div class="p-4 rounded-lg border-2 border-emerald-300 bg-emerald-50 text-emerald-900 font-medium">
+      ✅ {{ session('success') }}
+    </div>
   @endif
 
   <div class="bg-white rounded-lg shadow-sm border border-brand-100/60">
@@ -56,11 +60,9 @@
                     · {{ $vendor->phone }}
                   @endif
                 </div>
-                @if($vendor->supplier)
-                  <div class="text-xs text-brand-400 mt-1">
-                    {{ $vendor->materials_count ?? 0 }} material{{ ($vendor->materials_count ?? 0) !== 1 ? 's' : '' }}
-                  </div>
-                @endif
+                <div class="text-xs text-brand-400 mt-1">
+                  {{ $vendor->materials_count ?? 0 }} material{{ ($vendor->materials_count ?? 0) !== 1 ? 's' : '' }}
+                </div>
               </td>
               
               <td class="px-4 py-3">

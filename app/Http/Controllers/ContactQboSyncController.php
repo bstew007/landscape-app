@@ -106,19 +106,37 @@ class ContactQboSyncController extends Controller
     public function syncVendor(Contact $client, QboVendorService $svc, Request $request)
     {
         try {
-            $svc->upsert($client);
+            \Log::info('Syncing vendor to QB', ['vendor_id' => $client->id, 'qbo_vendor_id' => $client->qbo_vendor_id]);
+            $result = $svc->upsert($client);
+            \Log::info('Vendor sync successful', ['vendor_id' => $client->id, 'result' => $result]);
             
-            if ($request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Vendor synced to QuickBooks']);
+            // Check if any fields were skipped
+            $message = 'Synced to QuickBooks as Vendor';
+            if (isset($result['skipped'])) {
+                if ($result['skipped'] === 'no_changes') {
+                    $message = 'Vendor is already up to date in QuickBooks';
+                } elseif ($result['skipped'] === 'excluded_fields_changed') {
+                    $message = 'Vendor synced (Note: Name/Mobile changes require manual update in QuickBooks)';
+                }
             }
             
-            return back()->with('success', 'Synced to QuickBooks as Vendor');
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+            
+            return redirect()->back()->with('success', $message);
         } catch (\Throwable $e) {
+            \Log::error('Vendor sync failed', [
+                'vendor_id' => $client->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
             }
             
-            return back()->with('error', 'QBO Vendor sync failed: '.$e->getMessage());
+            return redirect()->back()->with('error', 'QBO Vendor sync failed: '.$e->getMessage());
         }
     }
 
