@@ -72,20 +72,13 @@ Add a comprehensive "Print Documents" tab to the estimates page that provides va
 - created_at, updated_at
 ```
 
-#### `suppliers` (if not exists)
-```sql
-- id
-- name
-- company_name
-- contact_person
-- email
-- phone
-- address
-- city, state, zip
-- qbo_vendor_id
-- is_active
-- created_at, updated_at
-```
+#### ~~`suppliers`~~ **DEPRECATED - NOW USING CONTACTS**
+**Note:** Suppliers are now managed as Contacts with `contact_type = 'vendor'`. This unifies vendor management with customer management and aligns with QuickBooks model (Customers & Vendors).
+
+The `clients` table now includes:
+- `qbo_customer_id` - for QuickBooks Customer sync
+- `qbo_vendor_id` - for QuickBooks Vendor sync
+- `contact_type` - 'lead', 'client', 'vendor', 'owner'
 
 ---
 
@@ -129,74 +122,50 @@ Add a comprehensive "Print Documents" tab to the estimates page that provides va
 ### Phase 2: Purchase Order Generation
 **Goal:** Generate and manage material purchase orders
 
-**STATUS: 95% COMPLETE** ✅
+**STATUS: 100% COMPLETE** ✅
 
 #### Completed:
-- ✅ Database tables created (suppliers, estimate_purchase_orders, estimate_purchase_order_items)
+- ✅ Database tables created (estimate_purchase_orders, estimate_purchase_order_items)
+- ✅ **Unified suppliers with Contacts** - vendors are now `contact_type = 'vendor'`
+- ✅ Added `qbo_vendor_id` to clients table for QuickBooks integration
+- ✅ Migrated all suppliers → contacts (32 vendors total)
 - ✅ Models with relationships and business logic
 - ✅ PurchaseOrderService with PO generation
+- ✅ MaterialMatchingService with intelligent SKU/vendor SKU/name matching
 - ✅ PurchaseOrderController with CRUD operations
 - ✅ PO management UI in Print Documents tab
 - ✅ PO print template for professional output
 - ✅ Auto-generated PO numbers (PO-YYYY-0001 format)
 - ✅ Status tracking (draft, sent, received, cancelled)
 - ✅ Bulk print functionality
+- ✅ Automatic vendor assignment from materials catalog
+- ✅ Fuzzy matching with 70% threshold for materials without direct catalog links
 
-#### 🔜 Next Enhancement - Automatic Vendor Assignment:
+#### ⚙️ Current System Behavior:
 
-**Current Behavior:**
-- PO generation groups materials by `material.supplier_id`
-- Materials without suppliers get grouped into "no_supplier" PO
-- Manual items (non-catalog) don't have vendor association
+**How It Works:**
+1. **PO Generation** groups materials by `material.supplier_id` (linked to contacts)
+2. **Automatic Matching** uses MaterialMatchingService with priority:
+   - Priority 1: Exact SKU match (100% confidence)
+   - Priority 2: Exact vendor SKU match (100% confidence)
+   - Priority 3: Exact name match (100% confidence)
+   - Fallback: Fuzzy matching (SKU: 35%, vendor SKU: 25%, name: 40%, description: 10%)
+3. **One PO per vendor** - materials automatically grouped by supplier
+4. **Materials without vendors** - grouped into "Unassigned Vendor" PO for manual review
 
-**Desired Behavior:**
-- When generating POs, match estimate items with database materials by name/SKU
-- Automatically assign the vendor from the matched catalog material
-- One PO per vendor with all their materials
-- Better handling of manual vs. catalog items
+**Vendor Management:**
+- ✅ Vendors managed at `/contacts` with filter `Type: vendor`
+- ✅ Full CRUD operations via existing Contacts UI
+- ✅ 32 vendors currently in system (migrated from old suppliers table)
+- ⚠️ **TO DO: Merge duplicate vendors** (e.g., "SiteOne" vs "Site One")
 
-**Implementation Steps:**
+**Next Maintenance Tasks:**
+- [ ] Merge duplicate vendor contacts (same company, different spellings)
+- [ ] Add missing vendor contact information (addresses, phone, email)
+- [ ] Review and update material → vendor assignments as needed
+- [ ] Consider adding vendor tags for better categorization
 
-#### Step 2.1: Database Setup
-- [ ] ✅ Already complete - supplier_id exists on materials table
-
-#### Step 2.2: Enhanced Material Matching Logic
-- [ ] Update `PurchaseOrderService::groupItemsBySupplier()` to:
-  - First check if item has catalog_id (direct catalog link)
-  - If no catalog_id, attempt fuzzy match by name/SKU
-  - Match against Material model using similarity search
-  - Assign matched material's supplier_id
-  - Track matching confidence for review
-
-#### Step 2.3: Matching Service
-- [ ] Create `MaterialMatchingService` with methods:
-  - `findBestMatch($itemName, $itemDescription)` - returns Material or null
-  - `calculateMatchScore($item, $material)` - returns 0-100 confidence
-  - `suggestMatches($item, $limit = 5)` - returns array of possible matches
-  - Consider: Levenshtein distance, fuzzy search, keyword matching
-
-#### Step 2.4: PO Generation Improvements
-- [ ] Enhance `PurchaseOrderService::generatePOsFromEstimate()`:
-  - Use MaterialMatchingService for items without catalog_id
-  - Store matched material_id in purchase_order_items
-  - Log unmatched items for manual review
-  - Group by matched supplier_id
-  - Create "Unassigned Vendor" PO for unmatched items
-
-#### Step 2.5: UI Enhancements
-- [ ] Add "Review Matches" step before PO generation (optional)
-- [ ] Show confidence scores for auto-matches
-- [ ] Allow manual vendor assignment before generation
-- [ ] Display warning for items without vendors
-- [ ] Option to assign vendor to multiple items at once
-
-#### Step 2.6: Supplier Management (Optional)
-- [ ] Routes for supplier CRUD
-- [ ] `SuppliersController` with index, create, store, edit, update, destroy
-- [ ] Views: suppliers/index, create, edit
-- [ ] Quick-add supplier from PO interface
-
-**Deliverable:** Generate and print material purchase orders
+**Deliverable:** ✅ Generate and print material purchase orders - COMPLETE
 
 ---
 
@@ -405,15 +374,21 @@ routes/web.php
 5. ✅ Create enhanced print views (full, materials, labor, summary)
 6. ✅ Test print/PDF functionality
 
-### 🔄 Short Term (Phase 2 - Week 2) - IN PROGRESS
+### 🔄 Short Term (Phase 2 - Week 2) - COMPLETE ✅
 7. ✅ Create database migrations for suppliers and POs
-8. ⏳ Build supplier management (Optional - deferred)
+8. ✅ **Unified suppliers with Contacts** - vendors now managed in `/contacts`
 9. ✅ Implement PO generation service
 10. ✅ Create PO management UI
 11. ✅ Create PO print template
-12. 🔜 **NEXT: Match materials with database catalog items and assign vendors automatically**
+12. ✅ Implement MaterialMatchingService with SKU/vendor SKU/fuzzy matching
+13. ✅ Migrate all suppliers to contacts table
+14. ✅ Add qbo_vendor_id to clients table
 
-### Medium Term (Phase 3 - Week 3)
+### 🔜 Immediate Next Steps
+15. **Merge duplicate vendors** - consolidate vendors with different spellings
+16. Clean up vendor contact information (addresses, phone, email)
+
+### Medium Term (Phase 3 - Week 3) - READY TO START
 12. Set up QuickBooks integration
 13. Implement estimate sync to QB
 14. Implement PO sync to QB
@@ -453,11 +428,11 @@ routes/web.php
 
 ---
 
-**Document Version:** 2.0  
+**Document Version:** 3.0  
 **Created:** November 27, 2025  
-**Last Updated:** November 27, 2025  
-**Status:** Phase 2 - 95% Complete, Next: Automatic Vendor Assignment  
-**Next Review:** After vendor matching implementation
+**Last Updated:** November 27, 2025 (Phase 2 Complete)  
+**Status:** Phase 2 - 100% Complete | Phase 3 - Ready to Start  
+**Next Review:** After vendor consolidation and Phase 3 planning
 
 ---
 
@@ -468,22 +443,22 @@ routes/web.php
 - Full-detail, materials-only, labor-only, summary, proposal views
 - Print and PDF download functionality working
 
-### 🔄 Phase 2: IN PROGRESS (95%)
+### 🔄 Phase 2: COMPLETE (100%)
 **Completed:**
-- Database schema for suppliers and POs
+- Database schema for POs and vendor management via Contacts
+- Unified suppliers with Contacts table (`contact_type = 'vendor'`)
+- Added `qbo_vendor_id` to clients for QuickBooks integration
 - Models with relationships and auto-calculations
-- PO generation service (basic grouping by supplier_id)
+- PO generation service with automatic vendor assignment
+- MaterialMatchingService with intelligent SKU/vendor SKU/name matching
 - Full CRUD operations for POs
-- Professional print template
+- Professional print template with batch printing
 - UI with generate, view, print, delete, bulk operations
 
-**Next Task:**
-- Implement automatic material matching and vendor assignment
-- Match estimate items with catalog materials by name/SKU
-- Ensure one PO per vendor with all their materials
-- Handle unmatched items gracefully
+**Current Task:**
+- Merge duplicate vendors in contacts (different spellings of same company)
 
-### ⏳ Phase 3: PENDING
+### ⏳ Phase 3: READY TO START
 - QuickBooks Integration (not started)
 
 ### ⏳ Phase 4: PENDING

@@ -27,6 +27,7 @@ class Contact extends Model
         'postal_code',
         // QBO linkage
         'qbo_customer_id',
+        'qbo_vendor_id',
         'qbo_sync_token',
         'qbo_last_synced_at',
         'qbo_balance',
