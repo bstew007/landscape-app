@@ -22,8 +22,8 @@
                 <x-secondary-button as="a" href="{{ route('contacts.qbo.search') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
                     Import Customers
                 </x-secondary-button>
-                <x-secondary-button as="a" href="{{ route('contacts.qbo.vendor.search') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
-                    Import Vendors
+                <x-secondary-button as="a" href="{{ route('contacts.qbo.vendor.link-page') }}" class="bg-white/10 text-white border-white/40 hover:bg-white/20 text-xs sm:text-sm flex-1 sm:flex-none justify-center">
+                    Link Vendors
                 </x-secondary-button>
                 <x-brand-button href="{{ route('contacts.create') }}" variant="muted" class="flex-1 sm:flex-none justify-center">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>

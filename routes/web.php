@@ -378,9 +378,11 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('contacts/qbo/import/bulk', [\App\Http\Controllers\ContactQboImportController::class, 'importBulk'])->name('contacts.qbo.import.bulk');
     Route::post('contacts/{client}/qbo-link', [\App\Http\Controllers\ContactQboImportController::class, 'link'])->name('contacts.qbo.link');
     // Vendor import routes
+    Route::get('contacts/qbo/vendors/link', [\App\Http\Controllers\ContactQboVendorImportController::class, 'linkPage'])->name('contacts.qbo.vendor.link-page');
     Route::get('contacts/qbo/vendors/import', [\App\Http\Controllers\ContactQboVendorImportController::class, 'search'])->name('contacts.qbo.vendor.search');
     Route::post('contacts/qbo/vendors/import', [\App\Http\Controllers\ContactQboVendorImportController::class, 'import'])->name('contacts.qbo.vendor.import');
     Route::post('contacts/{client}/qbo-vendor-link', [\App\Http\Controllers\ContactQboVendorImportController::class, 'link'])->name('contacts.qbo.vendor.link');
+    Route::post('contacts/qbo/vendors/sync-all', [\App\Http\Controllers\ContactQboVendorImportController::class, 'syncAll'])->name('contacts.qbo.vendor.sync-all');
 
     Route::resource('contacts', \App\Http\Controllers\ContactController::class);
 

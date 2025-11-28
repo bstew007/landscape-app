@@ -103,12 +103,21 @@ class ContactQboSyncController extends Controller
     // Vendor Sync Methods
     // ================================
     
-    public function syncVendor(Contact $client, QboVendorService $svc)
+    public function syncVendor(Contact $client, QboVendorService $svc, Request $request)
     {
         try {
             $svc->upsert($client);
+            
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Vendor synced to QuickBooks']);
+            }
+            
             return back()->with('success', 'Synced to QuickBooks as Vendor');
         } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            
             return back()->with('error', 'QBO Vendor sync failed: '.$e->getMessage());
         }
     }

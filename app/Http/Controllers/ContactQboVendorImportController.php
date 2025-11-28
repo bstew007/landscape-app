@@ -9,6 +9,107 @@ use Illuminate\Support\Facades\Http;
 
 class ContactQboVendorImportController extends Controller
 {
+    public function linkPage()
+    {
+        $token = QboToken::latest('updated_at')->first();
+        if (!$token) {
+            return redirect()->route('contacts.index')
+                ->with('error', 'QuickBooks not connected. Please connect to QuickBooks first.');
+        }
+
+        // Get all local vendors
+        $vendors = Contact::where('contact_type', 'vendor')
+            ->withCount(['materials' => function($q) {
+                $q->where('supplier_id', '!=', null);
+            }])
+            ->orderByRaw('qbo_vendor_id IS NULL DESC')
+            ->orderBy('company_name')
+            ->paginate(50);
+
+        $unlinkedCount = Contact::where('contact_type', 'vendor')
+            ->whereNull('qbo_vendor_id')
+            ->count();
+
+        // Fetch ALL QB vendors for dropdown
+        $qboVendors = $this->fetchAllQboVendors($token);
+        
+        // Get list of already linked QB vendor IDs
+        $linkedQboIds = Contact::whereNotNull('qbo_vendor_id')
+            ->pluck('qbo_vendor_id')
+            ->toArray();
+
+        return view('contacts.vendor-qbo-link', compact('vendors', 'qboVendors', 'linkedQboIds', 'unlinkedCount'));
+    }
+
+    protected function fetchAllQboVendors(QboToken $token): array
+    {
+        $allVendors = [];
+        $start = 1;
+        $maxResults = 100;
+        
+        try {
+            do {
+                $sql = "SELECT * FROM Vendor STARTPOSITION {$start} MAXRESULTS {$maxResults}";
+                
+                $res = Http::withHeaders($this->authHeaders($token))
+                    ->get($this->baseUrl($token->realm_id).'/query', ['query' => $sql, 'minorversion' => 65]);
+                
+                if ($res->status() === 401) {
+                    $this->refreshTokenIfNeeded($token);
+                    $res = Http::withHeaders($this->authHeaders($token))
+                        ->get($this->baseUrl($token->realm_id).'/query', ['query' => $sql, 'minorversion' => 65]);
+                }
+
+                if ($res->ok()) {
+                    $data = $res->json();
+                    $vendors = $data['QueryResponse']['Vendor'] ?? [];
+                    $allVendors = array_merge($allVendors, $vendors);
+                    
+                    // Check if there are more results
+                    if (count($vendors) < $maxResults) {
+                        break;
+                    }
+                    $start += $maxResults;
+                } else {
+                    break;
+                }
+            } while (true);
+            
+        } catch (\Throwable $e) {
+            \Log::error('Failed to fetch QB vendors: ' . $e->getMessage());
+        }
+
+        return $allVendors;
+    }
+
+    public function syncAll()
+    {
+        $vendors = Contact::where('contact_type', 'vendor')
+            ->whereNull('qbo_vendor_id')
+            ->get();
+
+        $service = app(\App\Services\QboVendorService::class);
+        $synced = 0;
+        $failed = 0;
+
+        foreach ($vendors as $vendor) {
+            try {
+                $service->upsert($vendor);
+                $synced++;
+            } catch (\Throwable $e) {
+                $failed++;
+                \Log::error("Failed to sync vendor {$vendor->id}: " . $e->getMessage());
+            }
+        }
+
+        $message = "Synced {$synced} vendor" . ($synced !== 1 ? 's' : '') . " to QuickBooks.";
+        if ($failed > 0) {
+            $message .= " {$failed} failed.";
+        }
+
+        return back()->with('success', $message);
+    }
+
     public function search(Request $request)
     {
         $token = QboToken::latest('updated_at')->first();
@@ -142,6 +243,9 @@ class ContactQboVendorImportController extends Controller
     {
         $qboVendorId = $request->input('qbo_vendor_id');
         if (!$qboVendorId) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No QuickBooks vendor ID provided'], 400);
+            }
             return back()->with('error', 'No QuickBooks vendor ID provided.');
         }
 
@@ -151,13 +255,21 @@ class ContactQboVendorImportController extends Controller
             ->first();
         
         if ($existing) {
-            return back()->with('error', "This QuickBooks vendor is already linked to: {$existing->name}");
+            $message = "This QuickBooks vendor is already linked to: {$existing->name}";
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 400);
+            }
+            return back()->with('error', $message);
         }
 
         $client->qbo_vendor_id = $qboVendorId;
         $client->qbo_last_synced_at = now();
         $client->save();
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Vendor linked to QuickBooks']);
+        }
+        
         return back()->with('success', 'Contact linked to QuickBooks vendor.');
     }
 

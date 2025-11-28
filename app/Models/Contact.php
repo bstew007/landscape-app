@@ -53,6 +53,11 @@ class Contact extends Model
         return $this->hasOne(Property::class, 'client_id')->where('is_primary', true);
     }
 
+    public function materials()
+    {
+        return $this->hasMany(Material::class, 'supplier_id');
+    }
+
     public function getNameAttribute(): string
     {
         $contact = trim("{$this->first_name} {$this->last_name}");
