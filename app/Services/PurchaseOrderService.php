@@ -13,10 +13,14 @@ use Illuminate\Support\Facades\Log;
 class PurchaseOrderService
 {
     protected MaterialMatchingService $matchingService;
+    protected QboPurchaseOrderService $qboService;
 
-    public function __construct(MaterialMatchingService $matchingService)
-    {
+    public function __construct(
+        MaterialMatchingService $matchingService,
+        QboPurchaseOrderService $qboService
+    ) {
         $this->matchingService = $matchingService;
+        $this->qboService = $qboService;
     }
     /**
      * Generate purchase orders from an estimate.
@@ -236,13 +240,35 @@ class PurchaseOrderService
     }
 
     /**
-     * Delete a purchase order.
+     * Delete a purchase order and optionally remove it from QuickBooks.
      *
      * @param EstimatePurchaseOrder $po
      * @return bool
      */
     public function deletePurchaseOrder(EstimatePurchaseOrder $po): bool
     {
+        // If PO is synced to QuickBooks, delete it there first
+        if ($po->qbo_id) {
+            try {
+                $result = $this->qboService->deletePurchaseOrder($po);
+                if (!$result['success']) {
+                    Log::warning('Failed to delete PO from QuickBooks', [
+                        'po_id' => $po->id,
+                        'qbo_id' => $po->qbo_id,
+                        'error' => $result['message']
+                    ]);
+                    // Continue with local deletion even if QBO delete fails
+                }
+            } catch (\Exception $e) {
+                Log::error('Error deleting PO from QuickBooks', [
+                    'po_id' => $po->id,
+                    'qbo_id' => $po->qbo_id,
+                    'error' => $e->getMessage()
+                ]);
+                // Continue with local deletion even if QBO delete fails
+            }
+        }
+
         return $po->delete();
     }
 
