@@ -7,6 +7,19 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+# Landscape App
+
+A comprehensive landscape business management application built with Laravel.
+
+## 📁 Project Structure
+
+- **`/docs`** - Project documentation (features, guides, system overviews)
+- **`/scripts`** - Utility scripts for development and maintenance ([See scripts/README.md](scripts/README.md))
+  - `/testing` - Development and testing scripts
+  - `/maintenance` - Database maintenance and diagnostic scripts
+  - `/data-migration` - One-time data migration scripts
+- **`/dev-tools`** - Development utilities and tools
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

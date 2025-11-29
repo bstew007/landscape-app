@@ -80,78 +80,94 @@ class PlantingCalculatorController extends Controller
             'cleanup' => 'nullable|numeric|min:0',
             'calculation_id' => 'nullable|exists:calculations,id',
             'job_notes' => 'nullable|string|max:2000',
+            'plants' => 'required|array|min:1',
+            'plants.*.catalog_id' => 'nullable|integer',
+            'plants.*.name' => 'required|string',
+            'plants.*.unit_cost' => 'required|numeric|min:0',
+            'plants.*.unit' => 'required|string',
+            'plants.*.quantity' => 'required|numeric|min:0',
             'tasks' => 'required|array',
             'tasks.*.qty' => 'nullable|numeric|min:0',
-            'tasks.*.unit_cost' => 'nullable|numeric|min:0',
         ];
         $rules['site_visit_id'] = ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id';
         $validated = $request->validate($rules);
 
         $productionRates = ProductionRate::where('calculator', 'planting')->pluck('rate', 'task');
         $taskInputs = [];
-        $unitCostInputs = [];
         $inputTasks = $request->input('tasks', []);
+        $inputPlants = $request->input('plants', []);
 
         $results = [];
-        $laborTasks = []; // NEW: Enhanced format for import service
+        $laborTasks = []; // Enhanced format for import service
         $materials = [];
         $materialTotal = 0;
         $totalHours = 0;
         $laborRate = (float) $validated['labor_rate'];
 
-        foreach ($productionRates as $taskKey => $ratePerUnit) {
-            $qty = (float) ($inputTasks[$taskKey]['qty'] ?? 0);
-            $unitCost = (float) ($inputTasks[$taskKey]['unit_cost'] ?? 0);
+        // Process plants from material catalog
+        foreach ($inputPlants as $plant) {
+            $qty = (float) ($plant['quantity'] ?? 0);
+            $unitCost = (float) ($plant['unit_cost'] ?? 0);
+            $plantName = $plant['name'] ?? 'Unknown Plant';
+            $unit = $plant['unit'] ?? 'ea';
+            $catalogId = $plant['catalog_id'] ?? null;
 
-            $taskInputs[$taskKey] = $qty;
-            $unitCostInputs[$taskKey] = $unitCost;
+            if ($qty > 0) {
+                // Determine production rate based on plant unit/size
+                $taskKey = $this->determineTaskKeyFromUnit($unit);
+                $ratePerUnit = $productionRates[$taskKey] ?? 0.1; // Default if not found
 
-            if ($qty <= 0) {
-                continue;
-            }
-
-            $hours = $qty * $ratePerUnit;
-            $taskLabel = $this->taskLabels[$taskKey] ?? Str::title(str_replace('_', ' ', $taskKey));
-            
-            $results[] = [
-                'task' => $taskLabel,
-                'qty' => $qty,
-                'rate' => $ratePerUnit,
-                'hours' => round($hours, 2),
-                'cost' => round($hours * $laborRate, 2),
-            ];
-
-            // NEW: Enhanced labor task format
-            $laborTasks[] = [
-                'task_key' => $taskKey,
-                'task_name' => $taskLabel,
-                'description' => "Install {$qty} {$taskLabel}",
-                'quantity' => $qty,
-                'unit' => $this->getTaskUnit($taskKey),
-                'production_rate' => $ratePerUnit,
-                'hours' => round($hours, 2),
-                'hourly_rate' => $laborRate,
-                'total_cost' => round($hours * $laborRate, 2),
-            ];
-
-            $totalHours += $hours;
-
-            // NEW: Enhanced material format
-            if ($unitCost > 0) {
-                $lineTotal = $qty * $unitCost;
-                $materials[] = [
-                    'task_key' => $taskKey,
-                    'name' => $taskLabel,
-                    'description' => "{$taskLabel} - Plant Material",
-                    'quantity' => $qty,
-                    'unit' => $this->getTaskUnit($taskKey),
-                    'unit_cost' => $unitCost,
-                    'total_cost' => round($lineTotal, 2),
-                    'category' => 'Plants',
+                // Calculate labor
+                $hours = $qty * $ratePerUnit;
+                $taskLabel = $this->taskLabels[$taskKey] ?? Str::title(str_replace('_', ' ', $taskKey));
+                
+                $results[] = [
+                    'task' => $plantName,
+                    'qty' => $qty,
+                    'rate' => $ratePerUnit,
+                    'hours' => round($hours, 2),
+                    'cost' => round($hours * $laborRate, 2),
                 ];
 
-                $materialTotal += $lineTotal;
+                // Enhanced labor task format for import
+                $laborTasks[] = [
+                    'task_key' => $taskKey,
+                    'task_name' => $plantName,
+                    'description' => "Install {$qty} {$plantName}",
+                    'quantity' => $qty,
+                    'unit' => $unit,
+                    'production_rate' => $ratePerUnit,
+                    'hours' => round($hours, 2),
+                    'hourly_rate' => $laborRate,
+                    'total_cost' => round($hours * $laborRate, 2),
+                ];
+
+                $totalHours += $hours;
+
+                // Add material
+                if ($unitCost > 0) {
+                    $lineTotal = $qty * $unitCost;
+                    $materials[] = [
+                        'catalog_id' => $catalogId,
+                        'task_key' => $taskKey,
+                        'name' => $plantName,
+                        'description' => "{$plantName} - Plant Material",
+                        'quantity' => $qty,
+                        'unit' => $unit,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => round($lineTotal, 2),
+                        'category' => 'Plants',
+                    ];
+
+                    $materialTotal += $lineTotal;
+                }
             }
+        }
+
+        // Also track raw labor quantity inputs for editing
+        foreach ($productionRates as $taskKey => $ratePerUnit) {
+            $qty = (float) ($inputTasks[$taskKey]['qty'] ?? 0);
+            $taskInputs[$taskKey] = $qty;
         }
 
         $calculator = new LaborCostCalculatorService();
@@ -163,13 +179,13 @@ class PlantingCalculatorController extends Controller
 
         $data = array_merge($validated, $totals, [
             'tasks' => $results,
-            'labor_tasks' => $laborTasks, // NEW: Enhanced format for import
+            'labor_tasks' => $laborTasks, // Enhanced format for import
             'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn ($hours) => round($hours, 2))->toArray(),
             'labor_hours' => round($totalHours, 2),
             'materials' => $materials,
             'material_total' => round($materialTotal, 2),
             'task_inputs' => $taskInputs,
-            'unit_costs' => $unitCostInputs,
+            'plants' => $inputPlants, // Store selected plants for editing
         ]);
 
         if (!empty($validated['calculation_id'])) {
@@ -245,6 +261,28 @@ class PlantingCalculatorController extends Controller
             'ball_and_burlap' => 'ea',
             'palm_8_12' => 'ea',
             default => 'ea',
+        };
+    }
+
+    /**
+     * Determine the task key based on plant unit from material catalog
+     */
+    protected function determineTaskKeyFromUnit(string $unit): string
+    {
+        // Map catalog units to production rate task keys
+        return match(strtolower($unit)) {
+            'flats', 'flat' => 'annual_flats',
+            'pots', 'pot', '4" pot', '6" pot' => 'annual_pots',
+            '1 gal', '1g', '#1' => 'container_1g',
+            '3 gal', '3g', '#3' => 'container_3g',
+            '5 gal', '5g', '#5' => 'container_5g',
+            '7 gal', '7g', '#7' => 'container_7g',
+            '10 gal', '10g', '#10' => 'container_10g',
+            '15 gal', '15g', '#15' => 'container_15g',
+            '25 gal', '25g', '#25' => 'container_25g',
+            'b&b', 'ball and burlap', 'balled and burlapped' => 'ball_and_burlap',
+            'palm' => 'palm_8_12',
+            default => 'container_1g', // Default to 1 gallon if unknown
         };
     }
 }

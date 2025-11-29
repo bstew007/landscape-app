@@ -175,9 +175,9 @@ class MulchingCalculatorController extends Controller
         $laborTasks[] = [
             'task_key' => $taskKey,
             'task_name' => ucwords($taskName),
-            'description' => "Mulch {$qty} sq ft",
+            'description' => "Mulch {$qty} cubic yards",
             'quantity' => $qty,
-            'unit' => 'sqft',
+            'unit' => 'cubic_yard',
             'production_rate' => $rate,
             'hours' => round($hours, 2),
             'hourly_rate' => $laborRate,

@@ -28,6 +28,7 @@ use App\Http\Controllers\LaborController;
 use App\Http\Controllers\EstimateItemController;
 use App\Http\Controllers\Admin\CompanyBudgetController;
 use App\Http\Controllers\Api\MaterialController as ApiMaterialController;
+use App\Http\Controllers\CalculatorImportController;
 
 
 Route::get('/', fn () => redirect()->route('client-hub'));
@@ -60,6 +61,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/calculators', function () {
         return view('calculators.index');
     })->name('calculators.index');
+
+    // ✅ Calculator Import Route (for importing calculations to estimates)
+    Route::post('/calculators/import-to-estimate', [CalculatorImportController::class, 'import'])
+        ->name('calculators.import-to-estimate');
 
     Route::get('/client-hub', ClientHubController::class)->name('client-hub');
 
