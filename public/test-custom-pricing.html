@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Pricing Diagnostic</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: system-ui; padding: 2rem; max-width: 800px; margin: 0 auto; }
+        .test { padding: 1rem; margin: 1rem 0; border: 1px solid #ccc; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 0.5rem 1rem; margin: 0.5rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Custom Pricing Feature Diagnostic</h1>
+    
+    <div class="test success">
+        <h2>✓ Page Loaded</h2>
+        <p>This diagnostic page has loaded successfully.</p>
+    </div>
+
+    <div class="test" x-data="{ alpine_working: true }">
+        <h2 x-show="alpine_working">✓ Alpine.js Working</h2>
+        <h2 x-show="!alpine_working">✗ Alpine.js NOT Working</h2>
+        <p x-text="alpine_working ? 'Alpine.js is loaded and functioning.' : 'Alpine.js failed to load.'"></p>
+    </div>
+
+    <div class="test" x-data="{ menuOpen: false }">
+        <h2>Test: Dropdown Menu</h2>
+        <div style="position: relative;">
+            <button type="button" 
+                    @click="menuOpen = !menuOpen"
+                    style="border: 1px solid #999; background: white;">
+                <span x-text="menuOpen ? 'Close Menu' : 'Open Menu'"></span>
+            </button>
+            <div x-show="menuOpen" 
+                 @click.away="menuOpen = false"
+                 style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid #999; padding: 0.5rem; min-width: 200px;">
+                <button type="button" @click="menuOpen = false; alert('Option 1 clicked!')">Option 1</button>
+                <button type="button" @click="menuOpen = false; alert('Option 2 clicked!')">Option 2</button>
+            </div>
+        </div>
+        <p>Click "Open Menu" to test dropdown behavior.</p>
+    </div>
+
+    <div class="test" x-data="{ show: false }">
+        <h2>Test: Modal</h2>
+        <button type="button" 
+                @click="show = true"
+                style="background: #007bff; color: white; border: none;">
+            Open Test Modal
+        </button>
+        
+        <div x-show="show" 
+             style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-center; z-index: 9999;">
+            <div @click.stop
+                 style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px;">
+                <h3>Test Modal</h3>
+                <p>This is a test modal to verify modal functionality.</p>
+                <button type="button" 
+                        @click="show = false"
+                        style="background: #dc3545; color: white; border: none;">
+                    Close Modal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test" x-data="testModal()">
+        <h2>Test: Custom Pricing Modal Function</h2>
+        <button type="button" 
+                @click="$dispatch('open-custom-pricing', { mode: 'price', areaId: 1, areaName: 'Test Area', estimateId: 1, currentTotal: 1000, currentCost: 750 })"
+                style="background: #28a745; color: white; border: none;">
+            Trigger Custom Pricing Event
+        </button>
+        <p>This tests if the custom pricing event system works.</p>
+        <p x-show="eventReceived" style="color: green; font-weight: bold;">✓ Event received!</p>
+    </div>
+
+    <script>
+    function testModal() {
+        return {
+            eventReceived: false,
+            init() {
+                this.$el.addEventListener('open-custom-pricing', (e) => {
+                    console.log('Custom pricing event received:', e.detail);
+                    this.eventReceived = true;
+                    alert(`Event received!\nMode: ${e.detail.mode}\nArea: ${e.detail.areaName}\nTotal: $${e.detail.currentTotal}`);
+                });
+            }
+        };
+    }
+
+    // Check if customPricingModal function exists
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const testDiv = document.createElement('div');
+            testDiv.classList.add('test');
+            
+            if (typeof window.customPricingModal === 'function') {
+                testDiv.classList.add('success');
+                testDiv.innerHTML = '<h2>✓ customPricingModal() Function Found</h2><p>The customPricingModal function is defined and available.</p>';
+            } else {
+                testDiv.classList.add('error');
+                testDiv.innerHTML = '<h2>✗ customPricingModal() Function NOT Found</h2><p>The customPricingModal function is not defined. This means the script in _custom-pricing.blade.php is not loading.</p>';
+            }
+            
+            document.body.appendChild(testDiv);
+        }, 1000);
+    });
+    </script>
+</body>
+</html>

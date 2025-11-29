@@ -1173,6 +1173,53 @@ window.lineItemCalculator = function(config) {
     };
 };
 
+// Alpine component factory for area cards
+window.areaComponent = function(initiallyOpen, clearPricingUrl, areaId) {
+    return {
+        open: initiallyOpen,
+        tab: 'pricing',
+        menuOpen: false,
+        
+        init() {
+            // Listen for force-open events
+            window.addEventListener('force-open-area', (e) => {
+                if (Number(e.detail?.areaId) === areaId && !this.open) {
+                    this.toggleOpen();
+                }
+            });
+        },
+        
+        toggleOpen() {
+            this.open = !this.open;
+        },
+        
+        async clearCustomPricing() {
+            if (!confirm('Are you sure you want to clear custom pricing? This will restore catalog-based pricing.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(clearPricingUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to clear custom pricing. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error clearing custom pricing:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+    };
+};
+
 initEstimateShow();
 
 export default initEstimateShow;

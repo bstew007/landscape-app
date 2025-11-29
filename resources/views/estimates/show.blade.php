@@ -498,5 +498,8 @@
     </div>
 </x-modal>
 
+{{-- Custom Pricing Modal --}}
+@include('estimates.partials.modals._custom-pricing')
+
 </div>
 @endsection

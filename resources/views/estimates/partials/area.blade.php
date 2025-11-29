@@ -36,29 +36,19 @@
     $profit = $price - $cogs;
     $initiallyOpen = isset($initiallyOpen) ? (bool) $initiallyOpen : false;
 @endphp
-<div x-data="{
-        open: {{ $initiallyOpen ? 'true' : 'false' }},
-        tab: 'pricing',
-        menuOpen: false,
-        toggleOpen() {
-            this.open = !this.open;
-        }
-    }"
-     x-on:force-open-area.window="if (Number($event.detail?.areaId) === {{ $area->id }} && !open) { toggleOpen(); }"
+<div x-data="areaComponent({{ $initiallyOpen ? 'true' : 'false' }}, '{{ route('estimates.areas.clearCustomPricing', [$estimate, $area]) }}', {{ $area->id }})"
      class="border rounded-lg bg-white work-area overflow-visible"
      data-area-id="{{ $area->id }}"
      data-sort-order="{{ $area->sort_order ?? 0 }}">
 
     <div class="px-3 py-1.5 border-b border-slate-200 bg-slate-100 cursor-pointer"
          @click.self="toggleOpen()">
-        <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-1.5">
-            @csrf
-            @method('PATCH')
-            <div class="relative inline-block text-left shrink-0">
+        <div class="flex flex-wrap items-start gap-1.5">
+            {{-- Options Dropdown - Outside of form to avoid scope issues --}}
+            <div class="relative inline-block text-left shrink-0" @keydown.escape.stop="menuOpen = false">
                 <button type="button" 
                         class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-white text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1" 
                         @click.stop="menuOpen = !menuOpen" 
-                        @keydown.escape.window="menuOpen = false"
                         :aria-expanded="menuOpen">
                     <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="1"/>
@@ -70,7 +60,7 @@
                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
                     </svg>
                 </button>
-                <div x-cloak x-show="menuOpen" x-transition @click.away="menuOpen = false"
+                <div x-cloak x-show="menuOpen" x-transition @click.outside="menuOpen = false"
                      class="absolute z-20 mt-1 min-w-[10rem] left-0 bg-white border border-gray-200 rounded-lg shadow-lg text-sm py-1 ring-1 ring-black/5">
                     <button type="button" 
                             class="flex items-center gap-2 w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50" 
@@ -91,6 +81,38 @@
                         Edit
                     </button>
                     <div class="my-1 border-t border-gray-200"></div>
+                    
+                    {{-- Custom Pricing Options --}}
+                    <button type="button" 
+                            class="flex items-center gap-2 w-full text-left px-3 py-2 text-brand-700 hover:bg-brand-50" 
+                            @click="menuOpen = false; $dispatch('open-custom-pricing', { mode: 'price', areaId: {{ $area->id }}, areaName: '{{ addslashes($area->name) }}', estimateId: {{ $estimate->id }}, currentTotal: {{ $price }}, currentCost: {{ $cogs }} })">
+                        <svg class="h-4 w-4 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        Custom Total Price
+                    </button>
+                    <button type="button" 
+                            class="flex items-center gap-2 w-full text-left px-3 py-2 text-brand-700 hover:bg-brand-50" 
+                            @click="menuOpen = false; $dispatch('open-custom-pricing', { mode: 'profit', areaId: {{ $area->id }}, areaName: '{{ addslashes($area->name) }}', estimateId: {{ $estimate->id }}, currentTotal: {{ $price }}, currentCost: {{ $cogs }} })">
+                        <svg class="h-4 w-4 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/>
+                        </svg>
+                        Custom Profit %
+                    </button>
+                    
+                    @if($area->hasCustomPricing())
+                        <button type="button" 
+                                class="flex items-center gap-2 w-full text-left px-3 py-2 text-amber-700 hover:bg-amber-50" 
+                                @click="menuOpen = false; clearCustomPricing()">
+                            <svg class="h-4 w-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+                            </svg>
+                            Clear Custom Pricing
+                        </button>
+                    @endif
+                    
+                    <div class="my-1 border-t border-gray-200"></div>
+                    
                     <button type="button" 
                             class="flex items-center gap-2 w-full text-left px-3 py-2 text-red-600 hover:bg-red-50" 
                             @click.prevent="$refs.deleteForm.submit()">
@@ -102,6 +124,11 @@
                     </button>
                 </div>
             </div>
+            
+            {{-- Area Update Form --}}
+            <form method="POST" action="{{ route('estimates.areas.update', [$estimate, $area]) }}" class="flex flex-wrap items-start gap-1.5 flex-1">
+                @csrf
+                @method('PATCH')
             <div class="w-16">
                 <label class="block text-xs font-medium text-gray-600">Order</label>
                 <input type="number" name="sort_order" class="form-input w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" value="{{ $area->sort_order ?? 0 }}">
@@ -137,6 +164,18 @@
                 <div class="flex items-baseline gap-1.5">
                     <span class="text-xs uppercase tracking-wide text-gray-500">Price</span>
                     <span class="text-base font-semibold text-gray-900">${{ number_format($price, 2) }}</span>
+                    @if($area->hasCustomPricing())
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200" title="Custom pricing applied on {{ optional($area->override_applied_at)->format('M d, Y g:i A') }}">
+                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                @if($area->custom_price_override)
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                @else
+                                    <path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/>
+                                @endif
+                            </svg>
+                            Custom
+                        </span>
+                    @endif
                 </div>
                 <span class="text-gray-300">•</span>
                 <div class="flex items-baseline gap-1.5">

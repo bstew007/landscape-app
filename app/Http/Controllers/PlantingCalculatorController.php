@@ -93,6 +93,7 @@ class PlantingCalculatorController extends Controller
         $inputTasks = $request->input('tasks', []);
 
         $results = [];
+        $laborTasks = []; // NEW: Enhanced format for import service
         $materials = [];
         $materialTotal = 0;
         $totalHours = 0;
@@ -110,22 +111,43 @@ class PlantingCalculatorController extends Controller
             }
 
             $hours = $qty * $ratePerUnit;
+            $taskLabel = $this->taskLabels[$taskKey] ?? Str::title(str_replace('_', ' ', $taskKey));
+            
             $results[] = [
-                'task' => $this->taskLabels[$taskKey] ?? Str::title(str_replace('_', ' ', $taskKey)),
+                'task' => $taskLabel,
                 'qty' => $qty,
                 'rate' => $ratePerUnit,
                 'hours' => round($hours, 2),
                 'cost' => round($hours * $laborRate, 2),
             ];
 
+            // NEW: Enhanced labor task format
+            $laborTasks[] = [
+                'task_key' => $taskKey,
+                'task_name' => $taskLabel,
+                'description' => "Install {$qty} {$taskLabel}",
+                'quantity' => $qty,
+                'unit' => $this->getTaskUnit($taskKey),
+                'production_rate' => $ratePerUnit,
+                'hours' => round($hours, 2),
+                'hourly_rate' => $laborRate,
+                'total_cost' => round($hours * $laborRate, 2),
+            ];
+
             $totalHours += $hours;
 
+            // NEW: Enhanced material format
             if ($unitCost > 0) {
                 $lineTotal = $qty * $unitCost;
-                $materials[$this->taskLabels[$taskKey] ?? Str::title(str_replace('_', ' ', $taskKey))] = [
-                    'qty' => $qty,
+                $materials[] = [
+                    'task_key' => $taskKey,
+                    'name' => $taskLabel,
+                    'description' => "{$taskLabel} - Plant Material",
+                    'quantity' => $qty,
+                    'unit' => $this->getTaskUnit($taskKey),
                     'unit_cost' => $unitCost,
-                    'total' => round($lineTotal, 2),
+                    'total_cost' => round($lineTotal, 2),
+                    'category' => 'Plants',
                 ];
 
                 $materialTotal += $lineTotal;
@@ -141,6 +163,7 @@ class PlantingCalculatorController extends Controller
 
         $data = array_merge($validated, $totals, [
             'tasks' => $results,
+            'labor_tasks' => $laborTasks, // NEW: Enhanced format for import
             'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn ($hours) => round($hours, 2))->toArray(),
             'labor_hours' => round($totalHours, 2),
             'materials' => $materials,
@@ -206,5 +229,22 @@ class PlantingCalculatorController extends Controller
         ]);
 
         return $pdf->download('planting_estimate.pdf');
+    }
+
+    /**
+     * Get the unit of measurement for a planting task
+     */
+    protected function getTaskUnit(string $taskKey): string
+    {
+        return match($taskKey) {
+            'annual_flats' => 'flats',
+            'annual_pots' => 'pots',
+            'container_1g', 'container_3g', 'container_5g', 
+            'container_7g', 'container_10g', 'container_15g', 
+            'container_25g' => 'ea',
+            'ball_and_burlap' => 'ea',
+            'palm_8_12' => 'ea',
+            default => 'ea',
+        };
     }
 }

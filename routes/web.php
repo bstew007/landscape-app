@@ -27,9 +27,17 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\LaborController;
 use App\Http\Controllers\EstimateItemController;
 use App\Http\Controllers\Admin\CompanyBudgetController;
+use App\Http\Controllers\Api\MaterialController as ApiMaterialController;
 
 
 Route::get('/', fn () => redirect()->route('client-hub'));
+
+// API Routes for Material Catalog
+Route::prefix('api')->middleware('auth')->group(function () {
+    Route::get('/materials/active', [ApiMaterialController::class, 'active'])->name('api.materials.active');
+    Route::get('/materials/search', [ApiMaterialController::class, 'search'])->name('api.materials.search');
+    Route::get('/materials/{material}', [ApiMaterialController::class, 'show'])->name('api.materials.show');
+});
 
 Route::get('/dashboard', fn () => view('dashboard'))
     ->middleware(['auth', 'verified'])
@@ -482,6 +490,11 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::patch('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'update'])->name('areas.update');
         Route::delete('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'destroy'])->name('areas.destroy');
         Route::post('areas/reorder', [\App\Http\Controllers\EstimateAreaController::class, 'reorder'])->name('areas.reorder');
+        
+        // Custom Pricing
+        Route::post('areas/{area}/custom-price', [\App\Http\Controllers\EstimateAreaController::class, 'customPrice'])->name('areas.customPrice');
+        Route::post('areas/{area}/custom-profit', [\App\Http\Controllers\EstimateAreaController::class, 'customProfit'])->name('areas.customProfit');
+        Route::post('areas/{area}/clear-custom-pricing', [\App\Http\Controllers\EstimateAreaController::class, 'clearCustomPricing'])->name('areas.clearCustomPricing');
 
         Route::delete('remove-calculation/{calculation}', [EstimateController::class, 'removeCalculation'])->name('remove-calculation');
 

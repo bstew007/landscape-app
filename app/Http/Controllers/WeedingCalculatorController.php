@@ -79,6 +79,7 @@ class WeedingCalculatorController extends Controller
     $dbRates = ProductionRate::where('calculator', 'weeding')->pluck('rate', 'task');
 
     $results = [];
+    $laborTasks = []; // NEW: Enhanced format for import service
     $totalHours = 0;
 
     foreach ($inputTasks as $taskKey => $taskData) {
@@ -88,13 +89,27 @@ class WeedingCalculatorController extends Controller
         $rate = $dbRates[$taskKey];
         $hours = $qty * $rate;
         $cost = $hours * $laborRate;
+        $taskName = str_replace('_', ' ', $taskKey);
 
         $results[] = [
-            'task' => str_replace('_', ' ', $taskKey),
+            'task' => $taskName,
             'qty' => $qty,
             'rate' => $rate,
             'hours' => round($hours, 2),
             'cost' => round($cost, 2),
+        ];
+
+        // NEW: Enhanced labor task format
+        $laborTasks[] = [
+            'task_key' => $taskKey,
+            'task_name' => ucwords($taskName),
+            'description' => "Weed {$qty} sq ft",
+            'quantity' => $qty,
+            'unit' => 'sqft',
+            'production_rate' => $rate,
+            'hours' => round($hours, 2),
+            'hourly_rate' => $laborRate,
+            'total_cost' => round($cost, 2),
         ];
 
         $totalHours += $hours;
@@ -107,6 +122,7 @@ class WeedingCalculatorController extends Controller
     // ✅ Prepare data to save
     $data = array_merge($validated, [
         'tasks' => $results,
+        'labor_tasks' => $laborTasks, // NEW: Enhanced format for import
         'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
         'labor_hours' => round($totalHours, 2),
         'materials' => [],

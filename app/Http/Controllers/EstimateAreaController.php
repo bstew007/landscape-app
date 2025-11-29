@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Estimate;
 use App\Models\EstimateArea;
 use App\Models\CostCode;
+use App\Services\PricingOverrideService;
 use Illuminate\Http\Request;
 
 class EstimateAreaController extends Controller
@@ -84,5 +85,86 @@ class EstimateAreaController extends Controller
             EstimateArea::where('id', $id)->update(['sort_order' => $index + 1]);
         }
         return response()->json(['status' => 'ok']);
+    }
+
+    public function customPrice(Request $request, Estimate $estimate, EstimateArea $area)
+    {
+        if ($area->estimate_id !== $estimate->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'value' => ['required', 'numeric', 'min:0'],
+            'method' => ['required', 'in:proportional,line_item'],
+        ]);
+
+        $service = app(PricingOverrideService::class);
+        $result = $service->applyCustomPrice(
+            $area,
+            $validated['value'],
+            $validated['method'],
+            auth()->id()
+        );
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+            'details' => $result['details'],
+        ]);
+    }
+
+    public function customProfit(Request $request, Estimate $estimate, EstimateArea $area)
+    {
+        if ($area->estimate_id !== $estimate->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'value' => ['required', 'numeric', 'min:0', 'max:99'],
+            'method' => ['required', 'in:proportional,line_item'],
+        ]);
+
+        $service = app(PricingOverrideService::class);
+        $result = $service->applyCustomProfit(
+            $area,
+            $validated['value'],
+            $validated['method'],
+            auth()->id()
+        );
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+            'details' => $result['details'],
+        ]);
+    }
+
+    public function clearCustomPricing(Request $request, Estimate $estimate, EstimateArea $area)
+    {
+        if ($area->estimate_id !== $estimate->id) {
+            abort(404);
+        }
+
+        $service = app(PricingOverrideService::class);
+        $result = $service->clearCustomPricing($area, true);
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+        ]);
     }
 }

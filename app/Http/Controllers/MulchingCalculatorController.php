@@ -65,10 +65,16 @@ class MulchingCalculatorController extends Controller
         'custom_materials.*.name' => 'nullable|string|max:255',
         'custom_materials.*.qty' => 'nullable|numeric|min:0',
         'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
+        'material_catalog_id' => 'nullable|exists:materials,id',
+        'material_unit_cost' => 'nullable|numeric|min:0',
     ]);
 
-    // ✅ Mulch unit cost
-    $unitCost = 35;
+    // ✅ Material catalog integration
+    $materialCatalogId = $request->input('material_catalog_id');
+    $materialUnitCost = $request->input('material_unit_cost');
+    
+    // Use catalog pricing if available, otherwise use default
+    $unitCost = $materialUnitCost ? (float) $materialUnitCost : 35;
 
     // ✅ Calculate mulch volume in cubic yards
     $areaSqft = (float) $request->input('area_sqft', 0);
@@ -80,12 +86,16 @@ class MulchingCalculatorController extends Controller
     }
 
     // ✅ Materials
-    $materials = [
-        $validated['mulch_type'] ?? 'Mulch' => [
-            'qty' => $mulchYards,
-            'unit_cost' => $unitCost,
-            'total' => round($mulchYards * $unitCost, 2),
-        ],
+    $materials = [];
+    $materials[] = [ // NEW: Enhanced array format with catalog linkage
+        'name' => $validated['mulch_type'] ?? 'Mulch',
+        'description' => 'Mulch material',
+        'quantity' => $mulchYards,
+        'unit' => 'cy',
+        'unit_cost' => $unitCost,
+        'total_cost' => round($mulchYards * $unitCost, 2),
+        'category' => 'Materials',
+        'catalog_id' => $materialCatalogId, // Link to material catalog
     ];
 
     $customMaterialsInput = $validated['custom_materials'] ?? [];
@@ -113,15 +123,27 @@ class MulchingCalculatorController extends Controller
         ->all();
 
     foreach ($customMaterials as $customMaterial) {
+        // Keep old format for backward compatibility
         $materials[$customMaterial['name']] = [
             'qty' => $customMaterial['qty'],
             'unit_cost' => $customMaterial['unit_cost'],
             'total' => $customMaterial['total'],
             'is_custom' => true,
         ];
+        // NEW: Add enhanced format too
+        $materials[] = [
+            'name' => $customMaterial['name'],
+            'description' => $customMaterial['name'],
+            'quantity' => $customMaterial['qty'],
+            'unit' => 'ea',
+            'unit_cost' => $customMaterial['unit_cost'],
+            'total_cost' => $customMaterial['total'],
+            'category' => 'Materials',
+            'is_custom' => true,
+        ];
     }
 
-    $materialTotal = array_sum(array_column($materials, 'total'));
+    $materialTotal = collect($materials)->sum('total_cost');
 
     // ✅ Labor Calculations
     $inputTasks = $request->input('tasks', []);
@@ -129,6 +151,7 @@ class MulchingCalculatorController extends Controller
     $dbRates = ProductionRate::where('calculator', 'mulching')->pluck('rate', 'task');
 
     $results = [];
+    $laborTasks = []; // NEW: Enhanced format for import service
     $totalHours = 0;
 
     foreach ($inputTasks as $taskKey => $taskData) {
@@ -138,13 +161,27 @@ class MulchingCalculatorController extends Controller
         $rate = $dbRates[$taskKey];
         $hours = $qty * $rate;
         $cost = $hours * $laborRate;
+        $taskName = str_replace('_', ' ', $taskKey);
 
         $results[] = [
-            'task' => str_replace('_', ' ', $taskKey),
+            'task' => $taskName,
             'qty' => $qty,
             'rate' => $rate,
             'hours' => round($hours, 2),
             'cost' => round($cost, 2),
+        ];
+
+        // NEW: Enhanced labor task format
+        $laborTasks[] = [
+            'task_key' => $taskKey,
+            'task_name' => ucwords($taskName),
+            'description' => "Mulch {$qty} sq ft",
+            'quantity' => $qty,
+            'unit' => 'sqft',
+            'production_rate' => $rate,
+            'hours' => round($hours, 2),
+            'hourly_rate' => $laborRate,
+            'total_cost' => round($cost, 2),
         ];
 
         $totalHours += $hours;
@@ -164,6 +201,7 @@ class MulchingCalculatorController extends Controller
         $totals, // first, so your custom totals overwrite theirs
         [
             'tasks' => $results,
+            'labor_tasks' => $laborTasks, // NEW: Enhanced format for import
             'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
             'area_sqft' => $areaSqft,
             'depth_inches' => $depthInches,

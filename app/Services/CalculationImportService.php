@@ -13,12 +13,190 @@ class CalculationImportService
     public function __construct(
         protected EstimateItemService $items,
         protected ?BudgetService $budget = null,
+        protected ?CalculatorOutputFormatter $formatter = null,
+        protected ?WorkAreaTemplateService $areaService = null,
     ) {
         if (!$this->budget) {
             $this->budget = app(BudgetService::class);
         }
+        if (!$this->formatter) {
+            $this->formatter = app(CalculatorOutputFormatter::class);
+        }
+        if (!$this->areaService) {
+            $this->areaService = app(WorkAreaTemplateService::class);
+        }
     }
 
+    /**
+     * Enhanced import to specific work area with granular task-level items
+     * 
+     * @param Estimate $estimate
+     * @param Calculation $calculation
+     * @param int|null $areaId Target work area (null = create new)
+     * @param array $options Import options
+     * @return \App\Models\EstimateArea The work area containing imported items
+     */
+    public function importCalculationToArea(
+        Estimate $estimate,
+        Calculation $calculation,
+        ?int $areaId = null,
+        array $options = []
+    ): \App\Models\EstimateArea {
+        
+        $data = $calculation->data ?? [];
+        $calcType = $calculation->calculation_type;
+        $laborRate = (float) ($data['labor_rate'] ?? 25.00);
+        
+        // Get margin from active budget
+        $activeBudget = $this->budget?->active();
+        $marginRate = (float) ($activeBudget?->desired_profit_margin ?? 0.0);
+        
+        // Remove old items from this calculation if replace option set
+        if ($options['replace'] ?? true) {
+            $this->items->removeCalculationItems($estimate, $calculation->id);
+        }
+        
+        // Create or get work area
+        $area = $this->areaService->getOrCreateArea($estimate, $calculation, $areaId, $options);
+        
+        // Check if calculator has new labor_tasks format
+        $hasLaborTasks = !empty($data['labor_tasks']) && is_array($data['labor_tasks']);
+        
+        if ($hasLaborTasks) {
+            // Import granular labor tasks
+            $this->importLaborTasks($estimate, $area, $data, $laborRate, $calcType, $marginRate);
+        } else {
+            // Fall back to old collapsed labor import
+            $this->importLabor($estimate, $data, Str::headline($calcType), $calculation, $marginRate, $area->id);
+        }
+        
+        // Import overhead tasks
+        if ($options['include_overhead'] ?? true) {
+            $this->importOverheadTasks($estimate, $area, $data, $laborRate, $marginRate);
+        }
+        
+        // Import materials
+        $this->importMaterialItems($estimate, $area, $data, $calcType, $marginRate, $calculation);
+        
+        return $area;
+    }
+
+    /**
+     * Import individual labor tasks (not collapsed)
+     */
+    protected function importLaborTasks(
+        Estimate $estimate,
+        \App\Models\EstimateArea $area,
+        array $data,
+        float $laborRate,
+        string $calcType,
+        float $marginRate
+    ): void {
+        
+        // Format labor tasks
+        $tasks = $data['labor_tasks'] ?? [];
+        $formattedTasks = $this->formatter->formatLaborTasks($tasks, $laborRate, $calcType);
+        
+        foreach ($formattedTasks as $task) {
+            $this->items->createManualItem($estimate, [
+                'item_type' => 'labor',
+                'area_id' => $area->id,
+                'name' => $task['name'],
+                'description' => $task['description'],
+                'unit' => $task['unit'],
+                'quantity' => $task['quantity'],
+                'unit_cost' => $task['unit_cost'],
+                'unit_price' => $marginRate > 0 ? round($task['unit_cost'] * (1 + $marginRate), 2) : null,
+                'margin_rate' => $marginRate > 0 ? $marginRate : null,
+                'tax_rate' => 0,
+                'source' => "calculator:{$calcType}",
+                'metadata' => [
+                    'calculator_type' => $calcType,
+                    'production_rate' => $task['production_rate'],
+                    'production_unit' => $task['production_unit'],
+                    'production_quantity' => $task['production_quantity'],
+                    'task_key' => $task['task_key'],
+                ],
+            ]);
+        }
+    }
+    
+    /**
+     * Import overhead tasks (drive time, site conditions, etc.)
+     */
+    protected function importOverheadTasks(
+        Estimate $estimate,
+        \App\Models\EstimateArea $area,
+        array $data,
+        float $laborRate,
+        float $marginRate
+    ): void {
+        
+        $overheadTasks = $this->formatter->formatOverheadTasks($data, $laborRate);
+        
+        foreach ($overheadTasks as $task) {
+            $this->items->createManualItem($estimate, [
+                'item_type' => 'labor',
+                'area_id' => $area->id,
+                'name' => $task['name'],
+                'description' => $task['description'],
+                'unit' => $task['unit'],
+                'quantity' => $task['quantity'],
+                'unit_cost' => $task['unit_cost'],
+                'unit_price' => $marginRate > 0 ? round($task['unit_cost'] * (1 + $marginRate), 2) : null,
+                'margin_rate' => $marginRate > 0 ? $marginRate : null,
+                'tax_rate' => 0,
+                'source' => "calculator:overhead",
+                'metadata' => [
+                    'task_category' => $task['task_category'],
+                ],
+            ]);
+        }
+    }
+    
+    /**
+     * Import material items with enhanced formatting
+     */
+    protected function importMaterialItems(
+        Estimate $estimate,
+        \App\Models\EstimateArea $area,
+        array $data,
+        string $calcType,
+        float $marginRate,
+        Calculation $calculation
+    ): void {
+        
+        $materials = $data['materials'] ?? [];
+        $formattedMaterials = $this->formatter->formatMaterials($materials, $calcType);
+        
+        foreach ($formattedMaterials as $material) {
+            $this->items->createManualItem($estimate, [
+                'item_type' => 'material',
+                'area_id' => $area->id,
+                'catalog_id' => $material['catalog_id'],
+                'name' => $material['name'],
+                'description' => $material['description'],
+                'unit' => $material['unit'],
+                'quantity' => $material['quantity'],
+                'unit_cost' => $material['unit_cost'],
+                'unit_price' => $marginRate > 0 ? round($material['unit_cost'] * (1 + $marginRate), 2) : null,
+                'margin_rate' => $marginRate > 0 ? $marginRate : null,
+                'tax_rate' => $material['tax_rate'],
+                'source' => "calculator:{$calcType}",
+                'calculation_id' => $calculation->id,
+                'metadata' => [
+                    'calculation_id' => $calculation->id,
+                    'calculation_type' => $calcType,
+                    'is_custom' => $material['is_custom'],
+                ],
+            ]);
+        }
+    }
+
+    /**
+     * LEGACY METHOD - Keep for backward compatibility
+     * Use importCalculationToArea() for new implementations
+     */
     public function importCalculation(Estimate $estimate, Calculation $calculation, bool $replace = true, ?int $areaId = null): void
     {
         $data = $calculation->data ?? [];
