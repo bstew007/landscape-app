@@ -4,67 +4,146 @@
     <meta charset="UTF-8">
     <title>Estimate #{{ $estimate->id }}</title>
     <style>
-        body { font-family: system-ui, sans-serif; padding: 40px; color: #1f2937; }
-        .header { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 20px; }
+        body { font-family: system-ui, sans-serif; padding: 20px; color: #1f2937; font-size: 13px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 16px; }
         .header-left { flex: 1; }
         .header-right { text-align: right; }
-        .logo { width: 160px; height: auto; object-fit: contain; display: block; margin-left: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { padding: 8px; border: 1px solid #e5e7eb; }
-        th { background: #f9fafb; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-        .total { font-weight: 700; text-align: right; font-size: 1.25rem; }
-        .page-break { page-break-before: always; margin-top: 32px; }
+        .logo { width: 140px; height: auto; object-fit: contain; display: block; margin-left: auto; }
+        h1 { font-size: 24px; margin: 0 0 4px 0; }
+        h2 { font-size: 16px; margin: 20px 0 8px 0; border-bottom: 2px solid #1f2937; padding-bottom: 4px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th, td { padding: 6px 8px; border: 1px solid #d1d5db; text-align: left; }
+        th { background: #f3f4f6; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+        
+        .info-table { width: 100%; }
+        .info-table td { padding: 5px 8px; }
+        .info-table td:first-child { font-weight: 600; width: 35%; background: #f9fafb; }
+        
+        .two-column-layout { display: flex; gap: 16px; margin-bottom: 12px; }
+        .two-column-layout > div { flex: 1; }
+        
+        .total { font-weight: 700; text-align: right; font-size: 1.1rem; margin-top: 8px; }
+        .page-break { page-break-before: always; margin-top: 24px; }
+        
+        @media print {
+            body { padding: 10px; }
+            .page-break { margin-top: 16px; }
+        }
     </style>
 </head>
 <body>
+<!-- Header with Logo -->
 <div class="header">
     <div class="header-left">
         <h1>Estimate #{{ $estimate->id }}</h1>
-        <p>{{ $estimate->title }}</p>
+        <p style="margin: 0; font-size: 15px; color: #6b7280;">{{ $estimate->title }}</p>
     </div>
     <div class="header-right">
         <img src="{{ public_path('images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo">
-        <p><strong>Status:</strong> {{ ucfirst($estimate->status) }}</p>
-        <p><strong>Created:</strong> {{ $estimate->created_at->format('M j, Y') }}</p>
-        <p><strong>Expires:</strong> {{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}</p>
     </div>
 </div>
 
-<p><strong>Client:</strong> {{ $estimate->client->name }}</p>
-<p><strong>Property:</strong> {{ $estimate->property->name ?? 'N/A' }}</p>
-<p><strong>Linked Visit:</strong> {{ optional($estimate->siteVisit)->visit_date?->format('M j, Y') ?? 'N/A' }}</p>
+<!-- Two-Column Layout for Company and Client Info -->
+<div class="two-column-layout">
+    <!-- Company Information -->
+    <div>
+        <table class="info-table">
+            <tr>
+                <td colspan="2" style="background: #1f2937; color: white; font-weight: 700; text-align: center;">Company Information</td>
+            </tr>
+            <tr>
+                <td>Company Name</td>
+                <td>{{ config('app.name') }}</td>
+            </tr>
+            <tr>
+                <td>Address</td>
+                <td>{{ env('COMPANY_ADDRESS', '123 Business St') }}</td>
+            </tr>
+            <tr>
+                <td>City, State ZIP</td>
+                <td>{{ env('COMPANY_CITY_STATE_ZIP', 'City, ST 12345') }}</td>
+            </tr>
+            <tr>
+                <td>Phone</td>
+                <td>{{ env('COMPANY_PHONE', '(555) 123-4567') }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ env('COMPANY_EMAIL', 'info@company.com') }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Client Information -->
+    <div>
+        <table class="info-table">
+            <tr>
+                <td colspan="2" style="background: #1f2937; color: white; font-weight: 700; text-align: center;">Client Information</td>
+            </tr>
+            <tr>
+                <td>Client Name</td>
+                <td>{{ $estimate->client->name }}</td>
+            </tr>
+            <tr>
+                <td>Property</td>
+                <td>{{ $estimate->property->name ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>Status</td>
+                <td>{{ ucfirst($estimate->status) }}</td>
+            </tr>
+            <tr>
+                <td>Created Date</td>
+                <td>{{ $estimate->created_at->format('M j, Y') }}</td>
+            </tr>
+            <tr>
+                <td>Expires</td>
+                <td>{{ optional($estimate->expires_at)->format('M j, Y') ?? 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
 
 @php
     $scopeSummaries = $scopeSummaries ?? [];
 @endphp
 
-<section>
+<!-- Scope & Terms -->
+@if($estimate->notes || $estimate->terms)
+<section style="margin-bottom: 12px;">
     <h2>Scope & Terms</h2>
-    <p>{{ $estimate->notes }}</p>
-    <p><strong>Terms:</strong> {{ $estimate->terms }}</p>
+    @if($estimate->notes)
+    <p style="margin: 6px 0;">{{ $estimate->notes }}</p>
+    @endif
+    @if($estimate->terms)
+    <p style="margin: 6px 0;"><strong>Terms:</strong> {{ $estimate->terms }}</p>
+    @endif
 </section>
+@endif
 
-<section>
+<!-- Line Items -->
+<section style="margin-bottom: 12px;">
     <h2>Line Items</h2>
     <table>
         <thead>
             <tr>
-                <th>Description</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Total</th>
+                <th style="width: 50%;">Description</th>
+                <th style="width: 12%; text-align: center;">Qty</th>
+                <th style="width: 19%; text-align: right;">Price</th>
+                <th style="width: 19%; text-align: right;">Total</th>
             </tr>
         </thead>
         <tbody>
         @forelse ($estimate->line_items ?? [] as $item)
             <tr>
                 <td>{{ $item['label'] ?? 'Item' }}</td>
-                <td>{{ $item['qty'] ?? 1 }}</td>
-                <td>${{ number_format($item['price'] ?? 0, 2) }}</td>
-                <td>${{ number_format(($item['qty'] ?? 1) * ($item['price'] ?? 0), 2) }}</td>
+                <td style="text-align: center;">{{ $item['qty'] ?? 1 }}</td>
+                <td style="text-align: right;">${{ number_format($item['price'] ?? 0, 2) }}</td>
+                <td style="text-align: right;">${{ number_format(($item['qty'] ?? 1) * ($item['price'] ?? 0), 2) }}</td>
             </tr>
         @empty
-            <tr><td colspan="4" class="text-center text-sm text-gray-500">No line items yet.</td></tr>
+            <tr><td colspan="4" style="text-align: center; color: #6b7280; font-size: 12px;">No line items yet.</td></tr>
         @endforelse
         </tbody>
     </table>
@@ -77,13 +156,13 @@
     <section class="page-break">
         <h2>Estimate Details</h2>
         @foreach ($scopeSummaries as $summary)
-            <h3 style="margin-top:16px;">{{ $summary['title'] }}</h3>
+            <h3 style="margin: 12px 0 6px 0; font-size: 14px; font-weight: 600;">{{ $summary['title'] }}</h3>
             @if (!empty($summary['measurements']))
-                <table>
+                <table style="margin-bottom: 8px;">
                     <thead>
                         <tr>
-                            <th>Measurement</th>
-                            <th>Value</th>
+                            <th style="width: 60%;">Measurement</th>
+                            <th style="width: 40%;">Value</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,19 +177,19 @@
             @endif
 
             @if (!empty($summary['materials']))
-                <table>
+                <table style="margin-bottom: 8px;">
                     <thead>
                         <tr>
-                            <th>Material</th>
-                            <th>Quantity</th>
-                            <th>Notes</th>
+                            <th style="width: 45%;">Material</th>
+                            <th style="width: 20%; text-align: center;">Quantity</th>
+                            <th style="width: 35%;">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($summary['materials'] as $material)
                             <tr>
                                 <td>{{ $material['label'] }}</td>
-                                <td>{{ $material['value'] }}</td>
+                                <td style="text-align: center;">{{ $material['value'] }}</td>
                                 <td>{{ $material['meta'] ?? '—' }}</td>
                             </tr>
                         @endforeach
@@ -121,22 +200,23 @@
     </section>
 @endif
 
-<section style="margin-top:32px;">
+<!-- Acceptance -->
+<section style="margin-top: 20px;">
     <h2>Acceptance</h2>
-    <p style="margin-bottom:16px;">By signing below you are approving this estimate and authorizing {{ config('app.name') }} to schedule the work described.</p>
-    <table style="width:100%; border: none;">
+    <p style="margin: 6px 0 10px 0; font-size: 12px;">By signing below you are approving this estimate and authorizing {{ config('app.name') }} to schedule the work described.</p>
+    <table style="border: 1px solid #d1d5db;">
         <tr>
-            <td style="padding:12px 0; border-bottom:1px solid #d1d5db;">
-                <input type="checkbox" style="width:18px; height:18px; margin-right:8px;"> I accept this estimate as quoted.
+            <td style="padding: 10px; border: none;">
+                <input type="checkbox" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;"> I accept this estimate as quoted.
             </td>
         </tr>
         <tr>
-            <td style="padding-top:20px;">
+            <td style="padding: 10px 10px 6px 10px; border: none; border-top: 1px solid #e5e7eb;">
                 <strong>Client Signature:</strong> ___________________________________________
             </td>
         </tr>
         <tr>
-            <td style="padding-top:12px;">
+            <td style="padding: 6px 10px 10px 10px; border: none;">
                 <strong>Date:</strong> ______________________
             </td>
         </tr>

@@ -9,27 +9,118 @@
     body {
         font-family: 'Helvetica', Arial, sans-serif;
         color: #1f2937;
-        line-height: 1.6;
-        padding: 40px;
+        line-height: 1.5;
+        padding: 20px;
         margin: 0;
+        font-size: 13px;
     }
     
     .page {
         max-width: 100%;
     }
     
-    /* Header with logo and company info - Using table for DomPDF compatibility */
+    /* NEW COMPACT HEADER STYLES */
+    .header-new {
+        display: table;
+        width: 100%;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #3b82f6;
+    }
+    
+    .header-left-new {
+        display: table-cell;
+        width: 60%;
+        vertical-align: top;
+    }
+    
+    .header-right-new {
+        display: table-cell;
+        width: 40%;
+        text-align: right;
+        vertical-align: top;
+    }
+    
+    .estimate-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 4px 0;
+    }
+    
+    .estimate-subtitle {
+        font-size: 15px;
+        color: #6b7280;
+        margin: 0;
+    }
+    
+    .company-logo-new {
+        max-width: 140px;
+        max-height: 80px;
+        height: auto;
+    }
+    
+    /* TWO COLUMN INFO LAYOUT */
+    .two-col-info {
+        display: table;
+        width: 100%;
+        margin-bottom: 14px;
+        table-layout: fixed;
+    }
+    
+    .info-half {
+        display: table-cell;
+        width: 49%;
+        padding-right: 1%;
+        vertical-align: top;
+    }
+    
+    .info-half:last-child {
+        padding-right: 0;
+        padding-left: 1%;
+    }
+    
+    /* BORDERED INFO TABLES */
+    .info-table-bordered {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin: 0;
+    }
+    
+    .info-table-bordered td {
+        padding: 5px 8px;
+        border: 1px solid #d1d5db;
+        text-align: left;
+    }
+    
+    .info-table-bordered .label-cell {
+        font-weight: 600;
+        width: 35%;
+        background: #f9fafb;
+        color: #374151;
+    }
+    
+    .info-table-bordered .table-header-dark {
+        background: #3b82f6;
+        color: white;
+        font-weight: 700;
+        text-align: center;
+        padding: 6px 8px;
+    }
+    
+    /* OLD HEADER STYLES - Keep for backward compatibility */
     .header {
         width: 100%;
         padding-bottom: 20px;
         margin-bottom: 30px;
-        border-bottom: 4px solid #10b981;
+        border-bottom: 4px solid #3b82f6;
     }
     
     .company-name {
         font-size: 24px;
         font-weight: 700;
-        color: #047857;
+        color: #2563eb;
         margin-bottom: 8px;
     }
     
@@ -51,16 +142,17 @@
     
     /* Document title area */
     .document-title {
-        background: #047857;
+        background: #3b82f6;
         color: white;
-        padding: 20px 30px;
-        margin: 20px 0;
+        padding: 15px 20px;
+        margin: 15px 0;
     }
     
     .document-title h1 {
-        font-size: 28px;
+        font-size: 22px;
         font-weight: 700;
-        margin: 0 0 8px 0;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.5px;
     }
     
     .document-title .subtitle {
@@ -72,41 +164,15 @@
     
     .template-badge {
         display: inline-block;
-        padding: 4px 12px;
+        padding: 4px 10px;
         background: rgba(255, 255, 255, 0.25);
         color: white;
+        border-radius: 12px;
         font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-top: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    
-    .document-title h1 {
-        font-size: 32px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-    }
-    
-    .document-title .subtitle {
-        font-size: 16px;
-        opacity: 0.95;
-        font-weight: 500;
-    }
-    
-    .template-badge {
-        display: inline-block;
-        padding: 6px 14px;
-        background: rgba(255, 255, 255, 0.25);
-        color: white;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 10px;
+        margin-top: 6px;
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
     
@@ -114,49 +180,49 @@
     .info-section {
         background: #f9fafb;
         border: 1px solid #e5e7eb;
-        border-left: 4px solid #10b981;
-        padding: 15px;
-        margin-bottom: 25px;
+        border-left: 4px solid #3b82f6;
+        padding: 12px;
+        margin-bottom: 14px;
     }
     
     .info-label {
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #047857;
+        color: #2563eb;
         font-weight: 700;
-        margin-bottom: 4px;
-        margin-top: 8px;
+        margin-bottom: 3px;
+        margin-top: 6px;
     }
     
     .info-value {
-        font-size: 13px;
+        font-size: 12px;
         color: #111827;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     
     /* Section headers */
     h2 {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
-        color: #047857;
-        margin: 25px 0 12px 0;
-        padding-bottom: 6px;
-        border-bottom: 2px solid #d1fae5;
+        color: #2563eb;
+        margin: 16px 0 8px 0;
+        padding-bottom: 4px;
+        border-bottom: 2px solid #1f2937;
     }
     
     h3 {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
-        color: #059669;
-        margin: 15px 0 10px 0;
+        color: #3b82f6;
+        margin: 12px 0 6px 0;
     }
     
     /* Tables */
     table {
         width: 100%;
         border-collapse: collapse;
-        margin: 12px 0;
+        margin: 10px 0;
         font-size: 12px;
     }
     
@@ -166,14 +232,15 @@
     }
     
     th {
-        padding: 10px 8px;
+        padding: 6px 8px;
         text-align: left;
-        font-size: 10px;
+        font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 700;
-        background: #047857;
-        color: white;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        background: #f3f4f6;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
     }
     
     th.text-right {
@@ -193,8 +260,9 @@
     }
     
     td {
-        padding: 10px;
+        padding: 6px 8px;
         color: #374151;
+        border: 1px solid #d1d5db;
     }
     
     td.text-right {
@@ -222,6 +290,51 @@
         background: #f3f4f6 !important;
         font-weight: 600;
         color: #111827;
+    }
+    
+    /* Work area headers with pricing */
+    .work-area {
+        margin-bottom: 30px;
+        page-break-inside: avoid;
+    }
+    
+    .work-area-header {
+        background: #eff6ff;
+        padding: 12px 15px;
+        font-weight: 600;
+        font-size: 16px;
+        border-left: 4px solid #3b82f6;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    .work-area-header span:first-child {
+        float: left;
+    }
+    
+    .work-area-price {
+        float: right;
+        color: #3b82f6;
+        font-weight: 700;
+    }
+    
+    /* Notes/Footer styles */
+    .notes {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f9fafb;
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .notes h3 {
+        margin-top: 0;
+        color: #1f2937;
+    }
+    
+    .notes p {
+        color: #374151;
+        font-size: 13px;
+        line-height: 1.7;
     }
     
     /* Totals section - table-based for PDF */
@@ -258,7 +371,7 @@
     }
     
     .grand-total {
-        background: #047857;
+        background: #3b82f6;
         color: white;
         padding: 16px 20px;
         margin-top: 8px;
@@ -279,7 +392,7 @@
     /* Notes and terms */
     .notes-section {
         background: #f9fafb;
-        border-left: 4px solid #10b981;
+        border-left: 4px solid #3b82f6;
         padding: 20px;
         margin: 30px 0;
     }
@@ -334,11 +447,12 @@
     /* Print optimization */
     @media print {
         body {
-            padding: 0;
+            padding: 10px;
+            font-size: 12px;
         }
         
         .page {
-            padding: 20px;
+            padding: 10px;
         }
         
         .no-print {
@@ -351,6 +465,19 @@
         
         .area-header {
             page-break-after: avoid;
+        }
+        
+        h2 {
+            margin: 12px 0 6px 0;
+        }
+        
+        .document-title {
+            padding: 10px 15px;
+            margin: 10px 0;
+        }
+        
+        .two-col-info {
+            margin-bottom: 10px;
         }
     }
     

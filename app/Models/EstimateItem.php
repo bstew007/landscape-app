@@ -56,6 +56,11 @@ class EstimateItem extends Model
         return $this->belongsTo(Calculation::class);
     }
 
+    public function area()
+    {
+        return $this->belongsTo(EstimateArea::class, 'area_id');
+    }
+
     /**
      * Get the material catalog item.
      */

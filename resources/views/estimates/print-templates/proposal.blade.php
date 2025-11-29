@@ -10,48 +10,6 @@
 
 @include('estimates.print-templates._header')
 
-<!-- Document Title -->
-<div class="document-title clearfix">
-    <h1>Landscape Proposal</h1>
-    <div class="subtitle">Estimate #{{ $estimate->id }} • {{ $estimate->title }}</div>
-</div>
-
-<!-- Client & Estimate Information -->
-<div class="info-section clearfix">
-    <div class="info-grid">
-        <div class="info-col">
-            <div class="info-label">Client</div>
-            <div class="info-value">{{ $estimate->client->name }}</div>
-            
-            @if($estimate->property)
-                <div class="info-label">Property</div>
-                <div class="info-value">{{ $estimate->property->name }}</div>
-                
-                @if($estimate->property->address)
-                    <div class="info-label">Location</div>
-                    <div class="info-value">
-                        {{ $estimate->property->address }}<br>
-                        {{ $estimate->property->city }}, {{ $estimate->property->state }} {{ $estimate->property->postal_code }}
-                    </div>
-                @endif
-            @endif
-        </div>
-        
-        <div class="info-col">
-            <div class="info-label">Proposal Date</div>
-            <div class="info-value">{{ $estimate->created_at->format('F j, Y') }}</div>
-            
-            <div class="info-label">Status</div>
-            <div class="info-value">{{ ucfirst($estimate->status) }}</div>
-            
-            @if($estimate->expires_at)
-                <div class="info-label">Valid Until</div>
-                <div class="info-value">{{ $estimate->expires_at->format('F j, Y') }}</div>
-            @endif
-        </div>
-    </div>
-</div>
-
 <!-- Project Notes -->
 @if($estimate->notes)
 <div class="notes-section">

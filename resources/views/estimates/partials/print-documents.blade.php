@@ -155,6 +155,22 @@
                                         <span class="mx-2">•</span>
                                         <span class="font-medium">Total:</span> ${{ number_format($po->total_amount, 2) }}
                                     </div>
+                                    @if($po->qbo_id)
+                                        <div class="mt-1 flex items-center gap-2 text-xs text-green-700">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span>Synced to QuickBooks</span>
+                                            <span class="text-gray-400">• {{ $po->qbo_synced_at?->format('M j, Y g:i A') }}</span>
+                                        </div>
+                                    @elseif($po->supplier && !$po->supplier->qbo_vendor_id)
+                                        <div class="mt-1 flex items-center gap-2 text-xs text-amber-700">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            <span>Supplier not synced to QuickBooks</span>
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <label class="flex items-center">
@@ -183,8 +199,21 @@
                                     </svg>
                                     PDF
                                 </a>
+
+                                @if($po->supplier && $po->supplier->qbo_vendor_id)
+                                    <form method="POST" action="{{ route('purchase-orders.qbo.sync', $po) }}" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium {{ $po->qbo_id ? 'text-blue-700 bg-blue-50 border-blue-300' : 'text-white bg-blue-600 border-blue-600 hover:bg-blue-700' }} border rounded-lg">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                            </svg>
+                                            {{ $po->qbo_id ? 'Update QBO' : 'Sync to QBO' }}
+                                        </button>
+                                    </form>
+                                @endif
                                 
-                                <form method="POST" action="{{ route('purchase-orders.destroy', $po) }}" class="inline" 
+                                <form method="POST" action="{{ route('purchase-orders.destroy', $po) }}" class="inline ml-auto" 
                                       onsubmit="return confirm('Delete this purchase order?')">
                                     @csrf
                                     @method('DELETE')
@@ -205,6 +234,7 @@
                 <!-- Bulk Actions -->
                 <div class="flex items-center gap-3 pt-4 border-t" x-show="selectedPOs.length > 0">
                     <span class="text-sm text-gray-600" x-text="`${selectedPOs.length} selected`"></span>
+                    
                     <form method="POST" action="{{ route('purchase-orders.print-batch') }}" class="inline">
                         @csrf
                         <template x-for="id in selectedPOs" :key="id">
@@ -216,6 +246,20 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                             </svg>
                             Print Selected
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('purchase-orders.qbo.sync-batch') }}" class="inline">
+                        @csrf
+                        <template x-for="id in selectedPOs" :key="id">
+                            <input type="hidden" name="po_ids[]" :value="id">
+                        </template>
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                            Sync Selected to QuickBooks
                         </button>
                     </form>
                 </div>
@@ -244,11 +288,13 @@
                             <h3 class="font-medium text-gray-900">Cost Analysis Report</h3>
                             <p class="text-sm text-gray-600 mt-1">Detailed breakdown of costs, pricing, and profit margins</p>
                         </div>
-                        <span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded">Soon</span>
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">View</button>
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">Print</button>
+                        <a href="{{ route('estimates.reports.cost-analysis', $estimate) }}" 
+                           target="_blank"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">View</a>
+                        <a href="{{ route('estimates.reports.cost-analysis', $estimate) }}?download=1"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">Print</a>
                     </div>
                 </div>
                 
@@ -259,11 +305,13 @@
                             <h3 class="font-medium text-gray-900">Labor Hours Summary</h3>
                             <p class="text-sm text-gray-600 mt-1">Total labor hours by work area and category</p>
                         </div>
-                        <span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded">Soon</span>
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">View</button>
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">Print</button>
+                        <a href="{{ route('estimates.reports.labor-hours', $estimate) }}" 
+                           target="_blank"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">View</a>
+                        <a href="{{ route('estimates.reports.labor-hours', $estimate) }}?download=1"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">Print</a>
                     </div>
                 </div>
                 
@@ -274,11 +322,13 @@
                             <h3 class="font-medium text-gray-900">Material Requirements</h3>
                             <p class="text-sm text-gray-600 mt-1">Complete materials list with quantities and costs</p>
                         </div>
-                        <span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded">Soon</span>
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">View</button>
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">Print</button>
+                        <a href="{{ route('estimates.reports.material-requirements', $estimate) }}" 
+                           target="_blank"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">View</a>
+                        <a href="{{ route('estimates.reports.material-requirements', $estimate) }}?download=1"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">Print</a>
                     </div>
                 </div>
                 
@@ -289,11 +339,13 @@
                             <h3 class="font-medium text-gray-900">Profit Margin Analysis</h3>
                             <p class="text-sm text-gray-600 mt-1">Gross and net profit analysis by work area</p>
                         </div>
-                        <span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded">Soon</span>
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">View</button>
-                        <button disabled class="text-sm text-gray-400 cursor-not-allowed">Print</button>
+                        <a href="{{ route('estimates.reports.profit-margin', $estimate) }}" 
+                           target="_blank"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">View</a>
+                        <a href="{{ route('estimates.reports.profit-margin', $estimate) }}?download=1"
+                           class="text-sm text-brand-600 hover:text-brand-700 font-medium">Print</a>
                     </div>
                 </div>
             </div>
@@ -309,18 +361,69 @@
                 </svg>
                 QuickBooks Integration
             </h2>
-            <p class="text-sm text-gray-600 mt-1">Sync estimates and purchase orders to QuickBooks Online</p>
+            <p class="text-sm text-gray-600 mt-1">Sync purchase orders to QuickBooks Online</p>
         </div>
         
         <div class="px-6 py-6">
-            <!-- Coming Soon Message -->
-            <div class="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-                <svg class="mx-auto h-12 w-12 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                </svg>
-                <h3 class="mt-3 text-sm font-medium text-gray-900">QuickBooks Sync</h3>
-                <p class="mt-1 text-sm text-gray-500">Coming in Phase 3</p>
-                <p class="mt-1 text-xs text-gray-400">Sync estimates and POs directly to QuickBooks Online</p>
+            <div class="space-y-4">
+                <!-- PO Sync Info -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold text-blue-900">Purchase Order Sync</h3>
+                            <p class="text-sm text-blue-800 mt-1">
+                                Purchase orders can be synced to QuickBooks Online for proper accounting and accounts payable tracking. 
+                                Make sure suppliers are synced to QuickBooks first.
+                            </p>
+                            <ul class="mt-3 space-y-1 text-sm text-blue-800">
+                                <li class="flex items-center gap-2">
+                                    <svg class="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    POs sync with all line items and pricing
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg class="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Materials automatically created as items in QuickBooks
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <svg class="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Updates sync bidirectionally when changed
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Guide -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">Recommended Workflow</h3>
+                    <ol class="space-y-2 text-sm text-gray-700">
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-semibold text-xs">1</span>
+                            <span>Create estimate and generate purchase orders</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-semibold text-xs">2</span>
+                            <span>Ensure suppliers are synced to QuickBooks (auto-syncs from Contacts)</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-semibold text-xs">3</span>
+                            <span>Click "Sync to QBO" to send purchase orders to QuickBooks</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-semibold text-xs">4</span>
+                            <span>Receive materials and match vendor bills in QuickBooks</span>
+                        </li>
+                    </ol>
+                </div>
             </div>
         </div>
     </section>

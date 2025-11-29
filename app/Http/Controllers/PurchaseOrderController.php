@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Estimate;
 use App\Models\EstimatePurchaseOrder;
 use App\Services\PurchaseOrderService;
+use App\Services\QboPurchaseOrderService;
 use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
 {
-    public function __construct(protected PurchaseOrderService $service)
-    {
+    public function __construct(
+        protected PurchaseOrderService $service,
+        protected QboPurchaseOrderService $qboService
+    ) {
     }
 
     /**
@@ -145,5 +148,91 @@ class PurchaseOrderController extends Controller
         }
 
         return view('purchase-orders.print-batch', compact('purchaseOrders'));
+    }
+
+    /**
+     * Sync a purchase order to QuickBooks Online.
+     */
+    public function syncToQuickBooks(EstimatePurchaseOrder $purchaseOrder)
+    {
+        // Ensure supplier is synced first
+        if (!$purchaseOrder->supplier || !$purchaseOrder->supplier->qbo_vendor_id) {
+            return back()->with('error', 'Supplier must be synced to QuickBooks before syncing purchase order.');
+        }
+
+        $result = $this->qboService->syncPurchaseOrder($purchaseOrder);
+
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', 'Failed to sync to QuickBooks: ' . $result['message']);
+    }
+
+    /**
+     * Sync multiple purchase orders to QuickBooks Online.
+     */
+    public function syncBatchToQuickBooks(Request $request)
+    {
+        $request->validate([
+            'po_ids' => ['required', 'array'],
+            'po_ids.*' => ['integer', 'exists:estimate_purchase_orders,id'],
+        ]);
+
+        $purchaseOrders = EstimatePurchaseOrder::with('supplier')
+            ->whereIn('id', $request->po_ids)
+            ->get();
+
+        $results = [
+            'success' => 0,
+            'failed' => 0,
+            'errors' => [],
+        ];
+
+        foreach ($purchaseOrders as $po) {
+            if (!$po->supplier || !$po->supplier->qbo_vendor_id) {
+                $results['failed']++;
+                $results['errors'][] = "PO #{$po->po_number}: Supplier not synced to QuickBooks";
+                continue;
+            }
+
+            $result = $this->qboService->syncPurchaseOrder($po);
+
+            if ($result['success']) {
+                $results['success']++;
+            } else {
+                $results['failed']++;
+                $results['errors'][] = "PO #{$po->po_number}: {$result['message']}";
+            }
+        }
+
+        $message = "{$results['success']} purchase order(s) synced successfully.";
+        if ($results['failed'] > 0) {
+            $message .= " {$results['failed']} failed.";
+        }
+
+        $type = $results['failed'] > 0 ? 'warning' : 'success';
+
+        return back()
+            ->with($type, $message)
+            ->with('sync_errors', $results['errors']);
+    }
+
+    /**
+     * Delete a purchase order from QuickBooks Online.
+     */
+    public function deleteFromQuickBooks(EstimatePurchaseOrder $purchaseOrder)
+    {
+        if (!$purchaseOrder->qbo_id) {
+            return back()->with('error', 'Purchase order is not synced to QuickBooks.');
+        }
+
+        $result = $this->qboService->deletePurchaseOrder($purchaseOrder);
+
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', 'Failed to delete from QuickBooks: ' . $result['message']);
     }
 }

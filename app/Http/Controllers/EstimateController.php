@@ -476,6 +476,331 @@ class EstimateController extends Controller
         return view($viewName, $viewData);
     }
 
+    public function costAnalysisReport(Estimate $estimate, Request $request)
+    {
+        $download = $request->boolean('download', false);
+        
+        // Calculate total costs and revenue
+        $materialItems = $estimate->items->where('item_type', 'material');
+        $laborItems = $estimate->items->where('item_type', 'labor');
+        
+        $materialsCost = $materialItems->sum(function ($item) {
+            return $item->quantity * ($item->unit_cost ?? 0);
+        });
+        $materialsRevenue = $materialItems->sum(function ($item) {
+            return $item->quantity * $item->unit_price;
+        });
+        
+        $laborCost = $laborItems->sum(function ($item) {
+            return $item->quantity * ($item->unit_cost ?? 0);
+        });
+        $laborRevenue = $laborItems->sum(function ($item) {
+            return $item->quantity * $item->unit_price;
+        });
+        
+        $totalCost = $materialsCost + $laborCost;
+        $totalRevenue = $materialsRevenue + $laborRevenue;
+        $grossProfit = $totalRevenue - $totalCost;
+        $profitMargin = $totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0;
+        
+        // Group by work area
+        $itemsByArea = $estimate->items->groupBy('area_id')->map(function ($items, $areaId) {
+            $area = $items->first()->area ?? null;
+            $areaName = $area ? $area->name : 'Unassigned';
+            
+            $areaCost = $items->sum(function ($item) {
+                return $item->quantity * ($item->unit_cost ?? 0);
+            });
+            $areaRevenue = $items->sum(function ($item) {
+                return $item->quantity * $item->unit_price;
+            });
+            
+            return [
+                'name' => $areaName,
+                'items' => $items,
+                'cost' => $areaCost,
+                'revenue' => $areaRevenue,
+                'profit' => $areaRevenue - $areaCost,
+                'margin' => $areaRevenue > 0 ? (($areaRevenue - $areaCost) / $areaRevenue) * 100 : 0,
+            ];
+        });
+        
+        $viewData = [
+            'estimate' => $estimate,
+            'totalCost' => $totalCost,
+            'totalRevenue' => $totalRevenue,
+            'grossProfit' => $grossProfit,
+            'profitMargin' => $profitMargin,
+            'materialsCost' => $materialsCost,
+            'materialsRevenue' => $materialsRevenue,
+            'laborCost' => $laborCost,
+            'laborRevenue' => $laborRevenue,
+            'itemsByArea' => $itemsByArea,
+        ];
+        
+        if ($download) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('estimates.reports.cost-analysis', $viewData);
+            return $pdf->download("Estimate-{$estimate->id}-Cost-Analysis.pdf");
+        }
+        
+        return view('estimates.reports.cost-analysis', $viewData);
+    }
+
+    public function laborHoursReport(Estimate $estimate, Request $request)
+    {
+        $download = $request->boolean('download', false);
+        
+        $laborItems = $estimate->items->where('item_type', 'labor');
+        
+        $totalHours = $laborItems->sum('quantity');
+        $totalLaborCost = $laborItems->sum(function ($item) {
+            return $item->quantity * ($item->unit_cost ?? 0);
+        });
+        $totalLaborRevenue = $laborItems->sum(function ($item) {
+            return $item->quantity * $item->unit_price;
+        });
+        
+        // Group by work area
+        $laborByArea = $laborItems->groupBy('area_id')->map(function ($items, $areaId) {
+            $area = $items->first()->area ?? null;
+            $areaName = $area ? $area->name : 'Unassigned';
+            
+            $hours = $items->sum('quantity');
+            $cost = $items->sum(function ($item) {
+                return $item->quantity * ($item->unit_cost ?? 0);
+            });
+            $revenue = $items->sum(function ($item) {
+                return $item->quantity * $item->unit_price;
+            });
+            
+            return [
+                'name' => $areaName,
+                'hours' => $hours,
+                'cost' => $cost,
+                'revenue' => $revenue,
+                'items' => $items,
+            ];
+        })->sortByDesc('hours')->values();
+        
+        $viewData = [
+            'estimate' => $estimate,
+            'totalHours' => $totalHours,
+            'totalLaborCost' => $totalLaborCost,
+            'totalLaborRevenue' => $totalLaborRevenue,
+            'laborByArea' => $laborByArea,
+        ];
+        
+        if ($download) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('estimates.reports.labor-hours', $viewData);
+            return $pdf->download("Estimate-{$estimate->id}-Labor-Hours.pdf");
+        }
+        
+        return view('estimates.reports.labor-hours', $viewData);
+    }
+
+    public function materialRequirementsReport(Estimate $estimate, Request $request)
+    {
+        $download = $request->boolean('download', false);
+        
+        // Eager load relationships for better performance
+        $estimate->load(['items.material.supplier', 'items.area']);
+        
+        $materialItems = $estimate->items->where('item_type', 'material');
+        
+        $totalItems = $materialItems->count();
+        $totalCost = $materialItems->sum(function ($item) {
+            return $item->quantity * ($item->unit_cost ?? 0);
+        });
+        $totalRevenue = $materialItems->sum(function ($item) {
+            return $item->quantity * $item->unit_price;
+        });
+        
+        // Consolidate materials by name
+        $consolidatedMaterials = $materialItems->groupBy('name')->map(function ($items, $name) {
+            $firstItem = $items->first();
+            $totalQty = $items->sum('quantity');
+            $avgCost = $items->avg('unit_cost') ?? 0;
+            $avgPrice = $items->avg('unit_price');
+            
+            return [
+                'name' => $name,
+                'description' => $firstItem->description,
+                'unit' => $firstItem->unit ?? 'ea',
+                'quantity' => $totalQty,
+                'unit_cost' => $avgCost,
+                'unit_price' => $avgPrice,
+                'total_cost' => $totalQty * $avgCost,
+                'total_price' => $totalQty * $avgPrice,
+            ];
+        })->sortBy('name')->values();
+        
+        // Group by supplier (using material->supplier relationship)
+        $materialsBySupplier = $materialItems->groupBy(function ($item) {
+            // Access supplier through material relationship
+            if ($item->material && $item->material->supplier) {
+                return $item->material->supplier->name;
+            }
+            return 'Unassigned Supplier';
+        })->map(function ($items, $supplierName) {
+            $firstSupplier = null;
+            foreach ($items as $item) {
+                if ($item->material && $item->material->supplier) {
+                    $firstSupplier = $item->material->supplier;
+                    break;
+                }
+            }
+            
+            return [
+                'items' => $items->map(function ($item) {
+                    return [
+                        'name' => $item->name,
+                        'sku' => $item->material->sku ?? '',
+                        'unit' => $item->unit ?? 'ea',
+                        'quantity' => $item->quantity,
+                        'unit_cost' => $item->unit_cost ?? 0,
+                        'total_cost' => $item->quantity * ($item->unit_cost ?? 0),
+                    ];
+                }),
+                'total' => $items->sum(function ($item) {
+                    return $item->quantity * ($item->unit_cost ?? 0);
+                }),
+                'contact' => $firstSupplier ? ($firstSupplier->email ?? $firstSupplier->phone ?? '') : '',
+            ];
+        })->sortByDesc('total');
+        
+        // Group by work area
+        $materialsByArea = $materialItems->groupBy('area_id')->map(function ($items, $areaId) {
+            $area = $items->first()->area ?? null;
+            $areaName = $area ? $area->name : 'Unassigned';
+            
+            $totalCost = $items->sum(function ($item) {
+                return $item->quantity * ($item->unit_cost ?? 0);
+            });
+            $totalPrice = $items->sum(function ($item) {
+                return $item->quantity * $item->unit_price;
+            });
+            
+            return [
+                'name' => $areaName,
+                'items' => $items,
+                'total_cost' => $totalCost,
+                'total_price' => $totalPrice,
+            ];
+        })->values();
+        
+        $viewData = [
+            'estimate' => $estimate,
+            'totalItems' => $totalItems,
+            'totalCost' => $totalCost,
+            'totalRevenue' => $totalRevenue,
+            'consolidatedMaterials' => $consolidatedMaterials,
+            'materialsBySupplier' => $materialsBySupplier,
+            'materialsByArea' => $materialsByArea,
+        ];
+        
+        if ($download) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('estimates.reports.material-requirements', $viewData);
+            return $pdf->download("Estimate-{$estimate->id}-Material-Requirements.pdf");
+        }
+        
+        return view('estimates.reports.material-requirements', $viewData);
+    }
+
+    public function profitMarginReport(Estimate $estimate, Request $request)
+    {
+        $download = $request->boolean('download', false);
+        
+        $materialItems = $estimate->items->where('item_type', 'material');
+        $laborItems = $estimate->items->where('item_type', 'labor');
+        
+        $materialsCost = $materialItems->sum(function ($item) {
+            return $item->quantity * ($item->unit_cost ?? 0);
+        });
+        $materialsRevenue = $materialItems->sum(function ($item) {
+            return $item->quantity * $item->unit_price;
+        });
+        
+        $laborCost = $laborItems->sum(function ($item) {
+            return $item->quantity * ($item->unit_cost ?? 0);
+        });
+        $laborRevenue = $laborItems->sum(function ($item) {
+            return $item->quantity * $item->unit_price;
+        });
+        
+        $totalCost = $materialsCost + $laborCost;
+        $totalRevenue = $materialsRevenue + $laborRevenue;
+        $grossProfit = $totalRevenue - $totalCost;
+        $grossProfitMargin = $totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0;
+        
+        // Estimate net profit (gross profit minus overhead - assume 15% overhead)
+        $overhead = $totalRevenue * 0.15;
+        $netProfit = $grossProfit - $overhead;
+        $netProfitMargin = $totalRevenue > 0 ? ($netProfit / $totalRevenue) * 100 : 0;
+        
+        // Profit by work area
+        $profitByArea = $estimate->items->groupBy('area_id')->map(function ($items, $areaId) use ($totalRevenue) {
+            $area = $items->first()->area ?? null;
+            $areaName = $area ? $area->name : 'Unassigned';
+            
+            $materialItems = $items->where('item_type', 'material');
+            $laborItems = $items->where('item_type', 'labor');
+            
+            $materialsCost = $materialItems->sum(function ($item) {
+                return $item->quantity * ($item->unit_cost ?? 0);
+            });
+            $materialsRevenue = $materialItems->sum(function ($item) {
+                return $item->quantity * $item->unit_price;
+            });
+            
+            $laborCost = $laborItems->sum(function ($item) {
+                return $item->quantity * ($item->unit_cost ?? 0);
+            });
+            $laborRevenue = $laborItems->sum(function ($item) {
+                return $item->quantity * $item->unit_price;
+            });
+            
+            $areaCost = $materialsCost + $laborCost;
+            $areaRevenue = $materialsRevenue + $laborRevenue;
+            $areaProfit = $areaRevenue - $areaCost;
+            $areaMargin = $areaRevenue > 0 ? ($areaProfit / $areaRevenue) * 100 : 0;
+            
+            return [
+                'name' => $areaName,
+                'cost' => $areaCost,
+                'revenue' => $areaRevenue,
+                'profit' => $areaProfit,
+                'margin' => $areaMargin,
+                'percent_of_total' => $totalRevenue > 0 ? ($areaRevenue / $totalRevenue) * 100 : 0,
+                'materials_cost' => $materialsCost,
+                'materials_revenue' => $materialsRevenue,
+                'labor_cost' => $laborCost,
+                'labor_revenue' => $laborRevenue,
+            ];
+        })->sortByDesc('margin')->values();
+        
+        $viewData = [
+            'estimate' => $estimate,
+            'totalCost' => $totalCost,
+            'totalRevenue' => $totalRevenue,
+            'grossProfit' => $grossProfit,
+            'grossProfitMargin' => $grossProfitMargin,
+            'netProfit' => $netProfit,
+            'netProfitMargin' => $netProfitMargin,
+            'materialsCost' => $materialsCost,
+            'materialsRevenue' => $materialsRevenue,
+            'laborCost' => $laborCost,
+            'laborRevenue' => $laborRevenue,
+            'profitByArea' => $profitByArea,
+        ];
+        
+        if ($download) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('estimates.reports.profit-margin', $viewData);
+            return $pdf->download("Estimate-{$estimate->id}-Profit-Margin-Analysis.pdf");
+        }
+        
+        return view('estimates.reports.profit-margin', $viewData);
+    }
+
     public function siteVisitLineItems(SiteVisit $siteVisit): JsonResponse
     {
         $lineItems = $this->buildLineItemsFromSiteVisit($siteVisit->id) ?? [];
