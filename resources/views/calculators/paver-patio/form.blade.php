@@ -8,18 +8,22 @@
     $widthValue = old('width', $formData['width'] ?? null);
     $paverTypeValue = old('paver_type', $formData['paver_type'] ?? '');
     $edgeSelection = old('edge_restraint', $formData['edge_restraint'] ?? '');
+    $edgeLfValue = old('edging_linear_feet', $formData['edging_linear_feet'] ?? null);
+
+    // Get materials from catalog if available - support multiple materials
+    $storedMaterials = $formData['materials'] ?? [];
+    $selectedMaterials = collect($storedMaterials);
 
     $areaSqft = ($lengthValue && $widthValue) ? round($lengthValue * $widthValue, 2) : null;
     $paverCoverage = 0.94;
     $paverCountEstimate = $areaSqft ? (int) ceil($areaSqft / $paverCoverage) : null;
     $baseDepthFeet = 2.5 / 12;
     $baseTonsEstimate = $areaSqft ? (int) ceil(($areaSqft * $baseDepthFeet) / 21.6) : null;
-    $edgeLfEstimate = $areaSqft ? round($areaSqft / 20, 2) : null;
-
+    $edgeLfEstimate = $edgeLfValue ?? ($areaSqft ? round($areaSqft / 20, 2) : null);
     $polymericCoverageSqft = 60;
+    $polymericBagsEstimate = $areaSqft ? (int) ceil($areaSqft / $polymericCoverageSqft) : null;
 
     $defaultUnitCosts = [
-        'paver_unit_cost' => 3.25,
         'base_unit_cost' => 45.00,
         'plastic_edge_unit_cost' => 5.00,
         'concrete_edge_unit_cost' => 12.00,
@@ -27,43 +31,8 @@
     ];
 
     $edgeCostLookup = [
-        'plastic' => old('override_plastic_edge_cost', $formData['override_plastic_edge_cost'] ?? null) ?: $defaultUnitCosts['plastic_edge_unit_cost'],
-        'concrete' => old('override_concrete_edge_cost', $formData['override_concrete_edge_cost'] ?? null) ?: $defaultUnitCosts['concrete_edge_unit_cost'],
-    ];
-
-    $materialCards = [
-        [
-            'label' => 'Pavers',
-            'unit' => 'stones',
-            'qty' => $paverCountEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => old('override_paver_cost', $formData['override_paver_cost'] ?? null) ?: $defaultUnitCosts['paver_unit_cost'],
-            'description' => '0.94 sqft coverage per stone',
-        ],
-        [
-            'label' => '#78 Base Gravel',
-            'unit' => 'tons',
-            'qty' => $baseTonsEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => old('override_base_cost', $formData['override_base_cost'] ?? null) ?: $defaultUnitCosts['base_unit_cost'],
-            'description' => '2.5" compacted depth assumption',
-        ],
-        [
-            'label' => 'Edge Restraints',
-            'unit' => 'LF (est.)',
-            'qty' => $edgeLfEstimate,
-            'qty_is_int' => false,
-            'unit_cost' => $edgeSelection ? $edgeCostLookup[$edgeSelection] : null,
-            'description' => sprintf('Plastic $%s /20ft | Concrete $%s /20ft', number_format($defaultUnitCosts['plastic_edge_unit_cost'], 2), number_format($defaultUnitCosts['concrete_edge_unit_cost'], 2)),
-        ],
-        [
-            'label' => 'Polymeric Sand',
-            'unit' => 'bags',
-            'qty' => data_get($formData, 'materials.Polymeric Sand.qty') ?? ($areaSqft ? (int) ceil($areaSqft / $polymericCoverageSqft) : null),
-            'qty_is_int' => true,
-            'unit_cost' => old('override_polymeric_sand_cost', $formData['override_polymeric_sand_cost'] ?? null) ?: $defaultUnitCosts['polymeric_sand_unit_cost'],
-            'description' => 'Avg. coverage ~60 sqft per bag.',
-        ],
+        'plastic' => $defaultUnitCosts['plastic_edge_unit_cost'],
+        'concrete' => $defaultUnitCosts['concrete_edge_unit_cost'],
     ];
 
     $customMaterials = old('custom_materials', $formData['custom_materials'] ?? []);
@@ -109,7 +78,9 @@
         @endif
     </div>
 
-    <form method="POST" action="{{ route('calculators.patio.calculate') }}">
+    <form method="POST" action="{{ route('calculators.patio.calculate') }}"
+          x-data="paverPatioCalculator()"
+          @material-selected.window="handleMaterialSelected($event)">
         @csrf
         <input type="hidden" name="mode" value="{{ $mode ?? '' }}">
         @if(!empty($estimateId))
@@ -171,16 +142,6 @@
                 </div>
 
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
-                    <label class="block font-semibold text-gray-900 mb-2">Paver Type</label>
-                    <select name="paver_type" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" required>
-                        <option value="">-- Select a Brand --</option>
-                        <option value="belgard" {{ $paverTypeValue === 'belgard' ? 'selected' : '' }}>Belgard</option>
-                        <option value="techo" {{ $paverTypeValue === 'techo' ? 'selected' : '' }}>Techo-Bloc</option>
-                    </select>
-                    <p class="text-xs text-gray-600 mt-2">Brand selection for catalog pricing</p>
-                </div>
-
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
                     <label class="block font-semibold text-gray-900 mb-2">Edge Restraint Type</label>
                     <select name="edge_restraint" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" required>
                         <option value="">-- Choose Edge Type --</option>
@@ -189,61 +150,107 @@
                     </select>
                     <p class="text-xs text-gray-600 mt-2">Plastic or concrete edge restraint</p>
                 </div>
+
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+                    <label class="block font-semibold text-gray-900 mb-2">Edging Linear Feet</label>
+                    <input type="number" step="0.1" name="edging_linear_feet" 
+                           x-ref="edgingLfInput"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ $edgeLfValue }}" 
+                           placeholder="Enter linear feet">
+                    <p class="text-xs text-gray-600 mt-2">Specify exact LF for edge restraints</p>
+                </div>
+            </div>
+            
+            {{-- Auto-calculated quantities preview --}}
+            <div x-show="length > 0 && width > 0" 
+                 x-transition
+                 class="bg-gradient-to-r from-amber-50 to-orange-100 border-l-4 border-amber-500 rounded-lg p-6 mt-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Area</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="area.toFixed(2) + ' sqft'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Pavers Est.</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="paverCount.toLocaleString() + ' stones'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Base Gravel</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="baseTons.toLocaleString() + ' tons'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Polymeric Sand</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="polymericBags.toLocaleString() + ' bags'"></p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        {{-- 3️⃣ Materials Preview --}}
+        {{-- 3️⃣ Material Selection --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
-                        <span class="text-white font-bold text-sm">3</span>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-900">Materials & Pricing Preview</h2>
-                        <p class="text-sm text-gray-600">Auto-calculated quantities based on area</p>
-                    </div>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">3</span>
                 </div>
-                <span id="materialPreviewHint" class="text-sm font-medium {{ $areaSqft ? 'text-green-700' : 'text-gray-500' }}" data-empty-message="Enter dimensions to unlock quantities" data-filled-message="Updating automatically">{{ $areaSqft ? 'Updating automatically' : 'Enter dimensions to unlock quantities' }}</span>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Material Selection</h2>
+                    <p class="text-sm text-gray-600">Add materials from your catalog. You can add multiple materials.</p>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                @foreach ($materialCards as $card)
-                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <p class="font-bold text-gray-900">{{ $card['label'] }}</p>
-                            <span class="text-xs font-medium text-gray-600 bg-white px-2 py-1 rounded">{{ $card['unit'] }}</span>
+            <div class="space-y-6">
+                {{-- Material Catalog Picker --}}
+                <div>
+                    @include('components.material-catalog-picker')
+                </div>
+                
+                {{-- Selected Materials Display --}}
+                <div x-show="selectedMaterials.length > 0" class="space-y-3">
+                    <h3 class="font-semibold text-gray-900">Selected Materials</h3>
+                    <template x-for="(material, index) in selectedMaterials" :key="index">
+                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-500 rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <svg class="w-5 h-5 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <p class="text-lg font-bold text-amber-900" x-text="material.name"></p>
+                                    </div>
+                                    <p class="text-sm font-semibold text-amber-700 ml-7">
+                                        $<span x-text="parseFloat(material.unit_cost).toFixed(2)"></span> per <span x-text="material.unit || 'ea'"></span>
+                                    </p>
+                                    <p class="text-xs text-amber-600 mt-1 ml-7" x-show="material.description" x-text="material.description"></p>
+                                    
+                                    {{-- Quantity Input --}}
+                                    <div class="mt-3 ml-7">
+                                        <label class="block text-sm font-semibold text-amber-900 mb-1">Quantity:</label>
+                                        <input type="number" 
+                                               :name="'materials[' + index + '][quantity]'"
+                                               x-model="material.quantity"
+                                               min="0"
+                                               step="any"
+                                               class="w-32 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                               placeholder="Qty">
+                                        {{-- Hidden fields for material data --}}
+                                        <input type="hidden" :name="'materials[' + index + '][catalog_id]'" :value="material.catalog_id">
+                                        <input type="hidden" :name="'materials[' + index + '][name]'" :value="material.name">
+                                        <input type="hidden" :name="'materials[' + index + '][unit_cost]'" :value="material.unit_cost">
+                                        <input type="hidden" :name="'materials[' + index + '][unit]'" :value="material.unit || 'ea'">
+                                    </div>
+                                </div>
+                                <button type="button"
+                                        @click="removeMaterial(index)"
+                                        class="ml-4 p-3 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-lg transition-colors">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-
-                        <div class="mb-3">
-                            <p class="text-xs uppercase tracking-wide text-gray-600 mb-1">Qty Estimate</p>
-                            <p class="text-2xl font-bold text-gray-900" data-material-qty="{{ \Illuminate\Support\Str::slug($card['label'], '_') }}">
-                                @if(!is_null($card['qty']))
-                                    @if(!empty($card['qty_is_int']))
-                                        {{ number_format($card['qty']) }}
-                                    @else
-                                        {{ number_format($card['qty'], 2) }}
-                                    @endif
-                                @else
-                                    &mdash;
-                                @endif
-                            </p>
-                        </div>
-
-                        <div class="mb-3">
-                            <p class="text-xs uppercase tracking-wide text-gray-600 mb-1">Unit Cost</p>
-                            <p class="text-lg font-semibold text-amber-800" data-material-cost="{{ \Illuminate\Support\Str::slug($card['label'], '_') }}">
-                                @if(!is_null($card['unit_cost']))
-                                    ${{ number_format($card['unit_cost'], 2) }}
-                                @else
-                                    Select edge type
-                                @endif
-                            </p>
-                        </div>
-
-                        <p class="text-xs text-gray-600 border-t border-amber-200 pt-2">{{ $card['description'] }}</p>
-                    </div>
-                @endforeach
+                    </template>
+                </div>
             </div>
         </div>
 
@@ -329,51 +336,75 @@
 
 @push('scripts')
 <script>
+    // Alpine.js component for paver patio calculator
+    function paverPatioCalculator() {
+        return {
+            // Dimensions
+            length: {{ $lengthValue ?? 0 }},
+            width: {{ $widthValue ?? 0 }},
+            area: 0,
+            paverCount: 0,
+            baseTons: 0,
+            polymericBags: 0,
+            
+            // Material selection - support multiple materials
+            selectedMaterials: @json($formData['materials'] ?? []),
+            
+            init() {
+                this.calculateQuantities();
+                
+                // Watch for dimension changes
+                this.$watch('length', () => this.calculateQuantities());
+                this.$watch('width', () => this.calculateQuantities());
+            },
+            
+            calculateQuantities() {
+                if (this.length > 0 && this.width > 0) {
+                    this.area = this.length * this.width;
+                    this.paverCount = Math.ceil(this.area / 0.94);
+                    this.baseTons = Math.ceil((this.area * (2.5 / 12)) / 21.6);
+                    this.polymericBags = Math.ceil(this.area / 60);
+                } else {
+                    this.area = 0;
+                    this.paverCount = 0;
+                    this.baseTons = 0;
+                    this.polymericBags = 0;
+                }
+            },
+            
+            handleMaterialSelected(event) {
+                this.addMaterial(event.detail);
+            },
+            
+            addMaterial(material) {
+                // Check if material already exists
+                const exists = this.selectedMaterials.find(m => m.catalog_id === material.id);
+                if (!exists) {
+                    this.selectedMaterials.push({
+                        catalog_id: material.id,
+                        name: material.name,
+                        unit_cost: parseFloat(material.unit_cost) || 0,
+                        unit: material.unit || 'ea',
+                        description: material.description || '',
+                        quantity: 1
+                    });
+                }
+            },
+            
+            removeMaterial(index) {
+                this.selectedMaterials.splice(index, 1);
+            }
+        };
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const lengthInput = document.querySelector('input[name="length"]');
         const widthInput = document.querySelector('input[name="width"]');
-        const edgeSelect = document.querySelector('select[name="edge_restraint"]');
-
-        const overrideInputs = {
-            paver: document.querySelector('input[name="override_paver_cost"]'),
-            base: document.querySelector('input[name="override_base_cost"]'),
-            plasticEdge: document.querySelector('input[name="override_plastic_edge_cost"]'),
-            concreteEdge: document.querySelector('input[name="override_concrete_edge_cost"]'),
-            polymericSand: document.querySelector('input[name="override_polymeric_sand_cost"]'),
-        };
-
-        const qtyEls = {
-            pavers: document.querySelector('[data-material-qty="pavers"]'),
-            base: document.querySelector('[data-material-qty="78_base_gravel"]'),
-            edge: document.querySelector('[data-material-qty="edge_restraints"]'),
-            polymeric_sand: document.querySelector('[data-material-qty="polymeric_sand"]'),
-        };
-
-        const costEls = {
-            pavers: document.querySelector('[data-material-cost="pavers"]'),
-            base: document.querySelector('[data-material-cost="78_base_gravel"]'),
-            edge: document.querySelector('[data-material-cost="edge_restraints"]'),
-            polymeric_sand: document.querySelector('[data-material-cost="polymeric_sand"]'),
-        };
-
-        const areaBadge = document.getElementById('patioAreaBadge');
-        const materialHint = document.getElementById('materialPreviewHint');
         const customRowsContainer = document.getElementById('customMaterialRows');
         const customTemplate = document.getElementById('customMaterialTemplate');
         const addCustomMaterialButton = document.getElementById('addCustomMaterial');
 
-        const defaults = {
-            paverUnitCost: 3.25,
-            baseUnitCost: 45.0,
-            plasticEdgeUnitCost: 5.0,
-            concreteEdgeUnitCost: 12.0,
-            paverCoverage: 0.94,
-            baseDepthFeet: 2.5 / 12,
-            baseTonsDivisor: 21.6,
-            edgeLfDivisor: 20,
-            polymericSandCoverage: 60,
-            polymericSandUnitCost: 28.0,
-        };
+
 
         const parseNumber = (value) => {
             const num = parseFloat(value);
@@ -399,24 +430,7 @@
             return parsed ?? fallback;
         };
 
-        const setBadgeText = (el, text, isFilled) => {
-            if (!el) return;
-            el.textContent = text;
-            if (isFilled) {
-                el.classList.remove('bg-gray-100', 'text-gray-600');
-                el.classList.add('bg-amber-100', 'text-amber-800');
-            } else {
-                el.classList.remove('bg-amber-100', 'text-amber-800');
-                el.classList.add('bg-gray-100', 'text-gray-600');
-            }
-        };
 
-        const setHintText = (el, text, isFilled) => {
-            if (!el) return;
-            el.textContent = text;
-            el.classList.toggle('text-green-700', isFilled);
-            el.classList.toggle('text-gray-500', !isFilled);
-        };
 
         const recalcCustomMaterials = () => {
             if (!customRowsContainer) return;
@@ -487,73 +501,22 @@
             addCustomMaterialButton.addEventListener('click', addCustomRow);
         }
 
-        const recalc = () => {
-            const length = lengthInput ? parseNumber(lengthInput.value) : null;
-            const width = widthInput ? parseNumber(widthInput.value) : null;
-            const area = length && width ? length * width : null;
-
-            if (areaBadge) {
-                const emptyMessage = areaBadge.dataset.emptyMessage || 'Enter length + width to unlock quantities.';
-                const prefix = areaBadge.dataset.prefix || 'Area: ';
-                setBadgeText(
-                    areaBadge,
-                    area ? `${prefix}${area.toFixed(2)} sqft` : emptyMessage,
-                    Boolean(area)
-                );
-            }
-
-            if (materialHint) {
-                const emptyMsg = materialHint.dataset.emptyMessage || 'Enter dimensions to unlock quantities';
-                const filledMsg = materialHint.dataset.filledMessage || 'Updating automatically';
-                setHintText(materialHint, area ? filledMsg : emptyMsg, Boolean(area));
-            }
-
-            const paverQty = area ? Math.ceil(area / defaults.paverCoverage) : null;
-            const baseQty = area ? Math.ceil((area * defaults.baseDepthFeet) / defaults.baseTonsDivisor) : null;
-            const edgeQty = area ? parseFloat((area / defaults.edgeLfDivisor).toFixed(2)) : null;
-            const polymericQty = area ? Math.ceil(area / defaults.polymericSandCoverage) : null;
-
-            if (qtyEls.pavers) qtyEls.pavers.textContent = formatQty(paverQty, true);
-            if (qtyEls.base) qtyEls.base.textContent = formatQty(baseQty, true);
-            if (qtyEls.edge) qtyEls.edge.textContent = formatQty(edgeQty);
-            if (qtyEls.polymeric_sand) qtyEls.polymeric_sand.textContent = formatQty(polymericQty, true);
-
-            const paverCost = resolveCost(overrideInputs.paver, defaults.paverUnitCost);
-            const baseCost = resolveCost(overrideInputs.base, defaults.baseUnitCost);
-            const polymericCost = resolveCost(overrideInputs.polymericSand, defaults.polymericSandUnitCost);
-
-            if (costEls.pavers) costEls.pavers.textContent = formatCurrency(paverCost);
-            if (costEls.base) costEls.base.textContent = formatCurrency(baseCost);
-            if (costEls.polymeric_sand) costEls.polymeric_sand.textContent = formatCurrency(polymericCost);
-
-            if (costEls.edge) {
-                const selection = edgeSelect ? edgeSelect.value : '';
-                if (!selection) {
-                    costEls.edge.textContent = 'Select edge type';
-                } else {
-                    const edgeCost = selection === 'plastic'
-                        ? resolveCost(overrideInputs.plasticEdge, defaults.plasticEdgeUnitCost)
-                        : resolveCost(overrideInputs.concreteEdge, defaults.concreteEdgeUnitCost);
-                    costEls.edge.textContent = formatCurrency(edgeCost);
+        // Sync dimension inputs with Alpine.js
+        if (lengthInput && widthInput) {
+            const alpineData = Alpine.$data(document.querySelector('form[x-data]'));
+            
+            lengthInput.addEventListener('input', (e) => {
+                if (alpineData) {
+                    alpineData.length = parseFloat(e.target.value) || 0;
                 }
-            }
-        };
-
-        recalc();
-
-        [lengthInput, widthInput].forEach((input) => {
-            if (!input) return;
-            input.addEventListener('input', recalc);
-        });
-
-        if (edgeSelect) {
-            edgeSelect.addEventListener('change', recalc);
+            });
+            
+            widthInput.addEventListener('input', (e) => {
+                if (alpineData) {
+                    alpineData.width = parseFloat(e.target.value) || 0;
+                }
+            });
         }
-
-        Object.values(overrideInputs).forEach((input) => {
-            if (!input) return;
-            input.addEventListener('input', recalc);
-        });
     });
 </script>
 @endpush
