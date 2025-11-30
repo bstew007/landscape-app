@@ -261,6 +261,26 @@ class SynTurfCalculatorController extends Controller
             ])
         );
 
+        // Build enhanced labor_tasks array for import
+        $laborTasks = [];
+        foreach ($results as $result) {
+            $taskKey = strtolower(str_replace(' ', '_', $result['task']));
+            $taskName = ucwords($result['task']);
+            $unit = $result['unit'] ?? 'sqft';
+            
+            $laborTasks[] = [
+                'task_key' => $taskKey,
+                'task_name' => $taskName,
+                'description' => $taskName . " - {$result['qty']} {$unit}",
+                'quantity' => $result['qty'],
+                'unit' => $unit,
+                'production_rate' => $result['rate'],
+                'hours' => $result['hours'],
+                'hourly_rate' => $laborRate,
+                'total_cost' => $result['cost'],
+            ];
+        }
+
         // Fees (tamper rental)
         $fees = [];
         if ($request->boolean('rent_tamper')) {
@@ -279,6 +299,7 @@ class SynTurfCalculatorController extends Controller
             $validated,
             [
                 'tasks' => $results,
+                'labor_tasks' => $laborTasks, // Enhanced format for import
                 'labor_by_task' => collect($results)
                     ->pluck('hours', 'task')
                     ->map(fn ($h) => round($h, 2))

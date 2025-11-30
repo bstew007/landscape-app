@@ -191,17 +191,43 @@
 @endphp
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    @include('calculators.partials.form_header', [
-        'title' => $editMode ? '✏️ Edit Fence Estimate' : '🪵 Fence Calculator',
-    ])
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {{-- Modern Header with Icon --}}
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-3">
+            <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-lg">
+                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        <circle cx="12" cy="6" r="1.5" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                        <circle cx="12" cy="18" r="1.5" fill="currentColor"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ $editMode ? 'Edit Fence Estimate' : 'Fence Calculator' }}
+                </h1>
+                <p class="text-gray-600 mt-1">Wood or vinyl fence installation estimator</p>
+            </div>
+        </div>
+    </div>
 
     @if(($mode ?? null) === 'template')
-        <div class="bg-white p-4 rounded border mb-6">
-            <p class="text-sm text-gray-700">Template Mode — build a Fence template without a site visit.</p>
-            @if(!empty($estimateId))
-                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
-            @endif
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-blue-900">Template Mode Active</p>
+                    <p class="text-sm text-blue-700 mt-1">Building fence template without site visit</p>
+                    @if(!empty($estimateId))
+                        <p class="text-sm text-blue-600 mt-1">Target Estimate: #{{ $estimateId }}</p>
+                    @endif
+                </div>
+            </div>
         </div>
     @endif
 
@@ -223,91 +249,138 @@
             <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @endif
 
-        {{-- Crew & Logistics --}}
-        <div class="mb-6">
-            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
+        {{-- 1️⃣ Crew & Logistics --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">1</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Crew & Logistics</h2>
+                    <p class="text-sm text-gray-600">Labor rates, crew size, and travel details</p>
+                </div>
+            </div>
             @include('calculators.partials.overhead_inputs')
         </div>
 
-        {{-- Fence Type --}}
-        <div class="mb-4">
-            <label for="fence_type" class="block font-semibold mb-1">Fence Type</label>
-            <select name="fence_type" id="fence_type" required class="form-select w-full">
-                <option value="">-- Select --</option>
-                <option value="wood" {{ old('fence_type', $formData['fence_type'] ?? '') == 'wood' ? 'selected' : '' }}>Wood</option>
-                <option value="vinyl" {{ old('fence_type', $formData['fence_type'] ?? '') == 'vinyl' ? 'selected' : '' }}>Vinyl</option>
-            </select>
-        </div>
-
-        {{-- Fence Height --}}
-        <div class="mb-4">
-            <label for="height" class="block font-semibold mb-1">Fence Height</label>
-            <select name="height" id="height" required class="form-select w-full">
-                <option value="4" {{ old('height', $formData['height'] ?? '') == '4' ? 'selected' : '' }}>4'</option>
-                <option value="6" {{ old('height', $formData['height'] ?? '') == '6' ? 'selected' : '' }}>6'</option>
-            </select>
-        </div>
-
-        {{-- Fence Length --}}
-        <div class="mb-4">
-            <label for="length" class="block font-semibold mb-1">Total Fence Length (ft)</label>
-            <input type="number" name="length" id="length" value="{{ old('length', $formData['length'] ?? '') }}" required class="form-input w-full">
-        </div>
-
-        {{-- Dig Method --}}
-        <div class="mb-4">
-            <label for="dig_method" class="block font-semibold mb-1">Post Digging Method</label>
-            <select name="dig_method" id="dig_method" required class="form-select w-full">
-                <option value="">-- Select Method --</option>
-                <option value="hand" {{ old('dig_method', $formData['dig_method'] ?? '') == 'hand' ? 'selected' : '' }}>Hand Dig</option>
-                <option value="auger" {{ old('dig_method', $formData['dig_method'] ?? '') == 'auger' ? 'selected' : '' }}>Auger</option>
-            </select>
-        </div>
-
-        {{-- Gates --}}
-        <div class="mb-4">
-            <label for="gate_4ft" class="block font-semibold mb-1">Number of 4' Gates</label>
-            <input type="number" name="gate_4ft" id="gate_4ft" value="{{ old('gate_4ft', $formData['gate_4ft'] ?? 0) }}" min="0" class="form-input w-full">
-        </div>
-        <div class="mb-4">
-            <label for="gate_5ft" class="block font-semibold mb-1">Number of 5' Gates</label>
-            <input type="number" name="gate_5ft" id="gate_5ft" value="{{ old('gate_5ft', $formData['gate_5ft'] ?? 0) }}" min="0" class="form-input w-full">
-        </div>
-
-        {{-- Wood Specific Options --}}
-        <div id="wood-options" style="display: none;">
-            <div class="mb-4">
-                <label for="picket_spacing" class="block font-semibold mb-1">Picket Spacing (inches)</label>
-                <input type="number" step="0.01" name="picket_spacing" id="picket_spacing" value="{{ old('picket_spacing', $formData['picket_spacing'] ?? 0.25) }}" class="form-input w-full">
+        {{-- 2️⃣ Fence Configuration --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">2</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Fence Configuration</h2>
+                    <p class="text-sm text-gray-600">Type, dimensions, and installation method</p>
+                </div>
             </div>
-            <div class="mb-4">
-                <label class="inline-flex items-center">
-                    <input type="checkbox" name="shadow_box" value="1"
-                           {{ old('shadow_box', $formData['shadow_box'] ?? false) ? 'checked' : '' }} class="form-checkbox">
-                    <span class="ml-2">Shadow Box Style (Double Pickets)</span>
-                </label>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- Fence Type --}}
+                <div>
+                    <label for="fence_type" class="block text-sm font-semibold text-gray-700 mb-2">Fence Type</label>
+                    <select name="fence_type" id="fence_type" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <option value="">-- Select Type --</option>
+                        <option value="wood" {{ old('fence_type', $formData['fence_type'] ?? '') == 'wood' ? 'selected' : '' }}>Wood</option>
+                        <option value="vinyl" {{ old('fence_type', $formData['fence_type'] ?? '') == 'vinyl' ? 'selected' : '' }}>Vinyl</option>
+                    </select>
+                </div>
+
+                {{-- Fence Height --}}
+                <div>
+                    <label for="height" class="block text-sm font-semibold text-gray-700 mb-2">Fence Height</label>
+                    <select name="height" id="height" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <option value="4" {{ old('height', $formData['height'] ?? '') == '4' ? 'selected' : '' }}>4 feet</option>
+                        <option value="6" {{ old('height', $formData['height'] ?? '') == '6' ? 'selected' : '' }}>6 feet</option>
+                    </select>
+                </div>
+
+                {{-- Fence Length --}}
+                <div>
+                    <label for="length" class="block text-sm font-semibold text-gray-700 mb-2">Total Fence Length (ft)</label>
+                    <input type="number" name="length" id="length" value="{{ old('length', $formData['length'] ?? '') }}" required 
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                </div>
+
+                {{-- Dig Method --}}
+                <div>
+                    <label for="dig_method" class="block text-sm font-semibold text-gray-700 mb-2">Post Digging Method</label>
+                    <select name="dig_method" id="dig_method" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <option value="">-- Select Method --</option>
+                        <option value="hand" {{ old('dig_method', $formData['dig_method'] ?? '') == 'hand' ? 'selected' : '' }}>Hand Dig</option>
+                        <option value="auger" {{ old('dig_method', $formData['dig_method'] ?? '') == 'auger' ? 'selected' : '' }}>Auger</option>
+                    </select>
+                </div>
+
+                {{-- 4' Gates --}}
+                <div>
+                    <label for="gate_4ft" class="block text-sm font-semibold text-gray-700 mb-2">Number of 4' Gates</label>
+                    <input type="number" name="gate_4ft" id="gate_4ft" value="{{ old('gate_4ft', $formData['gate_4ft'] ?? 0) }}" min="0" 
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                </div>
+
+                {{-- 5' Gates --}}
+                <div>
+                    <label for="gate_5ft" class="block text-sm font-semibold text-gray-700 mb-2">Number of 5' Gates</label>
+                    <input type="number" name="gate_5ft" id="gate_5ft" value="{{ old('gate_5ft', $formData['gate_5ft'] ?? 0) }}" min="0" 
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                </div>
+            </div>
+
+            {{-- Wood Specific Options --}}
+            <div id="wood-options" style="display: none;" class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Wood Fence Options</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="picket_spacing" class="block text-sm font-semibold text-gray-700 mb-2">Picket Spacing (inches)</label>
+                        <input type="number" step="0.01" name="picket_spacing" id="picket_spacing" value="{{ old('picket_spacing', $formData['picket_spacing'] ?? 0.25) }}" 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="shadow_box" value="1"
+                                   {{ old('shadow_box', $formData['shadow_box'] ?? false) ? 'checked' : '' }} 
+                                   class="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Shadow Box Style (Double Pickets)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Vinyl Specific Options --}}
+            <div id="vinyl-options" style="display: none;" class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Vinyl Fence Options</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="vinyl_corner_posts" class="block text-sm font-semibold text-gray-700 mb-2">Vinyl Corner Posts</label>
+                        <input type="number" name="vinyl_corner_posts" id="vinyl_corner_posts" value="{{ old('vinyl_corner_posts', $formData['vinyl_corner_posts'] ?? 0) }}" 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="vinyl_end_posts" class="block text-sm font-semibold text-gray-700 mb-2">Vinyl End Posts</label>
+                        <input type="number" name="vinyl_end_posts" id="vinyl_end_posts" value="{{ old('vinyl_end_posts', $formData['vinyl_end_posts'] ?? 0) }}" 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    </div>
+                </div>
             </div>
         </div>
 
-        {{-- Vinyl Specific Options --}}
-        <div id="vinyl-options" style="display: none;">
-            <div class="mb-4">
-                <label for="vinyl_corner_posts" class="block font-semibold mb-1">Vinyl Corner Posts</label>
-                <input type="number" name="vinyl_corner_posts" id="vinyl_corner_posts" value="{{ old('vinyl_corner_posts', $formData['vinyl_corner_posts'] ?? 0) }}" class="form-input w-full">
+        {{-- 3️⃣ Materials Preview --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-start justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">3</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Materials Preview</h2>
+                        <p class="text-sm text-gray-600">Auto-calculated quantities and costs</p>
+                    </div>
+                </div>
+                <span id="materialPreviewHint" class="text-sm {{ $fenceTypeValue ? 'text-gray-600' : 'text-gray-500' }}" data-empty-message="Select fence type to see materials" data-filled-message="Updating automatically">
+                    {{ $fenceTypeValue ? 'Updating automatically' : 'Select fence type to see materials' }}
+                </span>
             </div>
-            <div class="mb-4">
-                <label for="vinyl_end_posts" class="block font-semibold mb-1">Vinyl End Posts</label>
-                <input type="number" name="vinyl_end_posts" id="vinyl_end_posts" value="{{ old('vinyl_end_posts', $formData['vinyl_end_posts'] ?? 0) }}" class="form-input w-full">
-            </div>
-        </div>
-
-        {{-- Materials Preview --}}
-        <div class="mb-6">
-            @include('calculators.partials.section_heading', [
-                'title' => 'Materials & Pricing Preview',
-                'hint' => 'Matches the retaining wall cards—instantly shows posts, panels, rails, and costs.',
-                'right' => '<span id="materialPreviewHint" class="text-sm '.($fenceTypeValue ? 'text-gray-600' : 'text-gray-500').'" data-empty-message="Select a fence type + length to unlock quantities." data-filled-message="Quantities update automatically while you type.">'.($fenceTypeValue ? 'Quantities update automatically while you type.' : 'Select a fence type + length to unlock quantities.').'</span>',
-            ])
 
             <div id="fenceMaterialPreview" class="{{ $fenceTypeValue ? '' : 'hidden' }}">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -316,19 +389,19 @@
                             $cardVisible = $fenceTypeValue === $card['type'] && ($card['type'] === 'wood' || empty($card['vinyl_height']) || $card['vinyl_height'] === 'all' || $card['vinyl_height'] === $heightValue);
                         @endphp
                         <div
-                            class="border rounded-lg p-4 bg-white shadow-sm flex flex-col {{ $cardVisible ? '' : 'hidden' }}"
+                            class="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-gray-50 to-gray-100 {{ $cardVisible ? '' : 'hidden' }}"
                             data-fence-material-card
                             data-fence-type="{{ $card['type'] }}"
                             @if(!empty($card['vinyl_height'])) data-vinyl-height="{{ $card['vinyl_height'] }}" @endif
                         >
-                            <div class="flex items-center justify-between">
-                                <p class="font-semibold">{{ $card['label'] }}</p>
-                                <span class="text-sm text-gray-500">{{ $card['unit'] }}</span>
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="font-semibold text-gray-900">{{ $card['label'] }}</p>
+                                <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded">{{ $card['unit'] }}</span>
                             </div>
 
-                            <div class="mt-4">
-                                <p class="text-xs uppercase tracking-wide text-gray-500">Qty Estimate</p>
-                                <p class="text-2xl font-bold" data-material-qty="{{ $card['key'] }}">
+                            <div class="mb-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Quantity</p>
+                                <p class="text-2xl font-bold text-gray-900" data-material-qty="{{ $card['key'] }}">
                                     @if(!is_null($card['qty']))
                                         @if(is_numeric($card['qty']) && floor($card['qty']) == $card['qty'])
                                             {{ number_format($card['qty']) }}
@@ -341,9 +414,9 @@
                                 </p>
                             </div>
 
-                            <div class="mt-4">
-                                <p class="text-xs uppercase tracking-wide text-gray-500">Default Unit Cost</p>
-                                <p class="text-lg font-semibold" data-material-cost="{{ $card['key'] }}">
+                            <div class="mb-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Unit Cost</p>
+                                <p class="text-lg font-semibold text-gray-700" data-material-cost="{{ $card['key'] }}">
                                     @if(!is_null($card['unit_cost']))
                                         ${{ number_format($card['unit_cost'], 2) }}
                                     @else
@@ -352,21 +425,24 @@
                                 </p>
                             </div>
 
-                            <p class="text-xs text-gray-500 mt-4">{{ $card['description'] }}</p>
+                            <p class="text-xs text-gray-600">{{ $card['description'] }}</p>
                         </div>
                     @endforeach
                 </div>
             </div>
         </div>
 
-        {{-- Additional Materials --}}
-        <div class="mb-6">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Additional Materials</h2>
-                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (lighting kits, specialty hardware, etc.).</p>
+        {{-- 4️⃣ Additional Materials & Job Notes --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">4</span>
                 </div>
-                <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-gray-900">Additional Materials</h2>
+                    <p class="text-sm text-gray-600">Items not auto-calculated (lighting, specialty hardware, etc.)</p>
+                </div>
+                <button type="button" id="addCustomMaterial" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
                     + Add Material
                 </button>
             </div>
@@ -393,6 +469,16 @@
                     'material' => [],
                 ])
             </template>
+
+            {{-- Job Notes --}}
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <label for="job_notes" class="block text-sm font-semibold text-gray-700 mb-2">
+                    Job Notes <span class="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <textarea name="job_notes" id="job_notes" rows="3" 
+                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" 
+                          placeholder="Special considerations, access notes, or custom requirements...">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+            </div>
         </div>
 
         {{-- Toggle Material Overrides --}}
@@ -407,23 +493,24 @@
         ])
 
         {{-- Submit Button --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+        <div class="flex flex-col sm:flex-row gap-4">
             @if(($mode ?? null) === 'template')
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
-                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., 6' vinyl with 2 gates)" value="{{ old('template_name') }}">
-                    <select name="template_scope" class="form-select w-full sm:w-48">
-                        <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
-                        <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
-                        <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
-                    </select>
-                    <button type="submit" class="btn btn-secondary">💾 Save Template</button>
-                </div>
-            @else
-                <button type="submit" class="btn btn-secondary">
-                    {{ $editMode ? '🔄 Recalculate' : '➕ Calculate Fence Estimate' }}
+                <input type="text" name="template_name" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" 
+                       placeholder="Template name (e.g., 6' vinyl with 2 gates)" value="{{ old('template_name') }}">
+                <select name="template_scope" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
+                    <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
+                    <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
+                </select>
+                <button type="submit" class="px-6 py-2.5 bg-brand-800 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+                    💾 Save Template
                 </button>
-                <a href="{{ route('clients.show', $clientId ?? $siteVisitId) }}" class="btn btn-muted">
-                    🔙 Back to Client
+            @else
+                <button type="submit" class="px-8 py-3 bg-brand-800 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+                    {{ $editMode ? '🔄 Recalculate Estimate' : '➡️ Calculate Fence Estimate' }}
+                </button>
+                <a href="{{ route('clients.show', $clientId ?? $siteVisitId) }}" class="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-center">
+                    ← Back to Client
                 </a>
             @endif
         </div>

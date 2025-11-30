@@ -253,6 +253,88 @@ class RetainingWallCalculatorController extends Controller
         array_merge($validated, ['material_total' => $material_total])
     );
 
+    // Build labor_tasks array
+    $laborTasks = [];
+    $taskDefinitions = [
+        'excavation' => 'Excavate trench for wall foundation',
+        'base_install' => 'Install and compact base material',
+        'pipe_install' => 'Install drainage pipe',
+        'gravel_backfill' => 'Place and compact gravel backfill',
+        'topsoil_backfill' => 'Place topsoil backfill',
+        'underlayment' => 'Install underlayment fabric',
+        'geogrid' => 'Install geogrid reinforcement',
+        'capstone' => 'Install capstones',
+        'block_laying' => 'Lay standard retaining wall blocks',
+        'ab_straight_wall' => 'Install Allan Block straight wall sections',
+        'ab_curved_wall' => 'Install Allan Block curved wall sections',
+        'ab_stairs' => 'Build Allan Block stair sections',
+        'ab_columns' => 'Build Allan Block columns',
+    ];
+
+    foreach ($labor as $taskKey => $hours) {
+        if ($hours > 0) {
+            $taskName = ucwords(str_replace('_', ' ', $taskKey));
+            $description = $taskDefinitions[$taskKey] ?? $taskName;
+            
+            // Determine quantity and unit based on task
+            $quantity = 0;
+            $unit = 'sqft';
+            
+            if ($taskKey === 'excavation' || $taskKey === 'base_install') {
+                $quantity = $sqft;
+                $unit = 'sqft';
+            } elseif ($taskKey === 'pipe_install') {
+                $quantity = $length;
+                $unit = 'lf';
+            } elseif ($taskKey === 'gravel_backfill') {
+                $quantity = $gravelVolumeCF;
+                $unit = 'cf';
+            } elseif ($taskKey === 'topsoil_backfill') {
+                $quantity = $topsoilVolumeCF;
+                $unit = 'cf';
+            } elseif ($taskKey === 'underlayment') {
+                $quantity = $fabricArea;
+                $unit = 'sqft';
+            } elseif ($taskKey === 'geogrid') {
+                $quantity = $geogridLF;
+                $unit = 'lf';
+            } elseif ($taskKey === 'capstone') {
+                $quantity = $capCount;
+                $unit = 'ea';
+            } elseif ($taskKey === 'block_laying') {
+                $quantity = $sqft;
+                $unit = 'sqft';
+            } elseif ($taskKey === 'ab_straight_wall') {
+                $quantity = $validated['ab_straight_length'] ?? 0;
+                $unit = 'sqft';
+            } elseif ($taskKey === 'ab_curved_wall') {
+                $quantity = $validated['ab_curved_length'] ?? 0;
+                $unit = 'sqft';
+            } elseif ($taskKey === 'ab_stairs') {
+                $quantity = $validated['ab_step_count'] ?? 0;
+                $unit = 'ea';
+            } elseif ($taskKey === 'ab_columns') {
+                $quantity = $validated['ab_column_count'] ?? 0;
+                $unit = 'ea';
+            }
+
+            $productionRate = $quantity > 0 ? round($hours / $quantity, 4) : 0;
+            $totalCost = round($hours * $validated['labor_rate'], 2);
+
+            $laborTasks[] = [
+                'task_key' => $taskKey,
+                'task_name' => $taskName,
+                'description' => $description,
+                'quantity' => round($quantity, 2),
+                'unit' => $unit,
+                'production_rate' => $productionRate,
+                'hours' => round($hours, 2),
+                'hourly_rate' => $validated['labor_rate'],
+                'total_cost' => $totalCost,
+            ];
+        }
+    }
+
     $data = array_merge($validated, [
     'block_count' => $blockCount,
     'cap_count' => $capCount,
@@ -267,6 +349,7 @@ class RetainingWallCalculatorController extends Controller
 
     'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
     'labor_hours' => round($wallLabor, 2), // ✅ Add this line
+    'labor_tasks' => $laborTasks,
     'material_total' => round($material_total, 2),
     'materials' => $materials,
     'materials_override_enabled' => !empty($validated['materials_override_enabled']),

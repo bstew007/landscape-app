@@ -1,421 +1,351 @@
 @extends('layouts.sidebar')
 
 @php
-    $customMaterials = old('custom_materials', $formData['custom_materials'] ?? []);
+    // Get saved values or old input
     $areaValue = old('area_sqft', $formData['area_sqft'] ?? null);
-    $strawTypes = ['Pine Needles', 'Wheat Straw'];
-    $selectedStrawType = old('mulch_type', $formData['mulch_type'] ?? '');
+    
+    // Material catalog integration
     $storedMaterials = $formData['materials'] ?? [];
-    $primaryMaterialName = $selectedStrawType ?: (collect($storedMaterials)->keys()->first() ?? 'Pine Needles');
-    $primaryMaterial = $storedMaterials[$primaryMaterialName] ?? null;
-    $defaultStrawCost = 7;
-    $prefillCost = data_get($primaryMaterial, 'unit_cost', $defaultStrawCost);
-    $prefillQty = data_get($primaryMaterial, 'qty');
+    $firstMaterial = collect($storedMaterials)->first();
+    $selectedMaterialName = old('mulch_type', $firstMaterial['name'] ?? '');
+    $selectedCatalogId = old('material_catalog_id', $firstMaterial['catalog_id'] ?? null);
+    $selectedUnitCost = old('material_unit_cost', $firstMaterial['unit_cost'] ?? 7);
+    
+    // Calculate estimated quantity
     $strawBalesPreview = $areaValue ? round($areaValue / 50, 0) : null;
-    $materialCards = [
-        [
-            'key' => 'straw_material',
-            'label' => $primaryMaterialName ?: 'Pine Needles',
-            'unit' => 'bales',
-            'qty' => $prefillQty ?? $strawBalesPreview,
-            'qty_is_int' => true,
-            'unit_cost' => $prefillCost,
-            'description' => 'Approx. 1 bale per 50 sqft.',
-        ],
-    ];
 @endphp
 
 @section('content')
-<div class="max-w-4xl mx-auto py-10">
-    @include('calculators.partials.form_header', [
-        'title' => $editMode ? '✏️ Edit Pine Needle Data' : '🌿 Pine Needle Calculator',
-    ])
+<div class="max-w-5xl mx-auto py-8 px-4">
+    {{-- Header --}}
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="bg-gradient-to-br from-amber-700 to-amber-900 p-3 rounded-xl shadow-lg">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900">
+                {{ $editMode ? 'Edit Pine Needles Data' : 'Pine Needles Calculator' }}
+            </h1>
+        </div>
+        <p class="text-gray-600">Calculate materials and labor for pine needle or straw installations.</p>
+    </div>
 
     @if(($mode ?? null) !== 'template' && ($siteVisit ?? null))
         @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
     @else
-        <div class="bg-white p-4 rounded border mb-6">
-            <p class="text-sm text-gray-700">Template Mode — build a Pine Needles template without a site visit.</p>
-            @if(!empty($estimateId))
-                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
-            @endif
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <p class="font-semibold text-blue-900">Template Mode</p>
+                    <p class="text-sm text-blue-700">Build a pine needles estimate without a site visit.</p>
+                    @if(!empty($estimateId))
+                        <p class="text-sm text-blue-600 mt-1">Target Estimate: #{{ $estimateId }}</p>
+                    @endif
+                </div>
+            </div>
         </div>
     @endif
 
-    <form method="POST" action="{{ route('calculators.pine_needles.calculate') }}">
+    <form method="POST" action="{{ route('calculators.pine_needles.calculate') }}" 
+          x-data="pineNeedlesCalculator({{ $selectedUnitCost }}, '{{ $selectedMaterialName }}', {{ $selectedCatalogId ?? 'null' }})"
+          class="space-y-6">
         @csrf
         <input type="hidden" name="mode" value="{{ $mode ?? '' }}">
         @if(!empty($estimateId))
             <input type="hidden" name="estimate_id" value="{{ $estimateId }}">
         @endif
-
-        {{-- Edit Mode: Calculation ID --}}
         @if ($editMode && isset($calculation))
             <input type="hidden" name="calculation_id" value="{{ $calculation->id }}">
         @endif
-
-        {{-- Required --}}
         @if(($mode ?? null) !== 'template')
             <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @endif
-
-        {{-- Crew & Logistics --}}
-        <div class="mb-6">
-            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
-            @include('calculators.partials.overhead_inputs')
+        {{-- 1. Crew & Logistics --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4 border-b border-gray-600">
+                <h2 class="text-lg font-semibold text-white flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white font-bold mr-3">1</span>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Crew & Logistics
+                </h2>
+            </div>
+            <div class="p-6">
+                @include('calculators.partials.overhead_inputs')
+            </div>
         </div>
 
-        {{-- Straw Area --}}
-        <div class="mb-6">
-            @include('calculators.partials.section_heading', ['title' => 'Straw Coverage'])
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {{-- 2. Coverage Area --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4 border-b border-gray-600">
+                <h2 class="text-lg font-semibold text-white flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white font-bold mr-3">2</span>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                    </svg>
+                    Coverage Area
+                </h2>
+            </div>
+            <div class="p-6">
                 <div>
-                    <label class="block font-semibold mb-1">Square Footage</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Square Footage <span class="text-red-500">*</span>
+                    </label>
                     <input type="number"
                            name="area_sqft"
+                           x-model="area"
+                           @input="calculateBales()"
                            step="any"
                            min="0"
-                           class="form-input w-full"
-                           placeholder="Enter total area (sqft)"
+                           required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                           placeholder="e.g. 500"
                            value="{{ $areaValue }}">
                 </div>
-            </div>
-        </div>
-
-        {{-- Straw Type Dropdown --}}
-        <div class="mb-6">
-            <label class="block font-semibold mb-1">Straw Type</label>
-            <select name="mulch_type" class="form-select w-full">
-                <option value="" disabled {{ empty($selectedStrawType) ? 'selected' : '' }}>Select a straw type</option>
-                @foreach ($strawTypes as $type)
-                    <option value="{{ $type }}" {{ $selectedStrawType === $type ? 'selected' : '' }}>
-                        {{ $type }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        {{-- Materials Preview --}}
-        <div class="mb-6">
-            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Materials & Pricing Preview</h2>
-                    <p class="text-gray-500 text-sm">Aligns with the other calculators—live bale counts + pricing.</p>
-                </div>
-                <span
-                    id="materialPreviewHint"
-                    class="text-sm {{ $areaValue ? 'text-gray-600' : 'text-gray-500' }}"
-                    data-empty-message="Enter square footage to unlock quantities."
-                    data-filled-message="Quantities update automatically while you type."
-                >
-                    {{ $areaValue ? 'Quantities update automatically while you type.' : 'Enter square footage to unlock quantities.' }}
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach ($materialCards as $card)
-                    <div class="border rounded-lg p-4 bg-white shadow-sm flex flex-col">
-                        <div class="flex items-center justify-between">
-                            <p class="font-semibold" data-material-label="{{ $card['key'] }}">{{ $card['label'] }}</p>
-                            <span class="text-sm text-gray-500">{{ $card['unit'] }}</span>
+                
+                {{-- Auto-calculated quantity preview --}}
+                <div x-show="calculatedBales > 0" 
+                     x-transition
+                     class="bg-gradient-to-r from-amber-50 to-amber-100 border-l-4 border-amber-500 rounded-lg p-6 mt-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-amber-700 mb-1">Estimated Bales Needed</p>
+                            <p class="text-3xl font-bold text-amber-900" x-text="calculatedBales + ' bales'"></p>
+                            <p class="text-xs text-amber-600 mt-1">Approx. 1 bale per 50 sqft</p>
                         </div>
+                        <div class="flex items-center justify-center w-20 h-20 rounded-full bg-amber-200/50">
+                            <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        <div class="mt-4">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">Qty Estimate</p>
-                            <p class="text-2xl font-bold" data-material-qty="{{ $card['key'] }}">
-                                @if(!is_null($card['qty']))
-                                    {{ number_format($card['qty']) }}
-                                @else
-                                    &mdash;
-                                @endif
+        {{-- 3. Material Selection --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden" @material-selected.window="handleMaterialSelected($event)">
+            <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4 border-b border-gray-600">
+                <h2 class="text-lg font-semibold text-white flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white font-bold mr-3">3</span>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    Select Material
+                </h2>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Selected Material</label>
+                    <div class="flex gap-3">
+                        <input type="text" 
+                               x-model="materialName" 
+                               name="mulch_type"
+                               class="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                               placeholder="Select material from catalog"
+                               readonly>
+                        <button type="button" 
+                                @click="$dispatch('open-material-picker')"
+                                class="px-6 py-3 bg-brand-800 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-md transition duration-200 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Browse Materials
+                        </button>
+                    </div>
+                    <input type="hidden" name="material_catalog_id" x-model="catalogId">
+                    <input type="hidden" name="material_unit_cost" x-model="unitCost">
+                </div>
+
+                <div x-show="materialName" x-transition class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide">Unit Cost</p>
+                            <p class="text-xl font-bold text-blue-900" x-text="'$' + parseFloat(unitCost || 0).toFixed(2)"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide">Estimated Total</p>
+                            <p class="text-xl font-bold text-blue-900" x-text="'$' + (calculatedBales * parseFloat(unitCost || 0)).toFixed(2)"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 4. Pine Needle Tasks --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4 border-b border-gray-600">
+                <h2 class="text-lg font-semibold text-white flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white font-bold mr-3">4</span>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    Pine Needle Tasks
+                </h2>
+            </div>
+            <div class="p-6">
+                @php
+                    $savedTasks = $formData['tasks'] ?? [];
+                    $savedQuantities = [];
+
+                    foreach ($savedTasks as $taskRow) {
+                        $key = str_replace(' ', '_', strtolower($taskRow['task']));
+                        $savedQuantities[$key] = $taskRow['qty'] ?? null;
+                    }
+
+                    $rates = \App\Models\ProductionRate::where('calculator', 'pine_needles')
+                        ->orderBy('task')
+                        ->get();
+                @endphp
+
+                @if ($rates->isEmpty())
+                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                        <div class="flex items-start">
+                            <svg class="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-yellow-900">No pine needles production rates found</p>
+                                <p class="text-sm text-yellow-700 mt-1">
+                                    Please add pine needles rates in 
+                                    <a href="{{ route('production-rates.index', ['calculator' => 'pine_needles']) }}" class="underline font-medium hover:text-yellow-900">Production Rates</a>
+                                    or run <code class="bg-yellow-200 px-1 rounded">php artisan db:seed --class=ProductionRateSeeder</code>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach ($rates as $rate)
+                        @php
+                            $key = $rate->task;
+                            $label = ucwords(str_replace('_', ' ', $key));
+                            $value = old("tasks.$key.qty", $savedQuantities[$key] ?? '');
+                            $isAdvanced = str_contains($key, 'overgrown') || str_contains($key, 'palm');
+                        @endphp
+
+                        <div class="border border-gray-200 p-5 rounded-lg bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition {{ $isAdvanced ? 'advanced-task hidden' : '' }}">
+                            <label class="block font-semibold text-gray-900 mb-2">{{ $label }}</label>
+                            <input type="number"
+                                   name="tasks[{{ $key }}][qty]"
+                                   step="any"
+                                   min="0"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                   placeholder="Enter {{ $rate->unit }}"
+                                   value="{{ $value }}">
+                            <p class="text-sm text-gray-500 mt-2 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Rate: {{ number_format($rate->rate, 4) }} hrs/{{ $rate->unit }}
                             </p>
                         </div>
-
-                        <div class="mt-4">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">Default Unit Cost</p>
-                            <p class="text-lg font-semibold" data-material-cost="{{ $card['key'] }}">
-                                ${{ number_format($card['unit_cost'], 2) }}
-                            </p>
-                        </div>
-
-                        <p class="text-xs text-gray-500 mt-4">{{ $card['description'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-     
-        {{-- Task Inputs from DB --}}
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Pine Needle Tasks</h2>
-
-            @php
-                $savedTasks = $formData['tasks'] ?? [];
-                $savedQuantities = [];
-
-                foreach ($savedTasks as $taskRow) {
-                    $key = str_replace(' ', '_', strtolower($taskRow['task']));
-                    $savedQuantities[$key] = $taskRow['qty'] ?? null;
-                }
-
-                $rates = \App\Models\ProductionRate::where('calculator', 'pine_needles')
-                    ->orderBy('task')
-                    ->get();
-            @endphp
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach ($rates as $rate)
-                    @php
-                        $key = $rate->task;
-                        $label = ucwords(str_replace('_', ' ', $key));
-                        $value = old("tasks.$key.qty", $savedQuantities[$key] ?? '');
-                        $isAdvanced = str_contains($key, 'overgrown') || str_contains($key, 'palm');
-                    @endphp
-
-                    <div class="border p-4 rounded bg-gray-50 {{ $isAdvanced ? 'advanced-task hidden' : '' }}">
-                        <label class="block font-semibold mb-1">{{ $label }} ({{ $rate->unit }})</label>
-                        <input type="number"
-                               name="tasks[{{ $key }}][qty]"
-                               step="any"
-                               min="0"
-                               class="form-input w-full"
-                               placeholder="Enter quantity"
-                               value="{{ $value }}">
-                        <p class="text-sm text-gray-500">Rate: {{ number_format($rate->rate, 4) }} hrs/{{ $rate->unit }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-        
-        {{-- Additional Materials --}}
-        <div class="mb-6">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Additional Materials</h2>
-                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (delivery fees, edging, etc.).</p>
-                </div>
-                <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
-                    + Add Material
-                </button>
-            </div>
-
-            <div id="customMaterialRows" class="space-y-4">
-                @if (!empty($customMaterials))
-                    @foreach ($customMaterials as $index => $customMaterial)
-                        @include('calculators.partials.custom-material-row', [
-                            'rowIndex' => $index,
-                            'material' => $customMaterial,
-                        ])
                     @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- 5. Job Notes --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4 border-b border-gray-600">
+                <h2 class="text-lg font-semibold text-white flex items-center">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white font-bold mr-3">5</span>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Job Notes
+                </h2>
+            </div>
+            <div class="p-6">
+                <textarea name="job_notes"
+                          rows="4"
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                          placeholder="Enter any special instructions, site conditions, or notes...">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+            </div>
+        </div>
+
+        {{-- Submit Buttons --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                @if(($mode ?? null) === 'template')
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                        <input type="text" 
+                               name="template_name" 
+                               class="w-full sm:flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
+                               placeholder="Template name (e.g., Front beds straw)" 
+                               value="{{ old('template_name') }}">
+                        <select name="template_scope" class="w-full sm:w-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
+                            <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
+                            <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
+                        </select>
+                        <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-brand-800 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-md transition duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                            </svg>
+                            Save Template
+                        </button>
+                    </div>
                 @else
-                    @include('calculators.partials.custom-material-row', [
-                        'rowIndex' => 0,
-                        'material' => [],
-                    ])
+                    <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-brand-800 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-md transition duration-200 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ $editMode ? 'Recalculate Pine Needles' : 'Calculate Pine Needles' }}
+                    </button>
+
+                    @if($siteVisit && $siteVisit->client)
+                        <a href="{{ route('clients.show', $siteVisit->client->id) }}" class="w-full sm:w-auto px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md transition duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to Client
+                        </a>
+                    @endif
                 @endif
             </div>
-
-            <template id="customMaterialTemplate">
-                @include('calculators.partials.custom-material-row', [
-                    'rowIndex' => '__INDEX__',
-                    'material' => [],
-                ])
-            </template>
         </div>
 
-        {{-- Submit --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            @if(($mode ?? null) === 'template')
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
-                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Front beds straw)" value="{{ old('template_name') }}">
-                    <select name="template_scope" class="form-select w-full sm:w-48">
-                        <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
-                        <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
-                        <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
-                    </select>
-                    <button type="submit" class="btn btn-secondary">💾 Save Template</button>
-                </div>
-            @else
-                <button type="submit" class="btn btn-secondary">
-                    {{ $editMode ? '🔄 Recalculate Pine Needle Data' : '🧮 Calculate Pine Needle Data' }}
-                </button>
-
-                <a href="{{ route('clients.show', $siteVisitId) }}" class="btn btn-muted">
-                    🔙 Back to Client
-                </a>
-            @endif
-        </div>
     </form>
 </div>
+
+{{-- Material Catalog Picker Component --}}
+@include('components.material-catalog-picker')
+
 @endsection
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const toggle = document.getElementById('toggleAdvancedTasks');
-        const advanced = document.querySelectorAll('.advanced-task');
-
-        if (!toggle) {
-            return;
-        }
-
-        function updateVisibility() {
-            advanced.forEach(el => {
-                el.classList.toggle('hidden', !toggle.checked);
-            });
-        }
-
-        toggle.addEventListener('change', updateVisibility);
-        updateVisibility(); // on load
-    });
-</script>
-@endpush
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const customRowsContainer = document.getElementById('customMaterialRows');
-        const customTemplate = document.getElementById('customMaterialTemplate');
-        const addCustomMaterialButton = document.getElementById('addCustomMaterial');
-
-        const parseNumber = (value) => {
-            const num = parseFloat(value);
-            return Number.isFinite(num) ? num : null;
-        };
-
-        const formatCurrency = (value) => `$${Number(value).toFixed(2)}`;
-
-        const recalcCustomMaterials = () => {
-            if (!customRowsContainer) return;
-            customRowsContainer.querySelectorAll('[data-custom-row]').forEach((row) => {
-                const qtyInput = row.querySelector('[data-custom-qty]');
-                const costInput = row.querySelector('[data-custom-cost]');
-                const totalEl = row.querySelector('[data-custom-total]');
-                if (!totalEl) return;
-
-                const qty = qtyInput ? parseNumber(qtyInput.value) : null;
-                const cost = costInput ? parseNumber(costInput.value) : null;
-
-                totalEl.textContent = (qty === null || cost === null) ? '--' : formatCurrency(qty * cost);
-            });
-        };
-
-        const registerCustomRow = (row) => {
-            if (!row) return;
-            const qtyInput = row.querySelector('[data-custom-qty]');
-            const costInput = row.querySelector('[data-custom-cost]');
-            const removeBtn = row.querySelector('[data-action="remove-custom-material"]');
-
-            [qtyInput, costInput].forEach((input) => {
-                if (!input) return;
-                input.addEventListener('input', recalcCustomMaterials);
-            });
-
-            if (removeBtn) {
-                removeBtn.addEventListener('click', () => {
-                    row.remove();
-                    recalcCustomMaterials();
-                });
+    function pineNeedlesCalculator(initialCost, initialName, initialCatalogId) {
+        return {
+            area: {{ $areaValue ?? 0 }},
+            calculatedBales: {{ $strawBalesPreview ?? 0 }},
+            materialName: initialName || '',
+            unitCost: initialCost || 7,
+            catalogId: initialCatalogId || null,
+            
+            calculateBales() {
+                if (this.area > 0) {
+                    this.calculatedBales = Math.ceil(this.area / 50);
+                } else {
+                    this.calculatedBales = 0;
+                }
+            },
+            
+            handleMaterialSelected(event) {
+                const material = event.detail;
+                this.materialName = material.name;
+                this.unitCost = material.unit_cost;
+                this.catalogId = material.id;
             }
-        };
-
-        const getNextCustomIndex = () => {
-            if (!customRowsContainer) return 0;
-            const indexes = Array.from(customRowsContainer.querySelectorAll('[data-custom-row]'))
-                .map((row) => parseInt(row.dataset.customIndex ?? '', 10))
-                .filter((value) => Number.isFinite(value));
-            return indexes.length ? Math.max(...indexes) + 1 : 1;
-        };
-
-        let customIndex = getNextCustomIndex();
-
-        const addCustomRow = () => {
-            if (!customTemplate || !customRowsContainer) return;
-            const html = customTemplate.innerHTML.replace(/__INDEX__/g, customIndex++);
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = html.trim();
-            const newRow = wrapper.firstElementChild;
-            if (!newRow) return;
-            customRowsContainer.appendChild(newRow);
-            registerCustomRow(newRow);
-            recalcCustomMaterials();
-        };
-
-        if (customRowsContainer) {
-            customRowsContainer.querySelectorAll('[data-custom-row]').forEach(registerCustomRow);
-            recalcCustomMaterials();
         }
-
-        if (addCustomMaterialButton) {
-            addCustomMaterialButton.addEventListener('click', addCustomRow);
-        }
-    });
-</script>
-@endpush
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const areaInput = document.querySelector('input[name="area_sqft"]');
-        const strawTypeSelect = document.querySelector('select[name="mulch_type"]');
-        const qtyEl = document.querySelector('[data-material-qty="straw_material"]');
-        const costEl = document.querySelector('[data-material-cost="straw_material"]');
-        const labelEl = document.querySelector('[data-material-label="straw_material"]');
-        const hintEl = document.getElementById('materialPreviewHint');
-        const defaultCost = {{ $defaultStrawCost }};
-
-        const parseNumber = (value) => {
-            const num = parseFloat(value);
-            return Number.isFinite(num) ? num : null;
-        };
-
-        const formatQty = (value) => {
-            if (value === null || Number.isNaN(value)) {
-                return '—';
-            }
-            return Math.max(0, Math.round(value)).toLocaleString();
-        };
-
-        const setHint = (hasValue) => {
-            if (!hintEl) return;
-            const emptyText = hintEl.dataset.emptyMessage || '';
-            const filledText = hintEl.dataset.filledMessage || '';
-            hintEl.textContent = hasValue ? filledText : emptyText;
-            hintEl.classList.toggle('text-gray-600', hasValue);
-            hintEl.classList.toggle('text-gray-500', !hasValue);
-        };
-
-        const recalc = () => {
-            const area = parseNumber(areaInput ? areaInput.value : null);
-            const hasValue = area !== null && area > 0;
-            setHint(Boolean(hasValue));
-
-            const bales = hasValue ? Math.ceil(area / 50) : null;
-            if (qtyEl) {
-                qtyEl.textContent = formatQty(bales);
-            }
-            if (costEl) {
-                costEl.textContent = `$${defaultCost.toFixed(2)}`;
-            }
-            if (labelEl && strawTypeSelect) {
-                const selected = strawTypeSelect.value || labelEl.dataset.originalLabel || labelEl.textContent;
-                labelEl.textContent = selected || 'Pine Needles';
-            }
-        };
-
-        if (labelEl) {
-            labelEl.dataset.originalLabel = labelEl.textContent;
-        }
-
-        if (areaInput) {
-            areaInput.addEventListener('input', recalc);
-        }
-
-        if (strawTypeSelect) {
-            strawTypeSelect.addEventListener('change', recalc);
-        }
-
-        recalc();
-    });
+    }
 </script>
 @endpush

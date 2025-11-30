@@ -8,6 +8,7 @@ use App\Models\Estimate;
 use Illuminate\Http\Request;
 use App\Models\ProductionRate;
 use App\Services\LaborCostCalculatorService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 class PruningCalculatorController extends Controller
@@ -70,10 +71,11 @@ class PruningCalculatorController extends Controller
         $inputTasks = $request->input('tasks', []);
         $laborRate = (float) $validated['labor_rate'];
 
-        // 🔍 Load production rates from DB
+        // Load production rates from DB
         $productionRates = ProductionRate::where('calculator', 'pruning')->get()->keyBy('task');
 
         $results = [];
+        $laborTasks = []; // Enhanced format for import service
         $totalHours = 0;
 
         foreach ($inputTasks as $taskKey => $taskData) {
@@ -87,9 +89,10 @@ class PruningCalculatorController extends Controller
             $unitLabel = $rateModel->unit ?? '';
             $hours = $qty * $rate;
             $cost = $hours * $laborRate;
+            $taskName = str_replace('_', ' ', $taskKey);
 
             $results[] = [
-                'task' => str_replace('_', ' ', $taskKey),
+                'task' => $taskName,
                 'qty' => $qty,
                 'unit' => $unitLabel,
                 'rate' => $rate,
@@ -97,23 +100,37 @@ class PruningCalculatorController extends Controller
                 'cost' => round($cost, 2),
             ];
 
+            // Enhanced labor task format for import
+            $laborTasks[] = [
+                'task_key' => $taskKey,
+                'task_name' => ucwords($taskName),
+                'description' => ucwords($taskName) . " - {$qty} {$unitLabel}",
+                'quantity' => $qty,
+                'unit' => $unitLabel,
+                'production_rate' => $rate,
+                'hours' => round($hours, 2),
+                'hourly_rate' => $laborRate,
+                'total_cost' => round($cost, 2),
+            ];
+
             $totalHours += $hours;
         }
 
-        // ✅ Now call your overhead/margin service
+        // Calculate overhead/margin with labor cost service
         $calculator = new LaborCostCalculatorService();
         $totals = $calculator->calculate($totalHours, $laborRate, $request->all());
 
-        // ✅ Prepare data to save
-        $data = array_merge($validated, [
+        // Prepare data to save
+        $data = array_merge($validated, $totals, [
             'tasks' => $results,
+            'labor_tasks' => $laborTasks, // Enhanced format for import
             'labor_by_task' => collect($results)->pluck('hours', 'task')->map(fn($h) => round($h, 2))->toArray(),
             'labor_hours' => round($totalHours, 2),
             'materials' => [],
             'material_total' => 0,
-        ], $totals);
+        ]);
 
-        // 💾 Save or update
+        // Save or update
         if (!empty($validated['calculation_id'])) {
             $calc = Calculation::find($validated['calculation_id']);
             $calc->update(['data' => $data]);

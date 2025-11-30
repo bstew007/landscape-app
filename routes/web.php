@@ -54,7 +54,7 @@ Route::view('/legal/terms', 'legal.terms')->name('legal.terms');
 // QBO Webhook (must be public, no auth, and exempt from CSRF)
 Route::post('integrations/qbo/webhook', [\App\Http\Controllers\Integrations\QboWebhookController::class, 'handle'])
     ->name('integrations.qbo.webhook')
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 Route::middleware('auth')->group(function () {
      // ✅ Calculator Index Route

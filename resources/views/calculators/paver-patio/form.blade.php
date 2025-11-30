@@ -70,24 +70,46 @@
 @endphp
 
 @section('content')
-<div class="max-w-4xl mx-auto py-10 space-y-8">
-    @include('calculators.partials.form_header', [
-        'title' => $editMode ? 'Edit Paver Patio Data' : 'Paver Patio Calculator',
-        'subtitle' => 'Estimate materials, labor, and logistics with the same grouped layout as the planting calculator.',
-    ])
-
-    @if(($mode ?? null) !== 'template' && $siteVisit)
-        @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
-    @else
-        <div class="bg-white p-4 rounded border mb-6">
-            <p class="text-sm text-gray-700">Template Mode — build a Paver Patio template without a site visit.</p>
-            @if(!empty($estimateId))
-                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
-            @endif
+<div class="max-w-5xl mx-auto py-8 px-4">
+    {{-- Header --}}
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-6">
+            <div class="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-amber-700 to-orange-800 flex items-center justify-center shadow-lg">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ $editMode ? 'Edit Paver Patio' : 'Paver Patio Calculator' }}
+                </h1>
+                <p class="text-gray-600 mt-1">Estimate materials, labor, and project costs</p>
+            </div>
         </div>
-    @endif
 
-    <form method="POST" action="{{ route('calculators.patio.calculate') }}" class="space-y-8">
+        @if(($mode ?? null) !== 'template' && $siteVisit)
+            @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
+        @else
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-l-4 border-blue-400 rounded-lg shadow-sm p-4 mb-6">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900">Template Mode</p>
+                        <p class="text-sm text-gray-700 mt-1">Building a paver patio template without a site visit</p>
+                        @if(!empty($estimateId))
+                            <p class="text-sm text-gray-600 mt-1">Target Estimate: #{{ $estimateId }}</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <form method="POST" action="{{ route('calculators.patio.calculate') }}">
         @csrf
         <input type="hidden" name="mode" value="{{ $mode ?? '' }}">
         @if(!empty($estimateId))
@@ -104,85 +126,98 @@
             <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @endif
 
-        {{-- Crew & Logistics --}}
-        <div>
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
+        {{-- 1️⃣ Crew & Logistics --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">1</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Crew & Logistics</h2>
+                    <p class="text-sm text-gray-600">Labor and overhead settings</p>
+                </div>
+            </div>
             @include('calculators.partials.overhead_inputs')
         </div>
 
-        {{-- Core Inputs --}}
-        <div>
-            @php($patioBadge = new \Illuminate\Support\HtmlString('<span id="patioAreaBadge" class="text-sm font-medium '.($areaSqft ? 'text-gray-600' : 'text-gray-500').'" data-empty-message="Enter length + width to unlock quantities." data-prefix="Area: ">'.($areaSqft ? 'Area: '.number_format($areaSqft, 2).' sqft' : 'Enter length + width to unlock quantities.').'</span>'))
-            @include('calculators.partials.section_heading', [
-                'title' => 'Patio Inputs',
-                'right' => $patioBadge,
-            ])
+        {{-- 2️⃣ Patio Dimensions --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">2</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Patio Dimensions</h2>
+                        <p class="text-sm text-gray-600">Length, width, and configuration</p>
+                    </div>
+                </div>
+                <span id="patioAreaBadge" class="text-sm font-semibold px-3 py-1 rounded-full {{ $areaSqft ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600' }}" data-empty-message="Enter dimensions" data-prefix="Area: ">{{ $areaSqft ? 'Area: '.number_format($areaSqft, 2).' sqft' : 'Enter dimensions' }}</span>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Length (ft)</label>
-                    <input type="number" step="0.1" name="length" class="form-input w-full"
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+                    <label class="block font-semibold text-gray-900 mb-2">Length (ft)</label>
+                    <input type="number" step="0.1" name="length" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                            value="{{ $lengthValue }}" required>
-                    <p class="text-xs text-gray-500 mt-2">Paired with width to generate patio area.</p>
+                    <p class="text-xs text-gray-600 mt-2">Paired with width to calculate patio area</p>
                 </div>
 
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Width (ft)</label>
-                    <input type="number" step="0.1" name="width" class="form-input w-full"
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+                    <label class="block font-semibold text-gray-900 mb-2">Width (ft)</label>
+                    <input type="number" step="0.1" name="width" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                            value="{{ $widthValue }}" required>
-                    <p class="text-xs text-gray-500 mt-2">Used for material quantities and labor hours.</p>
+                    <p class="text-xs text-gray-600 mt-2">Used for material quantities and labor</p>
                 </div>
 
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Paver Type</label>
-                    <select name="paver_type" class="form-select w-full" required>
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+                    <label class="block font-semibold text-gray-900 mb-2">Paver Type</label>
+                    <select name="paver_type" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" required>
                         <option value="">-- Select a Brand --</option>
                         <option value="belgard" {{ $paverTypeValue === 'belgard' ? 'selected' : '' }}>Belgard</option>
                         <option value="techo" {{ $paverTypeValue === 'techo' ? 'selected' : '' }}>Techo-Bloc</option>
                     </select>
-                    <p class="text-xs text-gray-500 mt-2">Switch brands to reflect catalog pricing.</p>
+                    <p class="text-xs text-gray-600 mt-2">Brand selection for catalog pricing</p>
                 </div>
 
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Edge Restraint Type</label>
-                    <select name="edge_restraint" class="form-select w-full" required>
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+                    <label class="block font-semibold text-gray-900 mb-2">Edge Restraint Type</label>
+                    <select name="edge_restraint" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" required>
                         <option value="">-- Choose Edge Type --</option>
                         <option value="plastic" {{ $edgeSelection === 'plastic' ? 'selected' : '' }}>Plastic</option>
                         <option value="concrete" {{ $edgeSelection === 'concrete' ? 'selected' : '' }}>Concrete</option>
                     </select>
-                    <p class="text-xs text-gray-500 mt-2">Determines which default edge pricing is applied.</p>
+                    <p class="text-xs text-gray-600 mt-2">Plastic or concrete edge restraint</p>
                 </div>
             </div>
         </div>
 
-        {{-- Material Preview --}}
-        <div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Materials & Pricing Preview</h2>
-                    <p class="text-gray-500 text-sm">Mirrors the planting calculator grid so everything lines up.</p>
+        {{-- 3️⃣ Materials Preview --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">3</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Materials & Pricing Preview</h2>
+                        <p class="text-sm text-gray-600">Auto-calculated quantities based on area</p>
+                    </div>
                 </div>
-                <span
-                    id="materialPreviewHint"
-                    class="text-sm {{ $areaSqft ? 'text-gray-600' : 'text-gray-500' }}"
-                    data-empty-message="Enter dimensions above to unlock quantities."
-                    data-filled-message="Quantities update automatically while you type."
-                >
-                    {{ $areaSqft ? 'Quantities update automatically while you type.' : 'Enter dimensions above to unlock quantities.' }}
-                </span>
+                <span id="materialPreviewHint" class="text-sm font-medium {{ $areaSqft ? 'text-green-700' : 'text-gray-500' }}" data-empty-message="Enter dimensions to unlock quantities" data-filled-message="Updating automatically">{{ $areaSqft ? 'Updating automatically' : 'Enter dimensions to unlock quantities' }}</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 @foreach ($materialCards as $card)
-                    <div class="border rounded-lg p-4 bg-white shadow-sm flex flex-col">
-                        <div class="flex items-center justify-between">
-                            <p class="font-semibold">{{ $card['label'] }}</p>
-                            <span class="text-sm text-gray-500">{{ $card['unit'] }}</span>
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="font-bold text-gray-900">{{ $card['label'] }}</p>
+                            <span class="text-xs font-medium text-gray-600 bg-white px-2 py-1 rounded">{{ $card['unit'] }}</span>
                         </div>
 
-                        <div class="mt-4">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">Qty Estimate</p>
-                            <p class="text-2xl font-bold" data-material-qty="{{ \Illuminate\Support\Str::slug($card['label'], '_') }}">
+                        <div class="mb-3">
+                            <p class="text-xs uppercase tracking-wide text-gray-600 mb-1">Qty Estimate</p>
+                            <p class="text-2xl font-bold text-gray-900" data-material-qty="{{ \Illuminate\Support\Str::slug($card['label'], '_') }}">
                                 @if(!is_null($card['qty']))
                                     @if(!empty($card['qty_is_int']))
                                         {{ number_format($card['qty']) }}
@@ -195,9 +230,9 @@
                             </p>
                         </div>
 
-                        <div class="mt-4">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">Default Unit Cost</p>
-                            <p class="text-lg font-semibold" data-material-cost="{{ \Illuminate\Support\Str::slug($card['label'], '_') }}">
+                        <div class="mb-3">
+                            <p class="text-xs uppercase tracking-wide text-gray-600 mb-1">Unit Cost</p>
+                            <p class="text-lg font-semibold text-amber-800" data-material-cost="{{ \Illuminate\Support\Str::slug($card['label'], '_') }}">
                                 @if(!is_null($card['unit_cost']))
                                     ${{ number_format($card['unit_cost'], 2) }}
                                 @else
@@ -206,21 +241,29 @@
                             </p>
                         </div>
 
-                        <p class="text-xs text-gray-500 mt-4">{{ $card['description'] }}</p>
+                        <p class="text-xs text-gray-600 border-t border-amber-200 pt-2">{{ $card['description'] }}</p>
                     </div>
                 @endforeach
             </div>
         </div>
 
-        {{-- Additional Materials --}}
-        <div>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Additional Materials</h2>
-                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (lighting kits, low-voltage, etc.).</p>
+        {{-- 4️⃣ Additional Materials --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">4</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Additional Materials</h2>
+                        <p class="text-sm text-gray-600">Optional items not auto-calculated</p>
+                    </div>
                 </div>
-                <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
-                    + Add Material
+                <button type="button" id="addCustomMaterial" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-800 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-sm transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Material
                 </button>
             </div>
 
@@ -248,77 +291,34 @@
             </template>
         </div>
 
-        {{-- Material Overrides --}}
-        @include('calculators.partials.material_override_inputs', [
-            'overrideToggleName' => 'materials_override_enabled',
-            'overrideToggleLabel' => 'Show Material Cost Overrides',
-            'overrideChecked' => (bool) $overrideChecked,
-            'fields' => [
-                [
-                    'name' => 'override_paver_cost',
-                    'label' => 'Paver Cost per sqft ($)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_paver_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_base_cost',
-                    'label' => 'Base Gravel Cost per Ton ($)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_base_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_plastic_edge_cost',
-                    'label' => 'Plastic Edge ($/20ft)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_plastic_edge_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_concrete_edge_cost',
-                    'label' => 'Concrete Edge ($/20ft)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_concrete_edge_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_polymeric_sand_cost',
-                    'label' => 'Polymeric Sand ($/bag)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_polymeric_sand_cost'] ?? '',
-                    'width' => 'half',
-                ],
-            ],
-        ])
-
-        {{-- Submit --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+        {{-- Submit Buttons --}}
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between mt-8">
             @if(($mode ?? null) === 'template')
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
-                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., 12x20 patio)" value="{{ old('template_name') }}">
-                    <select name="template_scope" class="form-select w-full sm:w-48">
+                <div class="w-full flex flex-col lg:flex-row gap-4">
+                    <input type="text" name="template_name" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" placeholder="Template name (e.g., 12x20 patio)" value="{{ old('template_name') }}">
+                    <select name="template_scope" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
                         <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
                         <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
                         <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
                     </select>
-                    <button type="submit" class="btn btn-secondary">💾 Save Template</button>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                        </svg>
+                        Save Template
+                    </button>
                 </div>
             @else
-                <button type="submit" class="btn btn-secondary">
-                    {{ $editMode ? 'Recalculate Patio' : 'Calculate Patio Data' }}
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    {{ $editMode ? 'Recalculate Paver Patio' : 'Calculate Paver Patio' }}
                 </button>
-                <a href="{{ route('clients.show', $siteVisit->client->id) }}" class="btn btn-muted">
+                <a href="{{ route('clients.show', $siteVisit->client->id) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
                     Back to Client
                 </a>
             @endif
@@ -402,7 +402,19 @@
         const setBadgeText = (el, text, isFilled) => {
             if (!el) return;
             el.textContent = text;
-            el.classList.toggle('text-gray-600', isFilled);
+            if (isFilled) {
+                el.classList.remove('bg-gray-100', 'text-gray-600');
+                el.classList.add('bg-amber-100', 'text-amber-800');
+            } else {
+                el.classList.remove('bg-amber-100', 'text-amber-800');
+                el.classList.add('bg-gray-100', 'text-gray-600');
+            }
+        };
+
+        const setHintText = (el, text, isFilled) => {
+            if (!el) return;
+            el.textContent = text;
+            el.classList.toggle('text-green-700', isFilled);
             el.classList.toggle('text-gray-500', !isFilled);
         };
 
@@ -491,9 +503,9 @@
             }
 
             if (materialHint) {
-                const emptyMsg = materialHint.dataset.emptyMessage || 'Enter dimensions above to unlock quantities.';
-                const filledMsg = materialHint.dataset.filledMessage || 'Quantities update automatically while you type.';
-                setBadgeText(materialHint, area ? filledMsg : emptyMsg, Boolean(area));
+                const emptyMsg = materialHint.dataset.emptyMessage || 'Enter dimensions to unlock quantities';
+                const filledMsg = materialHint.dataset.filledMessage || 'Updating automatically';
+                setHintText(materialHint, area ? filledMsg : emptyMsg, Boolean(area));
             }
 
             const paverQty = area ? Math.ceil(area / defaults.paverCoverage) : null;

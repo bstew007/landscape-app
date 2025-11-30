@@ -282,6 +282,23 @@ public function downloadPdf($id)
         array_merge($validated, ['material_total' => $material_total])
     );
 
+    // Build enhanced labor_tasks array from labor_breakdown
+    $laborTasks = [];
+    foreach ($labor_breakdown as $taskKey => $hours) {
+        $taskName = ucwords(str_replace('_', ' ', $taskKey));
+        $laborTasks[] = [
+            'task_key' => $taskKey,
+            'task_name' => $taskName,
+            'description' => $taskName . " - {$hours} hrs",
+            'quantity' => $hours, // For fence, hours is the main quantity
+            'unit' => 'hr',
+            'production_rate' => null, // Not available in fence estimator
+            'hours' => round($hours, 2),
+            'hourly_rate' => $validated['labor_rate'] ?? 45,
+            'total_cost' => round($hours * ($validated['labor_rate'] ?? 45), 2),
+        ];
+    }
+
     // Final data array
     $data = array_merge($validated, [
         'fence_type' => $fenceType,
@@ -295,13 +312,13 @@ public function downloadPdf($id)
         'materials' => $materials,
         'material_total' => round($material_total, 2),
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor_breakdown),
+        'labor_tasks' => $laborTasks, // Enhanced format for import
         'job_notes' => $request->input('job_notes'),
         'vinyl_corner_posts' => $validated['vinyl_corner_posts'] ?? 0,
         'vinyl_end_posts' => $validated['vinyl_end_posts'] ?? 0,
-        'base_hours' => round($base_hours, 2), // add this line
+        'base_hours' => round($base_hours, 2),
         'materials_override_enabled' => !empty($validated['materials_override_enabled']),
         'custom_materials' => $customMaterials,
-
     ], $totals);
 
     // Save or update

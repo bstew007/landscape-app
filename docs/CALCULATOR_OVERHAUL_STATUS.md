@@ -1,5 +1,5 @@
 # Calculator Overhaul - Current Status & Next Steps
-**Last Updated:** November 29, 2024
+**Last Updated:** November 29, 2024 (Updated 2025)
 
 ## 🎯 Project Goal
 Transform calculators from simple data collectors into intelligent estimate builders that create granular work areas with task-level line items linked to the material catalog.
@@ -45,20 +45,63 @@ Transform calculators from simple data collectors into intelligent estimate buil
    - Modern charcoal theme UI
    - Professional SVG icons
 
-3. **Weeding Calculator** ✅
+3. **Weeding Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (labor-only)
    - Enhanced labor_tasks format
-   - Backend import-ready
-   - **NEXT: UI modernization**
+   - Production rates from database
+   - Modern charcoal theme UI
+   - Professional SVG icons (green book/garden theme)
+   - Enhanced import UI
 
-4. **Pine Needles Calculator** ✅
+4. **Pine Needles Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration with searchable modal
    - Enhanced labor_tasks format
-   - Backend import-ready
-   - Needs catalog integration + UI update
+   - Production rates from database
+   - Auto-calculating bales preview (1 bale per 50 sqft)
+   - Modern charcoal theme UI
+   - Professional SVG icons (amber sparkle theme)
+   - Enhanced import UI with granular/collapsed options
 
-5. **Turf Mowing Calculator** ✅
+5. **Turf Mowing Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (labor-only)
    - Enhanced labor_tasks format
-   - Backend import-ready
-   - Needs UI update
+   - Production rates from database
+   - Modern charcoal theme UI
+   - Professional SVG icons (green grass/mowing theme)
+   - Enhanced import UI with granular/collapsed options
+
+6. **Pruning Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (labor-only)
+   - Enhanced labor_tasks format
+   - Production rates from database
+   - Modern charcoal theme UI
+   - Professional SVG icons (green pruning shears theme)
+   - Enhanced import UI with granular/collapsed options
+   - Advanced task toggle (palm pruning & overgrown tasks)
+
+7. **Fence Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (uses custom pricing)
+   - Enhanced labor_tasks format (extracted from FenceLaborEstimatorService)
+   - Wood vs Vinyl fence types
+   - Dynamic materials preview with live calculations
+   - Modern charcoal theme UI
+   - Professional SVG icons (gray fence/post theme)
+   - Enhanced import UI with granular/collapsed options
+   - 4-section numbered flow (Crew, Configuration, Materials, Additional)
+
+8. **Synthetic Turf Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (uses custom pricing & editable materials grid)
+   - Enhanced labor_tasks format with 7+ tasks
+   - Production rates from database (excavation, base install, edging, turf install, infill)
+   - Excavation method selection (Generic, Skid Steer, Mini Skid) with dynamic task visibility
+   - Editable materials grid (6 materials: turf, infill bags, edging boards, weed barrier, ABC, rock dust)
+   - Turf tier selection (Good/Better/Best) with pricing from config
+   - Live calculations for cubic yards (excavation, ABC, rock dust)
+   - Tamper rental fee handling
+   - Modern charcoal theme UI
+   - Professional SVG icons (green grass/turf field theme)
+   - Enhanced import UI with granular/collapsed options
+   - 5-section numbered flow (Crew, Parameters, Turf Selection, Materials, Labor Tasks)
 
 ### Phase 3: Material Catalog Integration (100% Complete)
 - **Searchable Modal Component** ✅
@@ -236,6 +279,108 @@ Second calculator modernized, template for multi-item selection.
 
 ---
 
+#### **Weeding Calculator - COMPLETE** ✅ 🌟
+Third calculator modernized - labor-only calculator template.
+
+**Form Page** (`resources/views/calculators/weeding/form.blade.php`)
+- ✅ Modern charcoal theme matching mulching/planting template
+- ✅ Professional SVG icon (book/garden theme in green badge)
+- ✅ All buttons use `bg-brand-800 hover:bg-brand-700`
+- ✅ 3-section numbered flow with inline section icons:
+  1. Crew & Logistics (people icon)
+  2. Weeding Tasks (checklist icon)
+  3. Job Notes (edit icon)
+- ✅ Production rate display on each task input
+- ✅ Template mode support
+- ✅ Advanced task toggle support preserved
+
+**Results Page** (`resources/views/calculators/weeding/result.blade.php`)
+- ✅ Complete charcoal theme with gradient headers
+- ✅ Large icon badge at top (green gradient)
+- ✅ Rounded cards matching mulching/planting style
+- ✅ Enhanced import UI section with:
+  - Estimate dropdown with "New Estimate" button (`bg-brand-800`)
+  - Work area name field
+  - Granular vs Collapsed radio options
+  - "Import to Estimate" and "Save Only" buttons
+- ✅ Download PDF and navigation buttons
+
+**Backend** (`app/Http/Controllers/WeedingCalculatorController.php`)
+- ✅ Enhanced labor_tasks format (completed earlier)
+- ✅ Import-ready output
+- ✅ **No material catalog needed** (labor-only calculator)
+
+---
+
+#### **Pine Needles Calculator - COMPLETE** ✅ 🌟
+Fourth calculator modernized - single material calculator with coverage calculations.
+
+**Form Page** (`resources/views/calculators/pine_needles/form.blade.php`)
+- ✅ Modern charcoal theme matching mulching/planting/weeding template
+- ✅ Professional SVG icon (sparkle theme in amber/brown badge)
+- ✅ Material catalog integration with searchable modal
+- ✅ All buttons use `bg-brand-800 hover:bg-brand-700`
+- ✅ 5-section numbered flow with inline section icons:
+  1. Crew & Logistics (people icon)
+  2. Coverage Area (expand arrows icon)
+  3. Select Pine Needle Material (box icon)
+  4. Pine Needle Tasks (clipboard icon)
+  5. Job Notes (edit icon)
+- ✅ Auto-calculating bales preview (1 bale per 50 sqft)
+- ✅ Alpine.js reactive calculations
+- ✅ Template mode support
+
+**Results Page** (`resources/views/calculators/pine_needles/result.blade.php`)
+- ✅ Complete charcoal theme with gradient headers
+- ✅ Large icon badge at top (amber gradient)
+- ✅ Rounded cards matching mulching/planting/weeding style
+- ✅ Enhanced import UI section with:
+  - Estimate dropdown with "New Estimate" button (`bg-brand-800`)
+  - Work area name field
+  - Granular vs Collapsed radio options
+  - "Import to Estimate" and "Save Only" buttons
+- ✅ Download PDF and navigation buttons
+
+**Backend** (`app/Http/Controllers/PineNeedleCalculatorController.php`)
+- ✅ Enhanced labor_tasks format (completed earlier)
+- ✅ Material catalog integration ready
+- ✅ Import-ready output
+
+---
+
+#### **Turf Mowing Calculator - COMPLETE** ✅ 🌟
+Fifth calculator modernized - labor-only maintenance calculator.
+
+**Form Page** (`resources/views/calculators/turf-mowing/form.blade.php`)
+- ✅ Modern charcoal theme matching weeding template (labor-only)
+- ✅ Professional SVG icon (grass/mowing theme in green badge)
+- ✅ All buttons use `bg-brand-800 hover:bg-brand-700`
+- ✅ 3-section numbered flow with inline section icons:
+  1. Crew & Logistics (people icon)
+  2. Turf Maintenance Tasks (checklist icon)
+  3. Job Notes (edit icon)
+- ✅ Production rate display on each task input (sqft/linear ft)
+- ✅ Template mode support
+- ✅ **No material catalog needed** (labor-only calculator)
+
+**Results Page** (`resources/views/calculators/turf-mowing/result.blade.php`)
+- ✅ Complete charcoal theme with gradient headers
+- ✅ Large icon badge at top (green gradient)
+- ✅ Rounded cards matching mulching/planting/weeding/pine needles style
+- ✅ Enhanced import UI section with:
+  - Estimate dropdown with "New Estimate" button (`bg-brand-800`)
+  - Work area name field
+  - Granular vs Collapsed radio options
+  - "Import to Estimate" and "Save Only" buttons
+- ✅ Download PDF and navigation buttons
+
+**Backend** (`app/Http/Controllers/TurfMowingCalculatorController.php`)
+- ✅ Enhanced labor_tasks format (completed earlier)
+- ✅ Import-ready output
+- ✅ **No material catalog needed** (labor-only calculator)
+
+---
+
 ### Phase 7: Testing & Validation (Pending)
 **Mulching Calculator** 
 - ⏳ End-to-end testing needed (form → results → import)
@@ -245,88 +390,102 @@ Second calculator modernized, template for multi-item selection.
 - ⏳ Test multiple plant selection
 - ⏳ Verify unit mapping works correctly
 
+**Weeding Calculator**
+- ⏳ End-to-end testing needed (form → results → import)
+
+**Pine Needles Calculator**
+- ⏳ End-to-end testing needed (form → results → import)
+
+**Turf Mowing Calculator**
+**Turf Mowing Calculator**
+- ⏳ End-to-end testing needed (form → results → import)
+
+**Pruning Calculator**
+- ⏳ End-to-end testing needed (form → results → import)
+
+**Fence Calculator**
+- ⏳ End-to-end testing needed (form → results → import)
+
+**Synthetic Turf Calculator**
+- ⏳ End-to-end testing needed (form → results → import)
+
 ---
 
 ## 📋 IN PROGRESS
 
-None currently - Both Mulching and Planting calculators fully modernized! 🎉
+None currently - All 8 simple/moderate calculators fully modernized! 🎉🎉🎉
+
+**Completed:**
+- Mulching ✅
+- Planting ✅
+- Weeding ✅
+- Pine Needles ✅
+- Turf Mowing ✅
+- Pruning ✅
+- Fence ✅
+- Synthetic Turf ✅
+
+---
+
+9. **Paver Patio Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (uses custom pricing)
+   - Enhanced labor_tasks format with 6 tasks
+   - Production rates from database (excavation, base_compaction, laying_pavers, cutting_borders, install_edging, cleanup)
+   - Paver brand selection (Belgard, Techo-Bloc) with coverage calculations
+   - Edge restraint selection (plastic, concrete) with pricing
+   - Live Alpine.js calculations for area badge, material quantities, and costs
+   - Materials preview section with 4 auto-calculated materials (Pavers, Base Gravel, Edge Restraints, Polymeric Sand)
+   - Modern charcoal theme UI
+   - Professional SVG icons (amber/orange gradient paver grid pattern)
+   - Enhanced import UI with granular/collapsed options
+   - 4-section numbered flow (Crew, Patio Dimensions, Materials Preview, Additional Materials)
+
+10. **Retaining Wall Calculator** ✅ **FULLY MODERNIZED** 🌟
+   - Material catalog integration: N/A (uses custom pricing)
+   - Enhanced labor_tasks format with 8+ tasks (excavation, base_install, pipe_install, gravel_backfill, topsoil_backfill, underlayment, geogrid, capstone, block_laying)
+   - Allan Block system support with additional components (straight walls, curved walls, stairs, columns)
+   - Production rates from database with equipment factor variations (manual, skid_steer, excavator)
+   - Block brand selection (Belgard, Techo-Bloc, Allan Block) with coverage calculations
+   - Optional capstones and geogrid with auto-calculations (geogrid at height ≥ 4ft)
+   - Materials preview section with 8 auto-calculated materials (Wall Blocks, Capstones, Drain Pipe, #57 Gravel, Topsoil, Fabric, Geogrid, Adhesive)
+   - Allan Block components section showing straight/curved walls, stairs, columns
+   - Modern charcoal theme UI
+   - Professional SVG icons (gray gradient brick wall pattern with offset rows)
+   - Enhanced import UI with granular/collapsed options
+   - 4-section numbered flow (Crew, Wall Configuration, Materials Preview, Additional Materials)
 
 ---
 
 ## 🔜 NEXT STEPS (Priority Order)
 
-### 1. Test Modernized Calculators (Recommended First)
+### 1. Final Calculator Testing (Recommended)
 
-Test both calculators end-to-end before proceeding:
+Test all TEN modernized calculators end-to-end:
 - Create new calculation from form
 - Verify results page displays correctly
 - Import to estimate (granular)
 - Import to new estimate
 - Verify work areas created
-- Verify catalog linkage
+- Verify catalog linkage (mulching, planting, pine needles)
+- Test labor-only imports (weeding, turf mowing, pruning)
+- Test custom pricing (fence, synthetic turf, paver patio, retaining wall)
+- Test dynamic features:
+  - Pruning: Advanced tasks toggle
+  - Synthetic Turf: Excavation method radios (Generic/Skid/Mini)
+  - Paver Patio: Live area badge updates, material quantities
+  - Retaining Wall: Allan Block vs Standard system toggle, geogrid auto-enable
+  - Fence: Wood vs Vinyl toggle, materials preview
 
-### 2. Weeding Calculator (Phase 8 - NEXT)
-**Status:** Backend complete, needs UI modernization
+### 2. Documentation & Polish
+- Update any remaining documentation
+- Review consistency across all 10 calculators
+- Create comprehensive testing checklist
+- Document special features per calculator
 
-**Files:** 
-- `resources/views/calculators/weeding/form.blade.php`
-- `resources/views/calculators/weeding/result.blade.php`
-- `app/Http/Controllers/WeedingCalculatorController.php` (✅ Backend ready)
-
-**Tasks:**
-- Apply charcoal theme (copy from mulching/planting template)
-- Add professional SVG icon (garden/weeding theme)
-- Update section headers with inline icons
-- Update results page with import UI
-- **No material catalog needed** (labor-only calculator)
-- All buttons → `bg-brand-800`
-
-**Why Next:** Simplest calculator to modernize (no materials), good for confirming pattern.
-
-### 3. Pine Needles Calculator (Phase 9)
-**Status:** Backend complete, needs material catalog + UI
-
-**Files:** 
-- `resources/views/calculators/pine-needles/form.blade.php`
-- `app/Http/Controllers/PineNeedleCalculatorController.php` (✅ Backend ready)
-
-**Tasks:**
-- Apply charcoal theme
-- Add material catalog picker (pine needles, pine straw)
-- Add professional SVG icon
-- Update results page with import UI
-- Remove price override fields
-
-### 4. Turf Mowing Calculator (Phase 10)
-**Status:** Backend complete, needs UI update
-
-**Files:** 
-- `resources/views/calculators/turf-mowing/form.blade.php`
-- `app/Http/Controllers/TurfMowingCalculatorController.php` (✅ Backend ready)
-
-**Tasks:**
-- Apply charcoal theme
-- Add professional SVG icon
-- Update results page with import UI
-- **No material catalog needed** (labor-only)
-
-### 5. Complex Calculators (Phase 11+)
-**Not started - will require more extensive work**
-
-Files to update (in order of priority):
-1. Retaining Wall
-2. Paver Patio  
-3. Fence
-4. Synthetic Turf
-5. Pruning
-
-**Each needs:**
-- Backend: Update controller to output `labor_tasks` array
-- Frontend: Modern charcoal theme + streamlined UI
-- Material catalog integration where applicable
-- Results page update with import UI
-- Remove price override fields
-- Professional SVG icons
+### 3. Deployment
+- Prepare deployment checklist
+- Test in staging environment
+- Production rollout plan
 
 ---
 
@@ -367,34 +526,59 @@ Files to update (in order of priority):
   - `determineTaskKeyFromUnit()` - Maps catalog units to production rates
   - Enhanced materials with catalog_id linkage
 
-**Backend Ready (Needs UI Update):**
 - ✅ **Weeding:** `app/Http/Controllers/WeedingCalculatorController.php`
   - Enhanced labor_tasks format
   - Import-ready
-  
+  - Labor-only (no materials)
+
 - ✅ **Pine Needles:** `app/Http/Controllers/PineNeedleCalculatorController.php`
   - Enhanced labor_tasks format
+  - Material catalog integration
   - Import-ready
-  
+
 - ✅ **Turf Mowing:** `app/Http/Controllers/TurfMowingCalculatorController.php`
   - Enhanced labor_tasks format
+  - Import-ready
+  - Labor-only (no materials)
+
+- ✅ **Pruning:** `app/Http/Controllers/PruningCalculatorController.php`
+  - Enhanced labor_tasks format
+  - Import-ready
+  - Labor-only (no materials)
+  - Advanced task toggle support
+
+- ✅ **Fence:** `app/Http/Controllers/FenceCalculatorController.php`
+  - Enhanced labor_tasks format (extracted from FenceLaborEstimatorService)
+  - Custom pricing (wood/vinyl materials)
+  - Import-ready
+  - Dynamic materials preview
+
+- ✅ **Synthetic Turf:** `app/Http/Controllers/SynTurfCalculatorController.php`
+  - Enhanced labor_tasks format with 7+ tasks
+  - Excavation method selection (Generic, Skid Steer, Mini Skid)
+  - Editable materials grid (6 materials)
+  - Turf tier selection with pricing
+  - Cubic yards calculations
   - Import-ready
 
 ### View Templates
 
 **Reference Templates (Copy These):**
-- **Form Template:** `resources/views/calculators/mulching/form.blade.php` or `planting/form.blade.php`
-  - Use mulching for single material selection
-  - Use planting for multiple item selection
+- **Form Template:** 
+  - Single material: `resources/views/calculators/mulching/form.blade.php` or `pine_needles/form.blade.php`
+  - Multiple materials: `resources/views/calculators/planting/form.blade.php`
+  - Labor-only: `resources/views/calculators/weeding/form.blade.php` or `turf-mowing/form.blade.php` or `pruning/form.blade.php`
+  - Custom pricing with editable grid: `resources/views/calculators/fence/form.blade.php` or `syn-turf/form.blade.php`
+  - Dynamic task visibility: `resources/views/calculators/pruning/form.blade.php` (advanced toggle) or `syn-turf/form.blade.php` (excavation method)
+  - Live material preview: `resources/views/calculators/paver-patio/form.blade.php` (auto-calculating material cards)
+  - System toggle with conditional sections: `resources/views/calculators/retaining-wall/form.blade.php` (Allan Block vs Standard)
   
-- **Results Template:** `resources/views/calculators/mulching/result.blade.php` or `planting/result.blade.php`
-  - Both have identical import UI
-  - Just change page title/icon
+- **Results Template:** 
+  - All TEN modernized calculators have consistent import UI
+  - Just change page title/icon/gradient colors
+  - Copy any: `mulching/result.blade.php`, `planting/result.blade.php`, `weeding/result.blade.php`, `pine_needles/result.blade.php`, `turf-mowing/result.blade.php`, `pruning/result.blade.php`, `fence/result.blade.php`, `syn-turf/result.blade.php`, `paver-patio/result.blade.php`, `retaining-wall/result.blade.php`
 
-**Needs Modernization:**
-- `resources/views/calculators/weeding/form.blade.php` + `result.blade.php`
-- `resources/views/calculators/pine-needles/form.blade.php` + `result.blade.php`
-- `resources/views/calculators/turf-mowing/form.blade.php` + `result.blade.php`
+**All Primary Calculators Modernized!** ✅ 🎉
 
 ### API Endpoints
 - `GET /api/materials/active` - All active materials (for catalog picker)
@@ -408,17 +592,23 @@ Files to update (in order of priority):
 
 ### Calculator Icon System
 Choose icons that represent the calculator's function:
-- **Mulching:** Balance/scales (distribution) - Charcoal badge
-- **Planting:** Sparkle/growth - Green badge
-- **Weeding:** Suggested: Scissors/cutting or garden tool
-- **Pine Needles:** Suggested: Tree/evergreen or leaf
-- **Turf Mowing:** Suggested: Scissors/mower or grass
+- **Mulching:** Balance/scales (distribution) - Charcoal badge ✅
+- **Planting:** Sparkle/growth - Green badge ✅
+- **Weeding:** Book/garden pages - Green badge ✅
+- **Pine Needles:** Sparkle (scattered material) - Amber/brown badge ✅
+- **Turf Mowing:** Grass/mowing (happy face) - Green badge ✅
+- **Pruning:** Pruning shears - Green badge ✅
+- **Fence:** Fence/posts - Gray badge ✅
+- **Synthetic Turf:** Grass/field - Green gradient badge ✅
+- **Paver Patio:** Grid pattern (paver layout) - Amber/orange gradient badge ✅
+- **Retaining Wall:** Brick wall with offset rows - Gray gradient badge ✅
 
 ### Color Badges
-- **Charcoal/Neutral:** `from-brand-700 to-brand-900` (most calculators)
-- **Green:** `from-green-600 to-green-800` (planting, landscaping)
+- **Charcoal/Neutral:** `from-gray-700 to-gray-900` (most calculators)
+- **Green:** `from-green-600 to-green-800` (planting, weeding, turf mowing, synthetic turf)
 - **Blue:** `from-blue-600 to-blue-800` (water-related)
-- **Brown:** `from-amber-700 to-amber-900` (mulch, soil)
+- **Amber/Orange:** `from-amber-700 to-amber-900` or `from-amber-600 to-amber-800` (pine needles, paver patio)
+- **Gray Gradient:** `from-gray-600 to-gray-800` (fence, retaining wall - structural)
 
 ### Section Icons (Reusable)
 Standard icons used across calculators:
@@ -469,28 +659,35 @@ Use this checklist when modernizing a calculator:
 
 ## 📊 Progress Summary
 
-### Completed: 2 of 10 Calculators (20%)
-- ✅ Mulching Calculator - 100% Complete
-- ✅ Planting Calculator - 100% Complete
+### Completed: 10 of 11 Calculators (91%) 🎉
 
-### Backend Ready: 3 Calculators (30%)
-- ✅ Weeding Calculator - Backend done, needs UI
-- ✅ Pine Needles Calculator - Backend done, needs UI + catalog
-- ✅ Turf Mowing Calculator - Backend done, needs UI
+**FULLY MODERNIZED:** ✅
+1. Mulching Calculator
+2. Planting Calculator
+3. Weeding Calculator
+4. Pine Needles Calculator
+5. Turf Mowing Calculator
+6. Pruning Calculator
+7. Fence Calculator
+8. Synthetic Turf Calculator
+9. Paver Patio Calculator
+10. Retaining Wall Calculator
 
-### Not Started: 5 Complex Calculators (50%)
-- ⏳ Retaining Wall
-- ⏳ Paver Patio
-- ⏳ Fence
-- ⏳ Synthetic Turf
-- ⏳ Pruning
+**NOT STARTED:** ⏳
+- Sod Installation Calculator (11th calculator - not in original scope)
 
-**Overall Progress:** 50% backend complete, 20% fully modernized
+**Overall Progress:** 
+- 91% of primary calculators fully modernized
+- 100% backend labor_tasks format implemented
+- 100% modern charcoal theme applied
+- 100% enhanced import UI implemented
+- All reference templates established
 
 ---
 
-**Last Updated:** November 29, 2024  
-**Next Milestone:** Complete Weeding Calculator UI modernization
+**Last Updated:** January 2025  
+**Status:** Calculator overhaul 91% complete - only Sod Installation remains (out of scope)
+**Next Milestone:** Final testing across all 10 calculators
 
 - **Material Controller:** `app/Http/Controllers/Api/MaterialController.php`
 

@@ -1,4 +1,3 @@
-
 @extends('layouts.sidebar')
 
 @php
@@ -51,112 +50,116 @@
         : 0;
     $geogridAreaEstimate = $geogridLfEstimate && $heightValue ? round($geogridLfEstimate * $heightValue, 2) : 0;
 
-    $materialCards = [
-        [
-            'key' => 'wall_blocks',
-            'label' => 'Wall Blocks',
-            'unit' => 'blocks',
-            'qty' => $blockCountEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => $blockUnitCostDefault,
-            'description' => 'Coverage ~' . number_format($blockCoverage, 2) . ' sqft/block',
-        ],
-        [
-            'key' => 'capstones',
-            'label' => 'Capstones',
-            'unit' => 'caps',
-            'qty' => $capCountEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => $capUnitCostDefault,
-            'description' => 'Qty mirrors wall length',
-        ],
-        [
-            'key' => 'drain_pipe',
-            'label' => 'Drain Pipe',
-            'unit' => 'lf',
-            'qty' => $lengthValue,
-            'qty_is_int' => false,
-            'unit_cost' => $pipeUnitCostDefault,
-            'description' => 'Full wall length for pipe runs',
-        ],
-        [
-            'key' => 'gravel',
-            'label' => '#57 Gravel',
-            'unit' => 'tons',
-            'qty' => $gravelTonsEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => $gravelUnitCostDefault,
-            'description' => 'Backfill 1.5ft thick minus the first 0.5ft',
-        ],
-        [
-            'key' => 'topsoil',
-            'label' => 'Topsoil',
-            'unit' => 'cu yd',
-            'qty' => $topsoilYardsEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => $topsoilUnitCostDefault,
-            'description' => '0.5ft cap at 1.5ft depth',
-        ],
-        [
-            'key' => 'fabric',
-            'label' => 'Underlayment Fabric',
-            'unit' => 'sqft',
-            'qty' => $fabricAreaEstimate,
-            'qty_is_int' => false,
-            'unit_cost' => $fabricUnitCostDefault,
-            'description' => 'Covers both faces of the wall',
-        ],
-        [
-            'key' => 'geogrid',
-            'label' => 'Geogrid',
-            'unit' => 'sqft',
-            'qty' => $geogridAreaEstimate,
-            'qty_is_int' => false,
-            'unit_cost' => $geogridUnitCostDefault,
-            'description' => 'Only when geogrid is enabled',
-        ],
-        [
-            'key' => 'adhesive',
-            'label' => 'Adhesive Tubes',
-            'unit' => 'tubes',
-            'qty' => $adhesiveTubeEstimate,
-            'qty_is_int' => true,
-            'unit_cost' => $adhesiveUnitCostDefault,
-            'description' => '1 tube per 20 capstones',
-        ],
-    ];
-
     $customMaterials = old('custom_materials', $formData['custom_materials'] ?? []);
 @endphp
 
 @section('content')
 @if ($errors->any())
-    <div class="max-w-4xl mx-auto mb-6">
-        <div class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded">
-            <ul class="list-disc pl-5 space-y-1 text-sm">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+    <div class="max-w-6xl mx-auto mb-6">
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endif
 
-<div class="max-w-4xl mx-auto py-10 space-y-8">
-    @include('calculators.partials.form_header', [
-        'title' => $editMode ? 'Edit Retaining Wall Calculation' : 'Retaining Wall Calculator',
-        'subtitle' => 'Matches the planting/paver workflow: enter inputs, preview materials instantly, add overrides, then calculate.',
-    ])
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    {{-- Header with Wall Icon --}}
+    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8">
+        <div class="flex items-center gap-6">
+            {{-- Gray Gradient Brick Wall Icon (16x16 blocks) --}}
+            <div class="flex-shrink-0">
+                <div class="bg-gradient-to-br from-gray-600 to-gray-800 p-4 rounded-xl shadow-lg">
+                    <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 64 64">
+                        <g stroke-width="1.5">
+                            {{-- Row 1 --}}
+                            <rect x="2" y="2" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="16" y="2" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            <rect x="30" y="2" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="44" y="2" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            {{-- Row 2 (offset) --}}
+                            <rect x="8" y="10" width="12" height="6" fill="currentColor" opacity="0.85"/>
+                            <rect x="22" y="10" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="36" y="10" width="12" height="6" fill="currentColor" opacity="0.85"/>
+                            <rect x="50" y="10" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            {{-- Row 3 --}}
+                            <rect x="2" y="18" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            <rect x="16" y="18" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="30" y="18" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            <rect x="44" y="18" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            {{-- Row 4 (offset) --}}
+                            <rect x="8" y="26" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="22" y="26" width="12" height="6" fill="currentColor" opacity="0.85"/>
+                            <rect x="36" y="26" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="50" y="26" width="12" height="6" fill="currentColor" opacity="0.85"/>
+                            {{-- Row 5 --}}
+                            <rect x="2" y="34" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="16" y="34" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            <rect x="30" y="34" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="44" y="34" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            {{-- Row 6 (offset) --}}
+                            <rect x="8" y="42" width="12" height="6" fill="currentColor" opacity="0.85"/>
+                            <rect x="22" y="42" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="36" y="42" width="12" height="6" fill="currentColor" opacity="0.85"/>
+                            <rect x="50" y="42" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            {{-- Row 7 --}}
+                            <rect x="2" y="50" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            <rect x="16" y="50" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            <rect x="30" y="50" width="12" height="6" fill="currentColor" opacity="0.8"/>
+                            <rect x="44" y="50" width="12" height="6" fill="currentColor" opacity="0.9"/>
+                            {{-- Row 8 (offset) --}}
+                            <rect x="8" y="58" width="12" height="4" fill="currentColor" opacity="0.9"/>
+                            <rect x="22" y="58" width="12" height="4" fill="currentColor" opacity="0.85"/>
+                            <rect x="36" y="58" width="12" height="4" fill="currentColor" opacity="0.9"/>
+                            <rect x="50" y="58" width="12" height="4" fill="currentColor" opacity="0.85"/>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-4xl font-bold text-white mb-2">
+                    {{ $editMode ? 'Edit Retaining Wall Calculation' : 'Retaining Wall Calculator' }}
+                </h1>
+                <p class="text-gray-300 text-lg">
+                    Configure wall dimensions, select block system (Allan Block or Standard), preview materials, and calculate labor costs.
+                </p>
+            </div>
+        </div>
+        
+        @if(($mode ?? null) === 'template')
+            <div class="mt-6 bg-blue-500/20 border border-blue-400/30 rounded-lg p-4">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-blue-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <p class="text-blue-200 font-medium">Template Mode Active</p>
+                        <p class="text-blue-300 text-sm">Building a Retaining Wall template without a site visit
+                            @if(!empty($estimateId)) - Target Estimate: #{{ $estimateId }}@endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
 
     @if(($mode ?? null) !== 'template' && $siteVisit)
         @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
-    @else
-        <div class="bg-white p-4 rounded border mb-6">
-            <p class="text-sm text-gray-700">Template Mode — build a Retaining Wall template without a site visit.</p>
-            @if(!empty($estimateId))
-                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
-            @endif
-        </div>
     @endif
 
     <form method="POST" action="{{ route('calculators.wall.calculate') }}" class="space-y-8">
@@ -174,564 +177,688 @@
             <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @endif
 
-        {{-- Crew & Logistics --}}
-        <div>
-            <h2 class="text-xl font-semibold mb-2">Crew & Logistics</h2>
-            @include('calculators.partials.overhead_inputs')
-        </div>
-
-        {{-- Wall Inputs --}}
-        <div>
-            @php($wallBadge = new \Illuminate\Support\HtmlString('<span id="wallAreaBadge" class="text-sm font-medium '.($areaSqft ? 'text-gray-700' : 'text-gray-500').'" data-empty-message="Enter length + height to unlock wall area." data-prefix="Wall Area: ">'.($areaSqft ? 'Wall Area: '.number_format($areaSqft, 2).' sqft' : 'Enter length + height to unlock wall area.').'</span>'))
-            @include('calculators.partials.section_heading', [
-                'title' => 'Wall Inputs',
-                'right' => $wallBadge,
-            ])
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Length (ft)</label>
-                    <input type="number" step="0.1" name="length" class="form-input w-full" value="{{ $lengthValue }}" required>
-                    <p class="text-xs text-gray-500 mt-2">Used for block, pipe, gravel, and topsoil calculations.</p>
+        {{-- SECTION 1: Crew & Logistics --}}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div class="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex items-center gap-3">
+                <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                    1
                 </div>
-
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Height (ft)</label>
-                    <input type="number" step="0.1" name="height" class="form-input w-full" value="{{ $heightValue }}" required>
-                    <p class="text-xs text-gray-500 mt-2">Impacts block count, fabric, geogrid, and gravel.</p>
-                </div>
-
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Block System</label>
-                    <select name="block_system" id="block_system" class="form-select w-full" required>
-                        <option value="standard" {{ $blockSystemValue === 'standard' ? 'selected' : '' }}>Standard</option>
-                        <option value="allan_block" {{ $blockSystemValue === 'allan_block' ? 'selected' : '' }}>Allan Block</option>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-2">Choosing Allan Block reveals additional component inputs.</p>
-                </div>
-
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Block Brand</label>
-                    <select name="block_brand" class="form-select w-full" required>
-                        <option value="">Choose brand</option>
-                        <option value="belgard" {{ $blockBrandValue === 'belgard' ? 'selected' : '' }}>Belgard</option>
-                        <option value="techo" {{ $blockBrandValue === 'techo' ? 'selected' : '' }}>Techo-Bloc</option>
-                        <option value="allan_block" {{ $blockBrandValue === 'allan_block' ? 'selected' : '' }}>Allan Block</option>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-2">Brand toggles coverage + pricing assumptions.</p>
-                </div>
-
-                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                    <label class="block font-semibold mb-2">Equipment</label>
-                    <select name="equipment" class="form-select w-full" required>
-                        <option value="manual" {{ $equipmentValue === 'manual' ? 'selected' : '' }}>Manual</option>
-                        <option value="skid_steer" {{ $equipmentValue === 'skid_steer' ? 'selected' : '' }}>Skid Steer</option>
-                        <option value="excavator" {{ $equipmentValue === 'excavator' ? 'selected' : '' }}>Excavator</option>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-2">Impacts labor production rates.</p>
-                </div>
-
-                <div class="border rounded-lg p-4 bg-white shadow-sm space-y-3">
-                    <label class="block font-semibold">Accessories</label>
-                    <label class="inline-flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="use_capstones" value="1" class="form-checkbox" {{ $includeCaps ? 'checked' : '' }}>
-                        <span>Include capstones</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="include_geogrid" value="1" class="form-checkbox" {{ $includeGeogrid ? 'checked' : '' }}>
-                        <span>Include geogrid (auto at =4 ft)</span>
-                    </label>
-                </div>
+                <h2 class="text-xl font-bold text-white">Crew & Logistics</h2>
             </div>
-
-            <div id="allanBlockFields" class="mt-6 border rounded-lg p-4 bg-white shadow-sm {{ $blockSystemValue === 'allan_block' ? '' : 'hidden' }}">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Allan Block Details</h3>
-                    <span class="text-sm text-gray-500">Optional but boosts accuracy</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Straight Wall Length (ft)</label>
-                        <input type="number" step="0.1" name="ab_straight_length" value="{{ old('ab_straight_length', $formData['ab_straight_length'] ?? '') }}" class="form-input w-full">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Straight Wall Height (ft)</label>
-                        <input type="number" step="0.1" name="ab_straight_height" value="{{ old('ab_straight_height', $formData['ab_straight_height'] ?? '') }}" class="form-input w-full">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Curved Wall Length (ft)</label>
-                        <input type="number" step="0.1" name="ab_curved_length" value="{{ old('ab_curved_length', $formData['ab_curved_length'] ?? '') }}" class="form-input w-full">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Curved Wall Height (ft)</label>
-                        <input type="number" step="0.1" name="ab_curved_height" value="{{ old('ab_curved_height', $formData['ab_curved_height'] ?? '') }}" class="form-input w-full">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Step Count</label>
-                        <input type="number" name="ab_step_count" value="{{ old('ab_step_count', $formData['ab_step_count'] ?? '') }}" class="form-input w-full">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Column Count</label>
-                        <input type="number" name="ab_column_count" value="{{ old('ab_column_count', $formData['ab_column_count'] ?? '') }}" class="form-input w-full">
-                    </div>
-                </div>
-            </div>
-        </div>
-        {{-- Materials Preview --}}
-        <div>
-            <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Materials & Pricing Preview</h2>
-                    <p class="text-gray-500 text-sm">Identical card grid-see quantities + default unit cost immediately.</p>
-                </div>
-                <span
-                    id="materialPreviewHint"
-                    class="text-sm {{ $areaSqft ? 'text-gray-700' : 'text-gray-500' }}"
-                    data-empty-message="Enter dimensions above to unlock quantities."
-                    data-filled-message="Quantities update automatically while you type."
-                >
-                    {{ $areaSqft ? 'Quantities update automatically while you type.' : 'Enter dimensions above to unlock quantities.' }}
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                @foreach ($materialCards as $card)
-                    <div class="border rounded-lg p-4 bg-white shadow-sm flex flex-col">
-                        <div class="flex items-center justify-between">
-                            <p class="font-semibold">{{ $card['label'] }}</p>
-                            <span class="text-sm text-gray-500">{{ $card['unit'] }}</span>
-                        </div>
-
-                        <div class="mt-4">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">Qty Estimate</p>
-                            <p class="text-2xl font-bold" data-material-qty="{{ \Illuminate\Support\Str::slug($card['key'], '_') }}">
-                                @if(!is_null($card['qty']))
-                                    @if(!empty($card['qty_is_int']))
-                                        {{ number_format($card['qty']) }}
-                                    @else
-                                        {{ number_format($card['qty'], 2) }}
-                                    @endif
-                                @else
-                                    &mdash;
-                                @endif
-                            </p>
-                        </div>
-
-                        <div class="mt-4">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">Default Unit Cost</p>
-                            <p class="text-lg font-semibold" data-material-cost="{{ \Illuminate\Support\Str::slug($card['key'], '_') }}">
-                                @if(!is_null($card['unit_cost']))
-                                    ${{ number_format($card['unit_cost'], 2) }}
-                                @else
-                                    --
-                                @endif
-                            </p>
-                        </div>
-
-                        <p class="text-xs text-gray-500 mt-4">{{ $card['description'] }}</p>
-                    </div>
-                @endforeach
+            <div class="p-6">
+                @include('calculators.partials.overhead_inputs')
             </div>
         </div>
 
-        {{-- Additional Materials --}}
-        <div>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-3">
-                <div>
-                    <h2 class="text-xl font-semibold">Additional Materials</h2>
-                    <p class="text-gray-500 text-sm">Log materials not auto-calculated (lighting, specialty drain items, etc.).</p>
+        {{-- SECTION 2: Wall Configuration --}}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div class="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                            2
+                        </div>
+                        <h2 class="text-xl font-bold text-white">Wall Configuration</h2>
+                    </div>
+                    <div id="wallAreaBadge" class="px-4 py-1.5 rounded-full text-sm font-semibold {{ $areaSqft ? 'bg-gray-100 text-gray-800' : 'bg-gray-600/50 text-gray-300' }}">
+                        {{ $areaSqft ? 'Wall Area: ' . number_format($areaSqft, 2) . ' sqft' : 'Enter dimensions to calculate area' }}
+                    </div>
                 </div>
-                <button type="button" id="addCustomMaterial" class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
-                    + Add Material
-                </button>
             </div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Wall Length (ft) <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            step="0.1" 
+                            name="length" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors" 
+                            value="{{ $lengthValue }}" 
+                            required
+                        >
+                        <p class="text-xs text-gray-500 mt-1.5">Base for material calculations</p>
+                    </div>
 
-            <div id="customMaterialRows" class="space-y-4">
-                @if (!empty($customMaterials))
-                    @foreach ($customMaterials as $index => $customMaterial)
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Wall Height (ft) <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            step="0.1" 
+                            name="height" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors" 
+                            value="{{ $heightValue }}" 
+                            required
+                        >
+                        <p class="text-xs text-gray-500 mt-1.5">Impacts blocks, backfill, geogrid</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Equipment <span class="text-red-500">*</span>
+                        </label>
+                        <select 
+                            name="equipment" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors" 
+                            required
+                        >
+                            <option value="manual" {{ $equipmentValue === 'manual' ? 'selected' : '' }}>Manual Labor</option>
+                            <option value="skid_steer" {{ $equipmentValue === 'skid_steer' ? 'selected' : '' }}>Skid Steer</option>
+                            <option value="excavator" {{ $equipmentValue === 'excavator' ? 'selected' : '' }}>Excavator</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1.5">Affects labor production rates</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Block System <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="relative flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all {{ $blockSystemValue === 'standard' ? 'border-gray-600 bg-gray-50' : 'border-gray-300 bg-white hover:border-gray-400' }}">
+                                <input 
+                                    type="radio" 
+                                    name="block_system" 
+                                    value="standard" 
+                                    class="sr-only" 
+                                    {{ $blockSystemValue === 'standard' ? 'checked' : '' }}
+                                    required
+                                >
+                                <div class="text-center">
+                                    <div class="font-semibold text-gray-900">Standard</div>
+                                    <div class="text-xs text-gray-500">Generic blocks</div>
+                                </div>
+                            </label>
+                            <label class="relative flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all {{ $blockSystemValue === 'allan_block' ? 'border-gray-600 bg-gray-50' : 'border-gray-300 bg-white hover:border-gray-400' }}">
+                                <input 
+                                    type="radio" 
+                                    name="block_system" 
+                                    value="allan_block" 
+                                    class="sr-only" 
+                                    {{ $blockSystemValue === 'allan_block' ? 'checked' : '' }}
+                                    required
+                                >
+                                <div class="text-center">
+                                    <div class="font-semibold text-gray-900">Allan Block</div>
+                                    <div class="text-xs text-gray-500">AB System</div>
+                                </div>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1.5">Allan Block enables additional component options</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Block Brand <span class="text-red-500">*</span>
+                        </label>
+                        <select 
+                            name="block_brand" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors" 
+                            required
+                        >
+                            <option value="">Choose brand...</option>
+                            <option value="belgard" {{ $blockBrandValue === 'belgard' ? 'selected' : '' }}>Belgard (0.67 sqft/block)</option>
+                            <option value="techo" {{ $blockBrandValue === 'techo' ? 'selected' : '' }}>Techo-Bloc (0.65 sqft/block)</option>
+                            <option value="allan_block" {{ $blockBrandValue === 'allan_block' ? 'selected' : '' }}>Allan Block</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1.5">Brand affects coverage calculations</p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Optional Features</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative">
+                                <input 
+                                    type="checkbox" 
+                                    name="use_capstones" 
+                                    value="1" 
+                                    class="w-5 h-5 text-gray-600 border-gray-300 rounded focus:ring-2 focus:ring-gray-500 transition-colors" 
+                                    {{ $includeCaps ? 'checked' : '' }}
+                                >
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900 group-hover:text-gray-700">Include Capstones</div>
+                                <div class="text-xs text-gray-500">Finishing cap for wall top</div>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative">
+                                <input 
+                                    type="checkbox" 
+                                    name="include_geogrid" 
+                                    value="1" 
+                                    class="w-5 h-5 text-gray-600 border-gray-300 rounded focus:ring-2 focus:ring-gray-500 transition-colors" 
+                                    {{ $includeGeogrid ? 'checked' : '' }}
+                                >
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900 group-hover:text-gray-700">Include Geogrid</div>
+                                <div class="text-xs text-gray-500">Auto-calculated when height ≥ 4 ft</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {{-- Allan Block Additional Fields (conditionally shown) --}}
+                <div id="allanBlockFields" class="{{ $blockSystemValue === 'allan_block' ? '' : 'hidden' }} bg-blue-50 border-2 border-blue-200 rounded-lg p-6 space-y-4">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-blue-900">Allan Block Components</h3>
+                        <span class="ml-auto text-sm text-blue-600">Optional for enhanced accuracy</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Straight Wall Length (ft)</label>
+                            <input 
+                                type="number" 
+                                step="0.1" 
+                                name="ab_straight_length" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                value="{{ old('ab_straight_length', $formData['ab_straight_length'] ?? '') }}"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Straight Wall Height (ft)</label>
+                            <input 
+                                type="number" 
+                                step="0.1" 
+                                name="ab_straight_height" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                value="{{ old('ab_straight_height', $formData['ab_straight_height'] ?? '') }}"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Curved Wall Length (ft)</label>
+                            <input 
+                                type="number" 
+                                step="0.1" 
+                                name="ab_curved_length" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                value="{{ old('ab_curved_length', $formData['ab_curved_length'] ?? '') }}"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Curved Wall Height (ft)</label>
+                            <input 
+                                type="number" 
+                                step="0.1" 
+                                name="ab_curved_height" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                value="{{ old('ab_curved_height', $formData['ab_curved_height'] ?? '') }}"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Number of Steps</label>
+                            <input 
+                                type="number" 
+                                step="1" 
+                                name="ab_step_count" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                value="{{ old('ab_step_count', $formData['ab_step_count'] ?? '') }}"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Number of Columns</label>
+                            <input 
+                                type="number" 
+                                step="1" 
+                                name="ab_column_count" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                value="{{ old('ab_column_count', $formData['ab_column_count'] ?? '') }}"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- SECTION 3: Materials Preview --}}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div class="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex items-center gap-3">
+                <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                    3
+                </div>
+                <h2 class="text-xl font-bold text-white">Materials Preview</h2>
+                <span class="ml-auto text-sm text-gray-300">Auto-calculated • Update costs as needed</span>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {{-- Wall Blocks --}}
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16M4 12h16M4 19h16"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Wall Blocks</div>
+                                <div class="text-xs text-gray-500">Coverage ~{{ number_format($blockCoverage, 2) }} sqft/block</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ $blockCountEstimate ? number_format($blockCountEstimate) : '—' }} blocks</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_block_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $blockUnitCostDefault }}"
+                                    placeholder="11.00"
+                                >
+                            </div>
+                            @if($blockCountEstimate)
+                                <div class="pt-2 border-t border-gray-300">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-gray-600">Total:</span>
+                                        <span class="font-bold text-gray-900">${{ number_format($blockCountEstimate * $blockUnitCostDefault, 2) }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Capstones --}}
+                    @if($includeCaps)
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-700 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Capstones</div>
+                                <div class="text-xs text-gray-500">Mirrors wall length</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ $capCountEstimate ? number_format($capCountEstimate) : '—' }} caps</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_capstone_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $capUnitCostDefault }}"
+                                    placeholder="18.00"
+                                >
+                            </div>
+                            @if($capCountEstimate)
+                                <div class="pt-2 border-t border-gray-300">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-gray-600">Total:</span>
+                                        <span class="font-bold text-gray-900">${{ number_format($capCountEstimate * $capUnitCostDefault, 2) }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Drain Pipe --}}
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 12h8m-8 5h8"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Drain Pipe</div>
+                                <div class="text-xs text-gray-500">Full wall length</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ $lengthValue ? number_format($lengthValue, 1) : '—' }} lf</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($/ft)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_pipe_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $pipeUnitCostDefault }}"
+                                    placeholder="2.00"
+                                >
+                            </div>
+                            @if($lengthValue)
+                                <div class="pt-2 border-t border-gray-300">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-gray-600">Total:</span>
+                                        <span class="font-bold text-gray-900">${{ number_format($lengthValue * $pipeUnitCostDefault, 2) }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- #57 Gravel --}}
+                    @if($gravelTonsEstimate)
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-stone-600 to-stone-800 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="8" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="12" cy="16" r="1.5"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">#57 Gravel</div>
+                                <div class="text-xs text-gray-500">1.5ft backfill depth</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ number_format($gravelTonsEstimate) }} tons</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($/ton)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_gravel_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $gravelUnitCostDefault }}"
+                                    placeholder="85.00"
+                                >
+                            </div>
+                            <div class="pt-2 border-t border-gray-300">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Total:</span>
+                                    <span class="font-bold text-gray-900">${{ number_format($gravelTonsEstimate * $gravelUnitCostDefault, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Topsoil --}}
+                    @if($topsoilYardsEstimate)
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-amber-700 to-amber-900 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2L2 12h3v8h14v-8h3L12 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Topsoil</div>
+                                <div class="text-xs text-gray-500">0.5ft cap layer</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ number_format($topsoilYardsEstimate) }} cu yd</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($/yd³)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_topsoil_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $topsoilUnitCostDefault }}"
+                                    placeholder="17.00"
+                                >
+                            </div>
+                            <div class="pt-2 border-t border-gray-300">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Total:</span>
+                                    <span class="font-bold text-gray-900">${{ number_format($topsoilYardsEstimate * $topsoilUnitCostDefault, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Underlayment Fabric --}}
+                    @if($fabricAreaEstimate)
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Fabric</div>
+                                <div class="text-xs text-gray-500">Both wall faces</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ number_format($fabricAreaEstimate, 1) }} sqft</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($/sqft)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_fabric_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $fabricUnitCostDefault }}"
+                                    placeholder="0.30"
+                                >
+                            </div>
+                            <div class="pt-2 border-t border-gray-300">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Total:</span>
+                                    <span class="font-bold text-gray-900">${{ number_format($fabricAreaEstimate * $fabricUnitCostDefault, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Geogrid --}}
+                    @if($includeGeogrid && $geogridAreaEstimate)
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Geogrid</div>
+                                <div class="text-xs text-gray-500">{{ $geogridLayersEstimate }} layers</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ number_format($geogridAreaEstimate, 1) }} sqft</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($/sqft)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_geogrid_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $geogridUnitCostDefault }}"
+                                    placeholder="1.50"
+                                >
+                            </div>
+                            <div class="pt-2 border-t border-gray-300">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Total:</span>
+                                    <span class="font-bold text-gray-900">${{ number_format($geogridAreaEstimate * $geogridUnitCostDefault, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Adhesive for Capstones --}}
+                    @if($includeCaps && $adhesiveTubeEstimate)
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">Adhesive</div>
+                                <div class="text-xs text-gray-500">1 tube per 20 caps</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Quantity:</span>
+                                <span class="font-bold text-gray-900">{{ number_format($adhesiveTubeEstimate) }} tubes</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Unit Cost ($/tube)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="override_adhesive_cost" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500" 
+                                    value="{{ $adhesiveUnitCostDefault }}"
+                                    placeholder="8.00"
+                                >
+                            </div>
+                            <div class="pt-2 border-t border-gray-300">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600">Total:</span>
+                                    <span class="font-bold text-gray-900">${{ number_format($adhesiveTubeEstimate * $adhesiveUnitCostDefault, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- SECTION 4: Additional Materials (Custom) --}}
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div class="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex items-center gap-3">
+                <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                    4
+                </div>
+                <h2 class="text-xl font-bold text-white">Additional Materials</h2>
+                <span class="ml-auto text-sm text-gray-300">Optional custom items</span>
+            </div>
+            <div class="p-6">
+                <div id="customMaterialsWrapper">
+                    @foreach($customMaterials as $index => $material)
                         @include('calculators.partials.custom-material-row', [
-                            'rowIndex' => $index,
-                            'material' => $customMaterial,
+                            'index' => $index,
+                            'name' => $material['name'] ?? '',
+                            'qty' => $material['qty'] ?? '',
+                            'unitCost' => $material['unit_cost'] ?? ''
                         ])
                     @endforeach
-                @else
-                    @include('calculators.partials.custom-material-row', [
-                        'rowIndex' => 0,
-                        'material' => [],
-                    ])
-                @endif
+                    @if(empty($customMaterials))
+                        @include('calculators.partials.custom-material-row', ['index' => 0, 'name' => '', 'qty' => '', 'unitCost' => ''])
+                    @endif
+                </div>
+                <button type="button" onclick="addCustomMaterialRow()" class="mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm font-medium">
+                    + Add Another Material
+                </button>
             </div>
-
-            <template id="customMaterialTemplate">
-                @include('calculators.partials.custom-material-row', [
-                    'rowIndex' => '__INDEX__',
-                    'material' => [],
-                ])
-            </template>
         </div>
-        {{-- Material Overrides --}}
-        @include('calculators.partials.material_override_inputs', [
-            'overrideToggleName' => 'materials_override_enabled',
-            'overrideToggleLabel' => 'Show Material Cost Overrides',
-            'overrideChecked' => (bool) $overrideChecked,
-            'fields' => [
-                [
-                    'name' => 'override_block_cost',
-                    'label' => 'Wall Block ($/block)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_block_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_capstone_cost',
-                    'label' => 'Capstone ($/cap)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_capstone_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_pipe_cost',
-                    'label' => 'Drain Pipe ($/ft)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_pipe_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_gravel_cost',
-                    'label' => '#57 Gravel ($/ton)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_gravel_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_topsoil_cost',
-                    'label' => 'Topsoil ($/yd^3)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_topsoil_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_fabric_cost',
-                    'label' => 'Underlayment Fabric ($/ft^2)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_fabric_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_geogrid_cost',
-                    'label' => 'Geogrid ($/ft^2)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_geogrid_cost'] ?? '',
-                    'width' => 'half',
-                ],
-                [
-                    'name' => 'override_adhesive_cost',
-                    'label' => 'Adhesive ($/tube)',
-                    'type' => 'number',
-                    'step' => '0.01',
-                    'min' => '0',
-                    'value' => $formData['override_adhesive_cost'] ?? '',
-                    'width' => 'half',
-                ],
-            ],
-        ])
 
         {{-- Job Notes --}}
-        <div>
-            <label class="block text-sm font-semibold mb-2">Job Notes</label>
-            <textarea name="job_notes" rows="3" class="form-textarea w-full" placeholder="Anything unique about this wall or site?">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div class="p-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Job Notes (Optional)</label>
+                <textarea 
+                    name="job_notes" 
+                    rows="4" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors resize-none" 
+                    placeholder="Add any special notes, site conditions, or additional requirements..."
+                >{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+                <p class="text-xs text-gray-500 mt-2">These notes will appear on the calculation results and PDF export.</p>
+            </div>
         </div>
 
-        {{-- Submit --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            @if(($mode ?? null) === 'template')
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
-                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., 3ft retaining wall)" value="{{ old('template_name') }}">
-                    <select name="template_scope" class="form-select w-full sm:w-48">
-                        <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
-                        <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
-                        <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
-                    </select>
-                    <button type="submit" class="btn btn-secondary">💾 Save Template</button>
-                </div>
-            @else
-                <button type="submit" class="btn btn-secondary">
-                    {{ $editMode ? 'Recalculate Wall' : 'Calculate Wall Estimate' }}
-                </button>
-                <a href="{{ route('clients.show', $siteVisit->client_id) }}" class="btn btn-muted">
-                    Back to Client
-                </a>
-            @endif
+        {{-- Template Name (if template mode) --}}
+        @if(($mode ?? null) === 'template')
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Template Name (Optional)</label>
+            <input 
+                type="text" 
+                name="template_name" 
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                value="{{ old('template_name', $formData['template_name'] ?? '') }}"
+                placeholder="e.g., Standard 4ft Belgard Wall"
+            >
+            <p class="text-xs text-gray-600 mt-2">Give this template a descriptive name for easy identification</p>
+        </div>
+        @endif
+
+        {{-- Submit Buttons --}}
+        <div class="flex items-center justify-between gap-4 pt-6 border-t border-gray-200">
+            <a 
+                href="{{ ($mode ?? null) === 'template' && !empty($estimateId) ? route('estimates.show', $estimateId) : route('site-visits.show', $siteVisitId) }}" 
+                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+            >
+                Cancel
+            </a>
+            <button 
+                type="submit" 
+                class="px-8 py-3 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white rounded-lg shadow-lg transition-all transform hover:scale-105 font-bold text-lg"
+            >
+                {{ $editMode ? 'Update Calculation' : 'Calculate Wall Estimate' }}
+            </button>
         </div>
     </form>
 </div>
-@endsection
-@push('scripts')
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const lengthInput = document.querySelector('input[name="length"]');
-        const heightInput = document.querySelector('input[name="height"]');
-        const blockBrandSelect = document.querySelector('select[name="block_brand"]');
-        const capstoneCheckbox = document.querySelector('input[name="use_capstones"]');
-        const geogridCheckbox = document.querySelector('input[name="include_geogrid"]');
-        const blockSystemSelect = document.getElementById('block_system');
-        const allanBlockFields = document.getElementById('allanBlockFields');
-
-        const overrideInputs = {
-            block: document.querySelector('input[name="override_block_cost"]'),
-            cap: document.querySelector('input[name="override_capstone_cost"]'),
-            pipe: document.querySelector('input[name="override_pipe_cost"]'),
-            gravel: document.querySelector('input[name="override_gravel_cost"]'),
-            topsoil: document.querySelector('input[name="override_topsoil_cost"]'),
-            fabric: document.querySelector('input[name="override_fabric_cost"]'),
-            geogrid: document.querySelector('input[name="override_geogrid_cost"]'),
-            adhesive: document.querySelector('input[name="override_adhesive_cost"]'),
-        };
-
-        const qtyEls = {
-            wall_blocks: document.querySelector('[data-material-qty="wall_blocks"]'),
-            capstones: document.querySelector('[data-material-qty="capstones"]'),
-            drain_pipe: document.querySelector('[data-material-qty="drain_pipe"]'),
-            gravel: document.querySelector('[data-material-qty="gravel"]'),
-            topsoil: document.querySelector('[data-material-qty="topsoil"]'),
-            fabric: document.querySelector('[data-material-qty="fabric"]'),
-            geogrid: document.querySelector('[data-material-qty="geogrid"]'),
-            adhesive: document.querySelector('[data-material-qty="adhesive"]'),
-        };
-
-        const costEls = {
-            wall_blocks: document.querySelector('[data-material-cost="wall_blocks"]'),
-            capstones: document.querySelector('[data-material-cost="capstones"]'),
-            drain_pipe: document.querySelector('[data-material-cost="drain_pipe"]'),
-            gravel: document.querySelector('[data-material-cost="gravel"]'),
-            topsoil: document.querySelector('[data-material-cost="topsoil"]'),
-            fabric: document.querySelector('[data-material-cost="fabric"]'),
-            geogrid: document.querySelector('[data-material-cost="geogrid"]'),
-            adhesive: document.querySelector('[data-material-cost="adhesive"]'),
-        };
-
-        const areaBadge = document.getElementById('wallAreaBadge');
-        const materialHint = document.getElementById('materialPreviewHint');
-        const customRowsContainer = document.getElementById('customMaterialRows');
-        const customTemplate = document.getElementById('customMaterialTemplate');
-        const addCustomMaterialButton = document.getElementById('addCustomMaterial');
-
-        const defaults = {
-            blockUnitCost: 11,
-            capUnitCost: 18,
-            pipeUnitCost: 2,
-            gravelUnitCost: 85,
-            topsoilUnitCost: 5,
-            fabricUnitCost: 0.3,
-            geogridUnitCost: 1.5,
-            adhesiveUnitCost: 8,
-        };
-
-        const getBlockCoverage = (brand) => (brand === 'belgard' ? 0.67 : 0.65);
-
-        const parseNumber = (value) => {
-            const num = parseFloat(value);
-            return Number.isFinite(num) ? num : null;
-        };
-
-        const formatQty = (value, asInt = false) => {
-            if (value === null) {
-                return '--';
+document.addEventListener('DOMContentLoaded', function() {
+    // Block System toggle for Allan Block fields
+    const blockSystemRadios = document.querySelectorAll('input[name="block_system"]');
+    const allanBlockFields = document.getElementById('allanBlockFields');
+    
+    blockSystemRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'allan_block') {
+                allanBlockFields.classList.remove('hidden');
+            } else {
+                allanBlockFields.classList.add('hidden');
             }
-            if (asInt) {
-                return Number(value).toLocaleString();
-            }
-            return Number(value).toFixed(2);
-        };
-
-        const formatCurrency = (value) => `$${Number(value).toFixed(2)}`;
-
-        const resolveCost = (input, fallback) => {
-            const parsed = input ? parseNumber(input.value) : null;
-            return parsed ?? fallback;
-        };
-
-        const setBadgeText = (el, text, isFilled) => {
-            if (!el) return;
-            el.textContent = text;
-            el.classList.toggle('text-gray-700', isFilled);
-            el.classList.toggle('text-gray-500', !isFilled);
-        };
-
-        const recalcCustomMaterials = () => {
-            if (!customRowsContainer) return;
-            customRowsContainer.querySelectorAll('[data-custom-row]').forEach((row) => {
-                const qtyInput = row.querySelector('[data-custom-qty]');
-                const costInput = row.querySelector('[data-custom-cost]');
-                const totalEl = row.querySelector('[data-custom-total]');
-                if (!totalEl) return;
-
-                const qty = qtyInput ? parseNumber(qtyInput.value) : null;
-                const cost = costInput ? parseNumber(costInput.value) : null;
-
-                if (qty === null || cost === null) {
-                    totalEl.textContent = '--';
-                } else {
-                    totalEl.textContent = formatCurrency(qty * cost);
-                }
-            });
-        };
-
-        const registerCustomRow = (row) => {
-            if (!row) return;
-            const qtyInput = row.querySelector('[data-custom-qty]');
-            const costInput = row.querySelector('[data-custom-cost]');
-            const removeBtn = row.querySelector('[data-action="remove-custom-material"]');
-
-            [qtyInput, costInput].forEach((input) => {
-                if (!input) return;
-                input.addEventListener('input', recalcCustomMaterials);
-            });
-
-            if (removeBtn) {
-                removeBtn.addEventListener('click', () => {
-                    row.remove();
-                    recalcCustomMaterials();
-                });
-            }
-        };
-
-        const getNextCustomIndex = () => {
-            if (!customRowsContainer) return 0;
-            const indexes = Array.from(customRowsContainer.querySelectorAll('[data-custom-row]'))
-                .map((row) => parseInt(row.dataset.customIndex ?? '', 10))
-                .filter((value) => Number.isFinite(value));
-            return indexes.length ? Math.max(...indexes) + 1 : 1;
-        };
-
-        let customIndex = getNextCustomIndex();
-
-        const addCustomRow = () => {
-            if (!customTemplate || !customRowsContainer) return;
-            const html = customTemplate.innerHTML.replace(/__INDEX__/g, customIndex++);
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = html.trim();
-            const newRow = wrapper.firstElementChild;
-            if (!newRow) return;
-            customRowsContainer.appendChild(newRow);
-            registerCustomRow(newRow);
-            recalcCustomMaterials();
-        };
-
-        if (customRowsContainer) {
-            customRowsContainer.querySelectorAll('[data-custom-row]').forEach(registerCustomRow);
-            recalcCustomMaterials();
-        }
-
-        if (addCustomMaterialButton) {
-            addCustomMaterialButton.addEventListener('click', addCustomRow);
-        }
-
-        const toggleAllanFields = () => {
-            if (!blockSystemSelect || !allanBlockFields) return;
-            allanBlockFields.classList.toggle('hidden', blockSystemSelect.value !== 'allan_block');
-        };
-
-        if (blockSystemSelect) {
-            blockSystemSelect.addEventListener('change', toggleAllanFields);
-            toggleAllanFields();
-        }
-
-        const recalc = () => {
-            const length = lengthInput ? parseNumber(lengthInput.value) : null;
-            const height = heightInput ? parseNumber(heightInput.value) : null;
-            const area = length && height ? length * height : null;
-
-            if (areaBadge) {
-                const emptyMessage = areaBadge.dataset.emptyMessage || 'Enter length + height to unlock wall area.';
-                const prefix = areaBadge.dataset.prefix || 'Wall Area: ';
-                setBadgeText(areaBadge, area ? `${prefix}${area.toFixed(2)} sqft` : emptyMessage, Boolean(area));
-            }
-
-        if (materialHint) {
-            const emptyMsg = materialHint.dataset.emptyMessage || 'Enter dimensions above to unlock quantities.';
-            const filledMsg = materialHint.dataset.filledMessage || 'Quantities update automatically while you type.';
-            setBadgeText(materialHint, area ? filledMsg : emptyMsg, Boolean(area));
-        }
-
-            const coverage = blockBrandSelect ? getBlockCoverage(blockBrandSelect.value) : getBlockCoverage('');
-            const blocks = area ? Math.ceil(area / coverage) : null;
-            const capsIncluded = capstoneCheckbox ? capstoneCheckbox.checked : false;
-            const caps = capsIncluded && length ? Math.ceil(length) : 0;
-            const pipe = length ?? null;
-            const gravelVolumeCF = length && height ? length * Math.max(height - 0.5, 0) * 1.5 : null;
-            const gravelTons = gravelVolumeCF ? Math.ceil(gravelVolumeCF / 21.6) : null;
-            const topsoilVolume = length ? length * 0.5 * 1.5 : null;
-            const topsoilYards = topsoilVolume ? Math.ceil(topsoilVolume / 27) : null;
-            const fabricArea = length && height ? (length * height * 2) : null;
-            const geogridEnabled = geogridCheckbox ? geogridCheckbox.checked && height && height >= 4 : false;
-            const geogridLayers = geogridEnabled ? Math.floor(height / 2) : 0;
-            const geogridLF = geogridLayers && length ? length * geogridLayers : 0;
-            const geogridArea = geogridLF && height ? geogridLF * height : 0;
-            const adhesiveTubes = caps > 0 ? Math.ceil(caps / 20) : 0;
-
-            if (qtyEls.wall_blocks) qtyEls.wall_blocks.textContent = formatQty(blocks, true);
-            if (qtyEls.capstones) qtyEls.capstones.textContent = formatQty(caps, true);
-            if (qtyEls.drain_pipe) qtyEls.drain_pipe.textContent = formatQty(pipe);
-            if (qtyEls.gravel) qtyEls.gravel.textContent = formatQty(gravelTons, true);
-            if (qtyEls.topsoil) qtyEls.topsoil.textContent = formatQty(topsoilYards, true);
-            if (qtyEls.fabric) qtyEls.fabric.textContent = formatQty(fabricArea);
-            if (qtyEls.geogrid) qtyEls.geogrid.textContent = formatQty(geogridArea);
-            if (qtyEls.adhesive) qtyEls.adhesive.textContent = formatQty(adhesiveTubes, true);
-
-            if (costEls.wall_blocks) costEls.wall_blocks.textContent = formatCurrency(resolveCost(overrideInputs.block, defaults.blockUnitCost));
-            if (costEls.capstones) costEls.capstones.textContent = formatCurrency(resolveCost(overrideInputs.cap, defaults.capUnitCost));
-            if (costEls.drain_pipe) costEls.drain_pipe.textContent = formatCurrency(resolveCost(overrideInputs.pipe, defaults.pipeUnitCost));
-            if (costEls.gravel) costEls.gravel.textContent = formatCurrency(resolveCost(overrideInputs.gravel, defaults.gravelUnitCost));
-            if (costEls.topsoil) costEls.topsoil.textContent = formatCurrency(resolveCost(overrideInputs.topsoil, defaults.topsoilUnitCost));
-            if (costEls.fabric) costEls.fabric.textContent = formatCurrency(resolveCost(overrideInputs.fabric, defaults.fabricUnitCost));
-            if (costEls.geogrid) {
-                costEls.geogrid.textContent = geogridEnabled
-                    ? formatCurrency(resolveCost(overrideInputs.geogrid, defaults.geogridUnitCost))
-                    : '--';
-            }
-            if (costEls.adhesive) costEls.adhesive.textContent = formatCurrency(resolveCost(overrideInputs.adhesive, defaults.adhesiveUnitCost));
-        };
-
-        recalc();
-
-        [lengthInput, heightInput].forEach((input) => {
-            if (!input) return;
-            input.addEventListener('input', recalc);
-        });
-
-        if (blockBrandSelect) {
-            blockBrandSelect.addEventListener('change', recalc);
-        }
-
-        if (capstoneCheckbox) {
-            capstoneCheckbox.addEventListener('change', recalc);
-        }
-
-        if (geogridCheckbox) {
-            geogridCheckbox.addEventListener('change', recalc);
-        }
-
-        Object.values(overrideInputs).forEach((input) => {
-            if (!input) return;
-            input.addEventListener('input', recalc);
         });
     });
+});
+
+let materialRowIndex = {{ count($customMaterials) > 0 ? count($customMaterials) : 1 }};
+function addCustomMaterialRow() {
+    const wrapper = document.getElementById('customMaterialsWrapper');
+    const newRow = document.createElement('div');
+    newRow.innerHTML = `@include('calculators.partials.custom-material-row', ['index' => '${materialRowIndex}', 'name' => '', 'qty' => '', 'unitCost' => ''])`.replace(/\$\{materialRowIndex\}/g, materialRowIndex);
+    wrapper.insertAdjacentHTML('beforeend', newRow.innerHTML);
+    materialRowIndex++;
+}
 </script>
-@endpush
 
-
+@endsection

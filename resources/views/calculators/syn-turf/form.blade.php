@@ -1,19 +1,43 @@
 @extends('layouts.sidebar')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-10">
-    @include('calculators.partials.form_header', [
-        'title' => $editMode ? '✏️ Edit Synthetic Turf Estimate' : '🏟️ Synthetic Turf Calculator',
-    ])
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {{-- Modern Header with Icon --}}
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-3">
+            <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center shadow-lg">
+                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 13v6m4-6v6m4-6v6m4-6v6" stroke="currentColor" opacity="0.5"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ $editMode ? 'Edit Synthetic Turf Estimate' : 'Synthetic Turf Calculator' }}
+                </h1>
+                <p class="text-gray-600 mt-1">Artificial turf installation estimator</p>
+            </div>
+        </div>
+    </div>
 
     @if(($mode ?? null) !== 'template' && $siteVisit)
         @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
     @else
-        <div class="bg-white p-4 rounded border mb-6">
-            <p class="text-sm text-gray-700">Template Mode — build a Synthetic Turf template without a site visit.</p>
-            @if(!empty($estimateId))
-                <p class="text-sm text-gray-500">Target Estimate: #{{ $estimateId }}</p>
-            @endif
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-blue-900">Template Mode Active</p>
+                    <p class="text-sm text-blue-700 mt-1">Building synthetic turf template without site visit</p>
+                    @if(!empty($estimateId))
+                        <p class="text-sm text-blue-600 mt-1">Target Estimate: #{{ $estimateId }}</p>
+                    @endif
+                </div>
+            </div>
         </div>
     @endif
 
@@ -32,78 +56,105 @@
             <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
         @endif
 
-        <div class="mb-6 bg-white rounded border p-4">
-            @include('calculators.partials.section_heading', ['title' => 'Crew & Logistics'])
+        {{-- 1️⃣ Crew & Logistics --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">1</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Crew & Logistics</h2>
+                    <p class="text-sm text-gray-600">Labor rates, crew size, and travel details</p>
+                </div>
+            </div>
             @include('calculators.partials.overhead_inputs')
         </div>
 
-        <div class="mb-6 bg-white rounded border p-4">
-            @include('calculators.partials.section_heading', ['title' => 'Project & Base Parameters'])
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block font-semibold mb-1">Project Square Footage</label>
-                    <input type="number"
-                           name="area_sqft"
-                           min="1"
-                           step="any"
-                           class="form-input w-full"
-                           value="{{ old('area_sqft', $formData['area_sqft'] ?? '') }}"
-                           required>
+        {{-- 2️⃣ Project & Base Parameters --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">2</span>
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Perimeter / Edging (Linear Feet)</label>
-                    <input type="number"
-                           name="edging_linear_ft"
-                           min="0"
-                           step="any"
-                           class="form-input w-full"
-                           value="{{ old('edging_linear_ft', $formData['edging_linear_ft'] ?? '') }}"
-                           required>
-                    <p class="text-sm text-gray-500 mt-1">Used to calculate 20' edging boards.</p>
+                    <h2 class="text-xl font-bold text-gray-900">Project & Base Parameters</h2>
+                    <p class="text-sm text-gray-600">Area, edging, and base layer specifications</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                    <label class="block font-semibold mb-1">Excavation Depth (in)</label>
-                    <input type="number" name="excavation_depth_in" min="0" step="0.25" class="form-input w-full" value="{{ old('excavation_depth_in', $formData['excavation_depth_in'] ?? 3) }}">
-                    <p class="text-xs text-gray-500 mt-1">Used to auto-calc excavation volume (cubic yards) for equipment methods.</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Project Square Footage</label>
+                    <input type="number" name="area_sqft" min="1" step="any" required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ old('area_sqft', $formData['area_sqft'] ?? '') }}">
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">ABC Depth (in)</label>
-                    <input type="number" name="abc_depth_in" min="0" step="0.25" class="form-input w-full" value="{{ old('abc_depth_in', $formData['abc_depth_in'] ?? '') }}">
-                    <p class="text-xs text-gray-500 mt-1">Set depth to include ABC base material (in cubic yards).</p>
-                </div>
-                <div>
-                    <label class="block font-semibold mb-1">Rock Dust Depth (in)</label>
-                    <input type="number" name="rock_dust_depth_in" min="0" step="0.25" class="form-input w-full" value="{{ old('rock_dust_depth_in', $formData['rock_dust_depth_in'] ?? '') }}">
-                    <p class="text-xs text-gray-500 mt-1">Set depth to include Rock Dust material (in cubic yards).</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Perimeter / Edging (Linear Feet)</label>
+                    <input type="number" name="edging_linear_ft" min="0" step="any" required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ old('edging_linear_ft', $formData['edging_linear_ft'] ?? '') }}">
+                    <p class="text-xs text-gray-500 mt-1">Used to calculate 20' edging boards</p>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-                <div class="md:col-span-1">
-                    <label class="block font-semibold mb-1">Tamper Rental</label>
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" name="rent_tamper" id="rent_tamper" value="1" class="form-checkbox" {{ old('rent_tamper') ? 'checked' : '' }}>
-                        <input type="number" name="tamper_days" min="1" step="1" class="form-input w-24" value="{{ old('tamper_days', 1) }}">
-                        <span class="text-xs text-gray-500">days @ $125/day</span>
-                    </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Excavation Depth (in)</label>
+                    <input type="number" name="excavation_depth_in" min="0" step="0.25"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ old('excavation_depth_in', $formData['excavation_depth_in'] ?? 3) }}">
+                    <p class="text-xs text-gray-500 mt-1">Auto-calc excavation volume (cubic yards)</p>
                 </div>
-                <div class="md:col-span-2 flex items-end">
-                    <p id="excavationVolPreview" class="text-xs text-gray-500">&nbsp;</p>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">ABC Depth (in)</label>
+                    <input type="number" name="abc_depth_in" min="0" step="0.25"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ old('abc_depth_in', $formData['abc_depth_in'] ?? '') }}">
+                    <p class="text-xs text-gray-500 mt-1">ABC base material depth</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Rock Dust Depth (in)</label>
+                    <input type="number" name="rock_dust_depth_in" min="0" step="0.25"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ old('rock_dust_depth_in', $formData['rock_dust_depth_in'] ?? '') }}">
+                    <p class="text-xs text-gray-500 mt-1">Rock dust material depth</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="rent_tamper" id="rent_tamper" value="1" 
+                               class="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                               {{ old('rent_tamper') ? 'checked' : '' }}>
+                        <span class="text-sm font-medium text-gray-700">Tamper Rental</span>
+                    </label>
+                    <input type="number" name="tamper_days" min="1" step="1"
+                           class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ old('tamper_days', 1) }}">
+                    <span class="text-sm text-gray-600">days @ $125/day</span>
                 </div>
             </div>
         </div>
 
-        <div class="mb-6 bg-white rounded border p-4">
-            @include('calculators.partials.section_heading', ['title' => 'Synthetic Turf Selection'])
+        {{-- 3️⃣ Synthetic Turf Selection --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">3</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Synthetic Turf Selection</h2>
+                    <p class="text-sm text-gray-600">Choose turf tier and quality</p>
+                </div>
+            </div>
             @php
                 $turfOptions = config('syn_turf.materials.turf_tiers', []);
                 $turfGrade = old('turf_grade', $formData['turf_grade'] ?? 'better');
             @endphp
-            <label class="block font-semibold mb-1">Turf Tier</label>
-            <select name="turf_grade" class="form-select w-full">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Turf Tier</label>
+            <select name="turf_grade" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
                 @foreach ($turfOptions as $key => $tier)
                     <option value="{{ $key }}" data-unit-cost="{{ $tier['unit_cost'] ?? 0 }}" data-label="{{ $tier['label'] ?? ucfirst($key) }}"
                         {{ $turfGrade === $key ? 'selected' : '' }}>
@@ -113,8 +164,17 @@
             </select>
         </div>
 
-        <div class="mb-6 bg-white rounded border p-4" id="materialsEditSection">
-            @include('calculators.partials.section_heading', ['title' => 'Materials (Editable)'])
+        {{-- 4️⃣ Materials (Editable) --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6" id="materialsEditSection">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">4</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Materials (Editable)</h2>
+                    <p class="text-sm text-gray-600">Adjust quantities and unit costs</p>
+                </div>
+            </div>
             @php
                 $m = $formData['materials'] ?? [];
                 $areaVal = old('area_sqft', $formData['area_sqft'] ?? 0);
@@ -159,38 +219,51 @@
                         $cost = old("materials_edit.$key.unit_cost", $row['unit_cost']);
                         $line = (is_numeric($qty) && is_numeric($cost)) ? number_format((float)$qty * (float)$cost, 2) : null;
                     @endphp
-                    <div class="border rounded p-3 bg-gray-50" data-material-row data-key="{{ $key }}">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <div class="font-semibold">{{ $row['label'] }}</div>
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-gray-50 to-gray-100" data-material-row data-key="{{ $key }}">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900">{{ $row['label'] }}</div>
                                 <div class="text-xs text-gray-500">Key: {{ $key }}</div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <div>
-                                    <label class="block text-xs text-gray-500">Qty</label>
-                                    <input type="number" step="0.01" min="0" name="materials_edit[{{ $key }}][qty]" class="form-input w-28" value="{{ $qty }}" data-material-qty>
+                                    <label class="block text-xs text-gray-600 mb-1">Qty</label>
+                                    <input type="number" step="0.01" min="0" name="materials_edit[{{ $key }}][qty]" 
+                                           class="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" 
+                                           value="{{ $qty }}" data-material-qty>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-500">Unit Cost ($)</label>
-                                    <input type="number" step="0.01" min="0" name="materials_edit[{{ $key }}][unit_cost]" class="form-input w-28" value="{{ $cost }}" data-material-cost>
+                                    <label class="block text-xs text-gray-600 mb-1">Unit Cost ($)</label>
+                                    <input type="number" step="0.01" min="0" name="materials_edit[{{ $key }}][unit_cost]" 
+                                           class="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" 
+                                           value="{{ $cost }}" data-material-cost>
                                 </div>
-                                <div class="w-36 text-right">
-                                    <div class="text-xs text-gray-500">Line Total</div>
-                                    <div class="font-semibold" data-material-line>{{ $line ? '$'.$line : '—' }}</div>
+                                <div class="w-32 text-right">
+                                    <div class="text-xs text-gray-600 mb-1">Line Total</div>
+                                    <div class="font-semibold text-gray-900" data-material-line>{{ $line ? '$'.$line : '—' }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 @endforeach
             </div>
-            <div class="mt-3 text-right">
+            <div class="mt-4 pt-4 border-t border-gray-200 text-right">
                 <span class="text-sm text-gray-600 mr-2">Materials Subtotal:</span>
-                <span class="font-semibold" id="materialsEditSubtotal">—</span>
+                <span class="text-lg font-bold text-gray-900" id="materialsEditSubtotal">—</span>
             </div>
         </div>
 
-        <div class="mb-6 bg-white rounded border p-4">
-            <h2 class="text-xl font-semibold mb-2">Synthetic Turf Tasks</h2>
+        {{-- 5️⃣ Synthetic Turf Tasks --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">5</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Labor Tasks</h2>
+                    <p class="text-sm text-gray-600">Installation tasks with production rates</p>
+                </div>
+            </div>
 
             @php
                 $savedTasks = $formData['tasks'] ?? [];
@@ -221,23 +294,24 @@
                 }
             @endphp
 
-            <div class="mb-4 p-4 bg-white rounded border">
-                <label class="block font-semibold mb-2">Excavation Method</label>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
-                    <label class="inline-flex items-center gap-2">
-                        <input type="radio" name="excavation_method" value="generic" class="form-radio" {{ $selectedExcavation === 'generic' ? 'checked' : '' }}>
-                        <span>Generic</span>
+            {{-- Excavation Method Selection --}}
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <label class="block font-semibold text-gray-900 mb-3">Excavation Method</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <label class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:border-brand-500 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 transition-colors">
+                        <input type="radio" name="excavation_method" value="generic" class="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500" {{ $selectedExcavation === 'generic' ? 'checked' : '' }}>
+                        <span class="text-sm font-medium text-gray-700">Generic</span>
                     </label>
-                    <label class="inline-flex items-center gap-2">
-                        <input type="radio" name="excavation_method" value="skid" class="form-radio" {{ $selectedExcavation === 'skid' ? 'checked' : '' }}>
-                        <span>Skid Steer</span>
+                    <label class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:border-brand-500 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 transition-colors">
+                        <input type="radio" name="excavation_method" value="skid" class="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500" {{ $selectedExcavation === 'skid' ? 'checked' : '' }}>
+                        <span class="text-sm font-medium text-gray-700">Skid Steer</span>
                     </label>
-                    <label class="inline-flex items-center gap-2">
-                        <input type="radio" name="excavation_method" value="mini" class="form-radio" {{ $selectedExcavation === 'mini' ? 'checked' : '' }}>
-                        <span>Mini Skid</span>
+                    <label class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:border-brand-500 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 transition-colors">
+                        <input type="radio" name="excavation_method" value="mini" class="w-4 h-4 text-brand-600 border-gray-300 focus:ring-brand-500" {{ $selectedExcavation === 'mini' ? 'checked' : '' }}>
+                        <span class="text-sm font-medium text-gray-700">Mini Skid</span>
                     </label>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Pick one excavation method. The form will enable only the matching excavation task input.</p>
+                <p class="text-xs text-gray-600 mt-2">Select one excavation method - the corresponding task input will be enabled</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -251,18 +325,21 @@
                             $isExcavation = in_array($key, ['excavation','excavation_skid_steer','excavation_mini_skid']);
                             $rendered[$key] = true;
                         @endphp
-                        <div class="border p-4 rounded bg-gray-50 {{ $isExcavation ? 'excavation-card' : '' }}" @if($isExcavation) data-excavation-task="1" data-excavation-key="{{ $key }}" @endif>
-                            <label class="block font-semibold mb-1">{{ $label }} ({{ $rate->unit }})</label>
+                        <div class="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-gray-50 to-gray-100 {{ $isExcavation ? 'excavation-card' : '' }}" @if($isExcavation) data-excavation-task="1" data-excavation-key="{{ $key }}" @endif>
+                            <label class="block font-semibold text-gray-900 mb-2">
+                                {{ $label }}
+                                <span class="text-sm text-gray-600 font-normal">({{ $rate->unit }})</span>
+                            </label>
                             <input
                                 type="number"
                                 name="tasks[{{ $key }}][qty]"
                                 step="any"
                                 min="0"
-                                class="form-input w-full"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                                 placeholder="Enter quantity"
                                 value="{{ $value }}"
                             >
-                            <p class="text-sm text-gray-500">
+                            <p class="text-xs text-gray-600 mt-2">
                                 Rate: {{ number_format($rate->rate, 4) }} hrs/{{ $rate->unit }}
                             </p>
                         </div>
@@ -277,18 +354,21 @@
                         $value = old("tasks.$key.qty", $savedQuantities[$key] ?? '');
                         $isExcavation = in_array($key, ['excavation','excavation_skid_steer','excavation_mini_skid']);
                     @endphp
-                    <div class="border p-4 rounded bg-gray-50 {{ $isExcavation ? 'excavation-card' : '' }}" @if($isExcavation) data-excavation-task="1" data-excavation-key="{{ $key }}" @endif>
-                        <label class="block font-semibold mb-1">{{ $label }} ({{ $rate->unit }})</label>
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-gray-50 to-gray-100 {{ $isExcavation ? 'excavation-card' : '' }}" @if($isExcavation) data-excavation-task="1" data-excavation-key="{{ $key }}" @endif>
+                        <label class="block font-semibold text-gray-900 mb-2">
+                            {{ $label }}
+                            <span class="text-sm text-gray-600 font-normal">({{ $rate->unit }})</span>
+                        </label>
                         <input
                             type="number"
                             name="tasks[{{ $key }}][qty]"
                             step="any"
                             min="0"
-                            class="form-input w-full"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                             placeholder="Enter quantity"
                             value="{{ $value }}"
                         >
-                        <p class="text-sm text-gray-500">
+                        <p class="text-xs text-gray-600 mt-2">
                             Rate: {{ number_format($rate->rate, 4) }} hrs/{{ $rate->unit }}
                         </p>
                     </div>
@@ -296,23 +376,35 @@
             </div>
         </div>
 
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+        {{-- Submit Buttons --}}
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between mt-8">
             @if(($mode ?? null) === 'template')
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
-                    <input type="text" name="template_name" class="form-input w-full sm:w-72" placeholder="Template name (e.g., Small backyard turf)" value="{{ old('template_name') }}">
-                    <select name="template_scope" class="form-select w-full sm:w-48">
+                <div class="w-full flex flex-col lg:flex-row gap-4">
+                    <input type="text" name="template_name" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" placeholder="Template name (e.g., Small backyard turf)" value="{{ old('template_name') }}">
+                    <select name="template_scope" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
                         <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
                         <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
                         <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
                     </select>
-                    <button type="submit" class="btn btn-secondary">💾 Save Template</button>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                        </svg>
+                        Save Template
+                    </button>
                 </div>
             @else
-                <button type="submit" class="btn btn-secondary">
-                    {{ $editMode ? '🔄 Recalculate Synthetic Turf' : '🧮 Calculate Synthetic Turf' }}
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    {{ $editMode ? 'Recalculate Synthetic Turf' : 'Calculate Synthetic Turf' }}
                 </button>
-                <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}" class="btn btn-muted">
-                    🔙 Back to Client
+                <a href="{{ route('clients.show', $siteVisit->client->id ?? $siteVisitId) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Client
                 </a>
             @endif
         </div>

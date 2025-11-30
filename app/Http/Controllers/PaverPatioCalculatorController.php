@@ -196,6 +196,34 @@ class PaverPatioCalculatorController extends Controller
     );
 
     // --------------------------------------------
+    // 📋 Enhanced Labor Tasks Array
+    // --------------------------------------------
+    $laborRate = (float) $validated['labor_rate'];
+    $laborTasks = [];
+    $taskRates = ProductionRate::where('calculator', 'paver_patio')->get()->keyBy('task');
+    
+    foreach ($labor as $taskKey => $hours) {
+        if ($hours <= 0) continue;
+        
+        $taskName = ucwords(str_replace('_', ' ', $taskKey));
+        $rate = $taskRates->get($taskKey);
+        $productionRate = $rate ? $rate->rate : 0;
+        $unit = $rate ? $rate->unit : 'sqft';
+        
+        $laborTasks[] = [
+            'task_key' => $taskKey,
+            'task_name' => $taskName,
+            'description' => $taskName . " - " . round($area, 2) . " {$unit}",
+            'quantity' => round($area, 2),
+            'unit' => $unit,
+            'production_rate' => $productionRate,
+            'hours' => round($hours, 2),
+            'hourly_rate' => $laborRate,
+            'total_cost' => round($hours * $laborRate, 2),
+        ];
+    }
+
+    // --------------------------------------------
     // 💾 Prepare and Save
     // --------------------------------------------
     $data = array_merge($validated, [
@@ -209,6 +237,7 @@ class PaverPatioCalculatorController extends Controller
         'polymeric_bags' => $polymericBags,
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
         'labor_hours' => round($baseLaborHours, 2),
+        'labor_tasks' => $laborTasks,
         'materials' => $materials,
         'material_total' => round($material_total, 2),
         'materials_override_enabled' => !empty($validated['materials_override_enabled']),
