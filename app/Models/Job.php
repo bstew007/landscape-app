@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Job extends Model
 {
     use HasFactory;
+    
+    protected $table = 'project_jobs';
 
     protected $fillable = [
         'estimate_id',

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('job_work_areas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('job_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('job_id')->constrained('project_jobs')->cascadeOnDelete();
             $table->foreignId('estimate_area_id')->nullable()->constrained('estimate_areas')->nullOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
