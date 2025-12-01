@@ -105,6 +105,20 @@
                         <a href="{{ route('estimates.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Estimates List</a>
                     </div>
                 </details>
+
+                <details class="group sidebar-accordion" open>
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10h6M9 14h6"/></svg>
+                            <span>JOBS</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job Hub</a>
+                        <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job List</a>
+                    </div>
+                </details>
             </div>
 
             <div>
@@ -237,6 +251,20 @@
                     </summary>
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
                         <a href="{{ route('estimates.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Estimates List</a>
+                    </div>
+                </details>
+
+                <details class="group sidebar-accordion" open>
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10h6M9 14h6"/></svg>
+                            <span>JOBS</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job Hub</a>
+                        <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job List</a>
                     </div>
                 </details>
             </div>

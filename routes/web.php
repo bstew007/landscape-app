@@ -448,6 +448,12 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('estimates/bulk-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-status');
     Route::post('estimates/bulk-update-status', [EstimateController::class, 'bulkUpdateStatus'])->name('estimates.bulk-update-status');
 
+    // Jobs (created from approved estimates)
+    Route::get('jobs', [\App\Http\Controllers\JobController::class, 'index'])->name('jobs.index');
+    Route::get('jobs/{job}', [\App\Http\Controllers\JobController::class, 'show'])->name('jobs.show');
+    Route::patch('jobs/{job}', [\App\Http\Controllers\JobController::class, 'update'])->name('jobs.update');
+    Route::post('estimates/{estimate}/create-job', [\App\Http\Controllers\JobController::class, 'createFromEstimate'])->name('estimates.create-job');
+
     // Purchase Orders
     Route::get('purchase-orders', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
     Route::get('purchase-orders/{purchaseOrder}', [\App\Http\Controllers\PurchaseOrderController::class, 'show'])->name('purchase-orders.show');

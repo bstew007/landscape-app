@@ -230,4 +230,9 @@ class Estimate extends Model
     {
         return $this->belongsTo(User::class, 'email_last_sent_by');
     }
+
+    public function job()
+    {
+        return $this->hasOne(Job::class);
+    }
 }

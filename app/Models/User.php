@@ -72,4 +72,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the jobs assigned to this user as foreman.
+     */
+    public function jobs()
+    {
+        return $this->hasMany(Job::class, 'foreman_id');
+    }
 }

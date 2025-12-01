@@ -142,6 +142,9 @@
                         Print
                     </a>
                 @endif
+                
+                <!-- Convert to Job Button -->
+                @include('estimates.partials.create-job-button', ['estimate' => $estimate])
             </div>
         </div>
     </section>
