@@ -7,6 +7,7 @@ use App\Models\Calculation;
 use App\Models\SiteVisit;
 use App\Models\Estimate;
 use App\Services\FenceLaborEstimatorService;
+use App\Services\BudgetService;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 
@@ -25,6 +26,9 @@ public function showForm(Request $request)
         $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
     }
 
+    $budgetService = app(BudgetService::class);
+    $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
     return view('calculators.fence.form', [
         'siteVisitId' => $siteVisit?->id ?? $siteVisitId,
         'clientId' => $siteVisit?->client?->id,
@@ -32,6 +36,7 @@ public function showForm(Request $request)
         'formData' => [],
         'mode' => $mode,
         'estimateId' => $estimateId,
+        'defaultLaborRate' => $defaultLaborRate,
     ]);
 }
 
@@ -71,6 +76,9 @@ public function downloadPdf($id)
       // ✅ Load the related site visit and client
     $siteVisit = $calculation->siteVisit()->with('client')->first();
 
+    $budgetService = app(BudgetService::class);
+    $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
     return view('calculators.fence.form', [
         'siteVisitId' => $siteVisit?->id,
         'clientId' => $siteVisit?->client?->id,
@@ -79,6 +87,7 @@ public function downloadPdf($id)
         'editMode' => true,
         'mode' => $calculation->is_template ? 'template' : null,
         'estimateId' => $calculation->estimate_id,
+        'defaultLaborRate' => $defaultLaborRate,
     ]);
 }
 

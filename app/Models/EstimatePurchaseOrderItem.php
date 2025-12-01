@@ -6,6 +6,37 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $purchase_order_id
+ * @property int|null $estimate_item_id
+ * @property int|null $material_id
+ * @property numeric $quantity
+ * @property numeric $unit_cost
+ * @property numeric $total_cost
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\EstimateItem|null $estimateItem
+ * @property-read string $material_name
+ * @property-read string|null $unit
+ * @property-read \App\Models\Material|null $material
+ * @property-read \App\Models\EstimatePurchaseOrder $purchaseOrder
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereEstimateItemId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereMaterialId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem wherePurchaseOrderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereTotalCost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereUnitCost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrderItem whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class EstimatePurchaseOrderItem extends Model
 {
     use HasFactory;

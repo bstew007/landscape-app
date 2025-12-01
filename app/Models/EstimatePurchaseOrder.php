@@ -7,6 +7,41 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $estimate_id
+ * @property int|null $supplier_id
+ * @property string $po_number
+ * @property string $status
+ * @property numeric $total_amount
+ * @property string|null $notes
+ * @property string|null $qbo_id
+ * @property \Illuminate\Support\Carbon|null $qbo_synced_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Estimate $estimate
+ * @property-read string $status_color
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimatePurchaseOrderItem> $items
+ * @property-read int|null $items_count
+ * @property-read \App\Models\Contact|null $supplier
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder draft()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder sent()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereEstimateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder wherePoNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereQboId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereQboSyncedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereSupplierId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereTotalAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimatePurchaseOrder whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class EstimatePurchaseOrder extends Model
 {
     use HasFactory;

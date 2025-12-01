@@ -7,6 +7,7 @@ use App\Models\ProductionRate;
 use App\Models\SiteVisit;
 use App\Models\Estimate;
 use App\Services\LaborCostCalculatorService;
+use App\Services\BudgetService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -40,6 +41,9 @@ class PlantingCalculatorController extends Controller
             $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
         }
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.planting.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
@@ -48,12 +52,15 @@ class PlantingCalculatorController extends Controller
             'formData' => [],
             'mode' => $mode,
             'estimateId' => $estimateId,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
     public function edit(Calculation $calculation)
     {
         $siteVisit = $calculation->siteVisit()->with('client')->first();
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
 
         return view('calculators.planting.form', [
             'editMode' => true,
@@ -64,6 +71,7 @@ class PlantingCalculatorController extends Controller
             'clientId' => $siteVisit?->client?->id,
             'mode' => $calculation->is_template ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 

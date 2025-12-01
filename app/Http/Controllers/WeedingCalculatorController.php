@@ -7,6 +7,7 @@ use App\Models\ProductionRate;
 use App\Models\SiteVisit;
 use App\Models\Estimate;
 use App\Services\LaborCostCalculatorService;
+use App\Services\BudgetService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class WeedingCalculatorController extends Controller
@@ -24,6 +25,9 @@ class WeedingCalculatorController extends Controller
             $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
         }
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.weeding.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
@@ -32,6 +36,7 @@ class WeedingCalculatorController extends Controller
             'formData' => [],
             'mode' => $mode,
             'estimateId' => $estimateId,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
@@ -40,6 +45,9 @@ class WeedingCalculatorController extends Controller
         $siteVisit = $calculation->site_visit_id 
             ? SiteVisit::with('client')->find($calculation->site_visit_id)
             : null;
+
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
 
         return view('calculators.weeding.form', [
             'editMode' => true,
@@ -50,6 +58,7 @@ class WeedingCalculatorController extends Controller
             'clientId' => $siteVisit?->client?->id,
             'mode' => $calculation->is_template ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 

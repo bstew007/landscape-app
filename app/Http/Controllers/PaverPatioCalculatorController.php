@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ProductionRate;
 use App\Services\LaborCostCalculatorService;
+use App\Services\BudgetService;
 
 
 class PaverPatioCalculatorController extends Controller
@@ -26,6 +27,9 @@ class PaverPatioCalculatorController extends Controller
             $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
         }
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.paver-patio.form', [
             'siteVisit' => $siteVisit,
             'siteVisitId' => $siteVisitId,
@@ -34,12 +38,16 @@ class PaverPatioCalculatorController extends Controller
             'formData' => [],
             'mode' => $mode,
             'estimateId' => $estimateId,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
     public function edit(Calculation $calculation)
     {
         $siteVisit = $calculation->siteVisit()->with('client')->first();
+
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
 
         return view('calculators.paver-patio.form', [
             'siteVisit' => $siteVisit,
@@ -49,6 +57,7 @@ class PaverPatioCalculatorController extends Controller
             'siteVisitId' => $calculation->site_visit_id,
             'mode' => $calculation->is_template ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
@@ -58,8 +67,8 @@ class PaverPatioCalculatorController extends Controller
     $rules = [
         'length' => 'required|numeric|min:1',
         'width' => 'required|numeric|min:1',
-        'paver_type' => 'required|string|in:belgard,techo',
         'edge_restraint' => 'required|string|in:plastic,concrete',
+        'edging_linear_feet' => 'nullable|numeric|min:0',
         'crew_size' => 'required|integer|min:1',
         'drive_distance' => 'required|numeric|min:0',
         'drive_speed' => 'required|numeric|min:1',
@@ -69,17 +78,16 @@ class PaverPatioCalculatorController extends Controller
         'cleanup' => 'nullable|numeric|min:0',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
-        'materials_override_enabled' => 'nullable|boolean',
+        'materials' => 'nullable|array',
+        'materials.*.catalog_id' => 'nullable|integer',
+        'materials.*.name' => 'nullable|string|max:255',
+        'materials.*.quantity' => 'nullable|numeric|min:0',
+        'materials.*.unit_cost' => 'nullable|numeric|min:0',
+        'materials.*.unit' => 'nullable|string|max:50',
         'custom_materials' => 'nullable|array',
         'custom_materials.*.name' => 'nullable|string|max:255',
         'custom_materials.*.qty' => 'nullable|numeric|min:0',
         'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
-        // Material cost overrides
-        'override_paver_cost' => 'nullable|numeric|min:0',
-        'override_base_cost' => 'nullable|numeric|min:0',
-        'override_plastic_edge_cost' => 'nullable|numeric|min:0',
-        'override_concrete_edge_cost' => 'nullable|numeric|min:0',
-        'override_polymeric_sand_cost' => 'nullable|numeric|min:0',
     ];
     // site_visit_id depends on mode
     $rules['site_visit_id'] = ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id';
@@ -109,7 +117,7 @@ class PaverPatioCalculatorController extends Controller
         ? $plasticEdgeCostPer20ft
         : $concreteEdgeCostPer20ft;
 
-    $edgeLF = $area / 20;
+    $edgeLF = $validated['edging_linear_feet'] ?? ($area / 20);
 
     $materials = [
         'Pavers' => [
@@ -226,6 +234,23 @@ class PaverPatioCalculatorController extends Controller
     // --------------------------------------------
     // 💾 Prepare and Save
     // --------------------------------------------
+    
+    // Process catalog materials
+    $catalogMaterials = [];
+    if (!empty($validated['materials'])) {
+        foreach ($validated['materials'] as $mat) {
+            if (!empty($mat['name']) && isset($mat['quantity'])) {
+                $catalogMaterials[] = [
+                    'catalog_id' => $mat['catalog_id'] ?? null,
+                    'name' => $mat['name'],
+                    'quantity' => (float) $mat['quantity'],
+                    'unit_cost' => (float) ($mat['unit_cost'] ?? 0),
+                    'unit' => $mat['unit'] ?? 'ea',
+                ];
+            }
+        }
+    }
+    
     $data = array_merge($validated, [
         'area_sqft' => round($area, 2),
         'paver_count' => $paverCount,
@@ -234,13 +259,14 @@ class PaverPatioCalculatorController extends Controller
         'base_unit_cost' => $baseUnitCost,
         'edge_unit_cost' => $edgeUnitCost,
         'edge_lf' => round($edgeLF, 2),
+        'edging_linear_feet' => $validated['edging_linear_feet'] ?? null,
         'polymeric_bags' => $polymericBags,
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
         'labor_hours' => round($baseLaborHours, 2),
         'labor_tasks' => $laborTasks,
-        'materials' => $materials,
+        'materials' => $catalogMaterials,
+        'calculated_materials' => $materials,
         'material_total' => round($material_total, 2),
-        'materials_override_enabled' => !empty($validated['materials_override_enabled']),
         'custom_materials' => $customMaterials,
     ], $totals);
 

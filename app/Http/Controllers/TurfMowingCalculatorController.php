@@ -7,6 +7,7 @@ use App\Models\ProductionRate;
 use App\Models\SiteVisit;
 use App\Models\Estimate;
 use App\Services\LaborCostCalculatorService;
+use App\Services\BudgetService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -25,6 +26,9 @@ class TurfMowingCalculatorController extends Controller
             $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
         }
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.turf-mowing.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
@@ -33,11 +37,15 @@ class TurfMowingCalculatorController extends Controller
             'formData' => [],
             'mode' => $mode,
             'estimateId' => $estimateId,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
     public function edit(Calculation $calculation)
     {
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.turf-mowing.form', [
             'editMode' => true,
             'formData' => $calculation->data,
@@ -46,6 +54,7 @@ class TurfMowingCalculatorController extends Controller
             'siteVisit' => $calculation->siteVisit()->with('client')->first(),
             'mode' => $calculation->is_template ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 

@@ -68,6 +68,10 @@ class EstimateAreaController extends Controller
             abort(404);
         }
         $area->delete();
+        
+        // Recalculate estimate totals after deleting area and its items
+        app(\App\Services\EstimateItemService::class)->recalculateTotals($estimate->fresh());
+        
         return back()->with('success', 'Work area removed.');
     }
 

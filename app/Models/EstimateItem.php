@@ -6,6 +6,64 @@ use App\Models\Calculation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $estimate_id
+ * @property string $item_type
+ * @property string|null $catalog_type
+ * @property int|null $catalog_id
+ * @property string $name
+ * @property string|null $description
+ * @property string|null $unit
+ * @property numeric $quantity
+ * @property numeric $unit_cost
+ * @property numeric $tax_rate
+ * @property numeric $line_total
+ * @property string|null $source
+ * @property int $sort_order
+ * @property array<array-key, mixed>|null $metadata
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $calculation_id
+ * @property numeric $unit_price
+ * @property numeric $margin_rate
+ * @property numeric $cost_total
+ * @property numeric $margin_total
+ * @property int|null $area_id
+ * @property-read \App\Models\EstimateArea|null $area
+ * @property-read Calculation|null $calculation
+ * @property-read \App\Models\Estimate $estimate
+ * @property-read mixed $catalog
+ * @property-read \App\Models\LaborItem|null $laborItem
+ * @property-read \App\Models\Material|null $material
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereAreaId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereCalculationId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereCatalogId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereCatalogType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereCostTotal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereEstimateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereItemType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereLineTotal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereMarginRate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereMarginTotal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereMetadata($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereSortOrder($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereSource($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereTaxRate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereUnit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereUnitCost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereUnitPrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EstimateItem whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class EstimateItem extends Model
 {
     use HasFactory;

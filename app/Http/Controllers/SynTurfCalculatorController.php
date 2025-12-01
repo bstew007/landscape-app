@@ -9,6 +9,7 @@ use App\Models\SiteVisit;
 use App\Models\Estimate;
 use App\Services\LaborCostCalculatorService;
 use App\Services\SynTurfMaterialService;
+use App\Services\BudgetService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -29,6 +30,9 @@ class SynTurfCalculatorController extends Controller
             $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
         }
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.syn-turf.form', [
             'siteVisitId' => $siteVisitId,
             'siteVisit' => $siteVisit,
@@ -37,6 +41,7 @@ class SynTurfCalculatorController extends Controller
             'formData' => [],
             'mode' => $mode,
             'estimateId' => $estimateId,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
@@ -46,6 +51,9 @@ class SynTurfCalculatorController extends Controller
         // Treat calculations without a site visit (e.g., created via Estimate import) as template-mode edits
         $isTemplateMode = $calculation->is_template || (empty($calculation->site_visit_id) && !empty($calculation->estimate_id));
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.syn-turf.form', [
             'editMode' => true,
             'formData' => $calculation->data,
@@ -54,6 +62,7 @@ class SynTurfCalculatorController extends Controller
             'siteVisit' => $siteVisit,
             'mode' => $isTemplateMode ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 

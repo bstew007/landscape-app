@@ -20,14 +20,29 @@ class CalculatorImportController extends Controller
     {
         $validated = $request->validate([
             'calculation_id' => 'required|exists:calculations,id',
-            'estimate_id' => 'required|exists:estimates,id',
+            'estimate_id' => 'nullable|string', // Can be 'new' or existing ID
+            'estimate_title' => 'required_if:estimate_id,new|string|max:255',
             'area_name' => 'nullable|string|max:255',
             'import_type' => 'required|in:granular,collapsed',
             'action' => 'required|in:import,save_only',
         ]);
         
         $calculation = Calculation::findOrFail($validated['calculation_id']);
-        $estimate = Estimate::findOrFail($validated['estimate_id']);
+        
+        // Create new estimate if needed
+        if ($validated['estimate_id'] === 'new') {
+            $estimate = Estimate::create([
+                'title' => $validated['estimate_title'],
+                'client_id' => $calculation->client_id ?? $calculation->siteVisit->client_id,
+                'property_id' => $calculation->property_id ?? $calculation->siteVisit->property_id,
+                'site_visit_id' => $calculation->site_visit_id,
+                'status' => 'draft',
+                'estimate_type' => 'design_build',
+                'cost_code_id' => \App\Models\CostCode::where('is_active', true)->whereNotNull('qbo_item_id')->first()?->id ?? 1,
+            ]);
+        } else {
+            $estimate = Estimate::findOrFail($validated['estimate_id']);
+        }
         
         // Just save, don't import
         if ($validated['action'] === 'save_only') {
@@ -44,7 +59,7 @@ class CalculatorImportController extends Controller
                 $estimate, 
                 $calculation,
                 null, // Let the service find/create the work area
-                ['area_name' => $validated['area_name']]
+                ['name' => $validated['area_name']]
             );
             
             return redirect()

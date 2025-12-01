@@ -438,6 +438,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('site-visits/{site_visit}/estimate-line-items', [EstimateController::class, 'siteVisitLineItems'])->name('site-visits.estimate-line-items');
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
+    Route::match(['get', 'post'], 'estimates/{estimate}/recalculate', [EstimateController::class, 'recalculate'])->name('estimates.recalculate');
     Route::get('estimates/{estimate}/reports/cost-analysis', [EstimateController::class, 'costAnalysisReport'])->name('estimates.reports.cost-analysis');
     Route::get('estimates/{estimate}/reports/labor-hours', [EstimateController::class, 'laborHoursReport'])->name('estimates.reports.labor-hours');
     Route::get('estimates/{estimate}/reports/material-requirements', [EstimateController::class, 'materialRequirementsReport'])->name('estimates.reports.material-requirements');

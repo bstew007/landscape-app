@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ProductionRate;
 use App\Services\LaborCostCalculatorService;
+use App\Services\BudgetService;
 
 
 class RetainingWallCalculatorController extends Controller
@@ -26,6 +27,9 @@ class RetainingWallCalculatorController extends Controller
             $siteVisit = SiteVisit::with('client')->findOrFail($siteVisitId);
         }
 
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
+
         return view('calculators.retaining-wall.form', [
             'siteVisit' => $siteVisit,
             'siteVisitId' => $siteVisitId,
@@ -34,12 +38,16 @@ class RetainingWallCalculatorController extends Controller
             'formData' => [],
             'mode' => $mode,
             'estimateId' => $estimateId,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 
     public function edit(Calculation $calculation)
     {
         $siteVisit = $calculation->siteVisit()->with('client')->first();
+
+        $budgetService = app(BudgetService::class);
+        $defaultLaborRate = $budgetService->getLaborRateForCalculators();
 
         return view('calculators.retaining-wall.form', [
             'siteVisit' => $siteVisit,
@@ -50,6 +58,7 @@ class RetainingWallCalculatorController extends Controller
             'calculation' => $calculation,
             'mode' => $calculation->is_template ? 'template' : null,
             'estimateId' => $calculation->estimate_id,
+            'defaultLaborRate' => $defaultLaborRate,
         ]);
     }
 

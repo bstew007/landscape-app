@@ -89,14 +89,37 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($data['materials'] as $name => $material)
-                        <tr class="border-b border-gray-100 hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium text-gray-900">{{ $name }}</td>
-                            <td class="py-3 px-4 text-right text-gray-700">{{ number_format($material['qty'], 2) }}</td>
-                            <td class="py-3 px-4 text-right text-gray-700">${{ number_format($material['unit_cost'], 2) }}</td>
-                            <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($material['total'], 2) }}</td>
-                        </tr>
-                    @endforeach
+                    {{-- Auto-calculated materials (pavers, base, edge, polymeric) --}}
+                    @if(!empty($data['calculated_materials']))
+                        @foreach($data['calculated_materials'] as $name => $material)
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <td class="py-3 px-4 font-medium text-gray-900">{{ $name }}</td>
+                                <td class="py-3 px-4 text-right text-gray-700">{{ number_format($material['qty'], 2) }}</td>
+                                <td class="py-3 px-4 text-right text-gray-700">${{ number_format($material['unit_cost'], 2) }}</td>
+                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($material['total'], 2) }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
+                    
+                    {{-- Catalog materials --}}
+                    @if(!empty($data['materials']) && is_array($data['materials']))
+                        @foreach($data['materials'] as $material)
+                            @php
+                                $total = ($material['quantity'] ?? 0) * ($material['unit_cost'] ?? 0);
+                            @endphp
+                            <tr class="border-b border-gray-100 hover:bg-amber-50">
+                                <td class="py-3 px-4 font-medium text-gray-900">
+                                    {{ $material['name'] }}
+                                    <span class="text-xs text-gray-500 ml-2">(from catalog)</span>
+                                </td>
+                                <td class="py-3 px-4 text-right text-gray-700">
+                                    {{ number_format($material['quantity'], 2) }} {{ $material['unit'] ?? 'ea' }}
+                                </td>
+                                <td class="py-3 px-4 text-right text-gray-700">${{ number_format($material['unit_cost'], 2) }}</td>
+                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($total, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    @endif
                 </tbody>
                 <tfoot>
                     <tr class="border-t-2 border-gray-300 bg-gray-50">
@@ -212,44 +235,65 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('calculators.import_to_estimate') }}">
+        <form method="POST" action="{{ route('calculators.import-to-estimate') }}">
             @csrf
             <input type="hidden" name="calculation_id" value="{{ $calculation->id ?? '' }}">
             <input type="hidden" name="calculator_type" value="paver_patio">
 
             {{-- Target Estimate Selection --}}
-            <div class="mb-6">
-                <label class="block text-sm font-bold text-gray-700 mb-2">Select Target Estimate:</label>
-                <div class="flex gap-3">
-                    <select name="estimate_id" required 
-                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition">
+            <div class="mb-6" x-data="{ estimateMode: 'existing', newEstimateTitle: 'Paver Patio - {{ $siteVisit->client->company_name ?? $siteVisit->client->name ?? '' }} - {{ date('M d, Y') }}' }">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Target Estimate:</label>
+                
+                {{-- Mode Toggle --}}
+                <div class="flex gap-2 mb-3">
+                    <button type="button" @click="estimateMode = 'existing'" 
+                            :class="estimateMode === 'existing' ? 'bg-brand-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                            class="flex-1 px-4 py-2 rounded-lg font-semibold transition">
+                        Select Existing
+                    </button>
+                    <button type="button" @click="estimateMode = 'new'" 
+                            :class="estimateMode === 'new' ? 'bg-brand-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                            class="flex-1 px-4 py-2 rounded-lg font-semibold transition">
+                        Create New
+                    </button>
+                </div>
+                
+                {{-- Existing Estimate Selector --}}
+                <div x-show="estimateMode === 'existing'" x-cloak>
+                    <select :name="estimateMode === 'existing' ? 'estimate_id' : ''" :required="estimateMode === 'existing'"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition">
                         <option value="">-- Choose an Estimate --</option>
                         @php
                             $estimates = $siteVisit->estimates ?? collect();
                         @endphp
                         @foreach($estimates as $est)
                             <option value="{{ $est->id }}">
-                                #{{ $est->id }} - {{ $est->name }} ({{ ucfirst($est->status) }})
+                                #{{ $est->id }} - {{ $est->title }} ({{ ucfirst($est->status) }})
                             </option>
                         @endforeach
                     </select>
-                    <a href="{{ route('estimates.create', ['site_visit_id' => $siteVisit->id]) }}" 
-                       class="px-6 py-3 bg-brand-800 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-sm transition whitespace-nowrap flex items-center">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        New Estimate
-                    </a>
+                    <p class="mt-2 text-sm text-gray-500">Import calculation into an existing estimate</p>
                 </div>
-                <p class="mt-2 text-sm text-gray-500">Choose an existing estimate or create a new one</p>
+                
+                {{-- New Estimate Creator --}}
+                <div x-show="estimateMode === 'new'" x-cloak>
+                    <input type="hidden" :name="estimateMode === 'new' ? 'estimate_id' : ''" value="new">
+                    <input type="text" 
+                           :name="estimateMode === 'new' ? 'estimate_title' : ''"
+                           x-model="newEstimateTitle"
+                           :required="estimateMode === 'new'"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                           placeholder="Enter estimate title">
+                    <p class="mt-2 text-sm text-gray-500">A new estimate will be created and the calculation imported automatically</p>
+                </div>
             </div>
             
             {{-- Work Area Name --}}
-            <div class="mb-6">
+            <div class="mb-6" x-data="{ areaName: 'Paver Patio - {{ date('M d, Y') }}' }">
                 <label class="block text-sm font-bold text-gray-700 mb-2">Work Area Name:</label>
                 <input type="text" 
                        name="area_name" 
-                       value="Paver Patio - {{ date('M d, Y') }}"
+                       x-model="areaName"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                        placeholder="e.g., Backyard Patio Installation">
                 <p class="mt-2 text-sm text-gray-500">This will organize line items in your estimate</p>
@@ -282,19 +326,20 @@
             </div>
 
             {{-- Submit Button --}}
-            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                <p class="text-sm text-gray-600">
-                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Line items will be added to the selected estimate
-                </p>
-                <button type="submit" 
-                        class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
+                <button type="submit" name="action" value="import" 
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 bg-brand-800 hover:bg-brand-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                     </svg>
                     Import to Estimate
+                </button>
+                <button type="submit" name="action" value="save_only" 
+                        class="px-8 py-4 bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                    </svg>
+                    Save Only
                 </button>
             </div>
         </form>
@@ -313,7 +358,7 @@
             </a>
         @endif
         
-        <a href="{{ route('site_visits.show', $siteVisit->id) }}" 
+        <a href="{{ route('clients.site-visits.show', [$siteVisit->client->id, $siteVisit->id]) }}" 
            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-sm transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>

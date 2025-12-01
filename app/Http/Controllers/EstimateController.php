@@ -250,6 +250,24 @@ class EstimateController extends Controller
         return redirect()->route('estimates.index')->with('success', 'Estimate deleted.');
     }
 
+    public function recalculate(Estimate $estimate)
+    {
+        $this->itemService->recalculateTotals($estimate);
+        
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Totals recalculated',
+                'totals' => [
+                    'cost_total' => $estimate->cost_total,
+                    'revenue_total' => $estimate->revenue_total,
+                    'grand_total' => $estimate->grand_total,
+                ],
+            ]);
+        }
+        
+        return back()->with('success', 'Estimate totals recalculated.');
+    }
 
     public function removeCalculation(Estimate $estimate, Calculation $calculation)
     {

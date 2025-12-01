@@ -5,6 +5,59 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string|null $sku
+ * @property string|null $category
+ * @property string $unit
+ * @property numeric $unit_cost
+ * @property numeric $tax_rate
+ * @property string|null $vendor_name
+ * @property string|null $vendor_sku
+ * @property string|null $description
+ * @property bool $is_taxable
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $category_id
+ * @property numeric|null $unit_price
+ * @property numeric|null $breakeven
+ * @property numeric|null $profit_percent
+ * @property int|null $supplier_id
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MaterialCategory> $categories
+ * @property-read int|null $categories_count
+ * @property-read string $supplier_name
+ * @property-read \App\Models\MaterialCategory|null $materialCategory
+ * @property-read \App\Models\Contact|null $supplier
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material bySupplier(int $supplierId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material searchByName(string $name)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material searchBySku(string $sku, bool $exact = false)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereBreakeven($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereCategoryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereIsTaxable($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereProfitPercent($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereSku($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereSupplierId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereTaxRate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereUnit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereUnitCost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereUnitPrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereVendorName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Material whereVendorSku($value)
+ * @mixin \Eloquent
+ */
 class Material extends Model
 {
     use HasFactory;

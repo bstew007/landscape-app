@@ -10,7 +10,7 @@
                    step="0.01" 
                    name="labor_rate" 
                    class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" 
-                   value="{{ old('labor_rate', $formData['labor_rate'] ?? 65) }}" 
+                   value="{{ old('labor_rate', $formData['labor_rate'] ?? $defaultLaborRate ?? 65) }}" 
                    required>
         </div>
     </div>

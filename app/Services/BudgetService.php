@@ -155,4 +155,47 @@ class BudgetService
             'gross_margin' => round($grossMargin, 4),
         ];
     }
+
+    /**
+     * Get the average breakeven labor rate from the labor catalog.
+     * Falls back to budget BLC if no labor items exist.
+     *
+     * @return float
+     */
+    public function getAverageLaborRate(): float
+    {
+        // Try to get average from labor catalog items
+        $laborItems = \App\Models\LaborItem::where('is_active', true)
+            ->whereNotNull('breakeven')
+            ->where('breakeven', '>', 0)
+            ->get();
+
+        if ($laborItems->isNotEmpty()) {
+            $average = $laborItems->avg('breakeven');
+            return round((float) $average, 2);
+        }
+
+        // Fallback to budget break-even labor cost (BLC)
+        $budget = $this->active();
+        if ($budget) {
+            $blc = (float) Arr::get($budget->outputs, 'labor.blc', 0);
+            if ($blc > 0) {
+                return round($blc, 2);
+            }
+        }
+
+        // Final fallback - reasonable default
+        return 50.00;
+    }
+
+    /**
+     * Get the recommended labor rate for calculators.
+     * This is an alias for getAverageLaborRate() for better semantics.
+     *
+     * @return float
+     */
+    public function getLaborRateForCalculators(): float
+    {
+        return $this->getAverageLaborRate();
+    }
 }

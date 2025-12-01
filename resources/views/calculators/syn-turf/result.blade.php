@@ -203,7 +203,12 @@
     @endif
 
     {{-- Import to Estimate --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6" 
+         x-data="{ 
+            estimateMode: 'existing',
+            newEstimateTitle: 'Synthetic Turf - {{ date('M d, Y') }}',
+            areaName: 'Synthetic Turf - {{ date('M d, Y') }}'
+         }">
         <div class="flex items-center gap-3 mb-6">
             <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,31 +226,49 @@
             <input type="hidden" name="calculation_id" value="{{ $calculation->id ?? '' }}">
             <input type="hidden" name="calculator_type" value="syn_turf">
 
-            {{-- Target Estimate Selection --}}
+            {{-- Estimate Selection Toggle --}}
             <div class="mb-6">
-                <label class="block text-sm font-bold text-gray-700 mb-2">Select Target Estimate:</label>
-                <div class="flex gap-3">
-                    <select name="estimate_id" required 
-                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Estimate:</label>
+                <div class="flex gap-2 mb-3">
+                    <button type="button" @click="estimateMode = 'existing'" 
+                            :class="estimateMode === 'existing' ? 'bg-brand-800 text-white' : 'bg-gray-200 text-gray-700'"
+                            class="px-4 py-2 rounded-lg font-semibold transition">
+                        Select Existing
+                    </button>
+                    <button type="button" @click="estimateMode = 'new'" 
+                            :class="estimateMode === 'new' ? 'bg-brand-800 text-white' : 'bg-gray-200 text-gray-700'"
+                            class="px-4 py-2 rounded-lg font-semibold transition">
+                        Create New
+                    </button>
+                </div>
+                
+                {{-- Existing Estimate Selector --}}
+                <div x-show="estimateMode === 'existing'" x-cloak>
+                    <select :name="estimateMode === 'existing' ? 'estimate_id' : ''" 
+                            :required="estimateMode === 'existing'"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition">
                         <option value="">-- Choose an Estimate --</option>
                         @php
                             $estimates = $siteVisit->estimates ?? collect();
                         @endphp
                         @foreach($estimates as $est)
                             <option value="{{ $est->id }}">
-                                #{{ $est->id }} - {{ $est->name }} ({{ ucfirst($est->status) }})
+                                #{{ $est->id }} - {{ $est->title }} ({{ ucfirst($est->status) }})
                             </option>
                         @endforeach
                     </select>
-                    <a href="{{ route('estimates.create', ['site_visit_id' => $siteVisit->id]) }}" 
-                       class="px-6 py-3 bg-brand-800 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-sm transition whitespace-nowrap flex items-center">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        New Estimate
-                    </a>
                 </div>
-                <p class="mt-2 text-sm text-gray-500">Choose an existing estimate or create a new one</p>
+                
+                {{-- New Estimate Input --}}
+                <div x-show="estimateMode === 'new'" x-cloak>
+                    <input type="text" 
+                           x-model="newEstimateTitle"
+                           :name="estimateMode === 'new' ? 'new_estimate_title' : ''"
+                           :required="estimateMode === 'new'"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+                           placeholder="e.g., Backyard Turf Installation">
+                    <input type="hidden" :name="estimateMode === 'new' ? 'estimate_id' : ''" value="new">
+                </div>
             </div>
             
             {{-- Work Area Name --}}
@@ -253,7 +276,7 @@
                 <label class="block text-sm font-bold text-gray-700 mb-2">Work Area Name:</label>
                 <input type="text" 
                        name="area_name" 
-                       value="Synthetic Turf - {{ date('M d, Y') }}"
+                       x-model="areaName"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                        placeholder="e.g., Backyard Turf Installation">
                 <p class="mt-2 text-sm text-gray-500">This will organize line items in your estimate</p>
