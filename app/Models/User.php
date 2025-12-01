@@ -80,4 +80,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Job::class, 'foreman_id');
     }
+
+    /**
+     * Get the timesheets for this user.
+     */
+    public function timesheets()
+    {
+        return $this->hasMany(Timesheet::class);
+    }
 }

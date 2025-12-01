@@ -21,7 +21,7 @@ class CalculatorImportController extends Controller
         $validated = $request->validate([
             'calculation_id' => 'required|exists:calculations,id',
             'estimate_id' => 'nullable|string', // Can be 'new' or existing ID
-            'estimate_title' => 'required_if:estimate_id,new|string|max:255',
+            'new_estimate_title' => 'required_if:estimate_id,new|string|max:255',
             'area_name' => 'nullable|string|max:255',
             'import_type' => 'required|in:granular,collapsed',
             'action' => 'required|in:import,save_only',
@@ -32,7 +32,7 @@ class CalculatorImportController extends Controller
         // Create new estimate if needed
         if ($validated['estimate_id'] === 'new') {
             $estimate = Estimate::create([
-                'title' => $validated['estimate_title'],
+                'title' => $validated['new_estimate_title'],
                 'client_id' => $calculation->client_id ?? $calculation->siteVisit->client_id,
                 'property_id' => $calculation->property_id ?? $calculation->siteVisit->property_id,
                 'site_visit_id' => $calculation->site_visit_id,

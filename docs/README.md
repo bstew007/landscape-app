@@ -71,15 +71,12 @@
 
 ## 🧮 Calculator System
 
-- **[CALCULATOR_INTEGRATION_IMPLEMENTATION_GUIDE.md](CALCULATOR_INTEGRATION_IMPLEMENTATION_GUIDE.md)**
-  - Complete calculator integration guide
-  - How calculators convert to estimates
-  - Calculator types and workflows
-
-- **[CALCULATOR_ESTIMATE_INTEGRATION_ANALYSIS.md](CALCULATOR_ESTIMATE_INTEGRATION_ANALYSIS.md)**
-  - Analysis of calculator-estimate integration
-  - Data flow diagrams
-  - Best practices
+- **[CALCULATORS_MASTER_GUIDE.md](CALCULATORS_MASTER_GUIDE.md)** ⭐ **START HERE**
+  - Complete calculator system overview
+  - All calculator types explained
+  - Implementation status (91% complete)
+  - Production rates, catalog integration, import workflow
+  - Development guide for new calculators
 
 - **[CALCULATOR_OVERHAUL_STATUS.md](CALCULATOR_OVERHAUL_STATUS.md)**
   - Calculator system overhaul status
@@ -186,8 +183,7 @@ docs/
 │   └── CUSTOM_PRICING_FEATURE.md
 │
 ├── 🧮 CALCULATORS
-│   ├── CALCULATOR_INTEGRATION_IMPLEMENTATION_GUIDE.md
-│   ├── CALCULATOR_ESTIMATE_INTEGRATION_ANALYSIS.md
+│   ├── CALCULATORS_MASTER_GUIDE.md
 │   ├── CALCULATOR_OVERHAUL_STATUS.md
 │   ├── CALCULATOR_IMPORT_PLAN.md
 │   └── CALCULATOR_IMPORT_FIXES_SUMMARY.md

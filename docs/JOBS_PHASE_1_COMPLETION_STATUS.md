@@ -408,7 +408,7 @@ CREATE TABLE timesheets (
 
 ### Environment Setup
 ```bash
-cd /Users/robertstewart/Documents/laravel/www/landscape-app
+cd c:\laragon\www\landscape-app
 php artisan serve
 ```
 

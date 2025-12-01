@@ -122,7 +122,7 @@ Following the same modular pattern from Phase 1:
 
 ### Start Development Server
 ```bash
-cd /Users/robertstewart/Documents/laravel/www/landscape-app
+cd c:\laragon\www\landscape-app
 php artisan serve
 ```
 

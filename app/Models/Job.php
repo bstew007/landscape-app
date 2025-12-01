@@ -90,6 +90,11 @@ class Job extends Model
         return $this->hasMany(JobWorkArea::class)->orderBy('sort_order');
     }
 
+    public function timesheets(): HasMany
+    {
+        return $this->hasMany(Timesheet::class);
+    }
+
     // Computed attributes
     public function getVarianceTotalAttribute(): float
     {

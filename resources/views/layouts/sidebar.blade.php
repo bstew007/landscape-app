@@ -117,6 +117,8 @@
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
                         <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job Hub</a>
                         <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job List</a>
+                        <a href="{{ route('timesheets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Timesheets</a>
+                        <a href="{{ route('timesheets.approve') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Approve Timesheets</a>
                     </div>
                 </details>
             </div>
@@ -265,6 +267,8 @@
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
                         <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job Hub</a>
                         <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job List</a>
+                        <a href="{{ route('timesheets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Timesheets</a>
+                        <a href="{{ route('timesheets.approve') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Approve Timesheets</a>
                     </div>
                 </details>
             </div>

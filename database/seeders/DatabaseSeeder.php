@@ -17,9 +17,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ProductionRateSeeder::class,
-            EstimateSeeder::class,
             MaterialCategorySeeder::class,
             MaterialSeeder::class,
+            MaterialsSeeder::class,  // Full materials import
+            VendorContactsSeeder::class,
+            EstimateSeeder::class,
         ]);
 
         // User::factory(10)->create();
@@ -28,7 +30,5 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-
-
     }
 }

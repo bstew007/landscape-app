@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Contact;
+use App\Models\Timesheet;
 use App\Observers\ContactObserver;
+use App\Observers\TimesheetObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,5 +33,8 @@ class AppServiceProvider extends ServiceProvider
         if (config('qbo.auto_sync')) {
             Contact::observe(ContactObserver::class);
         }
+        
+        // Observe timesheet changes for job cost updates
+        Timesheet::observe(TimesheetObserver::class);
     }
 }

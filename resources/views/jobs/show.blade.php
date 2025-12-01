@@ -81,6 +81,71 @@
 
         {{-- Sidebar --}}
         <div class="space-y-6">
+            {{-- Active Timesheet / Clock In/Out Card --}}
+            @php
+                $activeTimesheet = $job->timesheets()
+                    ->where('user_id', auth()->id())
+                    ->where('work_date', now()->toDateString())
+                    ->whereNull('clock_out')
+                    ->first();
+            @endphp
+            
+            <div class="bg-white rounded-2xl border border-brand-100 shadow-sm p-6" x-data="timeclockWidget">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Time Clock</h3>
+                
+                @if($activeTimesheet)
+                    {{-- Currently Clocked In --}}
+                    <div class="space-y-4">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
+                                <span class="text-sm font-medium text-green-900">Clocked In</span>
+                            </div>
+                            <p class="text-xs text-green-700">Started: {{ $activeTimesheet->clock_in->format('g:i A') }}</p>
+                            <p class="text-xs text-green-700 mt-1">
+                                Area: {{ $activeTimesheet->workArea->name ?? 'General' }}
+                            </p>
+                            <p class="text-lg font-semibold text-green-900 mt-2" x-text="elapsedTime"></p>
+                        </div>
+                        
+                        <button @click="clockOut({{ $activeTimesheet->id }})"
+                                :disabled="loading"
+                                class="w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition">
+                            <span x-show="!loading">Clock Out</span>
+                            <span x-show="loading">Processing...</span>
+                        </button>
+                    </div>
+                @else
+                    {{-- Clock In Form --}}
+                    <form @submit.prevent="clockIn">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Work Area</label>
+                                <select x-model="workAreaId" required
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">Select work area...</option>
+                                    @foreach($job->workAreas as $area)
+                                        <option value="{{ $area->id }}">{{ $area->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            
+                            <button type="submit"
+                                    :disabled="loading || !workAreaId"
+                                    class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition">
+                                <span x-show="!loading">Clock In</span>
+                                <span x-show="loading">Processing...</span>
+                            </button>
+                        </div>
+                    </form>
+                @endif
+                
+                {{-- Error Message --}}
+                <div x-show="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm text-red-700" x-text="error"></p>
+                </div>
+            </div>
+
             {{-- Job Info Card --}}
             <div class="bg-white rounded-2xl border border-brand-100 shadow-sm p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Job Information</h3>
@@ -170,4 +235,100 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('timeclockWidget', () => ({
+        loading: false,
+        error: null,
+        workAreaId: '',
+        elapsedTime: '00:00:00',
+        intervalId: null,
+        clockInTime: @json($activeTimesheet?->clock_in?->timestamp),
+        
+        init() {
+            if (this.clockInTime) {
+                this.startTimer();
+            }
+        },
+        
+        startTimer() {
+            this.intervalId = setInterval(() => {
+                const now = Math.floor(Date.now() / 1000);
+                const elapsed = now - this.clockInTime;
+                
+                const hours = Math.floor(elapsed / 3600);
+                const minutes = Math.floor((elapsed % 3600) / 60);
+                const seconds = elapsed % 60;
+                
+                this.elapsedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        },
+        
+        async clockIn() {
+            this.loading = true;
+            this.error = null;
+            
+            try {
+                const response = await fetch('{{ route('timesheets.clock-in') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        job_id: {{ $job->id }},
+                        work_area_id: this.workAreaId,
+                        work_date: new Date().toISOString().split('T')[0]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to clock in');
+                }
+                
+                // Reload page to show active timesheet
+                window.location.reload();
+            } catch (err) {
+                this.error = err.message;
+                this.loading = false;
+            }
+        },
+        
+        async clockOut(timesheetId) {
+            this.loading = true;
+            this.error = null;
+            
+            try {
+                const response = await fetch(`{{ route('timesheets.clock-out', ':id') }}`.replace(':id', timesheetId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to clock out');
+                }
+                
+                clearInterval(this.intervalId);
+                
+                // Reload page to show clock in form
+                window.location.reload();
+            } catch (err) {
+                this.error = err.message;
+                this.loading = false;
+            }
+        }
+    }));
+});
+</script>
+@endpush
 @endsection

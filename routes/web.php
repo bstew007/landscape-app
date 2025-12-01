@@ -38,6 +38,13 @@ Route::prefix('api')->middleware('auth')->group(function () {
     Route::get('/materials/active', [ApiMaterialController::class, 'active'])->name('api.materials.active');
     Route::get('/materials/search', [ApiMaterialController::class, 'search'])->name('api.materials.search');
     Route::get('/materials/{material}', [ApiMaterialController::class, 'show'])->name('api.materials.show');
+    
+    // Mobile Timesheet API
+    Route::get('/mobile/my-jobs', [\App\Http\Controllers\Api\TimesheetApiController::class, 'myJobs'])->name('api.mobile.my-jobs');
+    Route::get('/mobile/my-timesheets', [\App\Http\Controllers\Api\TimesheetApiController::class, 'myTimesheets'])->name('api.mobile.my-timesheets');
+    Route::post('/mobile/clock-in', [\App\Http\Controllers\Api\TimesheetApiController::class, 'clockIn'])->name('api.mobile.clock-in');
+    Route::post('/mobile/clock-out', [\App\Http\Controllers\Api\TimesheetApiController::class, 'clockOut'])->name('api.mobile.clock-out');
+    Route::post('/mobile/submit-timesheet', [\App\Http\Controllers\Api\TimesheetApiController::class, 'submitTimesheet'])->name('api.mobile.submit-timesheet');
 });
 
 Route::get('/dashboard', fn () => view('dashboard'))
@@ -453,6 +460,18 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('jobs/{job}', [\App\Http\Controllers\JobController::class, 'show'])->name('jobs.show');
     Route::patch('jobs/{job}', [\App\Http\Controllers\JobController::class, 'update'])->name('jobs.update');
     Route::post('estimates/{estimate}/create-job', [\App\Http\Controllers\JobController::class, 'createFromEstimate'])->name('estimates.create-job');
+
+    // Timesheets
+    Route::resource('timesheets', \App\Http\Controllers\TimesheetController::class);
+    Route::post('timesheets/{timesheet}/submit', [\App\Http\Controllers\TimesheetController::class, 'submit'])->name('timesheets.submit');
+    Route::post('timesheets/clock-in', [\App\Http\Controllers\TimesheetController::class, 'clockIn'])->name('timesheets.clock-in');
+    Route::post('timesheets/{timesheet}/clock-out', [\App\Http\Controllers\TimesheetController::class, 'clockOut'])->name('timesheets.clock-out');
+    
+    // Timesheet Approval (Foreman/Admin)
+    Route::get('timesheets-approve', [\App\Http\Controllers\TimesheetController::class, 'approvalPage'])->name('timesheets.approve');
+    Route::post('timesheets/{timesheet}/approve', [\App\Http\Controllers\TimesheetController::class, 'approve'])->name('timesheets.approve.submit');
+    Route::post('timesheets/{timesheet}/reject', [\App\Http\Controllers\TimesheetController::class, 'reject'])->name('timesheets.reject');
+    Route::post('timesheets-bulk-approve', [\App\Http\Controllers\TimesheetController::class, 'bulkApprove'])->name('timesheets.bulk-approve');
 
     // Purchase Orders
     Route::get('purchase-orders', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
