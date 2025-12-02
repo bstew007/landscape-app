@@ -127,6 +127,14 @@ class Timesheet extends Model
         $this->save();
     }
 
+    public function unapprove(): void
+    {
+        $this->status = 'submitted';
+        $this->approved_by = null;
+        $this->approved_at = null;
+        $this->save();
+    }
+
     // Scopes
     public function scopeForJob($query, int $jobId)
     {

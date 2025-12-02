@@ -177,6 +177,17 @@
             </form>
         @endif
 
+        @if($timesheet->status === 'approved')
+            <form method="POST" action="{{ route('timesheets.unapprove', $timesheet) }}" 
+                  onsubmit="return confirm('Are you sure you want to reverse this approval? This will recalculate job costs.')">
+                @csrf
+                <button type="submit"
+                        class="w-full px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg shadow-sm transition">
+                    Reverse Approval
+                </button>
+            </form>
+        @endif
+
         <a href="{{ route('timesheets.index') }}"
            class="px-6 py-3 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition text-center">
             Back to List

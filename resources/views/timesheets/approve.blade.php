@@ -192,7 +192,7 @@
                                        class="text-brand-800 hover:text-brand-900">
                                         View
                                     </a>
-                                    <form method="POST" action="{{ route('timesheets.approve', $timesheet) }}" class="inline">
+                                    <form method="POST" action="{{ route('timesheets.approve.submit', $timesheet) }}" class="inline">
                                         @csrf
                                         <button type="submit" class="text-green-600 hover:text-green-900">
                                             Approve

@@ -188,10 +188,22 @@
                                 @include('timesheets.partials.status-badge', ['status' => $timesheet->status])
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <a href="{{ route('timesheets.show', $timesheet) }}" 
-                                   class="text-brand-700 hover:text-brand-900 font-medium">
-                                    View
-                                </a>
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('timesheets.show', $timesheet) }}" 
+                                       class="text-brand-700 hover:text-brand-900 font-medium">
+                                        View
+                                    </a>
+                                    @if($timesheet->status === 'approved')
+                                        <form method="POST" action="{{ route('timesheets.unapprove', $timesheet) }}" 
+                                              onsubmit="return confirm('Reverse this approval? Job costs will be recalculated.')"
+                                              class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-orange-600 hover:text-orange-900 font-medium">
+                                                Unapprove
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

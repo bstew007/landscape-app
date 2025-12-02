@@ -48,7 +48,18 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
+
+    /**
+     * Available user roles
+     */
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_MANAGER = 'manager';
+    public const ROLE_FOREMAN = 'foreman';
+    public const ROLE_CREW = 'crew';
+    public const ROLE_OFFICE = 'office';
+    public const ROLE_USER = 'user';
 
     /**
      * The attributes that should be hidden for serialization.
@@ -87,5 +98,123 @@ class User extends Authenticatable
     public function timesheets()
     {
         return $this->hasMany(Timesheet::class);
+    }
+
+    // Role Checking Methods
+    
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === self::ROLE_MANAGER;
+    }
+
+    public function isForeman(): bool
+    {
+        return $this->role === self::ROLE_FOREMAN;
+    }
+
+    public function isCrew(): bool
+    {
+        return $this->role === self::ROLE_CREW;
+    }
+
+    public function isOffice(): bool
+    {
+        return $this->role === self::ROLE_OFFICE;
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        if (is_string($roles)) {
+            return $this->role === $roles;
+        }
+
+        return in_array($this->role, $roles);
+    }
+
+    // Permission Checking Methods
+
+    public function canManageEstimates(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_OFFICE]);
+    }
+
+    public function canManageJobs(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER]);
+    }
+
+    public function canViewJobs(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_FOREMAN, self::ROLE_OFFICE]);
+    }
+
+    public function canManageTimesheets(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_FOREMAN]);
+    }
+
+    public function canApproveTimesheets(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_FOREMAN]);
+    }
+
+    public function canCreateTimesheets(): bool
+    {
+        // Everyone can create their own timesheets
+        return true;
+    }
+
+    public function canViewReports(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_OFFICE]);
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER]);
+    }
+
+    public function canManageClients(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_OFFICE]);
+    }
+
+    public function canManageBudgets(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canSyncQuickBooks(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_OFFICE]);
+    }
+
+    public function canClockInCrew(): bool
+    {
+        return $this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_FOREMAN]);
+    }
+
+    /**
+     * Get jobs this user can view
+     */
+    public function scopeViewableJobs($query)
+    {
+        if ($this->hasRole([self::ROLE_ADMIN, self::ROLE_MANAGER, self::ROLE_OFFICE])) {
+            return Job::query();
+        }
+
+        if ($this->isForeman()) {
+            return Job::where('foreman_id', $this->id);
+        }
+
+        // Crew can only see jobs they have timesheets for
+        return Job::whereHas('timesheets', function ($q) {
+            $q->where('user_id', $this->id);
+        });
     }
 }

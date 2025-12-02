@@ -375,8 +375,8 @@ class TimesheetController extends Controller
         }
 
         DB::transaction(function () use ($timesheet) {
-            $timesheet->approve(auth()->id());
-            $this->timesheetService->updateJobCostsFromApproval($timesheet);
+            $timesheet->approve(auth()->user());
+            // Observer handles cost updates automatically
         });
 
         return back()->with('success', 'Timesheet approved successfully');
@@ -395,9 +395,25 @@ class TimesheetController extends Controller
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        $timesheet->reject($validated['rejection_reason']);
+        $timesheet->reject(auth()->user(), $validated['rejection_reason']);
 
         return back()->with('success', 'Timesheet rejected');
+    }
+
+    /**
+     * Unapprove (reverse) an approved timesheet
+     */
+    public function unapprove(Timesheet $timesheet)
+    {
+        if ($timesheet->status !== 'approved') {
+            return back()->with('error', 'Only approved timesheets can be unapproved');
+        }
+
+        DB::transaction(function () use ($timesheet) {
+            $timesheet->unapprove();
+        });
+
+        return back()->with('success', 'Timesheet approval reversed - returned to submitted status');
     }
 
     /**

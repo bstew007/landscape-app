@@ -84,8 +84,8 @@ Route::middleware('auth')->group(function () {
 
     // ✅ Production Rates (moved into Admin-only group above)
 
-    // ✅ Catalogs (Admin Only)
-    Route::middleware(['can:manage-catalogs'])->group(function () {
+    // ✅ Catalogs (Admin & Manager Only)
+    Route::middleware(['role:admin,manager'])->group(function () {
         Route::get('materials/import', [MaterialController::class, 'importForm'])->name('materials.importForm');
         Route::post('materials/import', [MaterialController::class, 'import'])->name('materials.import');
         Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
@@ -467,11 +467,14 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('timesheets/clock-in', [\App\Http\Controllers\TimesheetController::class, 'clockIn'])->name('timesheets.clock-in');
     Route::post('timesheets/{timesheet}/clock-out', [\App\Http\Controllers\TimesheetController::class, 'clockOut'])->name('timesheets.clock-out');
     
-    // Timesheet Approval (Foreman/Admin)
-    Route::get('timesheets-approve', [\App\Http\Controllers\TimesheetController::class, 'approvalPage'])->name('timesheets.approve');
-    Route::post('timesheets/{timesheet}/approve', [\App\Http\Controllers\TimesheetController::class, 'approve'])->name('timesheets.approve.submit');
-    Route::post('timesheets/{timesheet}/reject', [\App\Http\Controllers\TimesheetController::class, 'reject'])->name('timesheets.reject');
-    Route::post('timesheets-bulk-approve', [\App\Http\Controllers\TimesheetController::class, 'bulkApprove'])->name('timesheets.bulk-approve');
+    // Timesheet Approval (Foreman/Manager/Admin)
+    Route::middleware(['role:admin,manager,foreman'])->group(function () {
+        Route::get('timesheets-approve', [\App\Http\Controllers\TimesheetController::class, 'approvalPage'])->name('timesheets.approve');
+        Route::post('timesheets/{timesheet}/approve', [\App\Http\Controllers\TimesheetController::class, 'approve'])->name('timesheets.approve.submit');
+        Route::post('timesheets/{timesheet}/reject', [\App\Http\Controllers\TimesheetController::class, 'reject'])->name('timesheets.reject');
+        Route::post('timesheets/{timesheet}/unapprove', [\App\Http\Controllers\TimesheetController::class, 'unapprove'])->name('timesheets.unapprove');
+        Route::post('timesheets-bulk-approve', [\App\Http\Controllers\TimesheetController::class, 'bulkApprove'])->name('timesheets.bulk-approve');
+    });
 
     // Purchase Orders
     Route::get('purchase-orders', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
@@ -488,8 +491,8 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     // Invoices -> QBO actions
     Route::post('invoices/{invoice}/qbo/create', [\App\Http\Controllers\InvoiceQboController::class, 'create'])->name('invoices.qbo.create');
     Route::post('invoices/{invoice}/qbo/refresh', [\App\Http\Controllers\InvoiceQboController::class, 'refresh'])->name('invoices.qbo.refresh');
-    // Admin budgets (protect with auth/ability middleware in your app)
-    Route::prefix('admin')->name('admin.')->group(function () {
+    // Admin budgets (Admin only)
+    Route::prefix('admin')->name('admin.')->middleware(['role:admin'])->group(function () {
         Route::resource('budgets', CompanyBudgetController::class)->except(['destroy', 'show']);
         // Users management
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['show']);

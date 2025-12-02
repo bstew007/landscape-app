@@ -72,7 +72,7 @@
 
         <nav class="mt-4 px-4 space-y-6 text-sm pb-8">
             <div class="space-y-2">
-                <details class="group sidebar-accordion" open>
+                <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                         <span class="inline-flex items-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 13a4 4 0 0 0-3-3.87"/></svg>
@@ -93,7 +93,7 @@
                     </div>
                 </details>
 
-                <details class="group sidebar-accordion" open>
+                <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                         <span class="inline-flex items-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg>
@@ -106,7 +106,7 @@
                     </div>
                 </details>
 
-                <details class="group sidebar-accordion" open>
+                <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                         <span class="inline-flex items-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10h6M9 14h6"/></svg>
@@ -115,10 +115,23 @@
                         <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                     </summary>
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
-                        <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job Hub</a>
                         <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job List</a>
-                        <a href="{{ route('timesheets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Timesheets</a>
+                    </div>
+                </details>
+
+                <details class="group sidebar-accordion">
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                            <span>TIMESHEETS</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('timesheets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Timesheet List</a>
+                        @can('approve-timesheets')
                         <a href="{{ route('timesheets.approve') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Approve Timesheets</a>
+                        @endcan
                     </div>
                 </details>
             </div>
@@ -140,7 +153,8 @@
         </nav>
 
         {{-- Admin Section (moved to bottom) --}}
-        <div class="mt-8 pt-4" @cannot('manage-users') x-data="{}" @endcannot>
+        @canany(['manage-catalogs', 'manage-users', 'view-reports'])
+        <div class="mt-8 pt-4">
             <h2 class="text-xs font-semibold text-brand-300 uppercase tracking-wide px-4 mb-2">Admin</h2>
             <ul>
                 <li>
@@ -156,6 +170,7 @@
                     </a>
                 </li>
 
+                @can('manage-catalogs')
                 <li>
                     <details class="group sidebar-accordion">
                         <summary class="list-none px-4 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
@@ -171,6 +186,7 @@
                         </div>
                     </details>
                 </li>
+                @endcan
                 <li>
                     <details class="group sidebar-accordion">
                         <summary class="list-none px-4 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
@@ -195,6 +211,7 @@
 
             </ul>
         </div>
+        @endcanany
 
     </aside>
 
@@ -223,7 +240,7 @@
                 <a href="{{ route('admin.company-settings.edit') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60">🏢 Company Settings</a>
             </div>
             <div class="space-y-2">
-                <details class="group sidebar-accordion" open>
+                <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                         <span class="inline-flex items-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 13a4 4 0 0 0-3-3.87"/></svg>
@@ -243,7 +260,7 @@
                         </a>
                     </div>
                 </details>
-                <details class="group sidebar-accordion" open>
+                <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                         <span class="inline-flex items-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/></svg>
@@ -256,7 +273,7 @@
                     </div>
                 </details>
 
-                <details class="group sidebar-accordion" open>
+                <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
                         <span class="inline-flex items-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M9 10h6M9 14h6"/></svg>
@@ -265,10 +282,23 @@
                         <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                     </summary>
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
-                        <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job Hub</a>
                         <a href="{{ route('jobs.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Job List</a>
-                        <a href="{{ route('timesheets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Timesheets</a>
+                    </div>
+                </details>
+
+                <details class="group sidebar-accordion">
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                            <span>TIMESHEETS</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('timesheets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Timesheet List</a>
+                        @can('approve-timesheets')
                         <a href="{{ route('timesheets.approve') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Approve Timesheets</a>
+                        @endcan
                     </div>
                 </details>
             </div>

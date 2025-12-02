@@ -1,7 +1,7 @@
 # Landscape App - Current State Summary
 
-**Last Updated:** December 1, 2025  
-**Current Status:** Production-ready estimate system + Jobs system + Timesheets system (Phase 2 complete!)
+**Last Updated:** December 1, 2025 (Evening)  
+**Current Status:** Production-ready estimate system + Jobs system + Timesheets system + Role-Based Permissions (Phase 2 complete + RBAC implemented!)
 
 ---
 
@@ -232,29 +232,133 @@
 - `clients` - Client records
 - `properties` - Property records
 
-### 10. User Management
-**Location:** `/app/Models/User.php`
+### 10. Role-Based Permission System (NEW - December 1, 2025 Evening)
+**Location:** `/app/Models/User.php`, `/app/Http/Middleware/CheckRole.php`, `/app/Providers/AppServiceProvider.php`
 
 **Features:**
-- User authentication
-- Role-based access (admin, foreman, crew)
-- Jobs relationship (foreman assignment)
-- Timesheet relationships
+- 🔐 6 user roles with hierarchical permissions
+- 🛡️ Route-level middleware protection
+- 🎯 Fine-grained Gates for authorization
+- 👥 Context-aware access control (e.g., foremen see only their jobs)
+- 📱 Simplified navigation based on role
 
-**Key Tables:**
-- `users` - User accounts
+**User Roles:**
+1. **Admin** - Full system access (all features)
+2. **Manager** - Estimates, jobs, timesheets, catalogs (no user management)
+3. **Foreman** - Assigned jobs, approve timesheets, clock in crew
+4. **Crew** - Own timesheets only, clock in/out
+5. **Office** - Estimates, reports (read-only on jobs)
+6. **User** - Basic access (default role)
+
+**Key Features:**
+- Role checking methods: `isAdmin()`, `isManager()`, `isForeman()`, etc.
+- Permission methods: `canManageEstimates()`, `canApproveTimesheets()`, etc.
+- Middleware: `role:admin`, `role:admin,manager`, etc.
+- 30+ authorization Gates for fine-grained control
+- Navigation automatically hides based on permissions
+
+**Key Files:**
+- `app/Models/User.php` - Role constants and permission methods
+- `app/Http/Middleware/CheckRole.php` - Route protection middleware
+- `app/Providers/AppServiceProvider.php` - Gates definitions
+- `database/seeders/UserRoleSeeder.php` - Test users for each role
+- `docs/ROLE_BASED_PERMISSIONS.md` - Complete documentation
 
 **Test Users Created:**
-- Admin: `admin@cfllandscape.com` / `password`
-- Foreman: `foreman@cfllandscape.com` / `password`
-- Crew 1: `crew1@cfllandscape.com` / `password`
-- Crew 2: `crew2@cfllandscape.com` / `password`
+- `admin@example.com` - Admin access
+- `manager@example.com` - Manager access
+- `foreman@example.com` - Foreman access
+- `crew@example.com` - Crew access
+- `office@example.com` - Office access
+- All passwords: `password`
+
+**What Works:**
+- ✅ Role-based route protection
+- ✅ Dynamic navigation (hides unauthorized sections)
+- ✅ Permission checks in views with `@can` directives
+- ✅ Context-aware access (foremen see only assigned jobs)
+- ✅ Timesheet approval restricted to foreman/manager/admin
+- ✅ Admin panel access restricted to admin only
+- ✅ Catalog management restricted to admin/manager
+
+### 11. Navigation Improvements (NEW - December 1, 2025 Evening)
+**Location:** `resources/views/layouts/sidebar.blade.php`
+
+**Changes:**
+- 📂 Moved Timesheets out of JOBS into own top-level section
+- 🔄 Renamed "Timesheets" link to "Timesheet List"
+- ✅ Added "Approve Timesheets" as second link (permission-based)
+- 🗑️ Removed duplicate "Job Hub" link (was same as Job List)
+- 🎯 All accordion menus now closed by default for cleaner UI
+- 🔐 Added permission-based visibility (`@can` directives)
+
+**Menu Structure:**
+```
+├── CRM
+│   ├── Contacts
+│   ├── Site Visits
+│   └── To-Do Board
+├── ESTIMATES
+│   └── Estimates List
+├── JOBS
+│   └── Job List
+├── TIMESHEETS (NEW)
+│   ├── Timesheet List
+│   └── Approve Timesheets (if authorized)
+├── Client Hub
+│   ├── Home Dashboard
+│   ├── Schedule
+│   └── Calculator Templates
+├── Assets & Equipment
+│   └── ...
+└── Admin (if authorized)
+    ├── Production Rates
+    ├── Budget
+    ├── Price List (if authorized)
+    │   ├── Materials Catalog
+    │   └── Labor Catalog
+    └── Settings
+        ├── Users (if authorized)
+        ├── Company Settings
+        ├── Material Categories
+        ├── Divisions
+        └── Cost Codes
+```
+
+---
+
+## 🎉 Recent Completion: Role-Based Permissions + UI Improvements
+
+**Completed:** December 1, 2025 (Evening)  
+**Total Implementation Time:** ~2 hours  
+**Files Modified:** 6 core files  
+**New Files:** 2 (middleware + seeder)  
+**Documentation:** 1 comprehensive guide
+
+### What Was Delivered:
+1. ✅ Complete role-based permission system with 6 roles
+2. ✅ 30+ authorization Gates for fine-grained control
+3. ✅ Route-level middleware protection
+4. ✅ Permission-based navigation visibility
+5. ✅ Test users for all roles
+6. ✅ Comprehensive documentation
+7. ✅ Navigation reorganization (TIMESHEETS section)
+8. ✅ Removed duplicate links
+9. ✅ Menus closed by default
+
+### Key Metrics:
+- **Code Coverage:** Full RBAC implementation
+- **User Roles:** 6 distinct roles with hierarchical permissions
+- **Gates:** 30+ authorization gates
+- **Navigation:** Permission-aware sidebar
+- **Documentation:** Complete RBAC guide with examples
+- **Test Data:** 5 test users (one per role)
 
 ---
 
 ## 🎉 Recent Completion: Phase 2 Timesheets
 
-**Completed:** December 1, 2025  
+**Completed:** December 1, 2025 (Afternoon)  
 **Total Implementation Time:** ~4 hours  
 **Files Created:** 10 core files + 2 documentation files  
 **Routes Added:** 20 total (15 web + 5 API)  

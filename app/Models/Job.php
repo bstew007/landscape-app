@@ -126,14 +126,18 @@ class Job extends Model
 
     public function getProgressPercentAttribute(): int
     {
-        $total = $this->workAreas->count();
+        // Calculate progress based on actual labor hours vs estimated labor hours
+        $estimatedHours = $this->workAreas->sum('estimated_labor_hours');
         
-        if ($total === 0) {
+        if ($estimatedHours == 0) {
             return 0;
         }
         
-        $completed = $this->workAreas->where('status', 'completed')->count();
+        $actualHours = $this->workAreas->sum('actual_labor_hours');
         
-        return (int) (($completed / $total) * 100);
+        $percent = ($actualHours / $estimatedHours) * 100;
+        
+        // Cap at 100%
+        return (int) min(100, $percent);
     }
 }

@@ -103,9 +103,14 @@ class TimesheetService
 
         $avgLaborRate = $this->calculateAverageLaborRate($workArea->job);
         
-        $workArea->actual_labor_cost = $totalApprovedHours * $avgLaborRate;
-        $workArea->actual_total_cost = $workArea->actual_labor_cost + ($workArea->actual_material_cost ?? 0);
-        $workArea->save();
+        // Use DB query to avoid computed attribute issues
+        DB::table('job_work_areas')
+            ->where('id', $workArea->id)
+            ->update([
+                'actual_labor_hours' => $totalApprovedHours,
+                'actual_labor_cost' => $totalApprovedHours * $avgLaborRate,
+                'updated_at' => now(),
+            ]);
     }
 
     /**
@@ -171,7 +176,7 @@ class TimesheetService
             
             if ($timesheet && $timesheet->status === 'submitted') {
                 $timesheet->approve(\App\Models\User::find($approverId));
-                $this->updateJobCostsFromApproval($timesheet);
+                // Observer handles cost updates automatically
                 $approved++;
             }
         }
