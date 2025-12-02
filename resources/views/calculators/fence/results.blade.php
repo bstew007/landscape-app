@@ -25,12 +25,12 @@
         @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
     </div>
 
-    {{-- Price Summary Card --}}
+    {{-- Total Cost Card --}}
     <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 mb-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm font-medium text-green-800 mb-1">Final Price</p>
-                <p class="text-4xl font-bold text-green-900">${{ number_format($data['final_price'], 2) }}</p>
+                <p class="text-sm font-medium text-green-800 mb-1">Total Cost</p>
+                <p class="text-4xl font-bold text-green-900">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</p>
             </div>
             <div class="text-right">
                 <p class="text-sm text-green-700">{{ number_format($data['total_hours'] ?? 0, 1) }} total hours</p>
@@ -146,13 +146,9 @@
                 <span class="text-gray-700">Material Cost</span>
                 <span class="text-lg font-semibold text-gray-900">${{ number_format($data['material_total'] ?? 0, 2) }}</span>
             </div>
-            <div class="flex justify-between items-center pt-3 border-t border-gray-200">
-                <span class="font-semibold text-gray-700">Subtotal</span>
-                <span class="text-lg font-semibold text-gray-900">${{ number_format(($data['labor_cost'] ?? 0) + ($data['material_total'] ?? 0), 2) }}</span>
-            </div>
             <div class="flex justify-between items-center pt-3 border-t-2 border-gray-300">
-                <span class="text-xl font-bold text-gray-900">Final Price</span>
-                <span class="text-2xl font-bold text-green-600">${{ number_format($data['final_price'] ?? 0, 2) }}</span>
+                <span class="text-xl font-bold text-gray-900">Total Cost</span>
+                <span class="text-2xl font-bold text-green-600">${{ number_format(($data['labor_cost'] ?? 0) + ($data['material_total'] ?? 0), 2) }}</span>
             </div>
         </div>
     </div>

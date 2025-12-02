@@ -68,14 +68,26 @@ class TimesheetObserver
 
         // Update work area actuals if work area is specified
         if ($workArea) {
+            // Check if this is the first approved timesheet for this work area
+            $currentStatus = \DB::table('job_work_areas')
+                ->where('id', $workArea->id)
+                ->value('status');
+            
+            $updateData = [
+                'actual_labor_hours' => \DB::raw('actual_labor_hours + ' . $timesheet->total_hours),
+                'actual_labor_cost' => \DB::raw('actual_labor_cost + ' . $laborCost),
+                'updated_at' => now(),
+            ];
+            
+            // Auto-transition from not_started to in_progress when first timesheet is approved
+            if ($currentStatus === 'not_started') {
+                $updateData['status'] = 'in_progress';
+            }
+            
             // Use DB query to update only specific columns, avoiding computed attributes
             \DB::table('job_work_areas')
                 ->where('id', $workArea->id)
-                ->update([
-                    'actual_labor_hours' => \DB::raw('actual_labor_hours + ' . $timesheet->total_hours),
-                    'actual_labor_cost' => \DB::raw('actual_labor_cost + ' . $laborCost),
-                    'updated_at' => now(),
-                ]);
+                ->update($updateData);
         }
 
         // Log activity
@@ -132,14 +144,28 @@ class TimesheetObserver
 
         // Reverse work area actuals if work area is specified
         if ($workArea) {
+            // Check if there will be any remaining approved timesheets after this reversal
+            $remainingApprovedCount = \DB::table('timesheets')
+                ->where('job_work_area_id', $workArea->id)
+                ->where('status', 'approved')
+                ->where('id', '!=', $timesheet->id) // Exclude current timesheet
+                ->count();
+            
+            $updateData = [
+                'actual_labor_hours' => \DB::raw('actual_labor_hours - ' . $timesheet->total_hours),
+                'actual_labor_cost' => \DB::raw('actual_labor_cost - ' . $laborCost),
+                'updated_at' => now(),
+            ];
+            
+            // Reset to not_started if no approved timesheets remain
+            if ($remainingApprovedCount === 0) {
+                $updateData['status'] = 'not_started';
+            }
+            
             // Use DB query to update only specific columns, avoiding computed attributes
             \DB::table('job_work_areas')
                 ->where('id', $workArea->id)
-                ->update([
-                    'actual_labor_hours' => \DB::raw('actual_labor_hours - ' . $timesheet->total_hours),
-                    'actual_labor_cost' => \DB::raw('actual_labor_cost - ' . $laborCost),
-                    'updated_at' => now(),
-                ]);
+                ->update($updateData);
         }
 
         // Log activity

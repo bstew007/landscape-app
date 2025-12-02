@@ -37,20 +37,9 @@ class LaborCostCalculatorService
         // ⏱️ Total labor hours
         $totalHours = $baseHours + $overheadTime + $adjustedDriveTime;
 
-        // 💵 Costs
+        // 💵 Costs (cost-only, no markup)
         $laborCost = $totalHours * $laborRate;
-        $preMarkup = $laborCost + $materialTotal;
-        $margin = $markup / 100;
-
-        if ($margin <= 0) {
-            $finalPrice = $preMarkup;
-        } elseif ($margin >= 1) {
-            $finalPrice = $preMarkup;
-        } else {
-            $finalPrice = $preMarkup / (1 - $margin);
-        }
-
-        $markupAmount = $finalPrice - $preMarkup;
+        $totalCost = $laborCost + $materialTotal;
 
         return [
             'visits' => $visits,
@@ -58,9 +47,8 @@ class LaborCostCalculatorService
             'overhead_hours' => round($overheadTime, 2),
             'total_hours' => round($totalHours, 2),
             'labor_cost' => round($laborCost, 2),
-            'markup' => $markup,
-            'markup_amount' => round($markupAmount, 2),
-            'final_price' => round($finalPrice, 2),
+            'total_cost' => round($totalCost, 2),
+            'final_price' => round($totalCost, 2), // Kept for backward compatibility
         ];
     }
 }

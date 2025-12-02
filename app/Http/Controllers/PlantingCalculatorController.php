@@ -152,19 +152,16 @@ class PlantingCalculatorController extends Controller
 
                 $totalHours += $hours;
 
-                // Add material
+                // Add material (associative format)
                 if ($unitCost > 0) {
                     $lineTotal = $qty * $unitCost;
-                    $materials[] = [
+                    $materials[$plantName] = [
+                        'qty' => $qty,
+                        'unit_cost' => $unitCost,
+                        'total' => round($lineTotal, 2),
+                        'unit' => $unit,
                         'catalog_id' => $catalogId,
                         'task_key' => $taskKey,
-                        'name' => $plantName,
-                        'description' => "{$plantName} - Plant Material",
-                        'quantity' => $qty,
-                        'unit' => $unit,
-                        'unit_cost' => $unitCost,
-                        'total_cost' => round($lineTotal, 2),
-                        'category' => 'Plants',
                     ];
 
                     $materialTotal += $lineTotal;

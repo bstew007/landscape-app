@@ -62,10 +62,10 @@
 
     @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
-    {{-- Final Price Card --}}
+    {{-- Total Cost Card --}}
     <div class="bg-gradient-to-r from-gray-700 to-gray-800 rounded-xl shadow-xl p-8 text-center">
-        <p class="text-gray-300 text-lg mb-2">Final Price</p>
-        <p class="text-6xl font-bold text-white">${{ number_format($data['final_price'], 2) }}</p>
+        <p class="text-gray-300 text-lg mb-2">Total Cost</p>
+        <p class="text-6xl font-bold text-white">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</p>
         <div class="mt-4 flex items-center justify-center gap-6 text-sm text-gray-300">
             <div>
                 <span class="font-semibold">Labor:</span>
@@ -315,14 +315,10 @@
                 <span class="text-gray-700">Material Cost</span>
                 <span class="font-semibold text-gray-900">${{ number_format($data['material_total'], 2) }}</span>
             </div>
-            <div class="flex justify-between items-center text-lg pt-3 border-t-2 border-gray-300">
-                <span class="text-gray-700 font-semibold">Subtotal</span>
-                <span class="font-semibold text-gray-900">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
-            </div>
             <div class="bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg p-4 mt-4">
                 <div class="flex justify-between items-center">
-                    <span class="text-white text-xl font-bold">Final Price</span>
-                    <span class="text-white text-3xl font-bold">${{ number_format($data['final_price'], 2) }}</span>
+                    <span class="text-white text-xl font-bold">Total Cost</span>
+                    <span class="text-white text-3xl font-bold">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
                 </div>
             </div>
         </div>

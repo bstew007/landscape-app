@@ -227,7 +227,7 @@ class EstimateController extends Controller
             'terms' => 'sometimes|nullable|string',
             'crew_notes' => 'sometimes|nullable|string',
             'division_id' => 'sometimes|nullable|exists:divisions,id',
-            'cost_code_id' => 'sometimes|nullable|exists:cost_codes,id',
+            'cost_code_id' => 'sometimes|required|exists:cost_codes,id',
             'estimate_type' => 'sometimes|required|in:design_build,maintenance',
         ]);
 

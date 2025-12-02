@@ -84,12 +84,6 @@ class SynTurfCalculatorController extends Controller
             'area_sqft' => 'required|numeric|min:1',
             'edging_linear_ft' => 'required|numeric|min:0',
             'turf_grade' => 'required|string|in:good,better,best',
-            'turf_custom_name' => 'nullable|string|max:255',
-            'override_turf_price' => 'nullable|numeric|min:0',
-            'override_infill_price' => 'nullable|numeric|min:0',
-            'override_edging_price' => 'nullable|numeric|min:0',
-            'override_weed_barrier_price' => 'nullable|numeric|min:0',
-            'materials_override_enabled' => 'nullable|boolean',
             // New optional fields
             'excavation_depth_in' => 'nullable|numeric|min:0',
             'abc_depth_in' => 'nullable|numeric|min:0',
@@ -143,12 +137,6 @@ class SynTurfCalculatorController extends Controller
 
         $materialService = app(SynTurfMaterialService::class);
         $materialData = $materialService->buildMaterials($areaSqft, $edgingLf, $validated['turf_grade'], [
-            'turf_price' => $request->input('override_turf_price'),
-            'turf_name' => $request->input('turf_custom_name'),
-            'infill_price' => $request->input('override_infill_price'),
-            'edging_price' => $request->input('override_edging_price'),
-            'weed_barrier_price' => $request->input('override_weed_barrier_price'),
-            // Pass per-layer base depths
             'abc_depth_in' => $request->input('abc_depth_in'),
             'rock_dust_depth_in' => $request->input('rock_dust_depth_in'),
         ]);
@@ -157,7 +145,6 @@ class SynTurfCalculatorController extends Controller
         $materialTotal = $materialData['material_total'];
         $turfName = $materialData['turf_name'];
         $turfUnitCost = $materialData['turf_unit_cost'];
-        $overridesEnabled = $materialData['overrides_enabled'];
         $abcCY = (float) ($materialData['abc_cy'] ?? 0);
         $rockDustCY = (float) ($materialData['rock_dust_cy'] ?? 0);
         $baseCY = $abcCY + $rockDustCY;
@@ -324,12 +311,6 @@ class SynTurfCalculatorController extends Controller
                 'turf_grade' => $validated['turf_grade'],
                 'turf_unit_cost' => $turfUnitCost,
                 'turf_name' => $turfName,
-                'override_turf_price' => $request->input('override_turf_price'),
-                'override_infill_price' => $request->input('override_infill_price'),
-                'override_edging_price' => $request->input('override_edging_price'),
-                'override_weed_barrier_price' => $request->input('override_weed_barrier_price'),
-                'turf_custom_name' => $request->input('turf_custom_name'),
-                'materials_override_enabled' => $overridesEnabled,
             ],
             $totals
         );

@@ -81,9 +81,6 @@ class PineNeedleCalculatorController extends Controller
         'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
     ]);
 
-    // ✅ Define mulch unit cost
-    $unitCost = 7;
-
     // ✅ Calculate mulch volume in cubic yards
     $areaSqft = (float) $request->input('area_sqft', 0);
     //$depthInches = (float) $request->input('depth_inches', 0);
@@ -93,14 +90,8 @@ class PineNeedleCalculatorController extends Controller
         $mulchYards = round($areaSqft / 50, 0);
     }
 
-    // ✅ Materials
-    $materials = [
-        $validated['mulch_type'] ?? 'Pine Needles' => [
-            'qty' => $mulchYards,
-            'unit_cost' => $unitCost,
-            'total' => round($mulchYards * $unitCost, 2),
-        ],
-    ];
+    // ✅ Materials - only from user input
+    $materials = [];
 
     $customMaterialsInput = $validated['custom_materials'] ?? [];
     $customMaterials = collect($customMaterialsInput)

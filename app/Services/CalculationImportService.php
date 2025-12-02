@@ -106,8 +106,8 @@ class CalculationImportService
                 'unit' => $task['unit'],
                 'quantity' => $task['quantity'],
                 'unit_cost' => $task['unit_cost'],
-                'unit_price' => $marginRate > 0 ? round($task['unit_cost'] * (1 + $marginRate), 2) : null,
-                'margin_rate' => $marginRate > 0 ? $marginRate : null,
+                'unit_price' => $marginRate > 0 ? round($task['unit_cost'] / (1 - $marginRate), 2) : $task['unit_cost'],
+                'margin_rate' => $marginRate > 0 ? $marginRate : 0,
                 'tax_rate' => 0,
                 'source' => "calculator:{$calcType}",
                 'metadata' => [
@@ -143,8 +143,8 @@ class CalculationImportService
                 'unit' => $task['unit'],
                 'quantity' => $task['quantity'],
                 'unit_cost' => $task['unit_cost'],
-                'unit_price' => $marginRate > 0 ? round($task['unit_cost'] * (1 + $marginRate), 2) : null,
-                'margin_rate' => $marginRate > 0 ? $marginRate : null,
+                'unit_price' => $marginRate > 0 ? round($task['unit_cost'] / (1 - $marginRate), 2) : $task['unit_cost'],
+                'margin_rate' => $marginRate > 0 ? $marginRate : 0,
                 'tax_rate' => 0,
                 'source' => "calculator:overhead",
                 'metadata' => [
@@ -166,7 +166,9 @@ class CalculationImportService
         Calculation $calculation
     ): void {
         
+        // All calculators now use 'materials' field for catalog materials only
         $materials = $data['materials'] ?? [];
+        
         $formattedMaterials = $this->formatter->formatMaterials($materials, $calcType);
         
         foreach ($formattedMaterials as $material) {
@@ -179,8 +181,8 @@ class CalculationImportService
                 'unit' => $material['unit'],
                 'quantity' => $material['quantity'],
                 'unit_cost' => $material['unit_cost'],
-                'unit_price' => $marginRate > 0 ? round($material['unit_cost'] * (1 + $marginRate), 2) : null,
-                'margin_rate' => $marginRate > 0 ? $marginRate : null,
+                'unit_price' => $marginRate > 0 ? round($material['unit_cost'] / (1 - $marginRate), 2) : $material['unit_cost'],
+                'margin_rate' => $marginRate > 0 ? $marginRate : 0,
                 'tax_rate' => $material['tax_rate'],
                 'source' => "calculator:{$calcType}",
                 'calculation_id' => $calculation->id,

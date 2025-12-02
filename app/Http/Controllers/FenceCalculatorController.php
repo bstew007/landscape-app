@@ -115,7 +115,6 @@ public function downloadPdf($id)
         'dig_method' => 'required|in:hand,auger',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
-        'materials_override_enabled' => 'nullable|boolean',
         'custom_materials' => 'nullable|array',
         'custom_materials.*.name' => 'nullable|string|max:255',
         'custom_materials.*.qty' => 'nullable|numeric|min:0',
@@ -157,7 +156,7 @@ public function downloadPdf($id)
         ]
     ];
 
-    // 🪵 Wood Fence Calculation
+    // 🪵 Wood Fence Calculation - quantities only for reference
     if ($fenceType === 'wood') {
         $post_spacing = 8;
         $post_count = ceil($adjusted_length / $post_spacing);
@@ -178,26 +177,9 @@ public function downloadPdf($id)
         $total_rails = $rails_per_section * $rail_sections;
 
         $concrete_bags = ($post_count + $gate_posts) * 2;
-
-        $wood_4x4_cost = filled($request->input('override_wood_post_4x4_cost')) ? floatval($request->input('override_wood_post_4x4_cost')) : $defaults['wood']['4x4'];
-        $wood_4x6_cost = filled($request->input('override_wood_post_4x6_cost')) ? floatval($request->input('override_wood_post_4x6_cost')) : $defaults['wood']['4x6'];
-        $rail_cost = filled($request->input('override_wood_rail_cost')) ? floatval($request->input('override_wood_rail_cost')) : $defaults['wood']['rail'];
-        $picket_cost = filled($request->input('override_wood_picket_cost')) ? floatval($request->input('override_wood_picket_cost')) : $defaults['wood']['picket'];
-        $screw_cost = filled($request->input('override_screws_cost')) ? floatval($request->input('override_screws_cost')) : $defaults['wood']['screw_cost_per_picket'];
-        $hardware_cost = filled($request->input('override_wood_gate_hardware_cost')) ? floatval($request->input('override_wood_gate_hardware_cost')) : $defaults['wood']['hardware'];
-
-        $materials = [
-            '4x4 Posts' => ['qty' => $post_count, 'unit_cost' => $wood_4x4_cost, 'total' => $post_count * $wood_4x4_cost],
-            '4x6 Gate Posts' => ['qty' => $gate_posts, 'unit_cost' => $wood_4x6_cost, 'total' => $gate_posts * $wood_4x6_cost],
-            '2x4 Rails' => ['qty' => $total_rails, 'unit_cost' => $rail_cost, 'total' => $total_rails * $rail_cost],
-            'Pickets' => ['qty' => $total_pickets, 'unit_cost' => $picket_cost, 'total' => $total_pickets * $picket_cost],
-            'Screws' => ['qty' => $total_pickets, 'unit_cost' => $screw_cost, 'total' => $total_pickets * $screw_cost],
-            'Gate Hardware' => ['qty' => $gate_count, 'unit_cost' => $hardware_cost, 'total' => $gate_count * $hardware_cost],
-            'Concrete Bags' => ['qty' => $concrete_bags, 'unit_cost' => 8.50, 'total' => $concrete_bags * 8.50],
-        ];
     }
 
-    // 🧱 Vinyl Fence Calculation
+    // 🧱 Vinyl Fence Calculation - quantities only for reference
     if ($fenceType === 'vinyl') {
         $panel_length = $height == 4 ? 8 : 6;
         $corner_posts = $validated['vinyl_corner_posts'] ?? 0;
@@ -207,25 +189,10 @@ public function downloadPdf($id)
         $line_posts = max(0, ($panel_count + 2) - $corner_posts - $end_posts);
         $post_total = $line_posts + $corner_posts + $end_posts + $gate_count;
         $concrete_bags = $post_total * 2;
-        $height_suffix = $height == 6 ? '_6' : '_4';
-
-        $panel_cost = filled($request->input("override_vinyl_panel{$height_suffix}_cost")) ? floatval($request->input("override_vinyl_panel{$height_suffix}_cost")) : $defaults['vinyl']["panel$height_suffix"];
-        $line_post_cost = filled($request->input("override_vinyl_line_post{$height_suffix}_cost")) ? floatval($request->input("override_vinyl_line_post{$height_suffix}_cost")) : $defaults['vinyl']["line$height_suffix"];
-        $end_post_cost = filled($request->input("override_vinyl_end_post{$height_suffix}_cost")) ? floatval($request->input("override_vinyl_end_post{$height_suffix}_cost")) : $defaults['vinyl']["end$height_suffix"];
-        $corner_post_cost = filled($request->input("override_vinyl_corner_post{$height_suffix}_cost")) ? floatval($request->input("override_vinyl_corner_post{$height_suffix}_cost")) : $defaults['vinyl']["corner$height_suffix"];
-        $gate_cost = filled($request->input("override_vinyl_gate{$height_suffix}_cost")) ? floatval($request->input("override_vinyl_gate{$height_suffix}_cost")) : $defaults['vinyl']["gate$height_suffix"];
-        $insert_cost = filled($request->input('override_metal_insert_cost')) ? floatval($request->input('override_metal_insert_cost')) : $defaults['vinyl']['metal_insert'];
-
-        $materials = [
-            "Vinyl Panels ({$height}')" => ['qty' => $panel_count, 'unit_cost' => $panel_cost, 'total' => $panel_count * $panel_cost],
-            "Line Posts ({$height}')" => ['qty' => $line_posts, 'unit_cost' => $line_post_cost, 'total' => $line_posts * $line_post_cost],
-            "End Posts ({$height}')" => ['qty' => $end_posts, 'unit_cost' => $end_post_cost, 'total' => $end_posts * $end_post_cost],
-            "Corner Posts ({$height}')" => ['qty' => $corner_posts, 'unit_cost' => $corner_post_cost, 'total' => $corner_posts * $corner_post_cost],
-            "Gates ({$height}')" => ['qty' => $gate_count, 'unit_cost' => $gate_cost, 'total' => $gate_count * $gate_cost],
-            "Metal Inserts" => ['qty' => $gate_count, 'unit_cost' => $insert_cost, 'total' => $gate_count * $insert_cost],
-            "Concrete Bags" => ['qty' => $concrete_bags, 'unit_cost' => 8.50, 'total' => $concrete_bags * 8.50],
-        ];
     }
+    
+    // Materials only from custom_materials input
+    $materials = [];
     $customMaterialsInput = $validated['custom_materials'] ?? [];
     $customMaterials = collect($customMaterialsInput)
         ->map(function ($item) {
@@ -326,7 +293,6 @@ public function downloadPdf($id)
         'vinyl_corner_posts' => $validated['vinyl_corner_posts'] ?? 0,
         'vinyl_end_posts' => $validated['vinyl_end_posts'] ?? 0,
         'base_hours' => round($base_hours, 2),
-        'materials_override_enabled' => !empty($validated['materials_override_enabled']),
         'custom_materials' => $customMaterials,
     ], $totals);
 

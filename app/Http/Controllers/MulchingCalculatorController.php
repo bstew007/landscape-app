@@ -122,39 +122,20 @@ class MulchingCalculatorController extends Controller
     }
 
     /**
-     * Build materials array with catalog integration
+     * Build materials array - only from custom materials input
      */
     private function buildMaterialsArray(Request $request, array $validated, float $mulchYards): array
     {
-        $materialCatalogId = $request->input('material_catalog_id');
-        $materialUnitCost = $request->input('material_unit_cost');
-        $unitCost = $materialUnitCost ? (float) $materialUnitCost : 35;
-        
         $materials = [];
         
-        // Add main mulch material
-        $materials[] = [
-            'name' => $validated['mulch_type'] ?? 'Mulch',
-            'description' => 'Mulch material',
-            'quantity' => $mulchYards,
-            'unit' => 'cy',
-            'unit_cost' => $unitCost,
-            'total_cost' => round($mulchYards * $unitCost, 2),
-            'category' => 'Materials',
-            'catalog_id' => $materialCatalogId,
-        ];
-        
-        // Add custom materials
+        // Only add materials from custom_materials input
         $customMaterialsInput = $validated['custom_materials'] ?? [];
         foreach ($this->processCustomMaterials($customMaterialsInput) as $customMaterial) {
-            $materials[] = [
-                'name' => $customMaterial['name'],
-                'description' => $customMaterial['name'],
-                'quantity' => $customMaterial['qty'],
-                'unit' => 'ea',
+            $materials[$customMaterial['name']] = [
+                'qty' => $customMaterial['qty'],
                 'unit_cost' => $customMaterial['unit_cost'],
-                'total_cost' => $customMaterial['total'],
-                'category' => 'Materials',
+                'total' => $customMaterial['total'],
+                'unit' => 'ea',
                 'is_custom' => true,
             ];
         }

@@ -98,84 +98,42 @@ class PaverPatioCalculatorController extends Controller
     $area = $length * $width;
 
     // --------------------------------------------
-    // 🔨 Material Calculations
+    // 🔨 Calculations - Quantities Only (No Pricing)
     // --------------------------------------------
+    // Calculate quantities for reference/display only
     $paverUnitCoverage = 0.94;
     $paverCount = ceil($area / $paverUnitCoverage);
     $baseDepthFeet = 2.5 / 12;
     $baseTons = ceil(($area * $baseDepthFeet) / 21.6);
-    $polymericCoverageSqft = 60; // average coverage per bag for standard joint widths
+    $polymericCoverageSqft = 60;
     $polymericBags = $area > 0 ? (int) ceil($area / $polymericCoverageSqft) : 0;
-
-    $paverUnitCost = $validated['override_paver_cost'] ?? 3.25;
-    $baseUnitCost = $validated['override_base_cost'] ?? 45.00;
-    $plasticEdgeCostPer20ft = $validated['override_plastic_edge_cost'] ?? 5.00;
-    $concreteEdgeCostPer20ft = $validated['override_concrete_edge_cost'] ?? 12.00;
-    $polymericSandCost = $validated['override_polymeric_sand_cost'] ?? 28.00;
-
-    $edgeUnitCost = $validated['edge_restraint'] === 'plastic'
-        ? $plasticEdgeCostPer20ft
-        : $concreteEdgeCostPer20ft;
-
     $edgeLF = $validated['edging_linear_feet'] ?? ($area / 20);
 
-    $materials = [
-        'Pavers' => [
-            'qty' => $paverCount,
-            'unit_cost' => $paverUnitCost,
-            'total' => $paverCount * $paverUnitCost
-        ],
-        '#78 Base Gravel' => [
-            'qty' => $baseTons,
-            'unit_cost' => $baseUnitCost,
-            'total' => $baseTons * $baseUnitCost
-        ],
-        'Edge Restraints' => [
-            'qty' => round($edgeLF, 2),
-            'unit_cost' => $edgeUnitCost,
-            'total' => $edgeLF * $edgeUnitCost
-        ],
-        'Polymeric Sand' => [
-            'qty' => $polymericBags,
-            'unit_cost' => $polymericSandCost,
-            'total' => $polymericBags * $polymericSandCost
-        ],
-    ];
-
-    $customMaterialsInput = $validated['custom_materials'] ?? [];
-    $customMaterials = collect($customMaterialsInput)
-        ->map(function ($item) {
-            $name = trim($item['name'] ?? '');
-            $qty = isset($item['qty']) ? (float) $item['qty'] : null;
-            $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
-
-            if ($name === '' || $qty === null || $unitCost === null) {
-                return null;
+    // --------------------------------------------
+    // 📦 Process Catalog Materials from Picker
+    // --------------------------------------------
+    $catalogMaterials = [];
+    $material_total = 0;
+    
+    if (!empty($validated['materials'])) {
+        foreach ($validated['materials'] as $mat) {
+            if (!empty($mat['name']) && isset($mat['quantity'])) {
+                $qty = (float) $mat['quantity'];
+                $unitCost = (float) ($mat['unit_cost'] ?? 0);
+                $total = $qty * $unitCost;
+                
+                $catalogMaterials[] = [
+                    'catalog_id' => $mat['catalog_id'] ?? null,
+                    'name' => $mat['name'],
+                    'quantity' => $qty,
+                    'unit_cost' => $unitCost,
+                    'unit' => $mat['unit'] ?? 'ea',
+                ];
+                
+                $material_total += $total;
             }
-
-            $total = $qty * $unitCost;
-
-            return [
-                'name' => $name,
-                'qty' => round($qty, 2),
-                'unit_cost' => round($unitCost, 2),
-                'total' => round($total, 2),
-            ];
-        })
-        ->filter()
-        ->values()
-        ->all();
-
-    foreach ($customMaterials as $customMaterial) {
-        $materials[$customMaterial['name']] = [
-            'qty' => $customMaterial['qty'],
-            'unit_cost' => $customMaterial['unit_cost'],
-            'total' => $customMaterial['total'],
-            'is_custom' => true,
-        ];
+        }
     }
-
-    $material_total = array_sum(array_column($materials, 'total'));
 
     // --------------------------------------------
     // 👷 Labor Calculations (from DB)
@@ -235,39 +193,17 @@ class PaverPatioCalculatorController extends Controller
     // 💾 Prepare and Save
     // --------------------------------------------
     
-    // Process catalog materials
-    $catalogMaterials = [];
-    if (!empty($validated['materials'])) {
-        foreach ($validated['materials'] as $mat) {
-            if (!empty($mat['name']) && isset($mat['quantity'])) {
-                $catalogMaterials[] = [
-                    'catalog_id' => $mat['catalog_id'] ?? null,
-                    'name' => $mat['name'],
-                    'quantity' => (float) $mat['quantity'],
-                    'unit_cost' => (float) ($mat['unit_cost'] ?? 0),
-                    'unit' => $mat['unit'] ?? 'ea',
-                ];
-            }
-        }
-    }
-    
     $data = array_merge($validated, [
         'area_sqft' => round($area, 2),
         'paver_count' => $paverCount,
         'base_tons' => $baseTons,
-        'paver_unit_cost' => $paverUnitCost,
-        'base_unit_cost' => $baseUnitCost,
-        'edge_unit_cost' => $edgeUnitCost,
         'edge_lf' => round($edgeLF, 2),
-        'edging_linear_feet' => $validated['edging_linear_feet'] ?? null,
         'polymeric_bags' => $polymericBags,
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
         'labor_hours' => round($baseLaborHours, 2),
         'labor_tasks' => $laborTasks,
         'materials' => $catalogMaterials,
-        'calculated_materials' => $materials,
         'material_total' => round($material_total, 2),
-        'custom_materials' => $customMaterials,
     ], $totals);
 
     if (!empty($validated['calculation_id'])) {

@@ -13,16 +13,16 @@
             @foreach($materials as $label => $item)
                 @if(is_array($item) && isset($item['qty'], $item['unit_cost'], $item['total']))
                     <tr>
-                        <td>{{ $label }}</td>
-                        <td class="text-right">{{ $item['qty'] }}</td>
-                        <td class="text-right">${{ number_format($item['unit_cost'], 2) }}</td>
-                        <td class="text-right">${{ number_format($item['total'], 2) }}</td>
+                        <td class="p-2">{{ $label }}</td>
+                        <td class="p-2 text-right">{{ is_numeric($item['qty']) ? number_format($item['qty'], 2) : $item['qty'] }}</td>
+                        <td class="p-2 text-right">${{ number_format($item['unit_cost'], 2) }}</td>
+                        <td class="p-2 text-right">${{ number_format($item['total'], 2) }}</td>
                     </tr>
                 @endif
             @endforeach
             <tr class="font-bold bg-gray-100">
                 <td colspan="3" class="text-right px-4 py-2">Total Material Cost:</td>
-                <td class="text-right px-4 py-2">${{ number_format($material_total, 2) }}</td>
+                <td class="text-right px-4 py-2">${{ number_format($material_total ?? 0, 2) }}</td>
             </tr>
         </tbody>
     </table>

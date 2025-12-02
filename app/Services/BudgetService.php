@@ -43,7 +43,15 @@ class BudgetService
         
         // Legacy simple calculation (for backwards compatibility)
         $headcount = (float) Arr::get($inputs, 'labor.headcount', 1);
-        $wage = (float) Arr::get($inputs, 'labor.wage', 25);
+        
+        // Get average wage from labor catalog instead of budget inputs
+        $laborCatalogAvgWage = \App\Models\LaborItem::where('is_active', true)
+            ->whereNotNull('average_wage')
+            ->where('average_wage', '>', 0)
+            ->avg('average_wage');
+        
+        $wage = $laborCatalogAvgWage > 0 ? (float) $laborCatalogAvgWage : (float) Arr::get($inputs, 'labor.wage', 25);
+        
         $payrollTaxes = (float) Arr::get($inputs, 'labor.payroll_taxes', 0.09);
         $benefits = (float) Arr::get($inputs, 'labor.benefits', 0.12);
         $workersComp = (float) Arr::get($inputs, 'labor.workers_comp', 0.03);
@@ -61,12 +69,22 @@ class BudgetService
         $dlc = $wage * (1 + $payrollTaxes + $benefits + $workersComp) + ($wage * $ptoPerHour);
         $plhPerPerson = $annualHours * $utilization * $productivity;
         $plh = $plhPerPerson * $headcount;
-        $blc = $dlc + $ohr;
+        
+        // BLC Calculation: Use the labor hour markup from overhead recovery settings
+        // This is the Field Labor Hour Markup that's manually set in the budget
+        // BLC = average wage + labor hour markup
+        $laborHourMarkup = (float) Arr::get($inputs, 'oh_recovery.labor_hour.markup_per_hour', 0);
+        
+        // If no labor hour markup is set, fall back to calculated OHR
+        $effectiveOHR = $laborHourMarkup > 0 ? $laborHourMarkup : $ohr;
+        
+        $blc = $wage + $effectiveOHR;
 
         return [
             'labor' => [
+                'wage' => round($wage, 2),
                 'dlc' => round($dlc, 2),
-                'ohr' => round($ohr, 2),
+                'ohr' => round($effectiveOHR, 2),
                 'blc' => round($blc, 2),
                 'plh' => round($plh, 1),
                 'plh_per_person' => round($plhPerPerson, 1),
@@ -190,12 +208,41 @@ class BudgetService
 
     /**
      * Get the recommended labor rate for calculators.
-     * This is an alias for getAverageLaborRate() for better semantics.
+     * Uses the Break-Even Labor Cost (BLC) from the active budget,
+     * which includes overhead costs needed to break even.
+     * 
+     * This is the company-wide break-even rate that should be used for
+     * calculator estimates, as it represents the current budget's cost structure.
      *
      * @return float
      */
     public function getLaborRateForCalculators(): float
     {
-        return $this->getAverageLaborRate();
+        // Use BLC from active budget (includes DLC + OHR)
+        // DLC = Direct Labor Cost (wage + payroll taxes + benefits + workers comp + PTO)
+        // OHR = Overhead Recovery Rate (total overhead / total field hours)
+        // BLC = DLC + OHR (company-wide break-even labor cost)
+        
+        $budget = $this->active();
+        if ($budget) {
+            $blc = (float) Arr::get($budget->outputs, 'labor.blc', 0);
+            if ($blc > 0) {
+                return round($blc, 2);
+            }
+        }
+
+        // Fallback to average from labor catalog items
+        $laborItems = \App\Models\LaborItem::where('is_active', true)
+            ->whereNotNull('breakeven')
+            ->where('breakeven', '>', 0)
+            ->get();
+
+        if ($laborItems->isNotEmpty()) {
+            $average = $laborItems->avg('breakeven');
+            return round((float) $average, 2);
+        }
+
+        // Final fallback - reasonable default
+        return 50.00;
     }
 }

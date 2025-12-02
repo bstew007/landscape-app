@@ -19,12 +19,12 @@
         @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
     </div>
 
-    {{-- Final Price Card --}}
+    {{-- Total Cost Card --}}
     <div class="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl shadow-md p-8 mb-8">
         <div class="text-center">
-            <p class="text-lg font-semibold text-gray-700 mb-2">Final Price</p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Total Cost</p>
             <p class="text-5xl font-bold bg-gradient-to-r from-amber-700 to-orange-700 bg-clip-text text-transparent">
-                ${{ number_format($data['final_price'], 2) }}
+                ${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}
             </p>
         </div>
     </div>
@@ -89,19 +89,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- Auto-calculated materials (pavers, base, edge, polymeric) --}}
-                    @if(!empty($data['calculated_materials']))
-                        @foreach($data['calculated_materials'] as $name => $material)
-                            <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                <td class="py-3 px-4 font-medium text-gray-900">{{ $name }}</td>
-                                <td class="py-3 px-4 text-right text-gray-700">{{ number_format($material['qty'], 2) }}</td>
-                                <td class="py-3 px-4 text-right text-gray-700">${{ number_format($material['unit_cost'], 2) }}</td>
-                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($material['total'], 2) }}</td>
-                            </tr>
-                        @endforeach
-                    @endif
-                    
-                    {{-- Catalog materials --}}
+                    {{-- Catalog materials from picker --}}
                     @if(!empty($data['materials']) && is_array($data['materials']))
                         @foreach($data['materials'] as $material)
                             @php
@@ -110,7 +98,6 @@
                             <tr class="border-b border-gray-100 hover:bg-amber-50">
                                 <td class="py-3 px-4 font-medium text-gray-900">
                                     {{ $material['name'] }}
-                                    <span class="text-xs text-gray-500 ml-2">(from catalog)</span>
                                 </td>
                                 <td class="py-3 px-4 text-right text-gray-700">
                                     {{ number_format($material['quantity'], 2) }} {{ $material['unit'] ?? 'ea' }}
@@ -119,14 +106,22 @@
                                 <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($total, 2) }}</td>
                             </tr>
                         @endforeach
+                    @else
+                        <tr>
+                            <td colspan="4" class="py-8 px-4 text-center text-gray-500 italic">
+                                No materials selected from catalog
+                            </td>
+                        </tr>
                     @endif
                 </tbody>
+                @if(!empty($data['materials']) && is_array($data['materials']))
                 <tfoot>
                     <tr class="border-t-2 border-gray-300 bg-gray-50">
                         <td colspan="3" class="py-4 px-4 text-right font-bold text-gray-900">Material Total:</td>
                         <td class="py-4 px-4 text-right font-bold text-amber-700 text-lg">${{ number_format($data['material_total'], 2) }}</td>
                     </tr>
                 </tfoot>
+                @endif
             </table>
         </div>
     </div>
@@ -175,7 +170,8 @@
         </div>
     </div>
 
-    {{-- Pricing Summary --}}\n    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    {{-- Pricing Summary --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center gap-3 mb-6">
             <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,13 +190,9 @@
                 <span class="text-gray-700 text-lg">Material Cost</span>
                 <span class="font-semibold text-gray-900 text-lg">${{ number_format($data['material_total'], 2) }}</span>
             </div>
-            <div class="flex justify-between items-center py-3 border-t-2 border-gray-200">
-                <span class="font-semibold text-gray-700 text-lg">Total Cost</span>
-                <span class="font-bold text-gray-900 text-xl">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
-            </div>
             <div class="flex justify-between items-center py-4 border-t-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 -mx-6 px-6 rounded-lg">
-                <span class="font-bold text-gray-900 text-xl">Final Price</span>
-                <span class="font-bold text-amber-700 text-2xl">${{ number_format($data['final_price'], 2) }}</span>
+                <span class="font-bold text-gray-900 text-xl">Total Cost</span>
+                <span class="font-bold text-amber-700 text-2xl">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
             </div>
         </div>
     </div>
@@ -279,7 +271,7 @@
                 <div x-show="estimateMode === 'new'" x-cloak>
                     <input type="hidden" :name="estimateMode === 'new' ? 'estimate_id' : ''" value="new">
                     <input type="text" 
-                           :name="estimateMode === 'new' ? 'estimate_title' : ''"
+                           :name="estimateMode === 'new' ? 'new_estimate_title' : ''"
                            x-model="newEstimateTitle"
                            :required="estimateMode === 'new'"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"

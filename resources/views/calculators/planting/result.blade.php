@@ -17,12 +17,12 @@
 
     @include('calculators.partials.client_info', ['siteVisit' => $siteVisit])
 
-    {{-- Final Price Highlight --}}
+    {{-- Total Cost Highlight --}}
     <div class="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-8 rounded-xl shadow-lg mb-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-300 text-sm font-medium uppercase tracking-wide mb-1">Total Project Price</p>
-                <p class="text-5xl font-bold">${{ number_format($data['final_price'], 2) }}</p>
+                <p class="text-gray-300 text-sm font-medium uppercase tracking-wide mb-1">Total Project Cost</p>
+                <p class="text-5xl font-bold">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</p>
                 <p class="text-gray-300 text-xs mt-2">Labor includes facing and watering each plant</p>
             </div>
             <div class="bg-white/20 rounded-full p-4">
@@ -122,13 +122,9 @@
                     <span class="text-gray-700">Material Cost:</span>
                     <span class="text-gray-900 font-semibold">${{ number_format($data['material_total'], 2) }}</span>
                 </div>
-                <div class="flex justify-between py-2 border-t border-gray-200">
-                    <span class="text-gray-900 font-semibold">Total Cost:</span>
-                    <span class="text-gray-900 font-semibold">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
-                </div>
                 <div class="flex justify-between py-3 border-t-2 border-brand-200 bg-gradient-to-r from-brand-50 to-brand-100 -mx-6 px-6 rounded-b-lg">
-                    <span class="text-brand-900 font-bold text-lg">Final Price:</span>
-                    <span class="text-brand-900 font-bold text-2xl">${{ number_format($data['final_price'], 2) }}</span>
+                    <span class="text-brand-900 font-bold text-lg">Total Cost:</span>
+                    <span class="text-brand-900 font-bold text-2xl">${{ number_format($data['labor_cost'] + $data['material_total'], 2) }}</span>
                 </div>
             </div>
         </div>

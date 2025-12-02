@@ -192,6 +192,16 @@ class Estimate extends Model
         return $this->belongsTo(SiteVisit::class);
     }
 
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function costCode()
+    {
+        return $this->belongsTo(CostCode::class);
+    }
+
     public function invoice()
     {
         return $this->hasOne(Invoice::class);

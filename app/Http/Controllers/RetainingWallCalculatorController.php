@@ -93,15 +93,6 @@ class RetainingWallCalculatorController extends Controller
         'ab_curved_height' => 'nullable|numeric|min:0',
         'ab_step_count' => 'nullable|integer|min:0',
         'ab_column_count' => 'nullable|integer|min:0',
-        'override_block_cost' => 'nullable|numeric|min:0',
-        'override_capstone_cost' => 'nullable|numeric|min:0',
-        'override_pipe_cost' => 'nullable|numeric|min:0',
-        'override_gravel_cost' => 'nullable|numeric|min:0',
-        'override_topsoil_cost' => 'nullable|numeric|min:0',
-        'override_fabric_cost' => 'nullable|numeric|min:0',
-        'override_geogrid_cost' => 'nullable|numeric|min:0',
-        'override_adhesive_cost' => 'nullable|numeric|min:0',
-        'materials_override_enabled' => 'nullable|boolean',
         'custom_materials' => 'nullable|array',
         'custom_materials.*.name' => 'nullable|string|max:255',
         'custom_materials.*.qty' => 'nullable|numeric|min:0',
@@ -114,120 +105,50 @@ class RetainingWallCalculatorController extends Controller
     $height = $validated['height'];
     $sqft = $length * $height;
 
+    // Calculate quantities only (no pricing)
     $blockCoverage = $validated['block_brand'] === 'belgard' ? 0.67 : 0.65;
     $blockCount = ceil($sqft / $blockCoverage);
-    $blockUnitCost = $validated['override_block_cost'] ?? 11.00;
-    $blockCost = $blockCount * $blockUnitCost;
-
+    
     $includeCaps = $validated['use_capstones'] ?? false;
     $capCount = $includeCaps ? ceil($length) : 0;
-    $capUnitCost = $validated['override_capstone_cost'] ?? 18.00;
-    $capCost = $capCount * $capUnitCost;
     $adhesiveTubeCount = ceil($capCount / 20);
 
     $includeGeogrid = $validated['include_geogrid'] ?? false;
     $geogridLayers = $includeGeogrid && $height >= 4 ? floor($height / 2) : 0;
     $geogridLF = $length * $geogridLayers;
 
-    $pipeUnitCost = $validated['override_pipe_cost'] ?? 2.00;
-    $gravelUnitCost = $validated['override_gravel_cost'] ?? 85.00;
-    $topsoilUnitCost = $validated['override_topsoil_cost'] ?? 17.00;
-    $fabricUnitCost = $validated['override_fabric_cost'] ?? 0.30;
-    $geogridUnitCost = $validated['override_geogrid_cost'] ?? 1.50;
-    $adhesiveUnitCost = $validated['override_adhesive_cost'] ?? 8.00;
-
-    $pipeCost = $length * $pipeUnitCost;
     $gravelVolumeCF = $length * ($height - 0.5) * 1.5;
     $gravelTons = $gravelVolumeCF / 21.6;
-    $gravelCost = ceil($gravelTons) * $gravelUnitCost;
 
     $topsoilVolumeCF = $length * 0.5 * 1.5;
     $topsoilYards = $topsoilVolumeCF / 27;
-    $topsoilCost = ceil($topsoilYards) * $topsoilUnitCost;
 
     $fabricArea = $length * $height * 2;
-    $fabricCost = $fabricArea * $fabricUnitCost;
-    $geogridCost = $geogridLF * $height * $geogridUnitCost;
-    $adhesiveCost = $adhesiveTubeCount * $adhesiveUnitCost;
 
-    $materials = [
-        'Wall Blocks' => [
-            'qty' => $blockCount,
-            'unit_cost' => $blockUnitCost,
-            'total' => round($blockCost, 2),
-        ],
-        'Capstones' => [
-            'qty' => $capCount,
-            'unit_cost' => $capUnitCost,
-            'total' => round($capCost, 2),
-        ],
-        'Drain Pipe' => [
-            'qty' => $length,
-            'unit_cost' => $pipeUnitCost,
-            'total' => round($pipeCost, 2),
-        ],
-        '#57 Gravel' => [
-            'qty' => ceil($gravelTons),
-            'unit_cost' => $gravelUnitCost,
-            'total' => round($gravelCost, 2),
-        ],
-        'Topsoil' => [
-            'qty' => ceil($topsoilYards),
-            'unit_cost' => $topsoilUnitCost,
-            'total' => round($topsoilCost, 2),
-        ],
-        'Underlayment Fabric' => [
-            'qty' => round($fabricArea, 2),
-            'unit_cost' => $fabricUnitCost,
-            'total' => round($fabricCost, 2),
-        ],
-        'Geogrid' => [
-            'qty' => $geogridLF * $height,
-            'unit_cost' => $geogridUnitCost,
-            'total' => round($geogridCost, 2),
-        ],
-        'Adhesive for Capstones' => [
-            'qty' => $adhesiveTubeCount,
-            'unit_cost' => $adhesiveUnitCost,
-            'total' => round($adhesiveCost, 2),
-        ],
-    ];
-
+    // Process custom materials from user input only
+    $materials = [];
+    $material_total = 0;
+    
     $customMaterialsInput = $validated['custom_materials'] ?? [];
-    $customMaterials = collect($customMaterialsInput)
-        ->map(function ($item) {
-            $name = trim($item['name'] ?? '');
-            $qty = isset($item['qty']) ? (float) $item['qty'] : null;
-            $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
+    foreach ($customMaterialsInput as $item) {
+        $name = trim($item['name'] ?? '');
+        $qty = isset($item['qty']) ? (float) $item['qty'] : null;
+        $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
 
-            if ($name === '' || $qty === null || $unitCost === null) {
-                return null;
-            }
+        if ($name === '' || $qty === null || $unitCost === null) {
+            continue;
+        }
 
-            $total = round($qty * $unitCost, 2);
-
-            return [
-                'name' => $name,
-                'qty' => round($qty, 2),
-                'unit_cost' => round($unitCost, 2),
-                'total' => $total,
-                'is_custom' => true,
-            ];
-        })
-        ->filter()
-        ->values()
-        ->all();
-
-    foreach ($customMaterials as $customMaterial) {
-        $materials[$customMaterial['name']] = [
-            'qty' => $customMaterial['qty'],
-            'unit_cost' => $customMaterial['unit_cost'],
-            'total' => $customMaterial['total'],
+        $total = round($qty * $unitCost, 2);
+        $materials[$name] = [
+            'qty' => round($qty, 2),
+            'unit_cost' => round($unitCost, 2),
+            'total' => $total,
             'is_custom' => true,
         ];
+        
+        $material_total += $total;
     }
-
-    $material_total = array_sum(array_column($materials, 'total'));
 
     $rates = ProductionRate::where('calculator', 'retaining_wall')->pluck('rate', 'task');
     $equipmentFactor = $validated['equipment'] === 'excavator' ? '_excavator' : '_manual';
@@ -361,7 +282,6 @@ class RetainingWallCalculatorController extends Controller
     'labor_tasks' => $laborTasks,
     'material_total' => round($material_total, 2),
     'materials' => $materials,
-    'materials_override_enabled' => !empty($validated['materials_override_enabled']),
     'custom_materials' => $customMaterials,
 
     'ab_straight_sqft' => round(($validated['ab_straight_length'] ?? 0) * ($validated['ab_straight_height'] ?? 0), 2),

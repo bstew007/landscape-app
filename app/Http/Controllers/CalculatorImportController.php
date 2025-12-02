@@ -31,6 +31,17 @@ class CalculatorImportController extends Controller
         
         // Create new estimate if needed
         if ($validated['estimate_id'] === 'new') {
+            // Get first active cost code with QBO mapping (required for estimates)
+            $costCodeId = \App\Models\CostCode::where('is_active', true)
+                ->whereNotNull('qbo_item_id')
+                ->first()?->id;
+            
+            if (!$costCodeId) {
+                return back()->withErrors([
+                    'cost_code_id' => 'No active cost code with QuickBooks mapping found. Please create one in Settings → Cost Codes before creating estimates.'
+                ])->withInput();
+            }
+            
             $estimate = Estimate::create([
                 'title' => $validated['new_estimate_title'],
                 'client_id' => $calculation->client_id ?? $calculation->siteVisit->client_id,
@@ -38,7 +49,7 @@ class CalculatorImportController extends Controller
                 'site_visit_id' => $calculation->site_visit_id,
                 'status' => 'draft',
                 'estimate_type' => 'design_build',
-                'cost_code_id' => \App\Models\CostCode::where('is_active', true)->whereNotNull('qbo_item_id')->first()?->id ?? 1,
+                'cost_code_id' => $costCodeId,
             ]);
         } else {
             $estimate = Estimate::findOrFail($validated['estimate_id']);
