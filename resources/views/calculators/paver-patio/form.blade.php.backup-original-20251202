@@ -4,7 +4,8 @@
     $hasOverrides = collect(old())->keys()->filter(fn($key) => str_starts_with($key, 'override_'))->isNotEmpty();
     $overrideChecked = old('materials_override_enabled', $formData['materials_override_enabled'] ?? $hasOverrides);
 
-    $areaSqft = old('area_sqft', $formData['area_sqft'] ?? null);
+    $lengthValue = old('length', $formData['length'] ?? null);
+    $widthValue = old('width', $formData['width'] ?? null);
     $paverTypeValue = old('paver_type', $formData['paver_type'] ?? '');
     $edgeSelection = old('edge_restraint', $formData['edge_restraint'] ?? '');
     $edgeLfValue = old('edging_linear_feet', $formData['edging_linear_feet'] ?? null);
@@ -12,6 +13,8 @@
     // Get materials from catalog if available - support multiple materials
     $storedMaterials = $formData['materials'] ?? [];
     $selectedMaterials = collect($storedMaterials);
+
+    $areaSqft = ($lengthValue && $widthValue) ? round($lengthValue * $widthValue, 2) : null;
     $paverCoverage = 0.94;
     $paverCountEstimate = $areaSqft ? (int) ceil($areaSqft / $paverCoverage) : null;
     $baseDepthFeet = 2.5 / 12;
@@ -118,26 +121,27 @@
                         <p class="text-sm text-gray-600">Length, width, and configuration</p>
                     </div>
                 </div>
-                <span id="patioAreaBadge" class="text-sm font-semibold px-3 py-1 rounded-full {{ $areaSqft ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600' }}" data-empty-message="Enter dimensions" data-prefix="Area: ">{{ $areaSqft ? 'Area: '.number_format($areaSqft, 2).' sqft' : 'Enter dimensions' }}</span>
+                <span id="patioAreaBadge" class="text-sm font-semibold px-3 py-1 rounded-full {{ $areaSqft ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600' }}" data-empty-message="Enter dimensions" data-prefix="Area: ">{{ $areaSqft ? 'Area: '.number_format($areaSqft, 2).' sqft' : 'Enter dimensions' }}</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
-                    <label class="block font-semibold text-gray-900 mb-2">Project Area (sq ft) <span class="text-red-500">*</span></label>
-                    <input type="number" 
-                           name="area_sqft" 
-                           x-model.number="area"
-                           @input="calculateQuantities(); updateLaborQuantities();"
-                           step="any" 
-                           min="1"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           required>
-                    <p class="text-xs text-gray-600 mt-2">Total patio area in square feet</p>
+                    <label class="block font-semibold text-gray-900 mb-2">Length (ft)</label>
+                    <input type="number" step="0.1" name="length" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ $lengthValue }}" required>
+                    <p class="text-xs text-gray-600 mt-2">Paired with width to calculate patio area</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
+                    <label class="block font-semibold text-gray-900 mb-2">Width (ft)</label>
+                    <input type="number" step="0.1" name="width" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                           value="{{ $widthValue }}" required>
+                    <p class="text-xs text-gray-600 mt-2">Used for material quantities and labor</p>
                 </div>
 
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
                     <label class="block font-semibold text-gray-900 mb-2">Edge Restraint Type</label>
-                    <select name="edge_restraint" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    <select name="edge_restraint" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" required>
                         <option value="">-- Choose Edge Type --</option>
                         <option value="plastic" {{ $edgeSelection === 'plastic' ? 'selected' : '' }}>Plastic</option>
                         <option value="concrete" {{ $edgeSelection === 'concrete' ? 'selected' : '' }}>Concrete</option>
@@ -148,44 +152,37 @@
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
                     <label class="block font-semibold text-gray-900 mb-2">Edging Linear Feet</label>
                     <input type="number" step="0.1" name="edging_linear_feet" 
-                           x-model="edgingLf"
-                           @input="updateLaborQuantities()"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           x-ref="edgingLfInput"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                            value="{{ $edgeLfValue }}" 
                            placeholder="Enter linear feet">
                     <p class="text-xs text-gray-600 mt-2">Specify exact LF for edge restraints</p>
                 </div>
-
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4">
-                    <label class="block font-semibold text-gray-900 mb-2">Excavation Depth (inches)</label>
-                    <input type="number" 
-                           name="excavation_depth" 
-                           x-model="excavationDepth"
-                           @input="calculateQuantities(); updateLaborQuantities();"
-                           min="0" 
-                           step="0.25"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           value="{{ old('excavation_depth', $formData['excavation_depth'] ?? 3) }}">
-                    <p class="text-xs text-gray-600 mt-2">Typical: 3-4 inches</p>
+            </div>
+            
+            {{-- Auto-calculated quantities preview --}}
+            <div x-show="length > 0 && width > 0" 
+                 x-transition
+                 class="bg-gradient-to-r from-amber-50 to-orange-100 border-l-4 border-amber-500 rounded-lg p-6 mt-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Area</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="area.toFixed(2) + ' sqft'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Pavers Est.</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="paverCount.toLocaleString() + ' stones'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Base Gravel</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="baseTons.toLocaleString() + ' tons'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Polymeric Sand</p>
+                        <p class="text-2xl font-bold text-amber-900" x-text="polymericBags.toLocaleString() + ' bags'"></p>
+                    </div>
                 </div>
             </div>
-
-            @include('calculators.partials.calculated_quantities_box', [
-                'color' => 'blue',
-                'quantities' => [
-                    ['label' => 'Area', 'value' => "area.toFixed(2) + ' sqft'", 'alpine' => true],
-                    ['label' => 'Excavation', 'value' => "excavationCY.toFixed(2) + ' cy'", 'alpine' => true],
-                    ['label' => 'Base Gravel', 'value' => "baseTons.toLocaleString() + ' tons'", 'alpine' => true],
-                    ['label' => 'Polymeric Sand', 'value' => "polymericBags.toLocaleString() + ' bags'", 'alpine' => true],
-                    ['label' => 'Pavers Est.', 'value' => "paverCount.toLocaleString() + ' stones'", 'alpine' => true],
-                    ['label' => 'Edging LF', 'value' => "(edgingLf || 0) + ' ft'", 'alpine' => true],
-                ]
-            ])
-
-            @include('calculators.partials.excavation_method_selector', [
-                'color' => 'blue',
-                'formData' => $formData
-            ])
         </div>
 
         {{-- 3️⃣ Material Selection --}}
@@ -210,29 +207,29 @@
                 <div x-show="selectedMaterials.length > 0" class="space-y-3">
                     <h3 class="font-semibold text-gray-900">Selected Materials</h3>
                     <template x-for="(material, index) in selectedMaterials" :key="index">
-                        <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-500 rounded-xl p-4 shadow-sm">
+                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-500 rounded-xl p-4 shadow-sm">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center mb-2">
-                                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
-                                        <p class="text-lg font-bold text-blue-900" x-text="material.name"></p>
+                                        <p class="text-lg font-bold text-amber-900" x-text="material.name"></p>
                                     </div>
-                                    <p class="text-sm font-semibold text-blue-700 ml-7">
+                                    <p class="text-sm font-semibold text-amber-700 ml-7">
                                         $<span x-text="parseFloat(material.unit_cost).toFixed(2)"></span> per <span x-text="material.unit || 'ea'"></span>
                                     </p>
-                                    <p class="text-xs text-blue-600 mt-1 ml-7" x-show="material.description" x-text="material.description"></p>
+                                    <p class="text-xs text-amber-600 mt-1 ml-7" x-show="material.description" x-text="material.description"></p>
                                     
                                     {{-- Quantity Input --}}
                                     <div class="mt-3 ml-7">
-                                        <label class="block text-sm font-semibold text-blue-900 mb-1">Quantity:</label>
+                                        <label class="block text-sm font-semibold text-amber-900 mb-1">Quantity:</label>
                                         <input type="number" 
                                                :name="'materials[' + index + '][quantity]'"
                                                x-model="material.quantity"
                                                min="0"
                                                step="any"
-                                               class="w-32 px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               class="w-32 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                                                placeholder="Qty">
                                         {{-- Hidden fields for material data --}}
                                         <input type="hidden" :name="'materials[' + index + '][catalog_id]'" :value="material.catalog_id">
@@ -243,7 +240,7 @@
                                 </div>
                                 <button type="button"
                                         @click="removeMaterial(index)"
-                                        class="ml-4 p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition-colors">
+                                        class="ml-4 p-3 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-lg transition-colors">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
@@ -255,29 +252,11 @@
             </div>
         </div>
 
-        {{-- 4️⃣ Labor Tasks --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        {{-- 4. Job Notes --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <div class="flex items-center">
                     <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-700 text-white font-bold mr-3">4</span>
-                    <h2 class="text-xl font-bold text-gray-900">Labor Tasks</h2>
-                </div>
-            </div>
-            <div class="p-6">
-                @include('calculators.partials.labor_tasks_section', [
-                    'calculator' => 'paver_patio',
-                    'formData' => $formData,
-                    'color' => 'blue',
-                    'includeExcavation' => true
-                ])
-            </div>
-        </div>
-
-        {{-- 5. Job Notes --}}
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
-            <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <div class="flex items-center">
-                    <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-700 text-white font-bold mr-3">5</span>
                     <h2 class="text-xl font-bold text-gray-900">Job Notes</h2>
                 </div>
             </div>
@@ -331,98 +310,36 @@
     function paverPatioCalculator() {
         return {
             // Dimensions
-            area: {{ old('area_sqft', $formData['area_sqft'] ?? 0) }},
-            excavationDepth: {{ old('excavation_depth', $formData['excavation_depth'] ?? 3) }},
-            edgingLf: {{ $edgeLfValue ?? 0 }},
-            excavationMethod: '{{ old('excavation_method', $formData['excavation_method'] ?? 'manual') }}',
-            
-            // Calculated quantities
-            excavationCY: 0,
+            length: {{ $lengthValue ?? 0 }},
+            width: {{ $widthValue ?? 0 }},
+            area: 0,
             paverCount: 0,
             baseTons: 0,
             polymericBags: 0,
-            
-            // Labor quantities - will be auto-populated
-            laborQuantities: {
-                excavation_manual: 0,
-                excavation_mini_skid: 0,
-                excavation_skid_steer: 0,
-                base_compaction: 0,
-                laying_pavers: 0,
-                cutting_borders: 0,
-                install_edging: 0,
-                cleanup: 0
-            },
             
             // Material selection - support multiple materials
             selectedMaterials: @json($formData['materials'] ?? []),
             
             init() {
                 this.calculateQuantities();
-                this.updateLaborQuantities();
                 
                 // Watch for dimension changes
-                this.$watch('area', () => {
-                    this.calculateQuantities();
-                    this.updateLaborQuantities();
-                });
-                this.$watch('excavationDepth', () => {
-                    this.calculateQuantities();
-                    this.updateLaborQuantities();
-                });
-                this.$watch('edgingLf', () => {
-                    this.updateLaborQuantities();
-                });
-                this.$watch('excavationMethod', () => {
-                    this.updateLaborQuantities();
-                });
+                this.$watch('length', () => this.calculateQuantities());
+                this.$watch('width', () => this.calculateQuantities());
             },
             
             calculateQuantities() {
-                const area = parseFloat(this.area) || 0;
-                const excDepth = parseFloat(this.excavationDepth) || 0;
-                
-                if (area > 0) {
-                    const paverCoverage = 0.94;
-                    this.paverCount = Math.ceil(area / paverCoverage);
-                    const baseDepthFeet = 2.5 / 12;
-                    this.baseTons = Math.ceil((area * baseDepthFeet) / 21.6);
-                    this.polymericBags = Math.ceil(area / 60);
-                    
-                    // Calculate excavation cubic yards
-                    this.excavationCY = area > 0 && excDepth > 0 ? (area * (excDepth / 12)) / 27 : 0;
+                if (this.length > 0 && this.width > 0) {
+                    this.area = this.length * this.width;
+                    this.paverCount = Math.ceil(this.area / 0.94);
+                    this.baseTons = Math.ceil((this.area * (2.5 / 12)) / 21.6);
+                    this.polymericBags = Math.ceil(this.area / 60);
                 } else {
+                    this.area = 0;
                     this.paverCount = 0;
                     this.baseTons = 0;
                     this.polymericBags = 0;
-                    this.excavationCY = 0;
                 }
-            },
-            
-            updateLaborQuantities() {
-                const area = parseFloat(this.area) || 0;
-                const edgingLf = parseFloat(this.edgingLf) || 0;
-                
-                // Reset all excavation methods to 0
-                this.laborQuantities.excavation_manual = 0;
-                this.laborQuantities.excavation_mini_skid = 0;
-                this.laborQuantities.excavation_skid_steer = 0;
-                
-                // Set the appropriate excavation method quantity based on selection
-                if (this.excavationMethod === 'manual') {
-                    this.laborQuantities.excavation_manual = Math.round(this.excavationCY * 100) / 100;
-                } else if (this.excavationMethod === 'mini_skid') {
-                    this.laborQuantities.excavation_mini_skid = Math.round(this.excavationCY * 100) / 100;
-                } else if (this.excavationMethod === 'skid_steer') {
-                    this.laborQuantities.excavation_skid_steer = Math.round(this.excavationCY * 100) / 100;
-                }
-                
-                // Auto-populate paver-specific tasks
-                this.laborQuantities.base_compaction = Math.round(area * 100) / 100;
-                this.laborQuantities.laying_pavers = Math.round(area * 100) / 100;
-                this.laborQuantities.cutting_borders = Math.round(area * 100) / 100;
-                this.laborQuantities.install_edging = Math.round(edgingLf * 100) / 100;
-                this.laborQuantities.cleanup = Math.round(area * 100) / 100;
             },
             
             handleMaterialSelected(event) {
@@ -450,5 +367,26 @@
         };
     }
 
+    document.addEventListener('DOMContentLoaded', function () {
+        const lengthInput = document.querySelector('input[name="length"]');
+        const widthInput = document.querySelector('input[name="width"]');
+
+        // Sync dimension inputs with Alpine.js
+        if (lengthInput && widthInput) {
+            const alpineData = Alpine.$data(document.querySelector('form[x-data]'));
+            
+            lengthInput.addEventListener('input', (e) => {
+                if (alpineData) {
+                    alpineData.length = parseFloat(e.target.value) || 0;
+                }
+            });
+            
+            widthInput.addEventListener('input', (e) => {
+                if (alpineData) {
+                    alpineData.width = parseFloat(e.target.value) || 0;
+                }
+            });
+        }
+    });
 </script>
 @endpush

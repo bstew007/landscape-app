@@ -82,37 +82,24 @@ class SynTurfCalculatorController extends Controller
             'tasks' => 'required|array',
             'tasks.*.qty' => 'nullable|numeric|min:0',
             'area_sqft' => 'required|numeric|min:1',
-            'perimeter_lf' => 'required|numeric|min:0',
-            'excavation_depth' => 'nullable|numeric|min:0',
-            'abc_depth' => 'nullable|numeric|min:0',
-            'rock_dust_depth' => 'nullable|numeric|min:0',
-            'excavation_method' => 'required|string|in:manual,mini_skid,skid_steer',
-            'materials' => 'nullable|array',
-            'materials.*.catalog_id' => 'required|exists:materials,id',
-            'materials.*.quantity' => 'required|numeric|min:0',
+            'edging_linear_ft' => 'required|numeric|min:0',
+            'turf_grade' => 'required|string|in:good,better,best',
+            // New optional fields
+            'excavation_depth_in' => 'nullable|numeric|min:0',
+            'abc_depth_in' => 'nullable|numeric|min:0',
+            'rock_dust_depth_in' => 'nullable|numeric|min:0',
+            'rent_tamper' => 'nullable|boolean',
+            'tamper_days' => 'nullable|integer|min:1',
         ];
+        // site_visit_id required unless template mode
         $rules['site_visit_id'] = ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id';
         $validated = $request->validate($rules);
 
         $inputTasks = $request->input('tasks', []);
         $laborRate = (float) $validated['labor_rate'];
-        $areaSqft = (float) $validated['area_sqft'];
-        $perimeterLf = (float) $validated['perimeter_lf'];
-        
-        // Calculate material quantities (for display/reference)
-        $excavationDepth = (float) ($validated['excavation_depth'] ?? 3);
-        $abcDepth = (float) ($validated['abc_depth'] ?? 2);
-        $rockDustDepth = (float) ($validated['rock_dust_depth'] ?? 1);
-        
-        $excavationCY = $areaSqft > 0 && $excavationDepth > 0 ? ($areaSqft * ($excavationDepth / 12)) / 27 : 0;
-        $abcCY = $areaSqft > 0 && $abcDepth > 0 ? ($areaSqft * ($abcDepth / 12)) / 27 : 0;
-        $rockDustCY = $areaSqft > 0 && $rockDustDepth > 0 ? ($areaSqft * ($rockDustDepth / 12)) / 27 : 0;
-        $baseCY = $abcCY + $rockDustCY;
 
-        // Get production rates
         $dbRates = ProductionRate::where('calculator', 'syn_turf')->pluck('rate', 'task');
 
-        // Process labor tasks
         $results = [];
         $totalHours = 0;
 
@@ -137,69 +124,136 @@ class SynTurfCalculatorController extends Controller
             $totalHours += $hours;
         }
 
-        // Handle excavation method - adjust hours based on method and calculated CY
-        $excavationMethod = $validated['excavation_method'];
-        if ($excavationCY > 0) {
-            $methodTaskMap = [
-                'manual' => 'excavation_manual',
-                'mini_skid' => 'excavation_mini_skid',
-                'skid_steer' => 'excavation_skid_steer',
-            ];
-            
-            $taskKey = $methodTaskMap[$excavationMethod] ?? 'excavation_manual';
-            if (isset($dbRates[$taskKey])) {
-                $rate = $dbRates[$taskKey];
-                $hours = $excavationCY * $rate;
-                $cost = $hours * $laborRate;
-                
-                // Remove any existing excavation task and add the correct one
-                $results = array_filter($results, fn($r) => !str_contains(strtolower($r['task']), 'excavation'));
-                $results[] = [
-                    'task' => ucwords(str_replace('_', ' ', $taskKey)),
-                    'qty' => round($excavationCY, 2),
-                    'rate' => $rate,
-                    'hours' => round($hours, 2),
-                    'cost' => round($cost, 2),
-                ];
-                
-                // Recalculate total hours
-                $totalHours = array_sum(array_column($results, 'hours'));
-            }
-        }
+        $areaSqft = (float) $validated['area_sqft'];
+        $edgingLf = (float) $validated['edging_linear_ft'];
 
-        // Process materials from catalog
-        $materials = [];
-        $materialTotal = 0;
-        
-        if (!empty($validated['materials'])) {
-            foreach ($validated['materials'] as $matData) {
-                $catalog = \App\Models\Material::find($matData['catalog_id']);
-                if ($catalog) {
-                    $qty = (float) $matData['quantity'];
-                    $unitCost = (float) $catalog->unit_cost;
-                    $total = $qty * $unitCost;
-                    
-                    $materials[] = [
-                        'catalog_id' => $catalog->id,
-                        'name' => $catalog->name,
+        // Depths (inches) for excavation and base layers
+        $excavationDepthIn = (float) ($request->input('excavation_depth_in') ?: 3);
+        $baseDepthIn = (float) ($request->input('base_depth_in') ?: 3);
+
+        // Convert to cubic yards for excavation and base
+        $areaCubicFeetExc = $areaSqft * ($excavationDepthIn / 12);
+        $excavationCY = $areaCubicFeetExc / 27;
+
+        $materialService = app(SynTurfMaterialService::class);
+        $materialData = $materialService->buildMaterials($areaSqft, $edgingLf, $validated['turf_grade'], [
+            'abc_depth_in' => $request->input('abc_depth_in'),
+            'rock_dust_depth_in' => $request->input('rock_dust_depth_in'),
+        ]);
+
+        $materials = $materialData['materials'];
+        $materialTotal = $materialData['material_total'];
+        $turfName = $materialData['turf_name'];
+        $turfUnitCost = $materialData['turf_unit_cost'];
+        $abcCY = (float) ($materialData['abc_cy'] ?? 0);
+        $rockDustCY = (float) ($materialData['rock_dust_cy'] ?? 0);
+        $baseCY = $abcCY + $rockDustCY;
+
+        // Apply editable materials if provided
+        $materialsEdit = $request->input('materials_edit', []);
+        if (is_array($materialsEdit) && !empty($materialsEdit)) {
+            $labelMap = [
+                'turf' => $turfName,
+                'infill_bags' => 'Infill Bags',
+                'edging_boards' => 'Composite Edging Boards',
+                'weed_barrier_rolls' => 'Weed Barrier Rolls',
+                'abc_cy' => 'ABC Base (cy)',
+                'rock_dust_cy' => 'Rock Dust (cy)',
+            ];
+
+            foreach ($materialsEdit as $key => $row) {
+                if (!array_key_exists($key, $labelMap)) continue;
+                $label = $labelMap[$key];
+                $qty = (float) ($row['qty'] ?? 0);
+                $unitCost = (float) ($row['unit_cost'] ?? 0);
+                if ($qty > 0) {
+                    $materials[$label] = [
                         'qty' => round($qty, 2),
                         'unit_cost' => round($unitCost, 2),
-                        'unit' => $catalog->unit,
-                        'total' => round($total, 2),
+                        'total' => round($qty * $unitCost, 2),
                     ];
-                    
-                    $materialTotal += $total;
+                    if ($key === 'turf') {
+                        $turfUnitCost = round($unitCost, 2);
+                    }
+                } else {
+                    unset($materials[$label]);
                 }
             }
+            // Recalculate material total
+            $materialTotal = array_sum(array_map(fn($m) => (float) ($m['total'] ?? 0), $materials));
+            $materialTotal = round($materialTotal, 2);
         }
 
-        // Calculate totals using service
+        // Adjust excavation tasks to use cy-based production if present
+        $laborByTask = collect($results)->keyBy(fn($r)=>strtolower(str_replace(' ','_', $r['task'])));
+        $excTasks = ['excavation_skid_steer','excavation_mini_skid'];
+        // If user chose an excavation method, ensure we include hours even without qty
+        $selectedMethod = $request->input('excavation_method');
+        if ($selectedMethod === 'skid') {
+            $key = 'excavation_skid_steer';
+            $rate = (float) ($dbRates[$key] ?? 0);
+            if ($rate > 0) {
+                $laborByTask->put($key, [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ]);
+            }
+        } elseif ($selectedMethod === 'mini') {
+            $key = 'excavation_mini_skid';
+            $rate = (float) ($dbRates[$key] ?? 0);
+            if ($rate > 0) {
+                $laborByTask->put($key, [ 'task' => str_replace('_',' ', $key), 'qty' => $excavationCY, 'rate' => $rate ]);
+            }
+        }
+        // Replace excavation hours using cy-based production for equipment methods
+        foreach ($excTasks as $t) {
+            if ($laborByTask->has($t)) {
+                $rate = (float) ($dbRates[$t] ?? 0);
+                $row = $laborByTask->get($t);
+                $row['qty'] = $excavationCY;
+                $row['rate'] = $rate;
+                $laborByTask->put($t, $row);
+            }
+        }
+        // Add base_install hours from base CY, if present
+        if ($baseCY > 0) {
+            $baseRate = (float) ($dbRates['base_install'] ?? 0);
+            if ($baseRate > 0) {
+                $laborByTask->put('base_install', [ 'task' => 'base install', 'qty' => $baseCY, 'rate' => $baseRate ]);
+            }
+        }
+        // Rebuild results with corrected quantities
+        $results = [];
+        $totalHours = 0;
+        foreach ($laborByTask as $key => $row) {
+            $rate = (float) ($dbRates[$key] ?? $row['rate']);
+            if (in_array($key, $excTasks)) {
+                $hours = max(0, $excavationCY) * $rate;
+                $qty = $excavationCY;
+                $unit = 'cy';
+            } else {
+                $qty = (float) ($row['qty'] ?? 0);
+                $hours = $qty * $rate;
+                $unit = null;
+            }
+            if ($hours <= 0) continue;
+            $cost = $hours * $laborRate;
+            $results[] = [
+                'task' => str_replace('_',' ', $key),
+                'qty' => round($qty, 2),
+                'rate' => $rate,
+                'hours' => round($hours, 2),
+                'cost' => round($cost, 2),
+                'unit' => $unit,
+            ];
+            $totalHours += $hours;
+        }
+
         $calculator = new LaborCostCalculatorService();
         $totals = $calculator->calculate(
             $totalHours,
             $laborRate,
             array_merge($request->all(), [
                 'material_total' => $materialTotal,
+                'excavation_cy' => round($excavationCY, 2),
+                'base_cy' => round($baseCY, 2),
             ])
         );
 
@@ -208,13 +262,14 @@ class SynTurfCalculatorController extends Controller
         foreach ($results as $result) {
             $taskKey = strtolower(str_replace(' ', '_', $result['task']));
             $taskName = ucwords($result['task']);
+            $unit = $result['unit'] ?? 'sqft';
             
             $laborTasks[] = [
                 'task_key' => $taskKey,
                 'task_name' => $taskName,
-                'description' => $taskName . " - {$result['qty']} sqft",
+                'description' => $taskName . " - {$result['qty']} {$unit}",
                 'quantity' => $result['qty'],
-                'unit' => 'sqft',
+                'unit' => $unit,
                 'production_rate' => $result['rate'],
                 'hours' => $result['hours'],
                 'hourly_rate' => $laborRate,
@@ -222,11 +277,25 @@ class SynTurfCalculatorController extends Controller
             ];
         }
 
+        // Fees (tamper rental)
+        $fees = [];
+        if ($request->boolean('rent_tamper')) {
+            $days = max(1, (int) $request->input('tamper_days', 1));
+            $daily = (float) config('syn_turf.materials.rentals.tamper_daily_cost', 125);
+            $fees[] = [
+                'name' => 'Motorized Hand Tamper (rental)',
+                'quantity' => $days,
+                'unit' => 'day',
+                'unit_cost' => 0,
+                'unit_price' => round($daily, 2),
+            ];
+        }
+
         $data = array_merge(
             $validated,
             [
                 'tasks' => $results,
-                'labor_tasks' => $laborTasks,
+                'labor_tasks' => $laborTasks, // Enhanced format for import
                 'labor_by_task' => collect($results)
                     ->pluck('hours', 'task')
                     ->map(fn ($h) => round($h, 2))
@@ -234,16 +303,14 @@ class SynTurfCalculatorController extends Controller
                 'labor_hours' => round($totalHours, 2),
                 'materials' => $materials,
                 'material_total' => round($materialTotal, 2),
+                'fees' => $fees,
                 'area_sqft' => round($areaSqft, 2),
-                'perimeter_lf' => round($perimeterLf, 2),
-                'excavation_depth' => $excavationDepth,
-                'abc_depth' => $abcDepth,
-                'rock_dust_depth' => $rockDustDepth,
-                'excavation_cy' => round($excavationCY, 2),
-                'abc_cy' => round($abcCY, 2),
-                'rock_dust_cy' => round($rockDustCY, 2),
-                'base_cy' => round($baseCY, 2),
-                'excavation_method' => $excavationMethod,
+                'edging_linear_ft' => round($edgingLf, 2),
+                'excavation_depth_in' => $excavationDepthIn,
+                'base_depth_in' => $baseDepthIn,
+                'turf_grade' => $validated['turf_grade'],
+                'turf_unit_cost' => $turfUnitCost,
+                'turf_name' => $turfName,
             ],
             $totals
         );

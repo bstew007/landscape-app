@@ -48,15 +48,17 @@
             </div>
 
             <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
-                <div class="text-sm text-gray-600 mb-1">Edging Length</div>
-                <div class="text-2xl font-bold text-gray-900">{{ number_format($data['edging_linear_ft'] ?? 0, 0) }}</div>
+                <div class="text-sm text-gray-600 mb-1">Perimeter / Edging</div>
+                <div class="text-2xl font-bold text-gray-900">{{ number_format($data['perimeter_lf'] ?? 0, 0) }}</div>
                 <div class="text-xs text-gray-500">linear feet</div>
             </div>
 
             <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                <div class="text-sm text-gray-600 mb-1">Turf Selection</div>
-                <div class="text-lg font-bold text-gray-900">{{ $data['turf_name'] ?? ucfirst($data['turf_grade'] ?? '') }}</div>
-                <div class="text-sm text-green-700 font-semibold">${{ number_format($data['turf_unit_cost'] ?? 0, 2) }}/sq ft</div>
+                <div class="text-sm text-gray-600 mb-1">Excavation Method</div>
+                <div class="text-lg font-bold text-gray-900">{{ ucwords(str_replace('_', ' ', $data['excavation_method'] ?? 'Manual')) }}</div>
+                <div class="text-sm text-green-700 font-semibold">
+                    Excavation: {{ number_format($data['excavation_cy'] ?? 0, 2) }} cy
+                </div>
             </div>
         </div>
     </div>
@@ -89,7 +91,7 @@
                                 <td class="py-3 px-4 font-medium text-gray-900">{{ $material['name'] }}</td>
                                 <td class="py-3 px-4 text-right text-gray-700">{{ number_format($material['qty'], 2) }} {{ $material['unit'] ?? '' }}</td>
                                 <td class="py-3 px-4 text-right text-gray-700">${{ number_format($material['unit_cost'], 2) }}</td>
-                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($material['line_total'], 2) }}</td>
+                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($material['total'] ?? ($material['qty'] * $material['unit_cost']), 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -217,10 +219,11 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('calculators.import_to_estimate') }}">
+        <form method="POST" action="{{ route('calculators.import-to-estimate') }}">
             @csrf
             <input type="hidden" name="calculation_id" value="{{ $calculation->id ?? '' }}">
             <input type="hidden" name="calculator_type" value="syn_turf">
+            <input type="hidden" name="action" value="import">
 
             {{-- Estimate Selection Toggle --}}
             <div class="mb-6">
@@ -336,7 +339,7 @@
             </a>
         @endif
         
-        <a href="{{ route('site_visits.show', $siteVisit->id) }}" 
+        <a href="{{ route('clients.site-visits.show', [$siteVisit->client->id, $siteVisit->id]) }}" 
            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-sm transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>

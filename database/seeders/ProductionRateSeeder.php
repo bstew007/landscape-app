@@ -87,6 +87,54 @@ class ProductionRateSeeder extends Seeder
             );
         }
 
+        // Universal excavation rates (shared across all calculators)
+        $excavationRates = [
+            ['calculator' => 'excavation', 'task' => 'excavation_manual', 'unit' => 'sqft', 'rate' => 0.014, 'note' => 'Manual excavation with shovels - general rate'],
+            ['calculator' => 'excavation', 'task' => 'excavation_mini_skid', 'unit' => 'cy', 'rate' => 0.14, 'note' => 'Mini skid steer excavation ~7-8 cy/hr'],
+            ['calculator' => 'excavation', 'task' => 'excavation_skid_steer', 'unit' => 'cy', 'rate' => 0.1, 'note' => 'Skid steer excavation ~10 cy/hr'],
+        ];
+
+        foreach ($excavationRates as $rate) {
+            \App\Models\ProductionRate::updateOrCreate(
+                ['calculator' => $rate['calculator'], 'task' => $rate['task']],
+                $rate
+            );
+        }
+
+        // Syn turf updated rates
+        $synTurfRates = [
+            ['calculator' => 'syn_turf', 'task' => 'excavation_manual', 'unit' => 'sqft', 'rate' => 0.014, 'note' => 'Manual excavation for turf removal'],
+            ['calculator' => 'syn_turf', 'task' => 'excavation_mini_skid', 'unit' => 'cy', 'rate' => 0.14, 'note' => 'Mini skid excavation for turf'],
+            ['calculator' => 'syn_turf', 'task' => 'excavation_skid_steer', 'unit' => 'cy', 'rate' => 0.1, 'note' => 'Skid steer excavation for turf'],
+            ['calculator' => 'syn_turf', 'task' => 'base_install', 'unit' => 'cy', 'rate' => 0.2, 'note' => 'Place, grade, compact base (mini skid + compactor)'],
+            ['calculator' => 'syn_turf', 'task' => 'turf_install', 'unit' => 'sqft', 'rate' => 0.022, 'note' => 'Roll out, trim, seam, detail edges, and secure'],
+            ['calculator' => 'syn_turf', 'task' => 'edging_install', 'unit' => 'lf', 'rate' => 0.06, 'note' => 'Install edging with stakes/spikes'],
+            ['calculator' => 'syn_turf', 'task' => 'infill_application', 'unit' => 'sqft', 'rate' => 0.0025, 'note' => 'Distribute infill material'],
+        ];
+
+        foreach ($synTurfRates as $rate) {
+            \App\Models\ProductionRate::updateOrCreate(
+                ['calculator' => $rate['calculator'], 'task' => $rate['task']],
+                $rate
+            );
+        }
+
+        // Paver patio rates (excludes excavation - use universal excavation rates instead)
+        $paverPatioRates = [
+            ['calculator' => 'paver_patio', 'task' => 'base_compaction', 'unit' => 'sqft', 'rate' => 0.04, 'note' => 'Compact base material'],
+            ['calculator' => 'paver_patio', 'task' => 'laying_pavers', 'unit' => 'sqft', 'rate' => 0.06, 'note' => 'Place and set pavers'],
+            ['calculator' => 'paver_patio', 'task' => 'cutting_borders', 'unit' => 'sqft', 'rate' => 0.015, 'note' => 'Cut border pavers to fit'],
+            ['calculator' => 'paver_patio', 'task' => 'install_edging', 'unit' => 'lf', 'rate' => 0.007, 'note' => 'Install edge restraints'],
+            ['calculator' => 'paver_patio', 'task' => 'cleanup', 'unit' => 'sqft', 'rate' => 0.005, 'note' => 'Final cleanup and sweep'],
+        ];
+
+        foreach ($paverPatioRates as $rate) {
+            \App\Models\ProductionRate::updateOrCreate(
+                ['calculator' => $rate['calculator'], 'task' => $rate['task']],
+                $rate
+            );
+        }
+
         $this->command?->info('Production rates seeded successfully!');
     }
 }

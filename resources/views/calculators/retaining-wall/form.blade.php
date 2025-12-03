@@ -55,7 +55,7 @@
     </div>
 
     <form 
-        action="{{ route('calculators.retaining-wall.calculate') }}" 
+        action="{{ route('calculators.wall.calculate') }}" 
         method="POST"
         class="space-y-8"
     >
@@ -71,7 +71,7 @@
                 <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                     1
                 </div>
-                <h2 class="text-xl font-bold text-white">Wall Dimensions</h2>
+                <h2 class="text-xl font-bold text-white">Project Configuration</h2>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -166,7 +166,7 @@
                 <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                     2
                 </div>
-                <h2 class="text-xl font-bold text-white">Block System</h2>
+                <h2 class="text-xl font-bold text-white">Materials</h2>
             </div>
             <div class="p-6">
                 <div class="space-y-4">
@@ -273,23 +273,27 @@
                 <div class="bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                     3
                 </div>
-                <h2 class="text-xl font-bold text-white">Labor & Overhead</h2>
+                <h2 class="text-xl font-bold text-white">Crew & Logistics</h2>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Labor Rate ($/hour)</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Labor Rate ($/hour) <span class="text-red-500">*</span>
+                        </label>
                         <input 
                             type="number" 
                             step="0.01" 
                             name="labor_rate" 
                             required
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors" 
-                            value="{{ old('labor_rate', $formData['labor_rate'] ?? $defaultLaborRate ?? 85) }}"
+                            value="{{ number_format((float) old('labor_rate', $formData['labor_rate'] ?? $defaultLaborRate ?? 0), 2, '.', '') }}"
                         >
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Crew Size</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Crew Size <span class="text-red-500">*</span>
+                        </label>
                         <input 
                             type="number" 
                             step="1" 
@@ -380,7 +384,7 @@
         {{-- Submit Buttons --}}
         <div class="flex items-center justify-between gap-4 pt-6 border-t border-gray-200">
             <a 
-                href="{{ ($mode ?? null) === 'template' && !empty($estimateId) ? route('estimates.show', $estimateId) : route('site-visits.show', $siteVisitId) }}" 
+                href="{{ ($mode ?? null) === 'template' && !empty($estimateId) ? route('estimates.show', $estimateId) : route('clients.site-visits.show', [$siteVisit->client->id, $siteVisitId]) }}" 
                 class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
             >
                 Cancel
