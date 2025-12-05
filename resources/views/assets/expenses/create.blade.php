@@ -59,6 +59,27 @@
                     <p class="text-xs text-brand-600 mt-1">Optional: Specify fuel type, insurance type, etc.</p>
                 </div>
 
+                {{-- QBO Expense Account --}}
+                <div>
+                    <label class="block text-sm font-semibold text-brand-800 mb-2">QBO Expense Account</label>
+                    <select name="qbo_account_id" id="qbo-account-select"
+                        class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        <option value="">Auto-select based on category</option>
+                        @if(!empty($qboAccounts))
+                            @foreach($qboAccounts as $account)
+                                <option value="{{ $account['Id'] }}" 
+                                    data-name="{{ $account['Name'] }}"
+                                    {{ old('qbo_account_id') == $account['Id'] ? 'selected' : '' }}>
+                                    {{ $account['Name'] }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <p class="text-xs text-brand-600 mt-1">
+                        <span id="mapped-account-hint"></span>
+                    </p>
+                </div>
+
                 {{-- Linked Issue (for repairs) --}}
                 <div id="issue-field" style="display: {{ old('category') == 'repairs' ? 'block' : 'none' }}">
                     <label class="block text-sm font-semibold text-brand-800 mb-2">
@@ -180,11 +201,28 @@
     </div>
 
     <script>
+        const categorySelect = document.getElementById('category');
+        const issueField = document.getElementById('issue-field');
+        const issueSelect = document.querySelector('[name="asset_issue_id"]');
+        const qboAccountSelect = document.getElementById('qbo-account-select');
+        const mappedAccountHint = document.getElementById('mapped-account-hint');
+
+        // Account mappings from backend
+        const accountMappings = {
+            @foreach($mappings as $mapping)
+                @if($mapping->isMapped())
+                    '{{ $mapping->category }}': {
+                        id: '{{ $mapping->qbo_account_id }}',
+                        name: '{{ $mapping->qbo_account_name }}'
+                    },
+                @endif
+            @endforeach
+        };
+
         function toggleIssueField() {
-            const category = document.getElementById('category').value;
-            const issueField = document.getElementById('issue-field');
-            const issueSelect = document.querySelector('[name="asset_issue_id"]');
+            const category = categorySelect.value;
             
+            // Show/hide issue field for repairs
             if (category === 'repairs') {
                 issueField.style.display = 'block';
                 issueSelect.required = true;
@@ -193,6 +231,18 @@
                 issueSelect.required = false;
                 issueSelect.value = '';
             }
+
+            // Update QBO account selection and hint
+            if (accountMappings[category]) {
+                qboAccountSelect.value = accountMappings[category].id;
+                mappedAccountHint.textContent = `Mapped to: ${accountMappings[category].name} (you can override this)`;
+            } else {
+                qboAccountSelect.value = '';
+                mappedAccountHint.textContent = 'No account mapped for this category yet';
+            }
         }
+
+        // Initialize on page load
+        toggleIssueField();
     </script>
 @endsection
