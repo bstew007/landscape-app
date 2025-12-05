@@ -148,6 +148,7 @@
                         <a href="{{ route('assets.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Add Asset</a>
                         <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Log Issue</a>
                         <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Schedule Reminder</a>
+                        <a href="{{ route('asset-reports.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Reports</a>
                     </div>
                 </details>
             </div>

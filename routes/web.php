@@ -572,5 +572,31 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::delete('assets/{asset}/attachments/{attachment}', [AssetController::class, 'destroyAttachment'])->name('assets.attachments.destroy');
     Route::post('assets/{asset}/link', [AssetController::class, 'linkAsset'])->name('assets.link');
     Route::delete('assets/{asset}/unlink/{linkedAsset}', [AssetController::class, 'unlinkAsset'])->name('assets.unlink');
+    Route::get('assets/{asset}/checkout', [AssetController::class, 'showCheckout'])->name('assets.checkout');
+    Route::post('assets/{asset}/checkout', [AssetController::class, 'storeCheckout'])->name('assets.checkout.store');
+    Route::get('assets/{asset}/checkin', [AssetController::class, 'showCheckin'])->name('assets.checkin');
+    Route::post('assets/{asset}/checkin', [AssetController::class, 'storeCheckin'])->name('assets.checkin.store');
+    Route::get('assets/{asset}/usage-logs/{usageLog}/edit', [AssetController::class, 'editUsageLog'])->name('assets.usage-logs.edit');
+    Route::put('assets/{asset}/usage-logs/{usageLog}', [AssetController::class, 'updateUsageLog'])->name('assets.usage-logs.update');
+    Route::delete('assets/{asset}/usage-logs/{usageLog}', [AssetController::class, 'destroyUsageLog'])->name('assets.usage-logs.destroy');
+
+    // Asset Expenses
+    Route::get('assets/{asset}/expenses/create', [App\Http\Controllers\AssetExpenseController::class, 'create'])->name('assets.expenses.create');
+    Route::post('assets/{asset}/expenses', [App\Http\Controllers\AssetExpenseController::class, 'store'])->name('assets.expenses.store');
+    Route::get('assets/{asset}/expenses/{expense}/edit', [App\Http\Controllers\AssetExpenseController::class, 'edit'])->name('assets.expenses.edit');
+    Route::put('assets/{asset}/expenses/{expense}', [App\Http\Controllers\AssetExpenseController::class, 'update'])->name('assets.expenses.update');
+    Route::delete('assets/{asset}/expenses/{expense}', [App\Http\Controllers\AssetExpenseController::class, 'destroy'])->name('assets.expenses.destroy');
+    Route::post('assets/{asset}/expenses/{expense}/approve', [App\Http\Controllers\AssetExpenseController::class, 'approve'])->name('assets.expenses.approve');
+    Route::post('assets/{asset}/expenses/{expense}/sync-qbo', [App\Http\Controllers\AssetExpenseController::class, 'syncToQbo'])->name('assets.expenses.sync-qbo');
+    Route::delete('assets/{asset}/expenses/{expense}/attachments/{attachment}', [App\Http\Controllers\AssetExpenseController::class, 'deleteAttachment'])->name('assets.expenses.attachments.delete');
+    Route::get('assets/{asset}/expenses/{expense}/attachments/{attachment}/download', [App\Http\Controllers\AssetExpenseController::class, 'downloadAttachment'])->name('assets.expenses.attachments.download');
+
+    // Asset Reports
+    Route::get('asset-reports', [App\Http\Controllers\AssetReportController::class, 'index'])->name('asset-reports.index');
+    Route::get('asset-reports/usage', [App\Http\Controllers\AssetReportController::class, 'usageReport'])->name('asset-reports.usage');
+    Route::get('asset-reports/maintenance', [App\Http\Controllers\AssetReportController::class, 'maintenanceReport'])->name('asset-reports.maintenance');
+    Route::get('asset-reports/issues', [App\Http\Controllers\AssetReportController::class, 'issuesReport'])->name('asset-reports.issues');
+    Route::get('asset-reports/utilization', [App\Http\Controllers\AssetReportController::class, 'utilizationReport'])->name('asset-reports.utilization');
+    Route::get('asset-reports/costs', [App\Http\Controllers\AssetReportController::class, 'costsReport'])->name('asset-reports.costs');
 });
 require __DIR__.'/auth.php';

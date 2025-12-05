@@ -106,6 +106,16 @@ class Asset extends Model
         return $this->hasMany(AssetAttachment::class);
     }
 
+    public function usageLogs()
+    {
+        return $this->hasMany(AssetUsageLog::class);
+    }
+
+    public function expenses()
+    {
+        return $this->hasMany(AssetExpense::class);
+    }
+
     /**
      * Get the user this asset is assigned to.
      * Note: This uses assigned_to as a name match since it's stored as a string.

@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\AssetAttachment;
 use App\Models\AssetIssue;
 use App\Models\AssetMaintenance;
+use App\Models\AssetUsageLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,7 @@ class AssetController extends Controller
             ->when($assignedTo, fn ($q) => $q->where('assigned_to', $assignedTo))
             ->when($serviceWindow === 'overdue', fn ($q) => $q->whereNotNull('next_service_date')->where('next_service_date', '<', now()))
             ->when($serviceWindow === 'upcoming', fn ($q) => $q->whereNotNull('next_service_date')->whereBetween('next_service_date', [now(), now()->addDays(30)]))
+            ->with(['usageLogs' => fn ($q) => $q->where('status', 'checked_out')->latest()->limit(1)])
             ->withCount([
                 'issues' => fn ($q) => $q->where('status', '!=', 'resolved'),
                 'linkedAssets',
@@ -125,6 +127,7 @@ class AssetController extends Controller
             'attachments',
             'linkedAssets',
             'parentAssets',
+            'usageLogs' => fn ($q) => $q->with('user')->latest()->limit(10),
         ]);
 
         // Get all other assets for linking dropdown
@@ -309,6 +312,141 @@ class AssetController extends Controller
         $asset->linkedAssets()->detach($linkedAsset->id);
         
         return back()->with('success', 'Asset unlinked successfully.');
+    }
+
+    // Usage Log Methods
+    public function showCheckout(Asset $asset)
+    {
+        $users = User::orderBy('name')->get();
+        
+        return view('assets.checkout', [
+            'asset' => $asset,
+            'users' => $users,
+        ]);
+    }
+
+    public function storeCheckout(Request $request, Asset $asset)
+    {
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'mileage_out' => 'nullable|integer',
+            'notes' => 'nullable|string',
+            'inspection_data' => 'nullable|array',
+        ]);
+
+        // Check if asset is already checked out
+        $activeLog = $asset->usageLogs()->where('status', 'checked_out')->latest()->first();
+        if ($activeLog) {
+            return back()->with('error', 'Asset is already checked out.');
+        }
+
+        $asset->usageLogs()->create([
+            'user_id' => $data['user_id'],
+            'checked_out_at' => now(),
+            'mileage_out' => $data['mileage_out'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'inspection_data' => $data['inspection_data'] ?? [],
+            'status' => 'checked_out',
+        ]);
+
+        return redirect()->route('assets.show', $asset)->with('success', 'Asset checked out successfully.');
+    }
+
+    public function showCheckin(Asset $asset)
+    {
+        $activeLog = $asset->usageLogs()->where('status', 'checked_out')->latest()->first();
+        
+        if (!$activeLog) {
+            return redirect()->route('assets.show', $asset)->with('error', 'Asset is not checked out.');
+        }
+
+        return view('assets.checkin', [
+            'asset' => $asset,
+            'usageLog' => $activeLog,
+        ]);
+    }
+
+    public function storeCheckin(Request $request, Asset $asset)
+    {
+        $data = $request->validate([
+            'usage_log_id' => 'required|exists:asset_usage_logs,id',
+            'mileage_in' => 'nullable|integer',
+            'notes' => 'nullable|string',
+            'inspection_data' => 'nullable|array',
+        ]);
+
+        $usageLog = AssetUsageLog::findOrFail($data['usage_log_id']);
+        
+        if ($usageLog->asset_id !== $asset->id) {
+            abort(404);
+        }
+
+        if ($usageLog->status !== 'checked_out') {
+            return back()->with('error', 'This usage log is already checked in.');
+        }
+
+        $usageLog->update([
+            'checked_in_at' => now(),
+            'mileage_in' => $data['mileage_in'] ?? null,
+            'notes' => ($usageLog->notes ? $usageLog->notes . "\n\n" : '') . ($data['notes'] ?? ''),
+            'inspection_data' => array_merge($usageLog->inspection_data ?? [], $data['inspection_data'] ?? []),
+            'status' => 'checked_in',
+        ]);
+
+        // Update asset mileage if provided
+        if (!empty($data['mileage_in'])) {
+            $asset->update(['mileage_hours' => $data['mileage_in']]);
+        }
+
+        return redirect()->route('assets.show', $asset)->with('success', 'Asset checked in successfully.');
+    }
+
+    public function editUsageLog(Asset $asset, AssetUsageLog $usageLog)
+    {
+        if ($usageLog->asset_id !== $asset->id) {
+            abort(404);
+        }
+
+        $users = User::orderBy('name')->get();
+        
+        return view('assets.edit-usage-log', [
+            'asset' => $asset,
+            'usageLog' => $usageLog,
+            'users' => $users,
+        ]);
+    }
+
+    public function updateUsageLog(Request $request, Asset $asset, AssetUsageLog $usageLog)
+    {
+        if ($usageLog->asset_id !== $asset->id) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'checked_out_at' => 'required|date',
+            'checked_in_at' => 'nullable|date|after:checked_out_at',
+            'mileage_out' => 'nullable|integer',
+            'mileage_in' => 'nullable|integer',
+            'notes' => 'nullable|string',
+            'inspection_data' => 'nullable|array',
+            'status' => 'required|in:checked_out,checked_in',
+        ]);
+
+        $usageLog->update($data);
+
+        return redirect()->route('assets.show', $asset)->with('success', 'Usage log updated successfully.');
+    }
+
+    public function destroyUsageLog(Asset $asset, AssetUsageLog $usageLog)
+    {
+        if ($usageLog->asset_id !== $asset->id) {
+            abort(404);
+        }
+
+        $usageLog->delete();
+
+        return redirect()->route('assets.show', $asset)->with('success', 'Usage log deleted.');
     }
 
     protected function validateAsset(Request $request): array

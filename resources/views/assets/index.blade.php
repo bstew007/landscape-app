@@ -99,7 +99,22 @@
         <div class="border-t border-brand-100/60">
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4 sm:p-5">
                 @forelse ($assets as $asset)
-                    <div class="bg-gray-50 rounded-2xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-all p-4 flex flex-col">
+                    @php
+                        $activeCheckout = $asset->usageLogs->first();
+                    @endphp
+                    <div class="bg-gray-50 rounded-2xl border-2 @if($activeCheckout) border-green-300 bg-green-50/50 @else border-gray-200 @endif shadow-sm hover:shadow-md transition-all p-4 flex flex-col relative">
+                        {{-- Checked Out Badge --}}
+                        @if($activeCheckout)
+                            <div class="absolute top-3 right-3 z-10">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 bg-green-600 text-white shadow-md border border-green-700">
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    CHECKED OUT
+                                </span>
+                            </div>
+                        @endif
+                        
                         <div class="flex items-start gap-3 mb-3">
                             {{-- Icon based on asset type --}}
                             <div class="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center border border-brand-200 overflow-hidden">
@@ -175,6 +190,19 @@
                         </div>
                         
                         <div class="space-y-2 text-sm text-brand-700 border-t border-brand-100 pt-3 mb-4">
+                            @if($activeCheckout)
+                                <div class="flex items-center justify-between bg-green-100 -mx-2 px-2 py-1.5 rounded-lg mb-2">
+                                    <span class="text-green-700 font-semibold flex items-center gap-1.5">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="8.5" cy="7" r="4"/>
+                                            <path d="M20 8v6M23 11h-6"/>
+                                        </svg>
+                                        In Use By:
+                                    </span>
+                                    <span class="font-bold text-green-900">{{ $activeCheckout->user->name ?? 'Unknown' }}</span>
+                                </div>
+                            @endif
                             <div class="flex items-center justify-between">
                                 <span class="text-brand-500">Assigned:</span>
                                 <span class="font-medium">{{ $asset->assigned_to ?: 'Unassigned' }}</span>

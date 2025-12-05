@@ -1,0 +1,219 @@
+@extends('layouts.sidebar')
+
+@section('content')
+    <div class="max-w-7xl mx-auto space-y-6">
+        {{-- Branded Header --}}
+        <section class="rounded-[20px] sm:rounded-[28px] bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white p-6 sm:p-8 shadow-2xl border border-brand-800/40">
+            <div class="flex items-center gap-4">
+                <div class="h-14 w-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center flex-shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-7 w-7 text-white">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Asset Reports</p>
+                    <h1 class="text-2xl sm:text-3xl font-semibold text-white mt-1">Issues & Problems</h1>
+                    <p class="text-sm text-brand-100/85 mt-1">Track reported issues and their resolution status.</p>
+                </div>
+                <a href="{{ route('asset-reports.index') }}" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-medium transition-all">
+                    Back to Reports
+                </a>
+            </div>
+        </section>
+
+        {{-- Filters --}}
+        <div class="rounded-2xl bg-white border-2 border-brand-100 shadow-sm p-6">
+            <form method="GET" action="{{ route('asset-reports.issues') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-brand-800 mb-2">Asset</label>
+                    <select name="asset_id" class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        <option value="">All Assets</option>
+                        @foreach($assets as $asset)
+                            <option value="{{ $asset->id }}" {{ $assetId == $asset->id ? 'selected' : '' }}>
+                                {{ $asset->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-brand-800 mb-2">Status</label>
+                    <select name="status" class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        <option value="">All Statuses</option>
+                        <option value="Reported" {{ $status == 'Reported' ? 'selected' : '' }}>Reported</option>
+                        <option value="In Progress" {{ $status == 'In Progress' ? 'selected' : '' }}>In Progress</option>
+                        <option value="Resolved" {{ $status == 'Resolved' ? 'selected' : '' }}>Resolved</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-brand-800 mb-2">Severity</label>
+                    <select name="severity" class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        <option value="">All Severities</option>
+                        <option value="Low" {{ $severity == 'Low' ? 'selected' : '' }}>Low</option>
+                        <option value="Medium" {{ $severity == 'Medium' ? 'selected' : '' }}>Medium</option>
+                        <option value="High" {{ $severity == 'High' ? 'selected' : '' }}>High</option>
+                        <option value="Critical" {{ $severity == 'Critical' ? 'selected' : '' }}>Critical</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <button type="submit" class="w-full px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition-all shadow-sm">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {{-- Summary Cards --}}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="rounded-2xl bg-white border-2 border-brand-100 shadow-sm p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-brand-600">Total Issues</p>
+                        <p class="text-2xl font-bold text-brand-900 mt-1">{{ $issues->count() }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-xl bg-brand-100 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-white border-2 border-yellow-100 shadow-sm p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-yellow-600">Reported</p>
+                        <p class="text-2xl font-bold text-yellow-900 mt-1">{{ $issues->where('status', 'Reported')->count() }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-xl bg-yellow-100 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-white border-2 border-orange-100 shadow-sm p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-orange-600">In Progress</p>
+                        <p class="text-2xl font-bold text-orange-900 mt-1">{{ $issues->where('status', 'In Progress')->count() }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-white border-2 border-green-100 shadow-sm p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-green-600">Resolved</p>
+                        <p class="text-2xl font-bold text-green-900 mt-1">{{ $issues->where('status', 'Resolved')->count() }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-xl bg-green-100 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Issues Table --}}
+        <div class="rounded-2xl bg-white border-2 border-brand-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b-2 border-brand-100">
+                <h2 class="text-lg font-bold text-brand-900">Issue Reports</h2>
+            </div>
+
+            @if($issues->count() > 0)
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-brand-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-brand-900 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-brand-900 uppercase tracking-wider">Asset</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-brand-900 uppercase tracking-wider">Issue</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-brand-900 uppercase tracking-wider">Severity</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-brand-900 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-brand-900 uppercase tracking-wider">Reported By</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-brand-900 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-brand-100">
+                            @foreach($issues as $issue)
+                                <tr class="hover:bg-brand-50/50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-semibold text-brand-900">{{ $issue->reported_on->format('M d, Y') }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            @if($issue->asset->image_path)
+                                                <img src="{{ asset('storage/' . $issue->asset->image_path) }}" alt="{{ $issue->asset->name }}" class="h-10 w-10 rounded-lg object-cover">
+                                            @else
+                                                <div class="h-10 w-10 rounded-lg bg-brand-100 flex items-center justify-center">
+                                                    <svg class="h-5 w-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                                    </svg>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <p class="font-semibold text-brand-900">{{ $issue->asset->name }}</p>
+                                                @if($issue->asset->asset_tag)
+                                                    <p class="text-xs text-brand-600">#{{ $issue->asset->asset_tag }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-sm text-brand-900 font-medium">{{ Str::limit($issue->description, 50) }}</p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold
+                                            @if($issue->severity == 'Low') bg-green-100 text-green-800
+                                            @elseif($issue->severity == 'Medium') bg-yellow-100 text-yellow-800
+                                            @elseif($issue->severity == 'High') bg-orange-100 text-orange-800
+                                            @elseif($issue->severity == 'Critical') bg-red-100 text-red-800
+                                            @else bg-brand-100 text-brand-800
+                                            @endif">
+                                            {{ $issue->severity }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold
+                                            @if($issue->status == 'Resolved') bg-green-100 text-green-800
+                                            @elseif($issue->status == 'In Progress') bg-orange-100 text-orange-800
+                                            @else bg-yellow-100 text-yellow-800
+                                            @endif">
+                                            {{ $issue->status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-sm text-brand-900">{{ $issue->reported_by }}</p>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <a href="{{ route('assets.show', $issue->asset) }}" class="inline-flex items-center px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-all">
+                                            View Asset
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="p-12 text-center">
+                    <svg class="mx-auto h-12 w-12 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="mt-4 text-lg font-semibold text-brand-900">No Issues Found</h3>
+                    <p class="mt-2 text-sm text-brand-600">No issues match your filter criteria. That's great news!</p>
+                </div>
+            @endif
+        </div>
+    </div>
+@endsection
