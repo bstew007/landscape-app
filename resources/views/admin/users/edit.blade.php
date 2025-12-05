@@ -28,9 +28,21 @@
                 <input type="password" name="password_confirmation" class="form-input w-full">
             </div>
         </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Role</label>
+            <select name="role" class="form-select w-full" required>
+                <option value="user" @selected(old('role', $user->role) === 'user')>User</option>
+                <option value="crew" @selected(old('role', $user->role) === 'crew')>Crew</option>
+                <option value="foreman" @selected(old('role', $user->role) === 'foreman')>Foreman</option>
+                <option value="office" @selected(old('role', $user->role) === 'office')>Office</option>
+                <option value="manager" @selected(old('role', $user->role) === 'manager')>Manager</option>
+                <option value="admin" @selected(old('role', $user->role) === 'admin')>Admin</option>
+            </select>
+            @error('role')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
         <label class="inline-flex items-center gap-2 text-sm">
-            <input type="checkbox" name="is_admin" value="1" class="form-checkbox" {{ old('is_admin', $user->is_admin) ? 'checked' : '' }}>
-            Admin
+            <input type="checkbox" name="is_driver" value="1" class="form-checkbox" {{ old('is_driver', $user->is_driver) ? 'checked' : '' }}>
+            Driver
         </label>
         <div class="flex justify-end gap-2">
             <x-brand-button href="{{ route('admin.users.index') }}" variant="outline">Cancel</x-brand-button>

@@ -26,13 +26,15 @@ class UserController extends Controller
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','string','min:8','confirmed'],
-            'is_admin' => ['nullable','boolean'],
+            'role' => ['required','string','in:admin,manager,foreman,crew,office,user'],
+            'is_driver' => ['nullable','boolean'],
         ]);
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'is_admin' => (bool)($data['is_admin'] ?? false),
+            'role' => $data['role'],
+            'is_driver' => (bool)($data['is_driver'] ?? false),
         ]);
         return redirect()->route('admin.users.index')->with('success', 'User created.');
     }
@@ -48,14 +50,16 @@ class UserController extends Controller
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255','unique:users,email,'.$user->id],
             'password' => ['nullable','string','min:8','confirmed'],
-            'is_admin' => ['nullable','boolean'],
+            'role' => ['required','string','in:admin,manager,foreman,crew,office,user'],
+            'is_driver' => ['nullable','boolean'],
         ]);
         $user->name = $data['name'];
         $user->email = $data['email'];
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
-        $user->is_admin = (bool)($data['is_admin'] ?? false);
+        $user->role = $data['role'];
+        $user->is_driver = (bool)($data['is_driver'] ?? false);
         $user->save();
         return redirect()->route('admin.users.index')->with('success', 'User updated.');
     }

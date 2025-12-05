@@ -100,7 +100,63 @@
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4 sm:p-5">
                 @forelse ($assets as $asset)
                     <div class="bg-white rounded-2xl border-2 border-brand-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col">
-                        <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-start gap-3 mb-3">
+                            {{-- Icon based on asset type --}}
+                            <div class="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center border border-brand-200 overflow-hidden">
+                                @switch($asset->type)
+                                    @case('crew_truck')
+                                        {{-- Pickup Truck --}}
+                                        <img src="{{ asset('images/crewtruck.jpg') }}" alt="Crew Truck" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                    @case('dump_truck')
+                                        {{-- Dump Truck --}}
+                                        <img src="{{ asset('images/dumptruck.jpg') }}" alt="Dump Truck" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                    @case('skid_steer')
+                                        {{-- Skid Steer Image --}}
+                                        <img src="{{ asset('images/skid.jpg') }}" alt="Skid Steer" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                    @case('excavator')
+                                        {{-- Excavator --}}
+                                        <img src="{{ asset('images/excavator.jpg') }}" alt="Excavator" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                    @case('mowers')
+                                        {{-- Grass/Lawn Mower --}}
+                                        <img src="{{ asset('images/mower.png') }}" alt="Mower" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                        <svg class="h-7 w-7 text-brand-700" fill="currentColor" viewBox="0 0 512 512">
+                                            <path d="M416 416c0 35.3-28.7 64-64 64s-64-28.7-64-64 28.7-64 64-64 64 28.7 64 64zm-192 0c0 35.3-28.7 64-64 64s-64-28.7-64-64 28.7-64 64-64 64 28.7 64 64zM0 288v64h40l40 64h352v-64H128l-16-64H0zm506.4-96H320V96c0-17.7-14.3-32-32-32h-32c-17.7 0-32 14.3-32 32v96H37.6c-6.6 0-12.1 5.1-12.6 11.7l-8 96c-.5 7.2 5.1 13.3 12.3 13.3h485.5c7.2 0 12.8-6.1 12.3-13.3l-8-96c-.5-6.6-6-11.7-12.7-11.7z"/>
+                                        </svg>
+                                    @break
+                                    @case('hand_tools')
+                                        {{-- Toolbox --}}
+                                        <svg class="h-7 w-7 text-brand-700" fill="currentColor" viewBox="0 0 512 512">
+                                            <path d="M502.6 214.6l-45.3-45.3c-6-6-14.1-9.4-22.6-9.4H384V80c0-26.5-21.5-48-48-48H176c-26.5 0-48 21.5-48 48v80H77.3c-8.5 0-16.6 3.4-22.6 9.4L9.4 214.6c-12.5 12.5-12.5 32.8 0 45.3l45.3 45.3c6 6 14.1 9.4 22.6 9.4H128v128h256V314.6h50.7c8.5 0 16.6-3.4 22.6-9.4l45.3-45.3c12.5-12.5 12.5-32.8 0-45.3zM320 128H192V80h128v48z"/>
+                                        </svg>
+                                    @break
+                                    @case('shop_tools')
+                                        {{-- Tools --}}
+                                        <svg class="h-7 w-7 text-brand-700" fill="currentColor" viewBox="0 0 512 512">
+                                            <path d="M501.1 395.7L384 278.6c-23.1-23.1-57.6-27.6-85.4-13.9L192 158.1V96L64 0 0 64l96 128h62.1l106.6 106.6c-13.6 27.8-9.2 62.3 13.9 85.4l117.1 117.1c14.6 14.6 38.2 14.6 52.7 0l52.7-52.7c14.5-14.6 14.5-38.2 0-52.7zM331.7 225c28.3 0 54.9 11 74.9 31l19.4 19.4c15.8-6.9 30.8-16.5 43.8-29.5 37.1-37.1 49.7-89.3 37.9-136.7-2.2-9-13.5-12.1-20.1-5.5l-74.4 74.4-67.9-11.3L334 98.9l74.4-74.4c6.6-6.6 3.4-17.9-5.7-20.2-47.4-11.7-99.6.9-136.6 37.9-28.5 28.5-41.9 66.1-41.2 103.6l82.1 82.1c8.1-1.9 16.5-2.9 24.7-2.9zm-103.9 82l-56.7-56.7L18.7 402.8c-25 25-25 65.5 0 90.5s65.5 25 90.5 0l123.6-123.6c-7.6-19.9-9.9-41.6-5-62.7zM64 472c-13.2 0-24-10.8-24-24 0-13.3 10.7-24 24-24s24 10.7 24 24c0 13.2-10.7 24-24 24z"/>
+                                        </svg>
+                                    @break
+                                    @case('enclosed_trailer')
+                                        {{-- Enclosed Trailer --}}
+                                        <img src="{{ asset('images/enlosed.png') }}" alt="Enclosed Trailer" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                    @case('dump_trailer')
+                                    @case('equipment_trailer')
+                                        {{-- Trailer --}}
+                                        <img src="{{ asset('images/trailer.jpg') }}" alt="Trailer" class="h-full w-full object-contain p-0.5">
+                                    @break
+                                    @default
+                                        {{-- Generic Equipment --}}
+                                        <svg class="h-7 w-7 text-brand-700" fill="currentColor" viewBox="0 0 512 512">
+                                            <path d="M352 320c88.4 0 160-71.6 160-160S440.4 0 352 0 192 71.6 192 160c0 19.1 3.4 37.5 9.5 54.5L19.5 396.5c-26 26-26 68.1 0 94.1 26 26 68.1 26 94.1 0l182-182c17 6.1 35.4 9.5 54.5 9.5zm0-256c53 0 96 43 96 96s-43 96-96 96-96-43-96-96 43-96 96-96z"/>
+                                        </svg>
+                                @endswitch
+                            </div>
+                            
                             <div class="flex-1 min-w-0">
                                 <h2 class="text-lg font-bold text-brand-900 truncate">{{ $asset->name }}</h2>
                                 <p class="text-sm text-brand-600">{{ ucwords(str_replace('_', ' ', $asset->type)) }}</p>
@@ -146,6 +202,13 @@
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 Edit
                             </x-brand-button>
+                            <form action="{{ route('assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete {{ $asset->name }}? This action cannot be undone.');" class="flex-shrink-0">
+                                @csrf
+                                @method('DELETE')
+                                <x-brand-button type="submit" variant="ghost" class="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M10 11v6M14 11v6"/></svg>
+                                </x-brand-button>
+                            </form>
                         </div>
                     </div>
                 @empty

@@ -55,6 +55,7 @@ class Asset extends Model
 
     protected $fillable = [
         'name',
+        'model',
         'type',
         'identifier',
         'status',
@@ -77,7 +78,18 @@ class Asset extends Model
     ];
 
     public const STATUSES = ['active', 'in_maintenance', 'retired'];
-    public const TYPES = ['vehicle', 'trailer', 'skid_steer', 'equipment', 'other'];
+    public const TYPES = [
+        'crew_truck',
+        'dump_truck',
+        'skid_steer',
+        'excavator',
+        'mowers',
+        'hand_tools',
+        'shop_tools',
+        'enclosed_trailer',
+        'dump_trailer',
+        'equipment_trailer',
+    ];
 
     public function maintenances()
     {
@@ -92,5 +104,14 @@ class Asset extends Model
     public function attachments()
     {
         return $this->hasMany(AssetAttachment::class);
+    }
+
+    /**
+     * Get the user this asset is assigned to.
+     * Note: This uses assigned_to as a name match since it's stored as a string.
+     */
+    public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_to', 'name');
     }
 }

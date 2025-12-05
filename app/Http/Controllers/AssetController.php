@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\AssetAttachment;
 use App\Models\AssetIssue;
 use App\Models\AssetMaintenance;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -101,7 +102,8 @@ class AssetController extends Controller
 
     public function create()
     {
-        return view('assets.create', ['asset' => new Asset()]);
+        $drivers = User::drivers()->orderBy('name')->get();
+        return view('assets.create', ['asset' => new Asset(), 'drivers' => $drivers]);
     }
 
     public function store(Request $request)
@@ -129,7 +131,8 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        return view('assets.edit', compact('asset'));
+        $drivers = User::drivers()->orderBy('name')->get();
+        return view('assets.edit', compact('asset', 'drivers'));
     }
 
     public function update(Request $request, Asset $asset)
@@ -266,6 +269,7 @@ class AssetController extends Controller
     {
         return $request->validate([
             'name' => 'required|string|max:255',
+            'model' => 'nullable|string|max:255',
             'type' => 'required|string|max:50',
             'identifier' => 'nullable|string|max:255',
             'status' => 'required|string|max:50',

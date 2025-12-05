@@ -29,7 +29,7 @@
                 <tr class="border-t">
                     <td class="px-4 py-2">{{ $user->name }}</td>
                     <td class="px-4 py-2">{{ $user->email }}</td>
-                    <td class="px-4 py-2">{{ $user->is_admin ? 'Admin' : 'User' }}</td>
+                    <td class="px-4 py-2">{{ ucfirst($user->role) }}</td>
                     <td class="px-4 py-2 text-right space-x-2">
                         <x-brand-button href="{{ route('admin.users.edit', $user) }}" variant="outline">Edit</x-brand-button>
                         <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Delete this user?');">

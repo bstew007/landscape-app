@@ -49,6 +49,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_driver',
     ];
 
     /**
@@ -81,6 +82,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_driver' => 'boolean',
         ];
     }
 
@@ -98,6 +100,14 @@ class User extends Authenticatable
     public function timesheets()
     {
         return $this->hasMany(Timesheet::class);
+    }
+
+    /**
+     * Scope a query to only include drivers.
+     */
+    public function scopeDrivers($query)
+    {
+        return $query->where('is_driver', true);
     }
 
     // Role Checking Methods
