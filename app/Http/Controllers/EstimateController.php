@@ -397,6 +397,61 @@ class EstimateController extends Controller
 
         return view('estimates.preview-email', compact('estimate', 'html'));
     }
+    
+    public function emailPreview(Estimate $estimate, Request $request)
+    {
+        $template = $request->query('template', 'full-detail');
+        
+        // Validate template
+        $validTemplates = ['full-detail', 'proposal', 'materials-only', 'labor-only', 'summary'];
+        if (!in_array($template, $validTemplates)) {
+            $template = 'full-detail';
+        }
+        
+        $templateLabel = match($template) {
+            'full-detail' => 'Full Detail',
+            'proposal' => 'Proposal',
+            'materials-only' => 'Materials Only',
+            'labor-only' => 'Labor Only',
+            'summary' => 'Summary',
+            default => 'Estimate'
+        };
+        
+        $defaultSubject = "Estimate #{$estimate->id} - {$templateLabel} from " . config('app.name');
+        $defaultMessage = "Please find attached your {$templateLabel} estimate for review.";
+        
+        return view('estimates.email-preview', compact('estimate', 'template', 'templateLabel', 'defaultSubject', 'defaultMessage'));
+    }
+    
+    public function sendEmailWithTemplate(Estimate $estimate, Request $request)
+    {
+        $validated = $request->validate([
+            'template' => 'required|in:full-detail,proposal,materials-only,labor-only,summary',
+            'recipient_email' => 'required|email',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'nullable|string|max:2000',
+        ]);
+        
+        $recipientEmail = $validated['recipient_email'];
+        $template = $validated['template'];
+        $subject = $validated['subject'] ?? null;
+        $message = $validated['message'] ?? null;
+        
+        Mail::to($recipientEmail)->send(
+            new \App\Mail\EstimateTemplateMail($estimate, $template, $subject, $message)
+        );
+        
+        $now = now();
+        $estimate->forceFill([
+            'email_sent_at' => $estimate->email_sent_at ?? $now,
+            'email_last_sent_at' => $now,
+            'email_send_count' => (int) ($estimate->email_send_count ?? 0) + 1,
+            'email_last_sent_by' => auth()->id(),
+        ])->save();
+        
+        return redirect()->route('estimates.show', $estimate)
+            ->with('success', 'Email sent successfully to ' . $recipientEmail);
+    }
 
     public function sendEmail(Estimate $estimate)
     {

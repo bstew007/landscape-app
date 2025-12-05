@@ -80,6 +80,15 @@
                         </svg>
                         Edit
                     </button>
+                    <button type="button" 
+                            class="flex items-center gap-2 w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50" 
+                            @click="menuOpen = false; $refs.duplicateForm.submit()">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Duplicate
+                    </button>
                     <div class="my-1 border-t border-gray-200"></div>
                     
                     {{-- Custom Pricing Options --}}
@@ -110,6 +119,18 @@
                             Clear Custom Pricing
                         </button>
                     @endif
+                    
+                    <div class="my-1 border-t border-gray-200"></div>
+                    
+                    {{-- Export Options --}}
+                    <button type="button" 
+                            class="flex items-center gap-2 w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50" 
+                            @click="menuOpen = false; exportAreaToCSV()">
+                        <svg class="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        Export to Excel
+                    </button>
                     
                     <div class="my-1 border-t border-gray-200"></div>
                     
@@ -150,54 +171,14 @@
                     @endforeach
                 </select>
             </div>
-            <div class="flex flex-wrap items-center gap-3 w-auto pt-0.5 text-sm">
-                <div class="flex items-baseline gap-1.5">
-                    <span class="text-xs uppercase tracking-wide text-gray-500">Hrs</span>
-                    <span class="text-base font-semibold text-gray-900">{{ number_format($laborHours, 2) }}</span>
-                </div>
-                <span class="text-gray-300">•</span>
-                <div class="flex items-baseline gap-1.5">
-                    <span class="text-xs uppercase tracking-wide text-gray-500">COGS</span>
-                    <span class="text-base font-semibold text-gray-900">${{ number_format($cogs, 2) }}</span>
-                </div>
-                <span class="text-gray-300">•</span>
-                <div class="flex items-baseline gap-1.5">
-                    <span class="text-xs uppercase tracking-wide text-gray-500">Price</span>
-                    <span class="text-base font-semibold text-gray-900">${{ number_format($price, 2) }}</span>
-                    @if($area->hasCustomPricing())
-                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200" title="Custom pricing applied on {{ optional($area->override_applied_at)->format('M d, Y g:i A') }}">
-                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                @if($area->custom_price_override)
-                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                                @else
-                                    <path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/>
-                                @endif
-                            </svg>
-                            Custom
-                        </span>
-                    @endif
-                </div>
-                <span class="text-gray-300">•</span>
-                <div class="flex items-baseline gap-1.5">
-                    <span class="text-xs uppercase tracking-wide text-gray-500">Profit</span>
-                    <span class="text-base font-semibold text-gray-900">${{ number_format($profit, 2) }}</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 pt-1 ml-auto">
-                <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-white text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1"
-                    @click="$dispatch('estimate-open-add-items', { areaId: {{ $area->id }}, tab: 'labor' })">
-                    <svg class="h-3.5 w-3.5 text-gray-500" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 10h12M10 4v12" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    Add Items
-                </button>
-            </div>
         </form>
         <form x-ref="deleteForm" method="POST" action="{{ route('estimates.areas.destroy', [$estimate, $area]) }}" class="hidden">
             @csrf
             @method('DELETE')
+        </form>
+        
+        <form x-ref="duplicateForm" method="POST" action="{{ route('estimates.areas.duplicate', [$estimate, $area]) }}" class="hidden">
+            @csrf
         </form>
     </div>
     <div x-show="open" class="px-3 py-2">
@@ -213,10 +194,67 @@
                 </button>
             </div>
         </div>
-        <div x-show="tab==='pricing'" class="overflow-x-auto">
+        <div x-show="tab==='pricing'" class="overflow-x-auto" x-data="{
+            selectedItems: [],
+            selectAll: false,
+            toggleSelectAll() {
+                if (this.selectAll) {
+                    this.selectedItems = [];
+                    this.selectAll = false;
+                } else {
+                    this.selectedItems = Array.from(document.querySelectorAll('[data-item-id]')).map(el => parseInt(el.dataset.itemId));
+                    this.selectAll = true;
+                }
+            },
+            async bulkDelete() {
+                if (!this.selectedItems.length) return;
+                if (!confirm(`Delete ${this.selectedItems.length} selected item(s)?`)) return;
+                
+                for (const itemId of this.selectedItems) {
+                    const form = document.querySelector(`form[action*='items/${itemId}'][method='POST']`);
+                    if (form) {
+                        const formData = new FormData(form);
+                        await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                    }
+                }
+                
+                if (window.showToast) window.showToast('Items deleted', 'success');
+                window.location.reload();
+            }
+        }">
+            <div x-show="selectedItems.length > 0" x-transition class="bg-brand-50 border-b border-brand-200 px-3 py-2 flex items-center justify-between">
+                <span class="text-sm font-medium text-brand-900">
+                    <span x-text="selectedItems.length"></span> item(s) selected
+                </span>
+                <div class="flex gap-2">
+                    <button type="button" 
+                            @click="bulkDelete()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Delete Selected
+                    </button>
+                    <button type="button" 
+                            @click="selectedItems = []; selectAll = false"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Clear
+                    </button>
+                </div>
+            </div>
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs uppercase text-gray-500">
                     <tr>
+                        <th class="text-center px-2.5 py-1.5 w-10">
+                            <input type="checkbox" 
+                                   :checked="selectAll"
+                                   @change="toggleSelectAll()"
+                                   class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                        </th>
                         <th class="text-left px-2.5 py-1.5">Name</th>
                         <th class="text-center px-2.5 py-1.5">Qty</th>
                         <th class="text-center px-2.5 py-1.5">Units</th>
@@ -294,15 +332,56 @@
                                 breakeven: {{ $breakeven }}
                             })"
 >
+                            <td class="px-2.5 py-1.5 text-center">
+                                <input type="checkbox" 
+                                       :checked="selectedItems.includes({{ $item->id }})"
+                                       @change="selectedItems.includes({{ $item->id }}) ? selectedItems = selectedItems.filter(id => id !== {{ $item->id }}) : selectedItems.push({{ $item->id }})"
+                                       data-item-id="{{ $item->id }}"
+                                       class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                            </td>
                             <td class="px-2.5 py-1.5">
-                                <form method="POST" action="{{ route('estimates.items.update', [$estimate, $item]) }}" class="contents">
+                                <form method="POST" 
+                                      action="{{ route('estimates.items.update', [$estimate, $item]) }}" 
+                                      class="contents"
+                                      @submit.prevent="
+                                          const formData = new FormData($el);
+                                          fetch($el.action, {
+                                              method: 'POST',
+                                              body: formData,
+                                              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                          }).then(res => res.json()).then(data => {
+                                              if (window.updateSummary && data.totals) window.updateSummary(data.totals);
+                                              if (window.showToast) window.showToast('Item updated', 'success');
+                                              window.dispatchEvent(new CustomEvent('form-saved'));
+                                          }).catch(err => {
+                                              if (window.showToast) window.showToast('Update failed', 'error');
+                                          });
+                                      ">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="area_id" value="{{ $area->id }}">
                                     <input type="text" name="name" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ $item->name }}">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                    <input type="number" step="0.01" min="0" name="quantity" class="form-input w-24 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ $item->quantity }}">
+                                    <div x-data="{ saving: false }" class="relative">
+                                        <input type="number" step="0.01" min="0" name="quantity" 
+                                               class="form-input w-24 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" 
+                                               value="{{ $item->quantity }}"
+                                               @input="window.dispatchEvent(new CustomEvent('form-changed'))"
+                                               @blur="
+                                                   if ($el.value !== '{{ $item->quantity }}') {
+                                                       saving = true;
+                                                       $el.closest('form').requestSubmit();
+                                                       setTimeout(() => saving = false, 1000);
+                                                   }
+                                               ">
+                                        <div x-show="saving" x-transition class="absolute -right-6 top-1/2 -translate-y-1/2">
+                                            <svg class="h-4 w-4 text-green-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
                                     <input type="text" name="unit" class="form-input w-24 mx-auto border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="{{ $item->unit }}">
@@ -315,12 +394,12 @@
                                        @input="recalculateFromCost()">
                             </td>
                             <td class="px-2.5 py-1.5 text-center">
-                                <div x-data="{ editing: false, unitPrice: {{ $item->unit_price }} }" class="flex items-center justify-center gap-1">
+                                <div x-data="{ editing: false, unitPrice: {{ $item->unit_price }}, saving: false }" class="flex items-center justify-center gap-1">
                                     <template x-if="!editing">
                                         <div class="flex items-center gap-1">
                                             <span class="text-sm font-medium" x-text="'$' + unitPrice.toFixed(2)"></span>
                                             <button type="button" 
-                                                    @click="editing = true"
+                                                    @click="editing = true; $nextTick(() => $refs.priceInput.focus())"
                                                     class="text-blue-600 hover:text-blue-800 transition">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -336,19 +415,26 @@
                                                 <input type="number" 
                                                        step="0.01" 
                                                        x-model.number="unitPrice"
-                                                       @blur="editing = false"
+                                                       @input="window.dispatchEvent(new CustomEvent('form-changed'))"
+                                                       @blur="
+                                                           editing = false;
+                                                           if (unitPrice !== {{ $item->unit_price }}) {
+                                                               saving = true;
+                                                               $el.closest('form').requestSubmit();
+                                                               setTimeout(() => saving = false, 1000);
+                                                           }
+                                                       "
+                                                       @keydown.enter="$el.blur()"
                                                        x-ref="priceInput"
                                                        class="form-input w-24 text-sm pl-5 pr-2 py-1 border-brand-300 focus:ring-brand-500 focus:border-brand-500">
                                             </div>
-                                            <button type="button" 
-                                                    @click="editing = false"
-                                                    class="text-green-600 hover:text-green-800 transition">
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <polyline points="20 6 9 17 4 12"/>
-                                                </svg>
-                                            </button>
                                         </div>
                                     </template>
+                                    <div x-show="saving" x-transition class="ml-1">
+                                        <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
                                     <input type="hidden" name="unit_price" x-model="unitPrice">
                                 </div>
                             </td>
@@ -426,9 +512,23 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-3 py-3 text-sm text-gray-500">No items in this work area yet.</td>
+                            <td colspan="10" class="px-3 py-3 text-sm text-gray-500">No items in this work area yet.</td>
                         </tr>
                     @endforelse
+                    
+                    {{-- Quick Add Row --}}
+                    <tr class="bg-brand-50/30 border-t-2 border-brand-200">
+                        <td colspan="10" class="px-2.5 py-2">
+                            <button type="button" 
+                                    @click="window.openCalculatorDrawer ? window.openCalculatorDrawer({{ $area->id }}) : (document.getElementById('calcDrawer').style.display = 'block')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-700 hover:text-brand-800 hover:bg-brand-100 rounded-md transition-colors">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Add Items from Catalog
+                            </button>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

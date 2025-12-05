@@ -92,9 +92,6 @@
                     {{-- Catalog materials from picker --}}
                     @if(!empty($data['materials']) && is_array($data['materials']))
                         @foreach($data['materials'] as $material)
-                            @php
-                                $total = ($material['quantity'] ?? 0) * ($material['unit_cost'] ?? 0);
-                            @endphp
                             <tr class="border-b border-gray-100 hover:bg-amber-50">
                                 <td class="py-3 px-4 font-medium text-gray-900">
                                     {{ $material['name'] }}
@@ -103,7 +100,7 @@
                                     {{ number_format($material['quantity'], 2) }} {{ $material['unit'] ?? 'ea' }}
                                 </td>
                                 <td class="py-3 px-4 text-right text-gray-700">${{ number_format($material['unit_cost'], 2) }}</td>
-                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($total, 2) }}</td>
+                                <td class="py-3 px-4 text-right font-semibold text-gray-900">${{ number_format($material['total'], 2) }}</td>
                             </tr>
                         @endforeach
                     @else
@@ -138,7 +135,7 @@
         </div>
 
         <div class="space-y-2 mb-4">
-            @foreach ($data['labor_by_task'] as $task => $hours)
+            @foreach (($data['labor_by_task'] ?? []) as $task => $hours)
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
                     <span class="text-gray-700 capitalize">{{ str_replace('_', ' ', $task) }}</span>
                     <span class="font-semibold text-gray-900">{{ number_format($hours, 2) }} hrs</span>

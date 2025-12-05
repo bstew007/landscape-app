@@ -1,0 +1,855 @@
+@extends('layouts.sidebar')
+
+@php
+    $hasOverrides = collect(old())->keys()->filter(fn($key) => str_contains($key, 'override_'))->isNotEmpty();
+    $overrideChecked = old('materials_override_enabled', $formData['materials_override_enabled'] ?? $hasOverrides);
+
+    $fenceTypeValue = old('fence_type', $formData['fence_type'] ?? '');
+    $heightValue = old('height', $formData['height'] ?? '');
+
+    $woodDefaults = [
+        '4x4' => 12.00,
+        '4x6' => 18.00,
+        'rail' => 6.50,
+        'picket' => 2.25,
+        'screw' => 0.25,
+        'hardware' => 12.00,
+    ];
+
+    $vinylDefaults = [
+        'panel_4' => 125.00,
+        'panel_6' => 75.00,
+        'line_post_4' => 28.00,
+        'line_post_6' => 48.00,
+        'end_post_4' => 25.00,
+        'end_post_6' => 45.00,
+        'corner_post_4' => 25.00,
+        'corner_post_6' => 45.00,
+        'gate_4' => 145.00,
+        'gate_6' => 145.00,
+        'metal_insert' => 75.00,
+    ];
+
+    $concreteDefault = 8.50;
+
+    $resolveUnitCost = function (string $overrideField, string $materialPath, float $default) use ($formData) {
+        $oldValue = old($overrideField);
+        if ($oldValue !== null && $oldValue !== '') {
+            return (float) $oldValue;
+        }
+
+        $materialValue = data_get($formData, $materialPath);
+        if ($materialValue !== null && $materialValue !== '') {
+            return (float) $materialValue;
+        }
+
+        return $default;
+    };
+
+    $materialCards = [
+        [
+            'key' => 'wood_posts',
+            'label' => '4x4 Wood Posts',
+            'unit' => 'posts',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.4x4 Posts.qty'),
+            'unit_cost' => $resolveUnitCost('override_wood_post_4x4_cost', 'materials.4x4 Posts.unit_cost', $woodDefaults['4x4']),
+            'description' => "Assumes ~8' spacing minus gate spans.",
+        ],
+        [
+            'key' => 'wood_gate_posts',
+            'label' => '4x6 Gate Posts',
+            'unit' => 'posts',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.4x6 Gate Posts.qty'),
+            'unit_cost' => $resolveUnitCost('override_wood_post_4x6_cost', 'materials.4x6 Gate Posts.unit_cost', $woodDefaults['4x6']),
+            'description' => 'Two per gate for added rigidity.',
+        ],
+        [
+            'key' => 'wood_rails',
+            'label' => '2x4 Rails',
+            'unit' => 'rails',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.2x4 Rails.qty'),
+            'unit_cost' => $resolveUnitCost('override_wood_rail_cost', 'materials.2x4 Rails.unit_cost', $woodDefaults['rail']),
+            'description' => '3 rails per 10ft section.',
+        ],
+        [
+            'key' => 'wood_pickets',
+            'label' => 'Pickets',
+            'unit' => 'pickets',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.Pickets.qty'),
+            'unit_cost' => $resolveUnitCost('override_wood_picket_cost', 'materials.Pickets.unit_cost', $woodDefaults['picket']),
+            'description' => 'Based on picket spacing + shadow box toggle.',
+        ],
+        [
+            'key' => 'wood_screws',
+            'label' => 'Screws',
+            'unit' => 'ea',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.Screws.qty'),
+            'unit_cost' => $resolveUnitCost('override_screws_cost', 'materials.Screws.unit_cost', $woodDefaults['screw']),
+            'description' => 'Per picket screw allowance.',
+        ],
+        [
+            'key' => 'wood_gate_hardware',
+            'label' => 'Gate Hardware Kits',
+            'unit' => 'gates',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.Gate Hardware.qty'),
+            'unit_cost' => $resolveUnitCost('override_wood_gate_hardware_cost', 'materials.Gate Hardware.unit_cost', $woodDefaults['hardware']),
+            'description' => 'Hinges + latch per gate.',
+        ],
+        [
+            'key' => 'wood_concrete',
+            'label' => 'Concrete Bags',
+            'unit' => 'bags',
+            'type' => 'wood',
+            'qty' => data_get($formData, 'materials.Concrete Bags.qty'),
+            'unit_cost' => data_get($formData, 'materials.Concrete Bags.unit_cost', $concreteDefault),
+            'description' => 'Two bags per post in the layout.',
+        ],
+    ];
+
+    foreach (['4', '6'] as $vinylHeight) {
+        $suffix = "{$vinylHeight}'";
+        $materialCards[] = [
+            'key' => "vinyl_panels_{$vinylHeight}",
+            'label' => "Vinyl Panels ({$suffix})",
+            'unit' => 'panels',
+            'type' => 'vinyl',
+            'vinyl_height' => $vinylHeight,
+            'qty' => data_get($formData, "materials.Vinyl Panels ({$suffix}).qty"),
+            'unit_cost' => $resolveUnitCost("override_vinyl_panel_{$vinylHeight}_cost", "materials.Vinyl Panels ({$suffix}).unit_cost", $vinylDefaults["panel_{$vinylHeight}"]),
+            'description' => 'Panels sized to the selected height.',
+        ];
+        $materialCards[] = [
+            'key' => "vinyl_line_posts_{$vinylHeight}",
+            'label' => "Line Posts ({$suffix})",
+            'unit' => 'posts',
+            'type' => 'vinyl',
+            'vinyl_height' => $vinylHeight,
+            'qty' => data_get($formData, "materials.Line Posts ({$suffix}).qty"),
+            'unit_cost' => $resolveUnitCost("override_vinyl_line_post_{$vinylHeight}_cost", "materials.Line Posts ({$suffix}).unit_cost", $vinylDefaults["line_post_{$vinylHeight}"]),
+            'description' => 'Auto-balances after accounting for corners + ends.',
+        ];
+        $materialCards[] = [
+            'key' => "vinyl_end_posts_{$vinylHeight}",
+            'label' => "End Posts ({$suffix})",
+            'unit' => 'posts',
+            'type' => 'vinyl',
+            'vinyl_height' => $vinylHeight,
+            'qty' => data_get($formData, "materials.End Posts ({$suffix}).qty"),
+            'unit_cost' => $resolveUnitCost("override_vinyl_end_post_{$vinylHeight}_cost", "materials.End Posts ({$suffix}).unit_cost", $vinylDefaults["end_post_{$vinylHeight}"]),
+            'description' => 'Placed where the run terminates.',
+        ];
+        $materialCards[] = [
+            'key' => "vinyl_corner_posts_{$vinylHeight}",
+            'label' => "Corner Posts ({$suffix})",
+            'unit' => 'posts',
+            'type' => 'vinyl',
+            'vinyl_height' => $vinylHeight,
+            'qty' => data_get($formData, "materials.Corner Posts ({$suffix}).qty"),
+            'unit_cost' => $resolveUnitCost("override_vinyl_corner_post_{$vinylHeight}_cost", "materials.Corner Posts ({$suffix}).unit_cost", $vinylDefaults["corner_post_{$vinylHeight}"]),
+            'description' => 'Use inputs above to pin corner counts.',
+        ];
+        $materialCards[] = [
+            'key' => "vinyl_gates_{$vinylHeight}",
+            'label' => "Gates ({$suffix})",
+            'unit' => 'gates',
+            'type' => 'vinyl',
+            'vinyl_height' => $vinylHeight,
+            'qty' => data_get($formData, "materials.Gates ({$suffix}).qty"),
+            'unit_cost' => $resolveUnitCost("override_vinyl_gate_{$vinylHeight}_cost", "materials.Gates ({$suffix}).unit_cost", $vinylDefaults["gate_{$vinylHeight}"]),
+            'description' => 'Counts both 4’ + 5’ entries.',
+        ];
+    }
+
+    $materialCards[] = [
+        'key' => 'vinyl_inserts',
+        'label' => 'Metal Inserts',
+        'unit' => 'posts',
+        'type' => 'vinyl',
+        'vinyl_height' => 'all',
+        'qty' => data_get($formData, 'materials.Metal Inserts.qty'),
+        'unit_cost' => $resolveUnitCost('override_metal_insert_cost', 'materials.Metal Inserts.unit_cost', $vinylDefaults['metal_insert']),
+        'description' => 'Applies when reinforcing vinyl posts.',
+    ];
+
+    $materialCards[] = [
+        'key' => 'vinyl_concrete',
+        'label' => 'Concrete Bags',
+        'unit' => 'bags',
+        'type' => 'vinyl',
+        'vinyl_height' => 'all',
+        'qty' => data_get($formData, 'materials.Concrete Bags.qty'),
+        'unit_cost' => data_get($formData, 'materials.Concrete Bags.unit_cost', $concreteDefault),
+        'description' => 'Two bags per vinyl post (line + specialty).',
+    ];
+@endphp
+
+@section('content')
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {{-- Modern Header with Icon --}}
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-3">
+            <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center shadow-lg">
+                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        <circle cx="12" cy="6" r="1.5" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                        <circle cx="12" cy="18" r="1.5" fill="currentColor"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    {{ $editMode ? 'Edit Fence Estimate' : 'Fence Calculator' }}
+                </h1>
+                <p class="text-gray-600 mt-1">Wood or vinyl fence installation estimator</p>
+            </div>
+        </div>
+    </div>
+
+    @if(($mode ?? null) === 'template')
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-blue-900">Template Mode Active</p>
+                    <p class="text-sm text-blue-700 mt-1">Building fence template without site visit</p>
+                    @if(!empty($estimateId))
+                        <p class="text-sm text-blue-600 mt-1">Target Estimate: #{{ $estimateId }}</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('calculators.fence.calculate') }}">
+
+        @csrf
+        <input type="hidden" name="mode" value="{{ $mode ?? '' }}">
+        @if(!empty($estimateId))
+            <input type="hidden" name="estimate_id" value="{{ $estimateId }}">
+        @endif
+
+        {{-- When editing, include hidden calculation ID --}}
+        @if ($editMode && isset($existingCalculation))
+            <input type="hidden" name="calculation_id" value="{{ $existingCalculation->id }}">
+        @endif
+
+        {{-- Site Visit --}}
+        @if(($mode ?? null) !== 'template')
+            <input type="hidden" name="site_visit_id" value="{{ $siteVisitId }}">
+        @endif
+
+        {{-- 1️⃣ Crew & Logistics --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">1</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Crew & Logistics</h2>
+                    <p class="text-sm text-gray-600">Labor rates, crew size, and travel details</p>
+                </div>
+            </div>
+            @include('calculators.partials.overhead_inputs')
+        </div>
+
+        {{-- 2️⃣ Fence Configuration --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">2</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Fence Configuration</h2>
+                    <p class="text-sm text-gray-600">Type, dimensions, and installation method</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- Fence Type --}}
+                <div>
+                    <label for="fence_type" class="block text-sm font-semibold text-gray-700 mb-2">Fence Type</label>
+                    <select name="fence_type" id="fence_type" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <option value="">-- Select Type --</option>
+                        <option value="wood" {{ old('fence_type', $formData['fence_type'] ?? '') == 'wood' ? 'selected' : '' }}>Wood</option>
+                        <option value="vinyl" {{ old('fence_type', $formData['fence_type'] ?? '') == 'vinyl' ? 'selected' : '' }}>Vinyl</option>
+                    </select>
+                </div>
+
+                {{-- Fence Height --}}
+                <div>
+                    <label for="height" class="block text-sm font-semibold text-gray-700 mb-2">Fence Height</label>
+                    <select name="height" id="height" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <option value="4" {{ old('height', $formData['height'] ?? '') == '4' ? 'selected' : '' }}>4 feet</option>
+                        <option value="6" {{ old('height', $formData['height'] ?? '') == '6' ? 'selected' : '' }}>6 feet</option>
+                    </select>
+                </div>
+
+                {{-- Fence Length --}}
+                <div>
+                    <label for="length" class="block text-sm font-semibold text-gray-700 mb-2">Total Fence Length (ft)</label>
+                    <input type="number" name="length" id="length" value="{{ old('length', $formData['length'] ?? '') }}" required 
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                </div>
+
+                {{-- Dig Method --}}
+                <div>
+                    <label for="dig_method" class="block text-sm font-semibold text-gray-700 mb-2">Post Digging Method</label>
+                    <select name="dig_method" id="dig_method" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <option value="">-- Select Method --</option>
+                        <option value="hand" {{ old('dig_method', $formData['dig_method'] ?? '') == 'hand' ? 'selected' : '' }}>Hand Dig</option>
+                        <option value="auger" {{ old('dig_method', $formData['dig_method'] ?? '') == 'auger' ? 'selected' : '' }}>Auger</option>
+                    </select>
+                </div>
+
+                {{-- 4' Gates --}}
+                <div>
+                    <label for="gate_4ft" class="block text-sm font-semibold text-gray-700 mb-2">Number of 4' Gates</label>
+                    <input type="number" name="gate_4ft" id="gate_4ft" value="{{ old('gate_4ft', $formData['gate_4ft'] ?? 0) }}" min="0" 
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                </div>
+
+                {{-- 5' Gates --}}
+                <div>
+                    <label for="gate_5ft" class="block text-sm font-semibold text-gray-700 mb-2">Number of 5' Gates</label>
+                    <input type="number" name="gate_5ft" id="gate_5ft" value="{{ old('gate_5ft', $formData['gate_5ft'] ?? 0) }}" min="0" 
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                </div>
+            </div>
+
+            {{-- Wood Specific Options --}}
+            <div id="wood-options" style="display: none;" class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Wood Fence Options</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="picket_spacing" class="block text-sm font-semibold text-gray-700 mb-2">Picket Spacing (inches)</label>
+                        <input type="number" step="0.01" name="picket_spacing" id="picket_spacing" value="{{ old('picket_spacing', $formData['picket_spacing'] ?? 0.25) }}" 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="shadow_box" value="1"
+                                   {{ old('shadow_box', $formData['shadow_box'] ?? false) ? 'checked' : '' }} 
+                                   class="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Shadow Box Style (Double Pickets)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Vinyl Specific Options --}}
+            <div id="vinyl-options" style="display: none;" class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Vinyl Fence Options</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="vinyl_corner_posts" class="block text-sm font-semibold text-gray-700 mb-2">Vinyl Corner Posts</label>
+                        <input type="number" name="vinyl_corner_posts" id="vinyl_corner_posts" value="{{ old('vinyl_corner_posts', $formData['vinyl_corner_posts'] ?? 0) }}" 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="vinyl_end_posts" class="block text-sm font-semibold text-gray-700 mb-2">Vinyl End Posts</label>
+                        <input type="number" name="vinyl_end_posts" id="vinyl_end_posts" value="{{ old('vinyl_end_posts', $formData['vinyl_end_posts'] ?? 0) }}" 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 3️⃣ Materials Preview --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-start justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">3</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Materials Preview</h2>
+                        <p class="text-sm text-gray-600">Auto-calculated quantities and costs</p>
+                    </div>
+                </div>
+                <span id="materialPreviewHint" class="text-sm {{ $fenceTypeValue ? 'text-gray-600' : 'text-gray-500' }}" data-empty-message="Select fence type to see materials" data-filled-message="Updating automatically">
+                    {{ $fenceTypeValue ? 'Updating automatically' : 'Select fence type to see materials' }}
+                </span>
+            </div>
+
+            <div id="fenceMaterialPreview" class="{{ $fenceTypeValue ? '' : 'hidden' }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    @foreach ($materialCards as $card)
+                        @php
+                            $cardVisible = $fenceTypeValue === $card['type'] && ($card['type'] === 'wood' || empty($card['vinyl_height']) || $card['vinyl_height'] === 'all' || $card['vinyl_height'] === $heightValue);
+                        @endphp
+                        <div
+                            class="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-gray-50 to-gray-100 {{ $cardVisible ? '' : 'hidden' }}"
+                            data-fence-material-card
+                            data-fence-type="{{ $card['type'] }}"
+                            @if(!empty($card['vinyl_height'])) data-vinyl-height="{{ $card['vinyl_height'] }}" @endif
+                        >
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="font-semibold text-gray-900">{{ $card['label'] }}</p>
+                                <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded">{{ $card['unit'] }}</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Quantity</p>
+                                <p class="text-2xl font-bold text-gray-900" data-material-qty="{{ $card['key'] }}">
+                                    @if(!is_null($card['qty']))
+                                        @if(is_numeric($card['qty']) && floor($card['qty']) == $card['qty'])
+                                            {{ number_format($card['qty']) }}
+                                        @else
+                                            {{ number_format((float) $card['qty'], 2) }}
+                                        @endif
+                                    @else
+                                        &mdash;
+                                    @endif
+                                </p>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Unit Cost</p>
+                                <p class="text-lg font-semibold text-gray-700" data-material-cost="{{ $card['key'] }}">
+                                    @if(!is_null($card['unit_cost']))
+                                        ${{ number_format($card['unit_cost'], 2) }}
+                                    @else
+                                        &mdash;
+                                    @endif
+                                </p>
+                            </div>
+
+                            <p class="text-xs text-gray-600">{{ $card['description'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- 4️⃣ Job Notes --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">4</span>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-gray-900">Job Notes</h2>
+                    <p class="text-sm text-gray-600">Special considerations, access notes, or custom requirements</p>
+                </div>
+            </div>
+
+            <div>
+                <label for="job_notes" class="block text-sm font-semibold text-gray-700 mb-2">
+                    Job Notes <span class="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <textarea name="job_notes" id="job_notes" rows="3" 
+                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" 
+                          placeholder="Special considerations, access notes, or custom requirements...">{{ old('job_notes', $formData['job_notes'] ?? '') }}</textarea>
+            </div>
+            </div>
+        </div>
+
+        {{-- Toggle Material Overrides --}}
+        @include('calculators.partials.material_override_inputs', [
+            'overrideToggleName' => 'materials_override_enabled',
+            'overrideToggleLabel' => 'Show Material Cost Overrides',
+            'overrideToggleId' => 'showOverrides',
+            'overrideSectionId' => 'overrides-section',
+            'overrideChecked' => (bool) $overrideChecked,
+            'fields' => [],
+            'customContent' => view('calculators.fence.partials.overrides'),
+        ])
+
+        {{-- Submit Button --}}
+        <div class="flex flex-col sm:flex-row gap-4">
+            @if(($mode ?? null) === 'template')
+                <input type="text" name="template_name" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent" 
+                       placeholder="Template name (e.g., 6' vinyl with 2 gates)" value="{{ old('template_name') }}">
+                <select name="template_scope" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                    <option value="global" {{ old('template_scope')==='global' ? 'selected' : '' }}>Global</option>
+                    <option value="client" {{ old('template_scope')==='client' ? 'selected' : '' }}>This Client</option>
+                    <option value="property" {{ old('template_scope')==='property' ? 'selected' : '' }}>This Property</option>
+                </select>
+                <button type="submit" class="px-6 py-2.5 bg-brand-800 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+                    💾 Save Template
+                </button>
+            @else
+                <button type="submit" class="px-8 py-3 bg-brand-800 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+                    {{ $editMode ? '🔄 Recalculate Estimate' : '➡️ Calculate Fence Estimate' }}
+                </button>
+                <a href="{{ route('clients.show', $clientId ?? $siteVisitId) }}" class="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-center">
+                    ← Back to Client
+                </a>
+            @endif
+        </div>
+    </form>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fenceTypeSelect = document.getElementById('fence_type');
+        const heightSelect = document.getElementById('height');
+        const overridesCheckbox = document.getElementById('showOverrides');
+        const lengthInput = document.getElementById('length');
+        const gate4Input = document.getElementById('gate_4ft');
+        const gate5Input = document.getElementById('gate_5ft');
+        const picketSpacingInput = document.getElementById('picket_spacing');
+        const shadowBoxInput = document.querySelector('input[name="shadow_box"]');
+        const vinylCornerInput = document.getElementById('vinyl_corner_posts');
+        const vinylEndInput = document.getElementById('vinyl_end_posts');
+        const materialPreviewWrapper = document.getElementById('fenceMaterialPreview');
+        const materialHint = document.getElementById('materialPreviewHint');
+        const previewCards = document.querySelectorAll('[data-fence-material-card]');
+
+        const defaults = {
+            wood: {
+                post4x4: 12,
+                post4x6: 18,
+                rail: 6.5,
+                picket: 2.25,
+                screw: 0.25,
+                hardware: 12,
+            },
+            vinyl: {
+                panel4: 125,
+                panel6: 75,
+                line4: 28,
+                line6: 48,
+                end4: 25,
+                end6: 45,
+                corner4: 25,
+                corner6: 45,
+                gate4: 145,
+                gate6: 145,
+                metalInsert: 75,
+            },
+            concreteBag: 8.5,
+        };
+
+        const overrideInputs = {
+            woodPost4x4: document.querySelector('input[name="override_wood_post_4x4_cost"]'),
+            woodPost4x6: document.querySelector('input[name="override_wood_post_4x6_cost"]'),
+            woodRail: document.querySelector('input[name="override_wood_rail_cost"]'),
+            woodPicket: document.querySelector('input[name="override_wood_picket_cost"]'),
+            screws: document.querySelector('input[name="override_screws_cost"]'),
+            woodGateHardware: document.querySelector('input[name="override_wood_gate_hardware_cost"]'),
+            vinylPanel4: document.querySelector('input[name="override_vinyl_panel_4_cost"]'),
+            vinylPanel6: document.querySelector('input[name="override_vinyl_panel_6_cost"]'),
+            vinylLine4: document.querySelector('input[name="override_vinyl_line_post_4_cost"]'),
+            vinylLine6: document.querySelector('input[name="override_vinyl_line_post_6_cost"]'),
+            vinylEnd4: document.querySelector('input[name="override_vinyl_end_post_4_cost"]'),
+            vinylEnd6: document.querySelector('input[name="override_vinyl_end_post_6_cost"]'),
+            vinylCorner4: document.querySelector('input[name="override_vinyl_corner_post_4_cost"]'),
+            vinylCorner6: document.querySelector('input[name="override_vinyl_corner_post_6_cost"]'),
+            vinylGate4: document.querySelector('input[name="override_vinyl_gate_4_cost"]'),
+            vinylGate6: document.querySelector('input[name="override_vinyl_gate_6_cost"]'),
+            metalInsert: document.querySelector('input[name="override_metal_insert_cost"]'),
+        };
+
+        const qtyEls = {
+            wood_posts: document.querySelector('[data-material-qty="wood_posts"]'),
+            wood_gate_posts: document.querySelector('[data-material-qty="wood_gate_posts"]'),
+            wood_rails: document.querySelector('[data-material-qty="wood_rails"]'),
+            wood_pickets: document.querySelector('[data-material-qty="wood_pickets"]'),
+            wood_screws: document.querySelector('[data-material-qty="wood_screws"]'),
+            wood_gate_hardware: document.querySelector('[data-material-qty="wood_gate_hardware"]'),
+            wood_concrete: document.querySelector('[data-material-qty="wood_concrete"]'),
+            vinyl_panels_4: document.querySelector('[data-material-qty="vinyl_panels_4"]'),
+            vinyl_panels_6: document.querySelector('[data-material-qty="vinyl_panels_6"]'),
+            vinyl_line_posts_4: document.querySelector('[data-material-qty="vinyl_line_posts_4"]'),
+            vinyl_line_posts_6: document.querySelector('[data-material-qty="vinyl_line_posts_6"]'),
+            vinyl_end_posts_4: document.querySelector('[data-material-qty="vinyl_end_posts_4"]'),
+            vinyl_end_posts_6: document.querySelector('[data-material-qty="vinyl_end_posts_6"]'),
+            vinyl_corner_posts_4: document.querySelector('[data-material-qty="vinyl_corner_posts_4"]'),
+            vinyl_corner_posts_6: document.querySelector('[data-material-qty="vinyl_corner_posts_6"]'),
+            vinyl_gates_4: document.querySelector('[data-material-qty="vinyl_gates_4"]'),
+            vinyl_gates_6: document.querySelector('[data-material-qty="vinyl_gates_6"]'),
+            vinyl_inserts: document.querySelector('[data-material-qty="vinyl_inserts"]'),
+            vinyl_concrete: document.querySelector('[data-material-qty="vinyl_concrete"]'),
+        };
+
+        const costEls = {
+            wood_posts: document.querySelector('[data-material-cost="wood_posts"]'),
+            wood_gate_posts: document.querySelector('[data-material-cost="wood_gate_posts"]'),
+            wood_rails: document.querySelector('[data-material-cost="wood_rails"]'),
+            wood_pickets: document.querySelector('[data-material-cost="wood_pickets"]'),
+            wood_screws: document.querySelector('[data-material-cost="wood_screws"]'),
+            wood_gate_hardware: document.querySelector('[data-material-cost="wood_gate_hardware"]'),
+            wood_concrete: document.querySelector('[data-material-cost="wood_concrete"]'),
+            vinyl_panels_4: document.querySelector('[data-material-cost="vinyl_panels_4"]'),
+            vinyl_panels_6: document.querySelector('[data-material-cost="vinyl_panels_6"]'),
+            vinyl_line_posts_4: document.querySelector('[data-material-cost="vinyl_line_posts_4"]'),
+            vinyl_line_posts_6: document.querySelector('[data-material-cost="vinyl_line_posts_6"]'),
+            vinyl_end_posts_4: document.querySelector('[data-material-cost="vinyl_end_posts_4"]'),
+            vinyl_end_posts_6: document.querySelector('[data-material-cost="vinyl_end_posts_6"]'),
+            vinyl_corner_posts_4: document.querySelector('[data-material-cost="vinyl_corner_posts_4"]'),
+            vinyl_corner_posts_6: document.querySelector('[data-material-cost="vinyl_corner_posts_6"]'),
+            vinyl_gates_4: document.querySelector('[data-material-cost="vinyl_gates_4"]'),
+            vinyl_gates_6: document.querySelector('[data-material-cost="vinyl_gates_6"]'),
+            vinyl_inserts: document.querySelector('[data-material-cost="vinyl_inserts"]'),
+            vinyl_concrete: document.querySelector('[data-material-cost="vinyl_concrete"]'),
+        };
+
+        function toggleSections() {
+            const type = fenceTypeSelect.value;
+            document.getElementById('wood-options').style.display = type === 'wood' ? 'block' : 'none';
+            document.getElementById('vinyl-options').style.display = type === 'vinyl' ? 'block' : 'none';
+            updateMaterialCardVisibility();
+        }
+
+        function toggleFenceSpecificOverrides() {
+            const type = fenceTypeSelect.value;
+            const currentHeight = heightSelect ? heightSelect.value : '';
+            const overridesEnabled = overridesCheckbox && overridesCheckbox.checked;
+            const groups = document.querySelectorAll('#overrides-section .override-group');
+
+            groups.forEach(group => {
+                let show = overridesEnabled;
+
+                if (group.classList.contains('wood-material')) {
+                    show = show && type === 'wood';
+                } else if (group.classList.contains('vinyl-material')) {
+                    const targetHeight = group.dataset.vinylHeight || 'all';
+                    if (type !== 'vinyl') {
+                        show = false;
+                    } else if (targetHeight !== 'all' && currentHeight && targetHeight !== currentHeight) {
+                        show = false;
+                    }
+                } else {
+                    show = show && Boolean(type);
+                }
+
+                group.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        function handleOverrideVisibility() {
+            toggleFenceSpecificOverrides();
+        }
+
+        function updateMaterialCardVisibility() {
+            const type = fenceTypeSelect ? fenceTypeSelect.value : '';
+            const currentHeight = heightSelect ? heightSelect.value : '';
+
+            previewCards.forEach((card) => {
+                const cardType = card.dataset.fenceType;
+                const cardHeight = card.dataset.vinylHeight || 'any';
+                let visible = Boolean(type) && cardType === type;
+
+                if (visible && cardType === 'vinyl' && cardHeight !== 'all' && cardHeight !== 'any') {
+                    visible = currentHeight && cardHeight === currentHeight;
+                }
+
+                card.classList.toggle('hidden', !visible);
+            });
+
+            if (materialPreviewWrapper) {
+                materialPreviewWrapper.classList.toggle('hidden', !type);
+            }
+        }
+
+        const parseNumber = (value) => {
+            const num = parseFloat(value);
+            return Number.isFinite(num) ? num : null;
+        };
+
+        const parseOrZero = (value) => {
+            const parsed = parseNumber(value);
+            return parsed === null ? 0 : parsed;
+        };
+
+        const formatCurrency = (value) => `$${Number(value).toFixed(2)}`;
+
+        const setHintText = (text, isActive) => {
+            if (!materialHint) return;
+            const fallback = materialHint.dataset.emptyMessage || '';
+            materialHint.textContent = text || fallback;
+            materialHint.classList.toggle('text-gray-600', Boolean(isActive));
+            materialHint.classList.toggle('text-gray-500', !isActive);
+        };
+
+        const setQtyDisplay = (key, value, options = {}) => {
+            const el = qtyEls[key];
+            if (!el) return;
+            if (value === null || value === undefined || Number.isNaN(value)) {
+                el.textContent = '—';
+                return;
+            }
+            const asInt = options.integer ?? false;
+            if (asInt) {
+                el.textContent = Math.max(0, Math.round(value)).toLocaleString();
+                return;
+            }
+            const decimals = options.decimals ?? 2;
+            el.textContent = Number(value).toFixed(decimals);
+        };
+
+        const setCostDisplay = (key, value) => {
+            const el = costEls[key];
+            if (!el) return;
+            if (value === null || value === undefined || Number.isNaN(value)) {
+                el.textContent = '—';
+                return;
+            }
+            el.textContent = formatCurrency(value);
+        };
+
+        const resolveCost = (input, fallback) => {
+            const parsed = input ? parseNumber(input.value) : null;
+            return parsed !== null ? parsed : fallback;
+        };
+
+        const resetMaterialDisplays = () => {
+            Object.values(qtyEls).forEach((el) => {
+                if (el) el.textContent = '—';
+            });
+            Object.values(costEls).forEach((el) => {
+                if (el) el.textContent = '—';
+            });
+        };
+
+        const recalcMaterialPreview = () => {
+            resetMaterialDisplays();
+
+            const type = fenceTypeSelect ? fenceTypeSelect.value : '';
+            const height = heightSelect ? heightSelect.value : '';
+            const length = lengthInput ? parseNumber(lengthInput.value) : null;
+            const gate4 = gate4Input ? parseOrZero(gate4Input.value) : 0;
+            const gate5 = gate5Input ? parseOrZero(gate5Input.value) : 0;
+            const gateCount = gate4 + gate5;
+
+            updateMaterialCardVisibility();
+
+            if (!type) {
+                setHintText(materialHint ? materialHint.dataset.emptyMessage : '', false);
+                return;
+            }
+
+            const hasLength = length !== null;
+            setHintText(
+                materialHint ? (hasLength ? materialHint.dataset.filledMessage : materialHint.dataset.emptyMessage) : '',
+                hasLength
+            );
+
+            if (type === 'wood') {
+                setCostDisplay('wood_posts', resolveCost(overrideInputs.woodPost4x4, defaults.wood.post4x4));
+                setCostDisplay('wood_gate_posts', resolveCost(overrideInputs.woodPost4x6, defaults.wood.post4x6));
+                setCostDisplay('wood_rails', resolveCost(overrideInputs.woodRail, defaults.wood.rail));
+                setCostDisplay('wood_pickets', resolveCost(overrideInputs.woodPicket, defaults.wood.picket));
+                setCostDisplay('wood_screws', resolveCost(overrideInputs.screws, defaults.wood.screw));
+                setCostDisplay('wood_gate_hardware', resolveCost(overrideInputs.woodGateHardware, defaults.wood.hardware));
+                setCostDisplay('wood_concrete', defaults.concreteBag);
+
+                if (!hasLength) {
+                    return;
+                }
+
+                const picketSpacing = picketSpacingInput ? parseNumber(picketSpacingInput.value) : null;
+                const spacing = picketSpacing === null ? 0.25 : Math.max(0, picketSpacing);
+                const shadowBox = shadowBoxInput ? shadowBoxInput.checked : false;
+                const gateLength = (gate4 * 4) + (gate5 * 5);
+                const adjustedLength = Math.max(0, length - gateLength);
+                const postCount = adjustedLength > 0 ? Math.ceil(adjustedLength / 8) : 0;
+                const gatePosts = gateCount * 2;
+                const visibleWidth = 5.5 + spacing;
+                const picketsPerFoot = visibleWidth > 0 ? Math.ceil(12 / visibleWidth) : 0;
+                let totalPickets = picketsPerFoot * Math.max(length, 0);
+                if (shadowBox) {
+                    totalPickets *= 2;
+                }
+                const railSections = adjustedLength > 0 ? Math.ceil(adjustedLength / 10) : 0;
+                const totalRails = railSections * 3;
+                const concreteBags = (postCount + gatePosts) * 2;
+
+                setQtyDisplay('wood_posts', postCount, { integer: true });
+                setQtyDisplay('wood_gate_posts', gatePosts, { integer: true });
+                setQtyDisplay('wood_rails', totalRails, { integer: true });
+                setQtyDisplay('wood_pickets', totalPickets, { integer: true });
+                setQtyDisplay('wood_screws', totalPickets, { integer: true });
+                setQtyDisplay('wood_gate_hardware', gateCount, { integer: true });
+                setQtyDisplay('wood_concrete', concreteBags, { integer: true });
+                return;
+            }
+
+            if (type === 'vinyl') {
+                const vinylHeight = height === '4' ? '4' : '6';
+                const heightKey = vinylHeight === '4' ? '4' : '6';
+
+                setCostDisplay(`vinyl_panels_${heightKey}`, resolveCost(overrideInputs[`vinylPanel${heightKey}`], defaults.vinyl[`panel${heightKey}`]));
+                setCostDisplay(`vinyl_line_posts_${heightKey}`, resolveCost(overrideInputs[`vinylLine${heightKey}`], defaults.vinyl[`line${heightKey}`]));
+                setCostDisplay(`vinyl_end_posts_${heightKey}`, resolveCost(overrideInputs[`vinylEnd${heightKey}`], defaults.vinyl[`end${heightKey}`]));
+                setCostDisplay(`vinyl_corner_posts_${heightKey}`, resolveCost(overrideInputs[`vinylCorner${heightKey}`], defaults.vinyl[`corner${heightKey}`]));
+                setCostDisplay(`vinyl_gates_${heightKey}`, resolveCost(overrideInputs[`vinylGate${heightKey}`], defaults.vinyl[`gate${heightKey}`]));
+                setCostDisplay('vinyl_inserts', resolveCost(overrideInputs.metalInsert, defaults.vinyl.metalInsert));
+                setCostDisplay('vinyl_concrete', defaults.concreteBag);
+
+                if (!hasLength || !height) {
+                    return;
+                }
+
+                const cornerPosts = vinylCornerInput ? parseOrZero(vinylCornerInput.value) : 0;
+                const endPosts = vinylEndInput ? parseOrZero(vinylEndInput.value) : 0;
+                const gateLength = (gate4 * 4) + (gate5 * 5);
+                const adjustedLength = Math.max(0, length - gateLength);
+                const panelLength = vinylHeight === '4' ? 8 : 6;
+                const panelCount = adjustedLength > 0 ? Math.ceil(adjustedLength / panelLength) : 0;
+                const linePosts = Math.max(0, panelCount + 2 - cornerPosts - endPosts);
+                const postTotal = linePosts + cornerPosts + endPosts + gateCount;
+                const concreteBags = postTotal * 2;
+
+                setQtyDisplay(`vinyl_panels_${heightKey}`, panelCount, { integer: true });
+                setQtyDisplay(`vinyl_line_posts_${heightKey}`, linePosts, { integer: true });
+                setQtyDisplay(`vinyl_end_posts_${heightKey}`, endPosts, { integer: true });
+                setQtyDisplay(`vinyl_corner_posts_${heightKey}`, cornerPosts, { integer: true });
+                setQtyDisplay(`vinyl_gates_${heightKey}`, gateCount, { integer: true });
+                setQtyDisplay('vinyl_inserts', gateCount, { integer: true });
+                setQtyDisplay('vinyl_concrete', concreteBags, { integer: true });
+            }
+        };
+
+        toggleSections();
+        handleOverrideVisibility();
+        updateMaterialCardVisibility();
+        recalcMaterialPreview();
+
+        if (fenceTypeSelect) {
+            fenceTypeSelect.addEventListener('change', function () {
+                toggleSections();
+                handleOverrideVisibility();
+                recalcMaterialPreview();
+            });
+        }
+
+        if (overridesCheckbox) {
+            overridesCheckbox.addEventListener('change', handleOverrideVisibility);
+        }
+
+        if (heightSelect) {
+            heightSelect.addEventListener('change', function () {
+                handleOverrideVisibility();
+                recalcMaterialPreview();
+            });
+        }
+        [lengthInput, gate4Input, gate5Input, picketSpacingInput, vinylCornerInput, vinylEndInput].forEach((input) => {
+            if (!input) return;
+            input.addEventListener('input', recalcMaterialPreview);
+        });
+
+        if (shadowBoxInput) {
+            shadowBoxInput.addEventListener('change', recalcMaterialPreview);
+        }
+
+        Object.values(overrideInputs).forEach((input) => {
+            if (!input) return;
+            input.addEventListener('input', recalcMaterialPreview);
+        });
+    });
+</script>
+@endpush

@@ -444,6 +444,8 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
 
     Route::get('site-visits/{site_visit}/estimate-line-items', [EstimateController::class, 'siteVisitLineItems'])->name('site-visits.estimate-line-items');
     Route::get('estimates/{estimate}/preview-email', [EstimateController::class, 'previewEmail'])->name('estimates.preview-email');
+    Route::get('estimates/{estimate}/email-preview', [EstimateController::class, 'emailPreview'])->name('estimates.email-preview');
+    Route::post('estimates/{estimate}/send-email', [EstimateController::class, 'sendEmailWithTemplate'])->name('estimates.send-email');
     Route::get('estimates/{estimate}/print', [EstimateController::class, 'print'])->name('estimates.print');
     Route::match(['get', 'post'], 'estimates/{estimate}/recalculate', [EstimateController::class, 'recalculate'])->name('estimates.recalculate');
     Route::get('estimates/{estimate}/reports/cost-analysis', [EstimateController::class, 'costAnalysisReport'])->name('estimates.reports.cost-analysis');
@@ -481,6 +483,8 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::get('purchase-orders/{purchaseOrder}', [\App\Http\Controllers\PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
     Route::delete('purchase-orders/{purchaseOrder}', [\App\Http\Controllers\PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
     Route::get('purchase-orders/{purchaseOrder}/print', [\App\Http\Controllers\PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
+    Route::get('purchase-orders/{purchaseOrder}/email-preview', [\App\Http\Controllers\PurchaseOrderController::class, 'emailPreview'])->name('purchase-orders.email-preview');
+    Route::post('purchase-orders/{purchaseOrder}/send-email', [\App\Http\Controllers\PurchaseOrderController::class, 'sendEmail'])->name('purchase-orders.send-email');
     Route::post('purchase-orders/print-batch', [\App\Http\Controllers\PurchaseOrderController::class, 'printBatch'])->name('purchase-orders.print-batch');
     Route::post('estimates/{estimate}/generate-purchase-orders', [\App\Http\Controllers\PurchaseOrderController::class, 'generateFromEstimate'])->name('estimates.generate-purchase-orders');
     Route::patch('purchase-orders/{purchaseOrder}/status', [\App\Http\Controllers\PurchaseOrderController::class, 'updateStatus'])->name('purchase-orders.update-status');
@@ -523,6 +527,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::post('areas', [\App\Http\Controllers\EstimateAreaController::class, 'store'])->name('areas.store');
         Route::patch('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'update'])->name('areas.update');
         Route::delete('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'destroy'])->name('areas.destroy');
+        Route::post('areas/{area}/duplicate', [\App\Http\Controllers\EstimateAreaController::class, 'duplicate'])->name('areas.duplicate');
         Route::post('areas/reorder', [\App\Http\Controllers\EstimateAreaController::class, 'reorder'])->name('areas.reorder');
         
         // Custom Pricing

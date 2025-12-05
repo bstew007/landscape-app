@@ -74,6 +74,61 @@ class EstimateAreaController extends Controller
         
         return back()->with('success', 'Work area removed.');
     }
+    
+    public function duplicate(Request $request, Estimate $estimate, EstimateArea $area)
+    {
+        if ($area->estimate_id !== $estimate->id) {
+            abort(404);
+        }
+        
+        // Determine new name (avoid collision)
+        $baseName = $area->name;
+        $copyNumber = 1;
+        $newName = $baseName . ' (Copy)';
+        
+        while ($estimate->areas()->where('name', $newName)->exists()) {
+            $copyNumber++;
+            $newName = $baseName . ' (Copy ' . $copyNumber . ')';
+        }
+        
+        // Create duplicated area
+        $maxSortOrder = (int) ($estimate->areas()->max('sort_order') ?? 0);
+        $newArea = $estimate->areas()->create([
+            'name' => $newName,
+            'identifier' => $area->identifier,
+            'cost_code_id' => $area->cost_code_id,
+            'description' => $area->description,
+            'sort_order' => $maxSortOrder + 1,
+            'pricing_override_method' => $area->pricing_override_method,
+            'pricing_override_value' => $area->pricing_override_value,
+        ]);
+        
+        // Duplicate all items in the area
+        foreach ($area->items as $item) {
+            $newArea->items()->create([
+                'estimate_id' => $estimate->id,
+                'item_type' => $item->item_type,
+                'name' => $item->name,
+                'description' => $item->description,
+                'unit' => $item->unit,
+                'quantity' => $item->quantity,
+                'unit_cost' => $item->unit_cost,
+                'unit_price' => $item->unit_price,
+                'margin_rate' => $item->margin_rate,
+                'tax_rate' => $item->tax_rate,
+                'cost_total' => $item->cost_total,
+                'margin_total' => $item->margin_total,
+                'line_total' => $item->line_total,
+                'calculation_id' => $item->calculation_id,
+                'sort_order' => $item->sort_order,
+            ]);
+        }
+        
+        // Recalculate estimate totals
+        app(\App\Services\EstimateItemService::class)->recalculateTotals($estimate->fresh());
+        
+        return back()->with('success', "Work area duplicated as \"$newName\".")->with('recent_area_id', $newArea->id);
+    }
 
     public function reorder(Request $request, Estimate $estimate)
     {

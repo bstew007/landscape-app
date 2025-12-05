@@ -436,7 +436,7 @@
     {{-- Action Buttons --}}
     <div class="flex items-center justify-between gap-4 pt-6 border-t-2 border-gray-300">
         <a 
-            href="{{ route('site-visits.show', $siteVisit->id) }}" 
+            href="{{ route('clients.site-visits.show', [$siteVisit->client->id, $siteVisit->id]) }}" 
             class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium inline-flex items-center gap-2"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1216,6 +1216,44 @@ window.areaComponent = function(initiallyOpen, clearPricingUrl, areaId) {
                 console.error('Error clearing custom pricing:', error);
                 alert('An error occurred. Please try again.');
             }
+        },
+        
+        exportAreaToCSV() {
+            // Get area name and items
+            const areaElement = document.querySelector(`[data-area-id="${areaId}"]`);
+            const areaName = areaElement?.querySelector('input[name="name"]')?.value || 'Work Area';
+            
+            // Collect all table rows
+            const rows = [];
+            rows.push(['Item', 'Quantity', 'Unit', 'Unit Cost', 'Unit Price', 'Profit %', 'Total Cost', 'Total Price']);
+            
+            const items = areaElement?.querySelectorAll('tbody tr[id^="estimate-item-"]');
+            items?.forEach(row => {
+                const name = row.querySelector('input[name="name"]')?.value || '';
+                const qty = row.querySelector('input[name="quantity"]')?.value || '';
+                const unit = row.querySelector('input[name="unit"]')?.value || '';
+                const cost = row.querySelector('input[name="unit_cost"]')?.value || '';
+                const price = row.querySelector('input[name="unit_price"]')?.value || '';
+                const profitPercent = row.dataset.profitPercent || '';
+                const totalCost = row.querySelector('[data-col="cost_total"]')?.textContent?.trim() || '';
+                const totalPrice = row.querySelector('[data-col="line_total"]')?.textContent?.trim() || '';
+                
+                rows.push([name, qty, unit, cost, price, profitPercent, totalCost, totalPrice]);
+            });
+            
+            // Convert to CSV
+            const csv = rows.map(row => 
+                row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+            
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${areaName.replace(/[^a-z0-9]/gi, '_')}.csv`;
+            link.click();
+            
+            if (window.showToast) window.showToast('Area exported to CSV', 'success');
         }
     };
 };

@@ -67,10 +67,23 @@
     </td>
     <td class="px-3 py-2 text-center">
         <div class="flex flex-col items-center gap-0.5">
-            <span class="text-gray-700 font-semibold" :class="{ 'text-green-600': {{ $profitPercent }} >= 10, 'text-yellow-600': {{ $profitPercent }} >= 0 && {{ $profitPercent }} < 10, 'text-red-600': {{ $profitPercent }} < 0 }">
+            @php
+                $marginColorClass = match(true) {
+                    $profitPercent < 0 => 'text-red-700 bg-red-50',
+                    $profitPercent < 10 => 'text-red-600 bg-red-50',
+                    $profitPercent < 15 => 'text-amber-600 bg-amber-50',
+                    default => 'text-emerald-700 bg-emerald-50',
+                };
+            @endphp
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold {{ $marginColorClass }}">
+                @if($profitPercent < 10)
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                @endif
                 {{ number_format($profitPercent, 1) }}%
             </span>
-            <div class="text-[10px] text-gray-500">
+            <div class="text-[10px] text-gray-500 mt-0.5">
                 ${{ number_format($totalProfit, 2) }}
             </div>
         </div>

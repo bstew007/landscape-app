@@ -89,12 +89,21 @@ class EstimateCalculatorController extends Controller
                 'data' => $template->data,
                 'estimate_id' => $estimate->id,
             ]);
+            
+            // Return template info for recent tracking
+            $templateInfo = [
+                'id' => $template->id,
+                'name' => $template->template_name,
+                'type' => $template->calculation_type,
+            ];
         } else {
             $calc = Calculation::create([
                 'calculation_type' => $payload['calculation_type'],
                 'data' => $payload['data'],
                 'estimate_id' => $estimate->id,
             ]);
+            
+            $templateInfo = null;
         }
 
         $replace = (bool) ($payload['replace'] ?? false);
@@ -111,6 +120,7 @@ class EstimateCalculatorController extends Controller
             'calculation_id' => $calc->id,
             'calculation_type' => $calc->calculation_type,
             'items' => $created,
+            'template_info' => $templateInfo,
             'totals' => [
                 'material_subtotal' => $estimate->material_subtotal,
                 'labor_subtotal' => $estimate->labor_subtotal,

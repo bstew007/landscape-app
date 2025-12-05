@@ -65,11 +65,10 @@ class PaverPatioCalculatorController extends Controller
 {
     $mode = $request->input('mode');
     $rules = [
-        'area_sqft' => 'required|numeric|min:1',
+        'length' => 'required|numeric|min:1',
+        'width' => 'required|numeric|min:1',
         'edge_restraint' => 'required|string|in:plastic,concrete',
         'edging_linear_feet' => 'nullable|numeric|min:0',
-        'excavation_depth' => 'nullable|numeric|min:0',
-        'excavation_method' => 'required|string|in:manual,mini_skid,skid_steer',
         'crew_size' => 'required|integer|min:1',
         'drive_distance' => 'required|numeric|min:0',
         'drive_speed' => 'required|numeric|min:1',
@@ -85,16 +84,14 @@ class PaverPatioCalculatorController extends Controller
         'materials.*.quantity' => 'nullable|numeric|min:0',
         'materials.*.unit_cost' => 'nullable|numeric|min:0',
         'materials.*.unit' => 'nullable|string|max:50',
-        'tasks' => 'nullable|array',
-        'tasks.*.qty' => 'nullable|numeric|min:0',
     ];
     // site_visit_id depends on mode
     $rules['site_visit_id'] = ($mode === 'template') ? 'nullable' : 'required|exists:site_visits,id';
     $validated = $request->validate($rules);
 
-    $area = $validated['area_sqft'];
-    $excavationDepth = $validated['excavation_depth'] ?? 3;
-    $excavationMethod = $validated['excavation_method'];
+    $length = $validated['length'];
+    $width = $validated['width'];
+    $area = $length * $width;
 
     // --------------------------------------------
     // 🔨 Calculations - Quantities Only (No Pricing)
@@ -107,9 +104,6 @@ class PaverPatioCalculatorController extends Controller
     $polymericCoverageSqft = 60;
     $polymericBags = $area > 0 ? (int) ceil($area / $polymericCoverageSqft) : 0;
     $edgeLF = $validated['edging_linear_feet'] ?? ($area / 20);
-    
-    // Calculate excavation cubic yards
-    $excavationCY = ($area * ($excavationDepth / 12)) / 27;
 
     // --------------------------------------------
     // 📦 Process Catalog Materials from Picker
@@ -127,10 +121,9 @@ class PaverPatioCalculatorController extends Controller
                 $catalogMaterials[] = [
                     'catalog_id' => $mat['catalog_id'] ?? null,
                     'name' => $mat['name'],
-                    'quantity' => round($qty, 2),
-                    'unit_cost' => round($unitCost, 2),
+                    'quantity' => $qty,
+                    'unit_cost' => $unitCost,
                     'unit' => $mat['unit'] ?? 'ea',
-                    'total' => round($total, 2),
                 ];
                 
                 $material_total += $total;
@@ -139,39 +132,18 @@ class PaverPatioCalculatorController extends Controller
     }
 
     // --------------------------------------------
-    // 👷 Labor Calculations - Process Tasks from Form
+    // 👷 Labor Calculations (from DB)
     // --------------------------------------------
-    $taskInput = $validated['tasks'] ?? [];
-    $paverRates = ProductionRate::where('calculator', 'paver_patio')->get()->keyBy('task');
-    $excavationRates = ProductionRate::where('calculator', 'excavation')->get()->keyBy('task');
-    
-    $labor = [];
-    $laborTasks = [];
-    $laborRate = (float) $validated['labor_rate'];
-    
-    // Process each task from the form
-    foreach ($taskInput as $taskKey => $taskData) {
-        $qty = (float) ($taskData['qty'] ?? 0);
-        if ($qty <= 0) continue;
-        
-        // Try to find rate in paver_patio rates first, then excavation rates
-        $rate = $paverRates->get($taskKey) ?? $excavationRates->get($taskKey);
-        if (!$rate) continue;
-        
-        $hours = $qty * $rate->rate;
-        $labor[$taskKey] = $hours;
-        
-        $taskName = ucwords(str_replace('_', ' ', $taskKey));
-        $laborTasks[] = [
-            'task' => $taskName,
-            'qty' => round($qty, 2),
-            'unit' => $rate->unit,
-            'production_rate' => $rate->rate,
-            'hours' => round($hours, 2),
-            'hourly_rate' => $laborRate,
-            'total_cost' => round($hours * $laborRate, 2),
-        ];
-    }
+    $dbRates = ProductionRate::where('calculator', 'paver_patio')->pluck('rate', 'task');
+
+    $labor = [
+        'excavation' => $area * ($dbRates['excavation'] ?? 0.03),
+        'base_compaction' => $area * ($dbRates['base_compaction'] ?? 0.04),
+        'laying_pavers' => $area * ($dbRates['laying_pavers'] ?? 0.06),
+        'cutting_borders' => $area * ($dbRates['cutting_borders'] ?? 0.015),
+        'install_edging' => $area * ($dbRates['install_edging'] ?? 0.007),
+        'cleanup' => $area * ($dbRates['cleanup'] ?? 0.005),
+    ];
 
     $baseLaborHours = array_sum($labor);
 
@@ -186,18 +158,45 @@ class PaverPatioCalculatorController extends Controller
     );
 
     // --------------------------------------------
+    // 📋 Enhanced Labor Tasks Array
+    // --------------------------------------------
+    $laborRate = (float) $validated['labor_rate'];
+    $laborTasks = [];
+    $taskRates = ProductionRate::where('calculator', 'paver_patio')->get()->keyBy('task');
+    
+    foreach ($labor as $taskKey => $hours) {
+        if ($hours <= 0) continue;
+        
+        $taskName = ucwords(str_replace('_', ' ', $taskKey));
+        $rate = $taskRates->get($taskKey);
+        $productionRate = $rate ? $rate->rate : 0;
+        $unit = $rate ? $rate->unit : 'sqft';
+        
+        $laborTasks[] = [
+            'task_key' => $taskKey,
+            'task_name' => $taskName,
+            'description' => $taskName . " - " . round($area, 2) . " {$unit}",
+            'quantity' => round($area, 2),
+            'unit' => $unit,
+            'production_rate' => $productionRate,
+            'hours' => round($hours, 2),
+            'hourly_rate' => $laborRate,
+            'total_cost' => round($hours * $laborRate, 2),
+        ];
+    }
+
+    // --------------------------------------------
     // 💾 Prepare and Save
     // --------------------------------------------
     
     $data = array_merge($validated, [
         'area_sqft' => round($area, 2),
-        'excavation_cy' => round($excavationCY, 2),
         'paver_count' => $paverCount,
         'base_tons' => $baseTons,
         'edge_lf' => round($edgeLF, 2),
         'polymeric_bags' => $polymericBags,
-        'labor_hours' => round($baseLaborHours, 2),
         'labor_by_task' => array_map(fn($h) => round($h, 2), $labor),
+        'labor_hours' => round($baseLaborHours, 2),
         'labor_tasks' => $laborTasks,
         'materials' => $catalogMaterials,
         'material_total' => round($material_total, 2),

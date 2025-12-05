@@ -115,10 +115,6 @@ public function downloadPdf($id)
         'dig_method' => 'required|in:hand,auger',
         'calculation_id' => 'nullable|exists:calculations,id',
         'job_notes' => 'nullable|string|max:2000',
-        'custom_materials' => 'nullable|array',
-        'custom_materials.*.name' => 'nullable|string|max:255',
-        'custom_materials.*.qty' => 'nullable|numeric|min:0',
-        'custom_materials.*.unit_cost' => 'nullable|numeric|min:0',
     ]);
 
     // 🔧 Basic setup
@@ -130,31 +126,6 @@ public function downloadPdf($id)
     $gate_total_length = ($gate_4ft * 4) + ($gate_5ft * 5);
     $adjusted_length = max(0, $length - $gate_total_length);
     $shadow_box = !empty($validated['shadow_box']);
-    $materials = [];
-
-    $defaults = [
-        'wood' => [
-            '4x4' => 12.00,
-            '4x6' => 18.00,
-            'rail' => 6.50,
-            'picket' => 2.25,
-            'screw_cost_per_picket' => 0.25,
-            'hardware' => 12.00
-        ],
-        'vinyl' => [
-            'panel_6' => 75,
-            'line_6' => 48,
-            'corner_6' => 45,
-            'end_6' => 45,
-            'panel_4' => 125,
-            'line_4' => 28,
-            'corner_4' => 25,
-            'end_4' => 25,
-            'gate_4' => 145,
-            'gate_6' => 145,
-            'metal_insert' => 75,
-        ]
-    ];
 
     // 🪵 Wood Fence Calculation - quantities only for reference
     if ($fenceType === 'wood') {
@@ -191,40 +162,8 @@ public function downloadPdf($id)
         $concrete_bags = $post_total * 2;
     }
     
-    // Materials only from custom_materials input
+    // Materials only from catalog picker (custom materials feature removed)
     $materials = [];
-    $customMaterialsInput = $validated['custom_materials'] ?? [];
-    $customMaterials = collect($customMaterialsInput)
-        ->map(function ($item) {
-            $name = trim($item['name'] ?? '');
-            $qty = isset($item['qty']) ? (float) $item['qty'] : null;
-            $unitCost = isset($item['unit_cost']) ? (float) $item['unit_cost'] : null;
-
-            if ($name === '' || $qty === null || $unitCost === null) {
-                return null;
-            }
-
-            $total = $qty * $unitCost;
-
-            return [
-                'name' => $name,
-                'qty' => round($qty, 2),
-                'unit_cost' => round($unitCost, 2),
-                'total' => round($total, 2),
-            ];
-        })
-        ->filter()
-        ->values()
-        ->all();
-
-    foreach ($customMaterials as $customMaterial) {
-        $materials[$customMaterial['name']] = [
-            'qty' => $customMaterial['qty'],
-            'unit_cost' => $customMaterial['unit_cost'],
-            'total' => $customMaterial['total'],
-            'is_custom' => true,
-        ];
-    }
 
      $material_total = array_sum(array_column($materials, 'total'));
      // Normalize post counts for labor input
@@ -293,7 +232,6 @@ public function downloadPdf($id)
         'vinyl_corner_posts' => $validated['vinyl_corner_posts'] ?? 0,
         'vinyl_end_posts' => $validated['vinyl_end_posts'] ?? 0,
         'base_hours' => round($base_hours, 2),
-        'custom_materials' => $customMaterials,
     ], $totals);
 
     // Save or update

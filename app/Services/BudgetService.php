@@ -208,38 +208,35 @@ class BudgetService
 
     /**
      * Get the recommended labor rate for calculators.
-     * Uses the Break-Even Labor Cost (BLC) from the active budget,
-     * which includes overhead costs needed to break even.
      * 
-     * This is the company-wide break-even rate that should be used for
-     * calculator estimates, as it represents the current budget's cost structure.
+     * Returns the average breakeven rate from the labor catalog.
+     * The breakeven rate already includes: average wage + overhead markup.
+     * 
+     * No calculations needed - the breakeven field is pre-calculated when
+     * labor items are created/updated based on the budget.
      *
      * @return float
      */
     public function getLaborRateForCalculators(): float
     {
-        // Use BLC from active budget (includes DLC + OHR)
-        // DLC = Direct Labor Cost (wage + payroll taxes + benefits + workers comp + PTO)
-        // OHR = Overhead Recovery Rate (total overhead / total field hours)
-        // BLC = DLC + OHR (company-wide break-even labor cost)
-        
+        // Get average breakeven from active labor catalog items
+        // Breakeven already includes: wage + overhead markup
+        $avgBreakeven = \App\Models\LaborItem::where('is_active', true)
+            ->whereNotNull('breakeven')
+            ->where('breakeven', '>', 0)
+            ->avg('breakeven');
+
+        if ($avgBreakeven > 0) {
+            return round((float) $avgBreakeven, 2);
+        }
+
+        // Fallback to BLC if no labor catalog items exist
         $budget = $this->active();
         if ($budget) {
             $blc = (float) Arr::get($budget->outputs, 'labor.blc', 0);
             if ($blc > 0) {
                 return round($blc, 2);
             }
-        }
-
-        // Fallback to average from labor catalog items
-        $laborItems = \App\Models\LaborItem::where('is_active', true)
-            ->whereNotNull('breakeven')
-            ->where('breakeven', '>', 0)
-            ->get();
-
-        if ($laborItems->isNotEmpty()) {
-            $average = $laborItems->avg('breakeven');
-            return round((float) $average, 2);
         }
 
         // Final fallback - reasonable default
