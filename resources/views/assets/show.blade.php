@@ -126,7 +126,7 @@
                 </form>
             </section>
 
-            <section class="rounded-2xl bg-white border-2 border-brand-100 shadow-sm p-5">rder-brand-100 shadow-sm p-5">
+            <section class="rounded-2xl bg-white border-2 border-brand-100 shadow-sm p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-bold text-brand-900">Issues & Repairs</h2>
                 </div>

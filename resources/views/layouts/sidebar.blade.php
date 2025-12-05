@@ -134,6 +134,22 @@
                         @endcan
                     </div>
                 </details>
+
+                <details class="group sidebar-accordion">
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M14.7 6.3a5 5 0 1 0-8.4 5.4l-4 4a2 2 0 1 0 2.8 2.8l4-4a5 5 0 0 0 5.6-8.2z"/></svg>
+                            <span>ASSETS & EQUIPMENT</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Asset Dashboard</a>
+                        <a href="{{ route('assets.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Add Asset</a>
+                        <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Log Issue</a>
+                        <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Schedule Reminder</a>
+                    </div>
+                </details>
             </div>
 
             <div>
@@ -141,14 +157,6 @@
                 <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3L3 10v11h7v-7h4v7h7V10l-9-7z"/></svg><span>Home Dashboard</span></span></a>
                 <a href="{{ route('calendar.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Schedule</span></span></a>
                 <a href="{{ route('calculator.templates.gallery') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg><span>Calculator Templates</span></span></a>
-            </div>
-
-            <div>
-                <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Assets & Equipment</h3>
-                <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M14.7 6.3a5 5 0 1 0-8.4 5.4l-4 4a2 2 0 1 0 2.8 2.8l4-4a5 5 0 0 0 5.6-8.2z"/></svg><span>Dashboard</span></span></a>
-                <a href="{{ route('assets.create') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 5v14M5 12h14"/></svg><span>Add Asset</span></span></a>
-                <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3v4M6 7l-2-2M18 7l2-2M4 13h16M5 17h14M7 10h10"/></svg><span>Log Issue</span></span></a>
-                <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="12" cy="13" r="7"/><path d="M12 10v4l3 2M7 3h3M14 3h3"/></svg><span>Schedule Reminder</span></span></a>
             </div>
         </nav>
 
@@ -301,19 +309,27 @@
                         @endcan
                     </div>
                 </details>
+
+                <details class="group sidebar-accordion">
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M14.7 6.3a5 5 0 1 0-8.4 5.4l-4 4a2 2 0 1 0 2.8 2.8l4-4a5 5 0 0 0 5.6-8.2z"/></svg>
+                            <span>ASSETS & EQUIPMENT</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Asset Dashboard</a>
+                        <a href="{{ route('assets.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Add Asset</a>
+                        <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Log Issue</a>
+                        <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Schedule Reminder</a>
+                    </div>
+                </details>
             </div>
             <div>
                 <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Client Hub</h3>
                 <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3L3 10v11h7v-7h4v7h7V10l-9-7z"/></svg><span>Dashboard</span></span></a>
                 <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Schedule</span></span></a>
-            </div>
-
-            <div>
-                <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Assets & Equipment</h3>
-                <a href="{{ route('assets.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M14.7 6.3a5 5 0 1 0-8.4 5.4l-4 4a2 2 0 1 0 2.8 2.8l4-4a5 5 0 0 0 5.6-8.2z"/></svg><span>Dashboard</span></span></a>
-                <a href="{{ route('assets.create') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 5v14M5 12h14"/></svg><span>Add Asset</span></span></a>
-                <a href="{{ route('assets.issues.create') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3v4M6 7l-2-2M18 7l2-2M4 13h16M5 17h14M7 10h10"/></svg><span>Log Issue</span></span></a>
-                <a href="{{ route('assets.reminders.create') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><circle cx="12" cy="13" r="7"/><path d="M12 10v4l3 2M7 3h3M14 3h3"/></svg><span>Schedule Reminder</span></span></a>
             </div>
         </nav>
 

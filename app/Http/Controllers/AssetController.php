@@ -240,7 +240,7 @@ class AssetController extends Controller
     {
         $data = $request->validate([
             'label' => 'nullable|string|max:255',
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:102400', // 100MB max
         ]);
 
         $path = $request->file('file')->store('assets/' . $asset->id, 'public');
