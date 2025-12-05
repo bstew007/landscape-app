@@ -22,7 +22,13 @@ class AssetExpenseController extends Controller
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name', 'company_name']);
         
-        return view('assets.expenses.create', compact('asset', 'issues', 'vendors'));
+        // Get expense account mappings
+        $mappings = \App\Models\ExpenseAccountMapping::where('is_active', true)->get();
+        
+        // Get QBO expense accounts (if connected)
+        $qboAccounts = $this->getQboExpenseAccounts();
+        
+        return view('assets.expenses.create', compact('asset', 'issues', 'vendors', 'mappings', 'qboAccounts'));
     }
 
     public function store(Request $request, Asset $asset)
@@ -39,6 +45,7 @@ class AssetExpenseController extends Controller
             'notes' => 'nullable|string',
             'receipt_number' => 'nullable|string|max:255',
             'is_reimbursable' => 'boolean',
+            'qbo_account_id' => 'nullable|string|max:100',
             'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:10240', // 10MB max
         ]);
 
@@ -89,7 +96,13 @@ class AssetExpenseController extends Controller
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name', 'company_name']);
         
-        return view('assets.expenses.edit', compact('asset', 'expense', 'issues', 'vendors'));
+        // Get expense account mappings
+        $mappings = \App\Models\ExpenseAccountMapping::where('is_active', true)->get();
+        
+        // Get QBO expense accounts (if connected)
+        $qboAccounts = $this->getQboExpenseAccounts();
+        
+        return view('assets.expenses.edit', compact('asset', 'expense', 'issues', 'vendors', 'mappings', 'qboAccounts'));
     }
 
     public function update(Request $request, Asset $asset, AssetExpense $expense)
@@ -111,6 +124,7 @@ class AssetExpenseController extends Controller
             'notes' => 'nullable|string',
             'receipt_number' => 'nullable|string|max:255',
             'is_reimbursable' => 'boolean',
+            'qbo_account_id' => 'nullable|string|max:100',
             'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:10240',
         ]);
 
@@ -216,5 +230,41 @@ class AssetExpenseController extends Controller
         ]);
 
         return back()->with('success', 'Expense approved successfully!');
+    }
+
+    /**
+     * Get QBO expense accounts for dropdown.
+     */
+    protected function getQboExpenseAccounts(): array
+    {
+        $token = \App\Models\QboToken::latest('updated_at')->first();
+        
+        if (!$token) {
+            return [];
+        }
+
+        try {
+            $env = config('qbo.environment');
+            $host = $env === 'production' ? 'quickbooks.api.intuit.com' : 'sandbox-quickbooks.api.intuit.com';
+            $baseUrl = "https://{$host}/v3/company/{$token->realm_id}";
+
+            $query = "SELECT * FROM Account WHERE AccountType = 'Expense' AND Active = true ORDER BY Name";
+            $url = $baseUrl . "/query?query=" . urlencode($query);
+
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token->access_token,
+                'Accept' => 'application/json',
+            ])->get($url);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['QueryResponse']['Account'] ?? [];
+            }
+
+            return [];
+
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

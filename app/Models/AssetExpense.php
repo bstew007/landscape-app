@@ -26,6 +26,7 @@ class AssetExpense extends Model
         'approved_by',
         'qbo_expense_id',
         'qbo_synced_at',
+        'qbo_account_id',
     ];
 
     protected $casts = [
