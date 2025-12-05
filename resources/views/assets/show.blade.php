@@ -510,11 +510,11 @@
         </div>
 
         <div class="space-y-6">
-            <section class="rounded-2xl bg-white border-2 border-brand-100 shadow-sm p-5">
+            <section class="rounded-2xl bg-yellow-50 border-2 border-yellow-200 shadow-sm p-5">
                 <h2 class="text-lg font-bold text-brand-900 mb-4">Attachments & Docs</h2>
                 <div class="space-y-3">
                     @forelse ($asset->attachments as $attachment)
-                        <div class="border-2 border-brand-100 rounded-xl p-3 flex items-center justify-between hover:border-brand-300 transition">
+                        <div class="border-2 border-yellow-200 rounded-xl p-3 flex items-center justify-between hover:border-yellow-300 transition">
                             <div class="flex-1 min-w-0">
                                 <p class="font-semibold text-brand-900 truncate">{{ $attachment->label }}</p>
                                 <p class="text-xs text-brand-500">{{ $attachment->mime_type }} · {{ number_format(($attachment->size ?? 0) / 1024, 1) }} KB</p>
@@ -533,7 +533,7 @@
                     @endforelse
                 </div>
 
-                <form action="{{ route('assets.attachments.store', $asset) }}" method="POST" enctype="multipart/form-data" class="mt-4 space-y-3 p-4 rounded-xl bg-brand-50/50 border-2 border-brand-100">
+                <form action="{{ route('assets.attachments.store', $asset) }}" method="POST" enctype="multipart/form-data" class="mt-4 space-y-3 p-4 rounded-xl bg-yellow-100/50 border-2 border-yellow-200">
                     @csrf
                     <div>
                         <label class="block text-sm font-medium text-brand-800 mb-1">Label</label>

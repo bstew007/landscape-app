@@ -32,6 +32,37 @@ class ExpenseAccountMappingController extends Controller
         return view('admin.expense-accounts.index', compact('mappings'));
     }
 
+    public function create()
+    {
+        // Fetch QBO Chart of Accounts
+        $qboAccounts = $this->fetchQboAccounts();
+        
+        return view('admin.expense-accounts.create', [
+            'qboAccounts' => $qboAccounts,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'category' => 'required|string|max:100|unique:expense_account_mappings,category',
+            'category_label' => 'required|string|max:255',
+            'qbo_account_id' => 'nullable|string|max:100',
+            'qbo_account_name' => 'nullable|string|max:255',
+            'qbo_account_type' => 'nullable|string|max:100',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        // Default is_active to true if not provided
+        $validated['is_active'] = $validated['is_active'] ?? true;
+
+        ExpenseAccountMapping::create($validated);
+
+        return redirect()
+            ->route('admin.expense-accounts.index')
+            ->with('success', 'Expense category created successfully!');
+    }
+
     public function edit(ExpenseAccountMapping $expenseAccount)
     {
         // Fetch QBO Chart of Accounts
@@ -46,6 +77,7 @@ class ExpenseAccountMappingController extends Controller
     public function update(Request $request, ExpenseAccountMapping $expenseAccount)
     {
         $validated = $request->validate([
+            'category_label' => 'sometimes|string|max:255',
             'qbo_account_id' => 'nullable|string|max:100',
             'qbo_account_name' => 'nullable|string|max:255',
             'qbo_account_type' => 'nullable|string|max:100',
@@ -57,6 +89,15 @@ class ExpenseAccountMappingController extends Controller
         return redirect()
             ->route('admin.expense-accounts.index')
             ->with('success', 'Expense account mapping updated successfully!');
+    }
+
+    public function destroy(ExpenseAccountMapping $expenseAccount)
+    {
+        $expenseAccount->delete();
+
+        return redirect()
+            ->route('admin.expense-accounts.index')
+            ->with('success', 'Expense category deleted successfully!');
     }
 
     public function syncAll()

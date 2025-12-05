@@ -504,7 +504,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::resource('divisions', \App\Http\Controllers\Admin\DivisionController::class)->except(['show']);
         Route::resource('cost-codes', \App\Http\Controllers\Admin\CostCodeController::class)->except(['show']);
         Route::resource('material-categories', \App\Http\Controllers\Admin\MaterialCategoryController::class)->except(['show']);
-        Route::resource('expense-accounts', \App\Http\Controllers\Admin\ExpenseAccountMappingController::class)->only(['index', 'edit', 'update']);
+        Route::resource('expense-accounts', \App\Http\Controllers\Admin\ExpenseAccountMappingController::class)->except(['show']);
         Route::post('expense-accounts/sync-all', [\App\Http\Controllers\Admin\ExpenseAccountMappingController::class, 'syncAll'])->name('expense-accounts.sync-all');
         Route::get('qbo/items/search', [\App\Http\Controllers\Admin\QboItemLookupController::class, 'search'])->name('qbo.items.search');
         // Company Settings

@@ -4,6 +4,12 @@
 <div class="max-w-5xl mx-auto space-y-6">
   <x-page-header title="Expense Account Mappings" eyebrow="Settings & Configurations" subtitle="Map internal expense categories to QuickBooks Online Chart of Accounts.">
     <x-slot:actions>
+      <x-brand-button as="a" href="{{ route('admin.expense-accounts.create') }}" variant="solid">
+        <svg class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 4v16m8-8H4"/>
+        </svg>
+        New Category
+      </x-brand-button>
       <form action="{{ route('admin.expense-accounts.sync-all') }}" method="POST" class="inline">
         @csrf
         <x-brand-button type="submit" variant="outline">
@@ -78,9 +84,18 @@
               @endif
             </td>
             <td class="px-6 py-4 text-right">
-              <x-brand-button as="a" href="{{ route('admin.expense-accounts.edit', $mapping) }}" size="xs" variant="outline">
-                Map Account
-              </x-brand-button>
+              <div class="flex items-center justify-end gap-2">
+                <x-brand-button as="a" href="{{ route('admin.expense-accounts.edit', $mapping) }}" size="xs" variant="outline">
+                  Edit
+                </x-brand-button>
+                <form action="{{ route('admin.expense-accounts.destroy', $mapping) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense category? This action cannot be undone.');">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="px-3 py-1.5 text-xs font-semibold text-red-700 bg-white border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all">
+                    Delete
+                  </button>
+                </form>
+              </div>
             </td>
           </tr>
         @empty

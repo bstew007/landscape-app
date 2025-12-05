@@ -31,8 +31,10 @@ return new class extends Migration
             $table->dropForeign(['cost_code_id']);
         });
         
-        // Make the column NOT NULL
-        DB::statement('ALTER TABLE estimates MODIFY cost_code_id BIGINT UNSIGNED NOT NULL');
+        // Make the column NOT NULL (works with both MySQL and SQLite)
+        Schema::table('estimates', function (Blueprint $table) {
+            $table->unsignedBigInteger('cost_code_id')->nullable(false)->change();
+        });
         
         // Re-add foreign key with RESTRICT (prevents deletion of cost codes in use)
         Schema::table('estimates', function (Blueprint $table) {
@@ -53,8 +55,10 @@ return new class extends Migration
             $table->dropForeign(['cost_code_id']);
         });
         
-        // Make column nullable
-        DB::statement('ALTER TABLE estimates MODIFY cost_code_id BIGINT UNSIGNED NULL');
+        // Make column nullable (works with both MySQL and SQLite)
+        Schema::table('estimates', function (Blueprint $table) {
+            $table->unsignedBigInteger('cost_code_id')->nullable()->change();
+        });
         
         // Restore the original SET NULL foreign key
         Schema::table('estimates', function (Blueprint $table) {
