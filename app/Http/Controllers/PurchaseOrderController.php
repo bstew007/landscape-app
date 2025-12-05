@@ -125,6 +125,37 @@ class PurchaseOrderController extends Controller
 
         return view('purchase-orders.print', compact('purchaseOrder'));
     }
+    
+    public function emailPreview(EstimatePurchaseOrder $purchaseOrder)
+    {
+        $purchaseOrder->load(['estimate', 'supplier', 'items.material', 'items.estimateItem']);
+        
+        $recipientEmail = $purchaseOrder->supplier->email ?? '';
+        $defaultSubject = "Purchase Order {$purchaseOrder->po_number} from " . config('app.name');
+        $defaultMessage = "Please find attached Purchase Order {$purchaseOrder->po_number} for your review and processing.";
+        
+        return view('purchase-orders.email-preview', compact('purchaseOrder', 'recipientEmail', 'defaultSubject', 'defaultMessage'));
+    }
+    
+    public function sendEmail(EstimatePurchaseOrder $purchaseOrder, \Illuminate\Http\Request $request)
+    {
+        $validated = $request->validate([
+            'recipient_email' => 'required|email',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'nullable|string|max:2000',
+        ]);
+        
+        $recipientEmail = $validated['recipient_email'];
+        $subject = $validated['subject'] ?? null;
+        $message = $validated['message'] ?? null;
+        
+        \Illuminate\Support\Facades\Mail::to($recipientEmail)->send(
+            new \App\Mail\PurchaseOrderMail($purchaseOrder, $subject, $message)
+        );
+        
+        return redirect()->route('estimates.show', $purchaseOrder->estimate_id)
+            ->with('success', 'Purchase Order email sent successfully to ' . $recipientEmail);
+    }
 
     /**
      * Print multiple purchase orders at once.
