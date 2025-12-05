@@ -523,6 +523,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::post('areas', [\App\Http\Controllers\EstimateAreaController::class, 'store'])->name('areas.store');
         Route::patch('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'update'])->name('areas.update');
         Route::delete('areas/{area}', [\App\Http\Controllers\EstimateAreaController::class, 'destroy'])->name('areas.destroy');
+        Route::post('areas/{area}/duplicate', [\App\Http\Controllers\EstimateAreaController::class, 'duplicate'])->name('areas.duplicate');
         Route::post('areas/reorder', [\App\Http\Controllers\EstimateAreaController::class, 'reorder'])->name('areas.reorder');
         
         // Custom Pricing

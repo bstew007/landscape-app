@@ -85,6 +85,17 @@ export function initEstimateCalculatorDrawer({ estimateId, areas }) {
             const json = await resp.json();
             if (json.totals && window.updateSummary) window.updateSummary(json.totals);
             if (json.items && Array.isArray(json.items)) insertImportedRows(json, areas);
+            
+            // Track recently used template
+            if (json.template_info) {
+                const recent = JSON.parse(sessionStorage.getItem('recentTemplates') || '[]');
+                const filtered = recent.filter(t => t.id !== json.template_info.id);
+                const updated = [json.template_info, ...filtered].slice(0, 5);
+                sessionStorage.setItem('recentTemplates', JSON.stringify(updated));
+                // Trigger Alpine update
+                window.dispatchEvent(new CustomEvent('template-used', { detail: json.template_info }));
+            }
+            
             state.showCalcPanel = false;
             if (window.showToast) window.showToast(replace ? 'Template imported (replaced)' : 'Template imported', 'success');
         } catch (e) {
@@ -183,5 +194,10 @@ export function initEstimateCalculatorDrawer({ estimateId, areas }) {
         function qtyText(q,u){ const n = Number(q||0).toFixed(2).replace(/\.00$/,''); return `${n} ${u||''}`.trim(); }
     }
 
-    return { state, calcHref, fetchTemplates, importTemplate };
+    const api = { state, calcHref, fetchTemplates, importTemplate };
+    
+    // Make available globally for Alpine components
+    window.estimateCalculator = api;
+    
+    return api;
 }

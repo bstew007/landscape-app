@@ -14,6 +14,45 @@
     $statusParam = request('status');
     $clientIdParam = request('client_id');
     $clientNameParam = optional(($clients ?? collect())->firstWhere('id', $clientIdParam))->name;
+    
+    // Status counts for filters
+    $allEstimates = $estimates->getCollection();
+    $statusCounts = [
+        'draft' => $allEstimates->where('status', 'draft')->count(),
+        'pending' => $allEstimates->where('status', 'pending')->count(),
+        'sent' => $allEstimates->where('status', 'sent')->count(),
+        'approved' => $allEstimates->where('status', 'approved')->count(),
+        'rejected' => $allEstimates->where('status', 'rejected')->count(),
+    ];
+    
+    // Status icon/color configuration
+    $statusConfig = [
+        'draft' => [
+            'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+            'color' => 'gray',
+            'label' => 'Draft'
+        ],
+        'pending' => [
+            'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+            'color' => 'amber',
+            'label' => 'Pending'
+        ],
+        'sent' => [
+            'icon' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+            'color' => 'blue',
+            'label' => 'Sent'
+        ],
+        'approved' => [
+            'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+            'color' => 'emerald',
+            'label' => 'Approved'
+        ],
+        'rejected' => [
+            'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+            'color' => 'red',
+            'label' => 'Rejected'
+        ],
+    ];
 @endphp
 
 <div class="space-y-8">
@@ -62,10 +101,18 @@
             <div class="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
                 <span class="text-xs uppercase tracking-wide text-brand-400 flex-shrink-0">Quick Filter</span>
                 @foreach (\App\Models\Estimate::STATUSES as $option)
-                    @php $isActive = $statusParam === $option; @endphp
+                    @php 
+                        $isActive = $statusParam === $option;
+                        $count = $statusCounts[$option] ?? 0;
+                    @endphp
                     <a href="{{ request()->fullUrlWithQuery(['status' => $isActive ? null : $option, 'page' => null]) }}"
-                       class="px-3 py-1.5 rounded-full text-xs font-semibold border transition {{ $isActive ? 'bg-brand-700 text-white border-brand-600 shadow-lg shadow-brand-700/30' : 'bg-white text-brand-700 border-brand-200 hover:border-brand-400 hover:bg-brand-50' }}">
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition {{ $isActive ? 'bg-brand-700 text-white border-brand-600 shadow-lg shadow-brand-700/30' : 'bg-white text-brand-700 border-brand-200 hover:border-brand-400 hover:bg-brand-50' }}">
                         {{ ucfirst($option) }}
+                        @if($count > 0)
+                            <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold {{ $isActive ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-700' }}">
+                                {{ $count }}
+                            </span>
+                        @endif
                     </a>
                 @endforeach
                 <a href="{{ route('estimates.index') }}" class="text-xs text-brand-500 hover:text-brand-700 ml-auto">Reset filters</a>
@@ -100,7 +147,9 @@
                                 <p class="font-semibold text-brand-900 truncate">{{ $estimate->title }}</p>
                                 <p class="text-sm text-brand-600 mt-1">{{ optional($estimate->client)->name ?? 'Unknown' }}</p>
                                 @php
-                                    $statusClass = match($estimate->status) {
+                                    $currentStatus = $estimate->status ?? 'draft';
+                                    $config = $statusConfig[$currentStatus] ?? $statusConfig['draft'];
+                                    $statusClass = match($currentStatus) {
                                         'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
                                         'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
                                         'sent' => 'bg-brand-50 text-brand-700 border-brand-200',
@@ -111,13 +160,19 @@
                                     $displayTotal = $estimate->grand_total > 0 ? $estimate->grand_total : $estimate->total;
                                 @endphp
                                 <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <div class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border {{ $statusClass }}">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="{{ $config['icon'] }}"/>
+                                        </svg>
+                                        <span>{{ $config['label'] }}</span>
+                                    </div>
                                     <form method="POST" action="{{ route('estimates.update', $estimate) }}" class="inline-block" x-data="{ updating: false }">
                                         @csrf
                                         @method('PATCH')
                                         <select name="status" 
                                                 @change="updating = true; $el.closest('form').submit()"
                                                 :disabled="updating"
-                                                class="rounded-full px-2 py-0.5 text-xs font-semibold border focus:ring-2 focus:ring-brand-500 focus:outline-none {{ $statusClass }}">
+                                                class="rounded px-1.5 py-0.5 text-xs border border-gray-300 focus:ring-2 focus:ring-brand-500 focus:outline-none bg-white text-gray-700">
                                             @foreach(['draft', 'pending', 'sent', 'approved', 'rejected'] as $statusOption)
                                                 <option value="{{ $statusOption }}" {{ $estimate->status === $statusOption ? 'selected' : '' }}>
                                                     {{ ucfirst($statusOption) }}
@@ -180,28 +235,40 @@
                                 <p class="text-xs text-brand-400">{{ optional($estimate->property)->name ?? 'No property' }}</p>
                             </td>
                             <td class="px-4 py-3 align-top">
-                                <form method="POST" action="{{ route('estimates.update', $estimate) }}" class="inline-block" x-data="{ updating: false }">
-                                    @csrf
-                                    @method('PATCH')
-                                    <select name="status" 
-                                            @change="updating = true; $el.closest('form').submit()"
-                                            :disabled="updating"
-                                            class="rounded-full px-2.5 py-0.5 text-xs font-semibold border focus:ring-2 focus:ring-brand-500 focus:outline-none
-                                                   {{ match($estimate->status) {
-                                                       'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
-                                                       'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
-                                                       'sent' => 'bg-brand-50 text-brand-700 border-brand-200',
-                                                       'approved' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                                                       'rejected' => 'bg-red-100 text-red-700 border-red-200',
-                                                       default => 'bg-gray-100 text-gray-700 border-gray-200',
-                                                   } }}">
-                                        @foreach(['draft', 'pending', 'sent', 'approved', 'rejected'] as $statusOption)
-                                            <option value="{{ $statusOption }}" {{ $estimate->status === $statusOption ? 'selected' : '' }}>
-                                                {{ ucfirst($statusOption) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </form>
+                                @php
+                                    $currentStatus = $estimate->status ?? 'draft';
+                                    $config = $statusConfig[$currentStatus] ?? $statusConfig['draft'];
+                                    $statusClass = match($currentStatus) {
+                                        'draft' => 'bg-gray-100 text-gray-700 border-gray-200',
+                                        'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
+                                        'sent' => 'bg-brand-50 text-brand-700 border-brand-200',
+                                        'approved' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                        'rejected' => 'bg-red-100 text-red-700 border-red-200',
+                                        default => 'bg-gray-100 text-gray-700 border-gray-200',
+                                    };
+                                @endphp
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border {{ $statusClass }} w-fit">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="{{ $config['icon'] }}"/>
+                                        </svg>
+                                        <span>{{ $config['label'] }}</span>
+                                    </div>
+                                    <form method="POST" action="{{ route('estimates.update', $estimate) }}" class="inline-block" x-data="{ updating: false }">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="status" 
+                                                @change="updating = true; $el.closest('form').submit()"
+                                                :disabled="updating"
+                                                class="rounded px-2 py-1 text-xs border border-gray-300 focus:ring-2 focus:ring-brand-500 focus:outline-none bg-white text-gray-700 w-full">
+                                            @foreach(['draft', 'pending', 'sent', 'approved', 'rejected'] as $statusOption)
+                                                <option value="{{ $statusOption }}" {{ $estimate->status === $statusOption ? 'selected' : '' }}>
+                                                    {{ ucfirst($statusOption) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </form>
+                                </div>
                             </td>
                             <td class="px-4 py-3 align-top">
                                 @if ($estimate->email_last_sent_at)
