@@ -456,7 +456,16 @@ class QboExpenseService
      */
     protected function getExpenseAccount(QboToken $token, string $category): array
     {
-        // Map categories to QBO account names
+        // First, try to get from expense account mappings
+        $mapping = \App\Models\ExpenseAccountMapping::where('category', $category)
+            ->where('is_active', true)
+            ->first();
+
+        if ($mapping && $mapping->isMapped()) {
+            return ['value' => $mapping->qbo_account_id];
+        }
+
+        // Fall back to searching by name
         $accountMap = [
             'fuel' => 'Fuel',
             'repairs' => 'Repairs and Maintenance',
@@ -465,7 +474,7 @@ class QboExpenseService
 
         $accountName = $accountMap[$category] ?? 'Other Expenses';
 
-        // Try to find the account in QBO
+        // Try to find the account in QBO by name
         $url = $this->baseUrl($token->realm_id) . "/query?query=" . urlencode("SELECT * FROM Account WHERE Name = '{$accountName}' AND AccountType = 'Expense'");
         
         $response = Http::withHeaders($this->authHeaders())->get($url);
@@ -484,9 +493,87 @@ class QboExpenseService
             }
         }
 
-        // If account not found, use a generic expense account (ID 7 is typically "Other Expenses" in QBO)
-        // In production, you might want to create the account if it doesn't exist
-        return ['value' => '7'];
+        // Account not found, try to find any expense account as fallback
+        $fallbackUrl = $this->baseUrl($token->realm_id) . "/query?query=" . urlencode("SELECT * FROM Account WHERE AccountType = 'Expense' AND Active = true MAXRESULTS 1");
+        
+        $response = Http::withHeaders($this->authHeaders())->get($fallbackUrl);
+
+        if ($response->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $response = Http::withHeaders($this->authHeaders())->get($fallbackUrl);
+        }
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $accounts = $data['QueryResponse']['Account'] ?? [];
+            
+            if (!empty($accounts)) {
+                if (config('qbo.debug')) {
+                    Log::info('QBO Expense Account Fallback', [
+                        'requested_category' => $category,
+                        'requested_name' => $accountName,
+                        'fallback_account_id' => $accounts[0]['Id'],
+                        'fallback_account_name' => $accounts[0]['Name'],
+                    ]);
+                }
+                return ['value' => $accounts[0]['Id']];
+            }
+        }
+
+        // If still no account found, create one
+        return $this->createExpenseAccount($token, $accountName);
+    }
+
+    /**
+     * Create a new expense account in QBO.
+     */
+    protected function createExpenseAccount(QboToken $token, string $accountName): array
+    {
+        $payload = [
+            'Name' => $accountName,
+            'AccountType' => 'Expense',
+            'AccountSubType' => 'OtherMiscellaneousServiceCost',
+        ];
+
+        $url = $this->baseUrl($token->realm_id) . '/account';
+        $response = Http::withHeaders($this->authHeaders())
+            ->withHeader('Content-Type', 'application/json')
+            ->post($url, $payload);
+
+        if ($response->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $response = Http::withHeaders($this->authHeaders())
+                ->withHeader('Content-Type', 'application/json')
+                ->post($url, $payload);
+        }
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $account = $data['Account'] ?? null;
+            
+            if ($account) {
+                if (config('qbo.debug')) {
+                    Log::info('QBO Expense Account Created', [
+                        'account_id' => $account['Id'],
+                        'account_name' => $account['Name'],
+                    ]);
+                }
+                return ['value' => $account['Id']];
+            }
+        }
+
+        // If creation failed, log error and throw exception
+        $error = $response->json()['Fault']['Error'][0]['Detail'] ?? 'Unknown error creating expense account';
+        
+        if (config('qbo.debug')) {
+            Log::error('QBO Expense Account Creation Failed', [
+                'account_name' => $accountName,
+                'error' => $error,
+                'response' => $response->body(),
+            ]);
+        }
+
+        throw new \Exception("Failed to create QBO expense account: {$error}");
     }
 
     /**

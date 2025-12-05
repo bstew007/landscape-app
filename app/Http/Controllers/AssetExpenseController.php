@@ -16,7 +16,13 @@ class AssetExpenseController extends Controller
     {
         $issues = $asset->issues()->whereIn('status', ['Reported', 'In Progress'])->get();
         
-        return view('assets.expenses.create', compact('asset', 'issues'));
+        // Get all contacts that have vendor IDs (synced to QBO as vendors)
+        $vendors = \App\Models\Contact::whereNotNull('qbo_vendor_id')
+            ->orderBy('company_name')
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name', 'company_name']);
+        
+        return view('assets.expenses.create', compact('asset', 'issues', 'vendors'));
     }
 
     public function store(Request $request, Asset $asset)
@@ -77,7 +83,13 @@ class AssetExpenseController extends Controller
 
         $issues = $asset->issues()->whereIn('status', ['Reported', 'In Progress'])->get();
         
-        return view('assets.expenses.edit', compact('asset', 'expense', 'issues'));
+        // Get all contacts that have vendor IDs (synced to QBO as vendors)
+        $vendors = \App\Models\Contact::whereNotNull('qbo_vendor_id')
+            ->orderBy('company_name')
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name', 'company_name']);
+        
+        return view('assets.expenses.edit', compact('asset', 'expense', 'issues', 'vendors'));
     }
 
     public function update(Request $request, Asset $asset, AssetExpense $expense)

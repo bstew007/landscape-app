@@ -99,9 +99,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-brand-800 mb-2">Vendor</label>
-                        <input type="text" name="vendor" value="{{ old('vendor') }}"
-                            class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                            placeholder="Shell, AutoZone, State Farm, etc.">
+                        <select name="vendor" 
+                            class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                            <option value="">Select vendor...</option>
+                            @foreach($vendors as $vendor)
+                                @php
+                                    $vendorName = $vendor->company_name ?: trim($vendor->first_name . ' ' . $vendor->last_name);
+                                @endphp
+                                <option value="{{ $vendorName }}" {{ old('vendor') == $vendorName ? 'selected' : '' }}>
+                                    {{ $vendorName }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-brand-600 mt-1">Select from QBO-synced vendors or leave blank</p>
                     </div>
 
                     <div>
