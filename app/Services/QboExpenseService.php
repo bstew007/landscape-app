@@ -131,15 +131,22 @@ class QboExpenseService
             ]
         ];
 
+        // Get payment account for top-level AccountRef (where money comes from)
+        $paymentAccountRef = $this->getPaymentAccount($token);
+        
         $payload = [
             'PaymentType' => 'Cash', // Can be Cash, Check, or CreditCard
-            'AccountRef' => $accountRef, // Default expense account
             'Line' => $lineItems,
             'TotalAmt' => (float) $expense->amount,
             'PrivateNote' => $this->buildPrivateNote($expense),
             'DocNumber' => $expense->receipt_number,
             'TxnDate' => $expense->expense_date->format('Y-m-d'),
         ];
+        
+        // Only add AccountRef if we found a payment account
+        if ($paymentAccountRef) {
+            $payload['AccountRef'] = $paymentAccountRef;
+        }
 
         // Add vendor if provided
         if ($expense->vendor) {
@@ -237,12 +244,11 @@ class QboExpenseService
         $accountRef = $this->getExpenseAccount($token, $expense->category);
         $description = $this->buildDescription($expense);
 
-        // Update payload
+        // Update payload - preserve existing AccountRef from QBO (payment account)
         $payload = [
             'Id' => $expense->qbo_expense_id,
             'SyncToken' => $syncToken,
             'PaymentType' => $qboExpense['PaymentType'] ?? 'Cash',
-            'AccountRef' => $accountRef,
             'Line' => [
                 [
                     'Id' => $qboExpense['Line'][0]['Id'] ?? '1',
@@ -259,6 +265,11 @@ class QboExpenseService
             'DocNumber' => $expense->receipt_number,
             'TxnDate' => $expense->expense_date->format('Y-m-d'),
         ];
+        
+        // Preserve the existing payment AccountRef from QBO if it exists
+        if (isset($qboExpense['AccountRef'])) {
+            $payload['AccountRef'] = $qboExpense['AccountRef'];
+        }
 
         // Add vendor if provided
         if ($expense->vendor) {
@@ -522,6 +533,43 @@ class QboExpenseService
 
         // If still no account found, create one
         return $this->createExpenseAccount($token, $accountName);
+    }
+
+    /**
+     * Get a payment account (Bank/Checking) for the Purchase transaction.
+     * This is used for the top-level AccountRef which represents where money comes from.
+     */
+    protected function getPaymentAccount(QboToken $token): ?array
+    {
+        // Try to find a Bank or Checking account
+        $query = "SELECT * FROM Account WHERE AccountType IN ('Bank', 'Other Current Asset') AND Active = true MAXRESULTS 1";
+        $url = $this->baseUrl($token->realm_id) . "/query?query=" . urlencode($query);
+        
+        $response = Http::withHeaders($this->authHeaders())->get($url);
+
+        if ($response->status() === 401) {
+            $this->refreshTokenIfNeeded();
+            $response = Http::withHeaders($this->authHeaders())->get($url);
+        }
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $accounts = $data['QueryResponse']['Account'] ?? [];
+            
+            if (!empty($accounts)) {
+                if (config('qbo.debug')) {
+                    Log::info('QBO Payment Account Found', [
+                        'account_id' => $accounts[0]['Id'],
+                        'account_name' => $accounts[0]['Name'],
+                        'account_type' => $accounts[0]['AccountType'],
+                    ]);
+                }
+                return ['value' => $accounts[0]['Id']];
+            }
+        }
+
+        // If no account found, return null - QBO will use default
+        return null;
     }
 
     /**

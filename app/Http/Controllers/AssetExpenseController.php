@@ -49,7 +49,6 @@ class AssetExpenseController extends Controller
             'description' => 'nullable|string',
             'notes' => 'nullable|string',
             'receipt_number' => 'nullable|string|max:255',
-            'is_reimbursable' => 'boolean',
             'qbo_account_id' => 'nullable|string|max:100',
             'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:10240', // 10MB max
         ]);
@@ -133,7 +132,6 @@ class AssetExpenseController extends Controller
             'description' => 'nullable|string',
             'notes' => 'nullable|string',
             'receipt_number' => 'nullable|string|max:255',
-            'is_reimbursable' => 'boolean',
             'qbo_account_id' => 'nullable|string|max:100',
             'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif|max:10240',
         ]);

@@ -85,7 +85,8 @@
                     <label class="block text-sm font-semibold text-brand-800 mb-2">
                         Linked Issue <span class="text-red-600">*</span>
                     </label>
-                    <select name="asset_issue_id" 
+                    <select name="asset_issue_id" id="asset_issue_id"
+                        {{ old('category', $expense->category) == 'repairs' ? 'required' : '' }}
                         class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
                         <option value="">Select issue...</option>
                         @foreach($issues as $issue)
@@ -233,7 +234,7 @@
     <script>
         const categorySelect = document.getElementById('category');
         const issueField = document.getElementById('issue-field');
-        const issueSelect = document.querySelector('[name="asset_issue_id"]');
+        const issueSelect = document.getElementById('asset_issue_id');
         const qboAccountSelect = document.getElementById('qbo-account-select');
         const mappedAccountHint = document.getElementById('mapped-account-hint');
 
@@ -255,11 +256,15 @@
             // Show/hide issue field for repairs
             if (category === 'repairs') {
                 issueField.style.display = 'block';
-                issueSelect.required = true;
+                if (issueSelect) {
+                    issueSelect.required = true;
+                }
             } else {
                 issueField.style.display = 'none';
-                issueSelect.required = false;
-                issueSelect.value = '';
+                if (issueSelect) {
+                    issueSelect.required = false;
+                    issueSelect.value = '';
+                }
             }
 
             // Update QBO account selection and hint (only if elements exist)
@@ -276,5 +281,28 @@
 
         // Initialize on page load
         toggleIssueField();
+
+        // Add form validation debugging
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Check if form is valid
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    console.error('Form validation failed');
+                    
+                    // Find invalid fields and log them
+                    const invalidFields = form.querySelectorAll(':invalid');
+                    invalidFields.forEach(field => {
+                        console.error('Invalid field:', field.name, field.validationMessage);
+                    });
+                    
+                    // Show validation messages
+                    form.reportValidity();
+                    return false;
+                }
+                console.log('Form is valid, submitting...');
+            });
+        }
     </script>
 @endsection
