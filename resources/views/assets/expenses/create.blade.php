@@ -232,12 +232,11 @@
                 issueSelect.value = '';
             }
 
-            // Update QBO account selection and hint
-            if (accountMappings[category]) {
+            // Update QBO account selection and hint (only if elements exist)
+            if (qboAccountSelect && mappedAccountHint && accountMappings[category]) {
                 qboAccountSelect.value = accountMappings[category].id;
                 mappedAccountHint.textContent = `Mapped to: ${accountMappings[category].name} (you can override this)`;
-            } else {
-                qboAccountSelect.value = '';
+            } else if (mappedAccountHint) {
                 mappedAccountHint.textContent = 'No account mapped for this category yet';
             }
         }

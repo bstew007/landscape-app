@@ -25,8 +25,13 @@ class AssetExpenseController extends Controller
         // Get expense account mappings
         $mappings = \App\Models\ExpenseAccountMapping::where('is_active', true)->get();
         
-        // Get QBO expense accounts (if connected)
-        $qboAccounts = $this->getQboExpenseAccounts();
+        // Get QBO expense accounts (if connected) - wrapped in try-catch to prevent blocking
+        try {
+            $qboAccounts = $this->getQboExpenseAccounts();
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch QBO accounts in create', ['error' => $e->getMessage()]);
+            $qboAccounts = [];
+        }
         
         return view('assets.expenses.create', compact('asset', 'issues', 'vendors', 'mappings', 'qboAccounts'));
     }
@@ -99,8 +104,13 @@ class AssetExpenseController extends Controller
         // Get expense account mappings
         $mappings = \App\Models\ExpenseAccountMapping::where('is_active', true)->get();
         
-        // Get QBO expense accounts (if connected)
-        $qboAccounts = $this->getQboExpenseAccounts();
+        // Get QBO expense accounts (if connected) - wrapped in try-catch to prevent blocking
+        try {
+            $qboAccounts = $this->getQboExpenseAccounts();
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch QBO accounts in edit', ['error' => $e->getMessage()]);
+            $qboAccounts = [];
+        }
         
         return view('assets.expenses.edit', compact('asset', 'expense', 'issues', 'vendors', 'mappings', 'qboAccounts'));
     }
@@ -237,13 +247,19 @@ class AssetExpenseController extends Controller
      */
     protected function getQboExpenseAccounts(): array
     {
-        $token = \App\Models\QboToken::latest('updated_at')->first();
-        
-        if (!$token) {
-            return [];
-        }
-
         try {
+            $token = \App\Models\QboToken::latest('updated_at')->first();
+            
+            if (!$token) {
+                return [];
+            }
+
+            // Check if token is expired
+            if ($token->expires_at && now()->isAfter($token->expires_at)) {
+                \Log::warning('QBO token expired, skipping account fetch');
+                return [];
+            }
+
             $env = config('qbo.environment');
             $host = $env === 'production' ? 'quickbooks.api.intuit.com' : 'sandbox-quickbooks.api.intuit.com';
             $baseUrl = "https://{$host}/v3/company/{$token->realm_id}";
@@ -251,19 +267,27 @@ class AssetExpenseController extends Controller
             $query = "SELECT * FROM Account WHERE AccountType = 'Expense' AND Active = true ORDER BY Name";
             $url = $baseUrl . "/query?query=" . urlencode($query);
 
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token->access_token,
-                'Accept' => 'application/json',
-            ])->get($url);
+            // Use a shorter timeout (3 seconds) to prevent hanging
+            $response = \Illuminate\Support\Facades\Http::timeout(3)
+                ->retry(1, 100) // Retry once with 100ms delay
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $token->access_token,
+                    'Accept' => 'application/json',
+                ])->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
                 return $data['QueryResponse']['Account'] ?? [];
             }
 
+            \Log::warning('QBO API request failed', ['status' => $response->status()]);
             return [];
 
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::error('QBO connection timeout', ['error' => $e->getMessage()]);
+            return [];
         } catch (\Exception $e) {
+            \Log::error('Error fetching QBO expense accounts', ['error' => $e->getMessage()]);
             return [];
         }
     }
