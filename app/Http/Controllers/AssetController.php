@@ -34,7 +34,11 @@ class AssetController extends Controller
             ->when($assignedTo, fn ($q) => $q->where('assigned_to', $assignedTo))
             ->when($serviceWindow === 'overdue', fn ($q) => $q->whereNotNull('next_service_date')->where('next_service_date', '<', now()))
             ->when($serviceWindow === 'upcoming', fn ($q) => $q->whereNotNull('next_service_date')->whereBetween('next_service_date', [now(), now()->addDays(30)]))
-            ->withCount(['issues' => fn ($q) => $q->where('status', '!=', 'resolved')])
+            ->withCount([
+                'issues' => fn ($q) => $q->where('status', '!=', 'resolved'),
+                'linkedAssets',
+                'parentAssets',
+            ])
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -119,10 +123,19 @@ class AssetController extends Controller
             'maintenances' => fn ($q) => $q->latest(),
             'issues' => fn ($q) => $q->latest(),
             'attachments',
+            'linkedAssets',
+            'parentAssets',
         ]);
+
+        // Get all other assets for linking dropdown
+        $availableAssets = Asset::where('id', '!=', $asset->id)
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
 
         return view('assets.show', [
             'asset' => $asset,
+            'availableAssets' => $availableAssets,
             'maintenanceTypes' => ['Inspection', 'Oil Change', 'Service', 'Repair'],
             'issueSeverities' => AssetIssue::SEVERITIES,
             'issueStatuses' => AssetIssue::STATUSES,
@@ -263,6 +276,39 @@ class AssetController extends Controller
         $attachment->delete();
 
         return back()->with('success', 'Attachment deleted.');
+    }
+
+    public function linkAsset(Request $request, Asset $asset)
+    {
+        $data = $request->validate([
+            'linked_asset_id' => 'required|exists:assets,id',
+            'relationship_type' => 'nullable|string|max:50',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        // Prevent linking to self
+        if ($asset->id == $data['linked_asset_id']) {
+            return back()->with('error', 'Cannot link an asset to itself.');
+        }
+
+        // Check if already linked
+        if ($asset->linkedAssets()->where('child_asset_id', $data['linked_asset_id'])->exists()) {
+            return back()->with('error', 'Assets are already linked.');
+        }
+
+        $asset->linkedAssets()->attach($data['linked_asset_id'], [
+            'relationship_type' => $data['relationship_type'] ?? 'linked',
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        return back()->with('success', 'Asset linked successfully.');
+    }
+
+    public function unlinkAsset(Asset $asset, Asset $linkedAsset)
+    {
+        $asset->linkedAssets()->detach($linkedAsset->id);
+        
+        return back()->with('success', 'Asset unlinked successfully.');
     }
 
     protected function validateAsset(Request $request): array

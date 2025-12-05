@@ -99,7 +99,7 @@
         <div class="border-t border-brand-100/60">
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4 sm:p-5">
                 @forelse ($assets as $asset)
-                    <div class="bg-white rounded-2xl border-2 border-brand-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col">
+                    <div class="bg-gray-50 rounded-2xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-all p-4 flex flex-col">
                         <div class="flex items-start gap-3 mb-3">
                             {{-- Icon based on asset type --}}
                             <div class="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center border border-brand-200 overflow-hidden">
@@ -187,6 +187,18 @@
                                 <span class="text-brand-500">Open Issues:</span>
                                 <span class="font-bold {{ ($asset->issues_count ?? 0) > 0 ? 'text-red-700' : 'text-brand-900' }}">{{ $asset->issues_count ?? 0 }}</span>
                             </div>
+                            @if(($asset->linked_assets_count + $asset->parent_assets_count) > 0)
+                            <div class="flex items-center justify-between">
+                                <span class="text-brand-500">Linked Assets:</span>
+                                <span class="font-bold text-blue-600 flex items-center gap-1">
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                    </svg>
+                                    {{ $asset->linked_assets_count + $asset->parent_assets_count }}
+                                </span>
+                            </div>
+                            @endif
                             <div class="flex items-center justify-between">
                                 <span class="text-brand-500">Next Service:</span>
                                 <span class="font-medium">{{ optional($asset->next_service_date)->format('M j, Y') ?? 'N/A' }}</span>

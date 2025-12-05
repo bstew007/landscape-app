@@ -38,7 +38,15 @@
             <div class="flex-1">
                 <p class="text-xs uppercase tracking-[0.3em] text-brand-200/80">Asset Management</p>
                 <h1 class="text-2xl sm:text-3xl font-semibold text-white mt-1">{{ $asset->name }}</h1>
-                <p class="text-sm text-brand-100/85 mt-1">{{ ucwords(str_replace('_', ' ', $asset->type)) }} · {{ $asset->identifier ?: 'No ID' }}</p>
+                <p class="text-sm text-brand-100/85 mt-1">
+                    {{ ucwords(str_replace('_', ' ', $asset->type)) }}
+                    @if($asset->model)
+                        <span class="text-brand-200">·</span> {{ $asset->model }}
+                    @endif
+                    @if($asset->identifier)
+                        <span class="text-brand-200">·</span> {{ $asset->identifier }}
+                    @endif
+                </p>
             </div>
             <div class="flex gap-2 flex-wrap">
                 <x-brand-button href="{{ route('assets.edit', $asset) }}" variant="outline" class="border-white/30 text-white hover:bg-white/10">
@@ -225,6 +233,91 @@
                         <input type="file" name="file" required class="form-input w-full">
                     </div>
                     <x-brand-button type="submit" class="w-full justify-center">Upload File</x-brand-button>
+                </form>
+            </section>
+
+            <section class="rounded-2xl bg-blue-50 border-2 border-blue-200 shadow-sm p-5">
+                <h2 class="text-lg font-bold text-blue-900 mb-4">Linked Assets</h2>
+                
+                {{-- Assets this contains/carries --}}
+                @if($asset->linkedAssets->count() > 0)
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold text-brand-700 mb-2">Contains/Carries:</h3>
+                        <div class="space-y-2">
+                            @foreach($asset->linkedAssets as $linked)
+                                <div class="border-2 border-brand-100 rounded-xl p-3 flex items-center justify-between hover:border-brand-300 transition">
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-brand-900">{{ $linked->name }}</p>
+                                        <p class="text-xs text-brand-500">{{ ucwords(str_replace('_', ' ', $linked->type)) }}@if($linked->pivot->relationship_type) · {{ ucwords($linked->pivot->relationship_type) }}@endif</p>
+                                        @if($linked->pivot->notes)
+                                            <p class="text-xs text-brand-600 mt-1">{{ $linked->pivot->notes }}</p>
+                                        @endif
+                                    </div>
+                                    <div class="flex gap-2 flex-shrink-0">
+                                        <a href="{{ route('assets.show', $linked) }}" class="text-brand-600 hover:text-brand-800 text-sm font-medium">View</a>
+                                        <form action="{{ route('assets.unlink', [$asset, $linked]) }}" method="POST" onsubmit="return confirm('Unlink this asset?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">Unlink</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Assets that contain/carry this asset --}}
+                @if($asset->parentAssets->count() > 0)
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold text-brand-700 mb-2">Carried By/Attached To:</h3>
+                        <div class="space-y-2">
+                            @foreach($asset->parentAssets as $parent)
+                                <div class="border-2 border-brand-100 rounded-xl p-3 flex items-center justify-between hover:border-brand-300 transition">
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-brand-900">{{ $parent->name }}</p>
+                                        <p class="text-xs text-brand-500">{{ ucwords(str_replace('_', ' ', $parent->type)) }}@if($parent->pivot->relationship_type) · {{ ucwords($parent->pivot->relationship_type) }}@endif</p>
+                                        @if($parent->pivot->notes)
+                                            <p class="text-xs text-brand-600 mt-1">{{ $parent->pivot->notes }}</p>
+                                        @endif
+                                    </div>
+                                    <a href="{{ route('assets.show', $parent) }}" class="text-brand-600 hover:text-brand-800 text-sm font-medium">View</a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Link new asset form --}}
+                <form action="{{ route('assets.link', $asset) }}" method="POST" class="mt-4 space-y-3 p-4 rounded-xl bg-brand-50/50 border-2 border-brand-100">
+                    @csrf
+                    <div>
+                        <label class="block text-sm font-medium text-brand-800 mb-1">Link Asset</label>
+                        <select name="linked_asset_id" class="form-select w-full" required>
+                            <option value="">Select an asset...</option>
+                            @foreach($availableAssets->groupBy('type') as $type => $typeAssets)
+                                <optgroup label="{{ ucwords(str_replace('_', ' ', $type)) }}">
+                                    @foreach($typeAssets as $availableAsset)
+                                        <option value="{{ $availableAsset->id }}">{{ $availableAsset->name }}@if($availableAsset->model) ({{ $availableAsset->model }})@endif</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-brand-800 mb-1">Relationship Type</label>
+                        <select name="relationship_type" class="form-select w-full">
+                            <option value="contains">Contains/Carries</option>
+                            <option value="towing">Towing</option>
+                            <option value="attached">Attached To</option>
+                            <option value="linked">Linked</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-brand-800 mb-1">Notes (optional)</label>
+                        <input type="text" name="notes" class="form-input w-full" placeholder="Additional details...">
+                    </div>
+                    <x-brand-button type="submit" class="w-full justify-center">Link Asset</x-brand-button>
                 </form>
             </section>
         </div>

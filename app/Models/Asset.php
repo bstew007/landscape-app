@@ -114,4 +114,24 @@ class Asset extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to', 'name');
     }
+
+    /**
+     * Assets that this asset contains/carries (e.g., mowers in a trailer)
+     */
+    public function linkedAssets()
+    {
+        return $this->belongsToMany(Asset::class, 'asset_links', 'parent_asset_id', 'child_asset_id')
+            ->withPivot('relationship_type', 'notes')
+            ->withTimestamps();
+    }
+
+    /**
+     * Assets that contain/carry this asset (e.g., trailer that carries this mower)
+     */
+    public function parentAssets()
+    {
+        return $this->belongsToMany(Asset::class, 'asset_links', 'child_asset_id', 'parent_asset_id')
+            ->withPivot('relationship_type', 'notes')
+            ->withTimestamps();
+    }
 }

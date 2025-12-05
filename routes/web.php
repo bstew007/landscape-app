@@ -570,5 +570,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('assets/{asset}/issues', [AssetController::class, 'storeIssue'])->name('assets.issues.store');
     Route::post('assets/{asset}/attachments', [AssetController::class, 'storeAttachment'])->name('assets.attachments.store');
     Route::delete('assets/{asset}/attachments/{attachment}', [AssetController::class, 'destroyAttachment'])->name('assets.attachments.destroy');
+    Route::post('assets/{asset}/link', [AssetController::class, 'linkAsset'])->name('assets.link');
+    Route::delete('assets/{asset}/unlink/{linkedAsset}', [AssetController::class, 'unlinkAsset'])->name('assets.unlink');
 });
 require __DIR__.'/auth.php';
