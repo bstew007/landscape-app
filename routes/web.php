@@ -507,6 +507,15 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::resource('expense-accounts', \App\Http\Controllers\Admin\ExpenseAccountMappingController::class)->except(['show']);
         Route::post('expense-accounts/sync-all', [\App\Http\Controllers\Admin\ExpenseAccountMappingController::class, 'syncAll'])->name('expense-accounts.sync-all');
         Route::get('qbo/items/search', [\App\Http\Controllers\Admin\QboItemLookupController::class, 'search'])->name('qbo.items.search');
+        
+        // Expense Approvals & QBO Sync
+        Route::get('expense-approvals', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'index'])->name('expense-approvals.index');
+        Route::post('expense-approvals/{expense}/approve', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'approve'])->name('expense-approvals.approve');
+        Route::post('expense-approvals/{expense}/sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'sync'])->name('expense-approvals.sync');
+        Route::post('expense-approvals/{expense}/approve-and-sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'approveAndSync'])->name('expense-approvals.approve-and-sync');
+        Route::post('expense-approvals/bulk-approve', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'bulkApprove'])->name('expense-approvals.bulk-approve');
+        Route::post('expense-approvals/bulk-sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'bulkSync'])->name('expense-approvals.bulk-sync');
+        
         // Company Settings
         Route::get('company-settings', [\App\Http\Controllers\Admin\CompanySettingsController::class, 'edit'])->name('company-settings.edit');
         Route::put('company-settings', [\App\Http\Controllers\Admin\CompanySettingsController::class, 'update'])->name('company-settings.update');

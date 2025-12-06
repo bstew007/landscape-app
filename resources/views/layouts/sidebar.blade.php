@@ -209,6 +209,7 @@
                             @can('manage-users')
                             <a href="{{ route('admin.users.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Users</a>
                             @endcan
+                            <a href="{{ route('admin.expense-approvals.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Expense Approvals</a>
                             <a href="{{ route('admin.company-settings.edit') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Company Settings</a>
                             <a href="{{ route('admin.material-categories.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Material Categories</a>
                             <a href="{{ route('admin.divisions.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Divisions</a>
