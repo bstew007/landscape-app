@@ -510,11 +510,12 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         
         // Expense Approvals & QBO Sync
         Route::get('expense-approvals', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'index'])->name('expense-approvals.index');
+        // Bulk routes must come BEFORE parameterized routes to avoid conflicts
+        Route::post('expense-approvals/bulk-approve', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'bulkApprove'])->name('expense-approvals.bulk-approve');
+        Route::post('expense-approvals/bulk-sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'bulkSync'])->name('expense-approvals.bulk-sync');
         Route::post('expense-approvals/{expense}/approve', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'approve'])->name('expense-approvals.approve');
         Route::post('expense-approvals/{expense}/sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'sync'])->name('expense-approvals.sync');
         Route::post('expense-approvals/{expense}/approve-and-sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'approveAndSync'])->name('expense-approvals.approve-and-sync');
-        Route::post('expense-approvals/bulk-approve', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'bulkApprove'])->name('expense-approvals.bulk-approve');
-        Route::post('expense-approvals/bulk-sync', [\App\Http\Controllers\Admin\ExpenseApprovalController::class, 'bulkSync'])->name('expense-approvals.bulk-sync');
         
         // Company Settings
         Route::get('company-settings', [\App\Http\Controllers\Admin\CompanySettingsController::class, 'edit'])->name('company-settings.edit');

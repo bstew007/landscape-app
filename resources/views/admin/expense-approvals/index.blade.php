@@ -132,6 +132,7 @@
 
     const form = document.getElementById('bulk-action-form');
     form.action = action;
+    form.onsubmit = null; // Remove the prevention handler
     form.submit();
   }
 
