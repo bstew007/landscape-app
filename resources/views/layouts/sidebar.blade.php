@@ -146,9 +146,9 @@
                         <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                     </summary>
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
-                        <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials Catalog</a>
-                        <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor Catalog</a>
-                        <a href="{{ route('equipment.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Equipment Catalog</a>
+                        <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials</a>
+                        <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor</a>
+                        <a href="{{ route('equipment.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Equipment</a>
                         <a href="{{ route('admin.material-categories.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Material Categories</a>
                     </div>
                 </details>
@@ -330,9 +330,9 @@
                         <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
                     </summary>
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
-                        <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials Catalog</a>
-                        <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor Catalog</a>
-                        <a href="{{ route('equipment.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Equipment Catalog</a>
+                        <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials</a>
+                        <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor</a>
+                        <a href="{{ route('equipment.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Equipment</a>
                         <a href="{{ route('admin.material-categories.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Material Categories</a>
                     </div>
                 </details>
