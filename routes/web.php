@@ -462,6 +462,11 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::post('contacts/{client}/qbo-vendor-link', [\App\Http\Controllers\ContactQboVendorImportController::class, 'link'])->name('contacts.qbo.vendor.link');
     Route::post('contacts/qbo/vendors/sync-all', [\App\Http\Controllers\ContactQboVendorImportController::class, 'syncAll'])->name('contacts.qbo.vendor.sync-all');
 
+    // Bulk contact actions (must be before resource routes)
+    Route::post('contacts/bulk/tags', [\App\Http\Controllers\ContactController::class, 'bulkTags'])->name('contacts.bulk.tags');
+    Route::post('contacts/bulk/archive', [\App\Http\Controllers\ContactController::class, 'bulkArchive'])->name('contacts.bulk.archive');
+    Route::delete('contacts/bulk/delete', [\App\Http\Controllers\ContactController::class, 'bulkDelete'])->name('contacts.bulk.delete');
+
     Route::resource('contacts', \App\Http\Controllers\ContactController::class);
 
     // Legacy clients -> contacts redirects

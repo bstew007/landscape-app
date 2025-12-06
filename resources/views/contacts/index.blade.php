@@ -97,24 +97,167 @@
                 </div>
             @endif
 
-            <div class="rounded-2xl border border-brand-100/80 bg-brand-50/40 p-3 flex flex-wrap items-center gap-2" data-role="bulk-toolbar">
-                <x-secondary-button data-action="bulk-view" size="sm" disabled>
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    View
-                </x-secondary-button>
-                <x-brand-button variant="outline" data-action="bulk-edit" size="sm" disabled>
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    Edit
-                </x-brand-button>
-                <x-danger-button data-action="bulk-delete" size="sm" disabled>
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                    Delete
-                </x-danger-button>
+            <div class="rounded-2xl border border-brand-100/80 bg-brand-50/40 p-3 flex flex-wrap items-center gap-2" 
+                 data-role="bulk-toolbar" 
+                 x-data="{ 
+                    selectedCount: 0, 
+                    selectedIds: [],
+                    showTagsModal: false,
+                    showArchiveConfirm: false,
+                    showDeleteConfirm: false,
+                    updateSelection(count, ids) {
+                        this.selectedCount = count;
+                        this.selectedIds = ids;
+                    },
+                    clearSelection() {
+                        this.selectedCount = 0;
+                        this.selectedIds = [];
+                        window.clearAllCheckboxes();
+                    }
+                 }"
+                 @selection-changed.window="updateSelection($event.detail.count, $event.detail.ids)">
+                <span class="text-xs text-brand-600 font-medium" x-text="selectedCount === 0 ? 'Select contacts below' : selectedCount + ' selected'"></span>
+                
+                <template x-if="selectedCount > 0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" @click="showTagsModal = true" class="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white border border-brand-300 text-brand-700 text-xs font-medium hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                <line x1="7" y1="7" x2="7.01" y2="7"/>
+                            </svg>
+                            Manage Tags
+                        </button>
+                        
+                        <button type="button" @click="showArchiveConfirm = true" class="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white border border-amber-300 text-amber-700 text-xs font-medium hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="21 8 21 21 3 21 3 8"/>
+                                <rect x="1" y="3" width="22" height="5"/>
+                                <line x1="10" y1="12" x2="14" y2="12"/>
+                            </svg>
+                            Archive
+                        </button>
+                        
+                        <button type="button" @click="showDeleteConfirm = true" class="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white border border-red-300 text-red-700 text-xs font-medium hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                            </svg>
+                            Delete
+                        </button>
+                        
+                        <button type="button" @click="clearSelection()" class="text-xs text-brand-500 hover:text-brand-700 ml-2">
+                            Clear Selection
+                        </button>
+                    </div>
+                </template>
+                
                 <div class="ml-auto flex items-center gap-2">
                     <x-brand-button href="{{ route('contacts.create') }}" size="sm">New Contact</x-brand-button>
                     <a href="{{ route('contacts.qbo.search') }}" class="inline-flex items-center rounded-full border border-brand-600 px-4 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500">
                         Import from QBO
                     </a>
+                </div>
+                
+                <!-- Tags Modal -->
+                <div x-show="showTagsModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showTagsModal = false">
+                    <div class="flex min-h-screen items-center justify-center p-4">
+                        <div class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                        <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6" @click.stop>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Manage Tags for <span x-text="selectedCount"></span> Contact(s)</h3>
+                            <form method="POST" action="{{ route('contacts.bulk.tags') }}">
+                                @csrf
+                                <input type="hidden" name="contact_ids" :value="selectedIds.join(',')">
+                                
+                                @php $allTags = \App\Models\ContactTag::orderBy('name')->get(); @endphp
+                                @if($allTags->count() > 0)
+                                    <div class="space-y-3 mb-6">
+                                        @foreach($allTags as $tag)
+                                            <label class="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-brand-300 cursor-pointer transition">
+                                                <input type="checkbox" name="tags[]" value="{{ $tag->id }}" class="form-checkbox rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border"
+                                                      style="background-color: {{ $tag->color }}20; border-color: {{ $tag->color }}; color: {{ $tag->color }};">
+                                                    {{ $tag->name }}
+                                                </span>
+                                                @if($tag->description)
+                                                    <span class="text-xs text-gray-500">{{ $tag->description }}</span>
+                                                @endif
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <button type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-full bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                            Apply Tags
+                                        </button>
+                                        <button type="button" @click="showTagsModal = false" class="inline-flex items-center justify-center h-10 px-6 rounded-full border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                @else
+                                    <p class="text-sm text-gray-500 mb-4">No tags available. <a href="{{ route('admin.contact-tags.create') }}" class="text-brand-600 hover:text-brand-700 underline">Create tags first</a>.</p>
+                                    <button type="button" @click="showTagsModal = false" class="inline-flex items-center justify-center h-10 px-6 rounded-full border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
+                                        Close
+                                    </button>
+                                @endif
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Archive Confirmation Modal -->
+                <div x-show="showArchiveConfirm" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showArchiveConfirm = false">
+                    <div class="flex min-h-screen items-center justify-center p-4">
+                        <div class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                        <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" @click.stop>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Archive Contacts?</h3>
+                            <p class="text-sm text-gray-600 mb-6">Archive <span x-text="selectedCount"></span> selected contact(s)? Archived contacts won't appear in normal lists but can be restored later.</p>
+                            <form method="POST" action="{{ route('contacts.bulk.archive') }}">
+                                @csrf
+                                <input type="hidden" name="contact_ids" :value="selectedIds.join(',')">
+                                <div class="flex items-center gap-3">
+                                    <button type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-full bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                        Archive Contacts
+                                    </button>
+                                    <button type="button" @click="showArchiveConfirm = false" class="inline-flex items-center justify-center h-10 px-6 rounded-full border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Delete Confirmation Modal -->
+                <div x-show="showDeleteConfirm" x-cloak class="fixed inset-0 z-50 overflow-y-auto" @click.self="showDeleteConfirm = false">
+                    <div class="flex min-h-screen items-center justify-center p-4">
+                        <div class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                        <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" @click.stop>
+                            <div class="flex items-start gap-3 mb-4">
+                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                                    <svg class="h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Delete Contacts?</h3>
+                                    <p class="text-sm text-gray-600 mt-1">Permanently delete <span x-text="selectedCount"></span> selected contact(s)? This action cannot be undone.</p>
+                                </div>
+                            </div>
+                            <form method="POST" action="{{ route('contacts.bulk.delete') }}">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="contact_ids" :value="selectedIds.join(',')">
+                                <div class="flex items-center gap-3">
+                                    <button type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-full bg-red-600 text-white text-sm font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        Delete Permanently
+                                    </button>
+                                    <button type="button" @click="showDeleteConfirm = false" class="inline-flex items-center justify-center h-10 px-6 rounded-full border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -260,4 +403,60 @@
         </div>
     </section>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleAll = document.querySelector('[data-action="toggle-all"]');
+    const rowChecks = document.querySelectorAll('[data-role="row-check"]');
+    
+    function updateSelection() {
+        const checked = Array.from(rowChecks).filter(cb => cb.checked);
+        const ids = checked.map(cb => cb.value);
+        
+        // Dispatch custom event for Alpine to listen to
+        window.dispatchEvent(new CustomEvent('selection-changed', {
+            detail: {
+                count: checked.length,
+                ids: ids
+            }
+        }));
+        
+        // Update toggle-all checkbox
+        if (toggleAll) {
+            toggleAll.checked = checked.length === rowChecks.length && checked.length > 0;
+            toggleAll.indeterminate = checked.length > 0 && checked.length < rowChecks.length;
+        }
+        
+        // Update row highlighting
+        rowChecks.forEach(cb => {
+            const row = cb.closest('tr');
+            if (row) {
+                row.dataset.selected = cb.checked;
+            }
+        });
+    }
+    
+    // Make clearAllCheckboxes globally available for Alpine
+    window.clearAllCheckboxes = function() {
+        rowChecks.forEach(cb => cb.checked = false);
+        updateSelection();
+    };
+    
+    if (toggleAll) {
+        toggleAll.addEventListener('change', (e) => {
+            rowChecks.forEach(cb => cb.checked = e.target.checked);
+            updateSelection();
+        });
+    }
+    
+    rowChecks.forEach(cb => {
+        cb.addEventListener('change', updateSelection);
+    });
+    
+    // Initial update
+    updateSelection();
+});
+</script>
+@endpush
 @endsection

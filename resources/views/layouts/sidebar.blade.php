@@ -10,6 +10,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        [x-cloak] { display: none !important; }
         .sidebar-accordion summary::-webkit-details-marker { display: none; }
         .sidebar-accordion summary {
             position: relative;

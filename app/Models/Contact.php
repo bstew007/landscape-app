@@ -87,11 +87,13 @@ class Contact extends Model
         'qbo_sync_token',
         'qbo_last_synced_at',
         'qbo_balance',
+        'archived_at',
     ];
 
     protected $casts = [
         'qbo_last_synced_at' => 'datetime',
         'qbo_balance' => 'decimal:2',
+        'archived_at' => 'datetime',
     ];
 
     public function siteVisits()

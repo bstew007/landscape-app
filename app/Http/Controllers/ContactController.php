@@ -14,6 +14,7 @@ class ContactController extends Controller
         $type = $request->query('type', 'all');
 
         $contacts = Contact::query()
+            ->whereNull('archived_at') // Exclude archived contacts
             ->when($type && $type !== 'all', fn($q) => $q->where('contact_type', $type))
             ->when($search, function ($query, $term) {
                 $query->where(function ($q) use ($term) {
@@ -195,5 +196,63 @@ class ContactController extends Controller
         $contact->delete();
 
         return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully.');
+    }
+
+    public function bulkTags(Request $request)
+    {
+        $validated = $request->validate([
+            'contact_ids' => 'required|string',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:contact_tags,id',
+        ]);
+
+        $contactIds = array_filter(explode(',', $validated['contact_ids']));
+        $tagIds = $validated['tags'] ?? [];
+
+        if (empty($contactIds)) {
+            return back()->with('error', 'No contacts selected.');
+        }
+
+        $contacts = Contact::whereIn('id', $contactIds)->get();
+        
+        foreach ($contacts as $contact) {
+            $contact->tags()->sync($tagIds);
+        }
+
+        return back()->with('success', 'Tags updated for ' . count($contacts) . ' contact(s).');
+    }
+
+    public function bulkArchive(Request $request)
+    {
+        $validated = $request->validate([
+            'contact_ids' => 'required|string',
+        ]);
+
+        $contactIds = array_filter(explode(',', $validated['contact_ids']));
+
+        if (empty($contactIds)) {
+            return back()->with('error', 'No contacts selected.');
+        }
+
+        $count = Contact::whereIn('id', $contactIds)->update(['archived_at' => now()]);
+
+        return back()->with('success', $count . ' contact(s) archived successfully.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'contact_ids' => 'required|string',
+        ]);
+
+        $contactIds = array_filter(explode(',', $validated['contact_ids']));
+
+        if (empty($contactIds)) {
+            return back()->with('error', 'No contacts selected.');
+        }
+
+        $count = Contact::whereIn('id', $contactIds)->delete();
+
+        return back()->with('success', $count . ' contact(s) deleted successfully.');
     }
 }
