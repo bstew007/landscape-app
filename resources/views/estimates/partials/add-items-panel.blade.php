@@ -10,6 +10,7 @@
             <div class="mb-3">
                 <div class="flex flex-wrap gap-2">
                     <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='labor' }" @click="addItemsTab='labor'">Labor</button>
+                    <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='equipment' }" @click="addItemsTab='equipment'">Equipment</button>
                     <button type="button" class="px-3 py-1 text-sm rounded border border-transparent hover:bg-brand-50" :class="{ 'bg-brand-600 text-white border-brand-600': addItemsTab==='materials' }" @click="addItemsTab='materials'">Materials</button>
                 </div>
             </div>
@@ -161,6 +162,79 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <x-brand-button type="submit" disabled>Add Labor</x-brand-button>
+                        <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
+                    </div>
+                    @error('name')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    @error('unit_cost')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
+                </form>
+            </div>
+
+            <div x-show="addItemsTab==='equipment'" class="bg-white rounded-lg border p-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-md font-semibold">Add Equipment from Catalog</h4>
+                    <x-brand-button type="button" size="sm" onclick="window.location.href='{{ route('equipment.create') }}'">New Equipment</x-brand-button>
+                </div>
+                
+                <form method="POST" action="{{ route('estimates.items.store', $estimate) }}" class="space-y-3" id="equipmentCatalogForm" data-form-type="equipment">
+                    @csrf
+                    <input type="hidden" name="item_type" value="equipment">
+                    <input type="hidden" name="catalog_type" value="equipment">
+                    <input type="hidden" name="stay_in_add_items" value="1">
+                    <input type="hidden" name="add_items_tab" value="equipment">
+                    <input type="hidden" name="area_id" data-role="add-items-area-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Equipment</label>
+                        <input type="text" class="form-input w-full mb-2 text-sm border-brand-300 focus:ring-brand-500 focus:border-brand-500" placeholder="Search equipment..." data-role="filter">
+                        <select name="catalog_id" class="form-select w-full border-brand-300 focus:ring-brand-500 focus:border-brand-500" data-role="equipment-select">
+                            <option value="">Select equipment</option>
+                            @foreach (($equipmentCatalog ?? []) as $equipment)
+                                @php
+                                    $rate = $equipment->unit === 'hr' ? $equipment->hourly_rate : $equipment->daily_rate;
+                                    $cost = $equipment->unit === 'hr' ? $equipment->hourly_cost : $equipment->daily_cost;
+                                    $ownershipBadge = $equipment->ownership_type === 'company' ? '🏢' : '🔑';
+                                @endphp
+                                <option value="{{ $equipment->id }}"
+                                        data-unit="{{ $equipment->unit }}"
+                                        data-cost="{{ number_format($cost, 2, '.', '') }}"
+                                        data-price="{{ number_format($rate, 2, '.', '') }}"
+                                        data-ownership="{{ $equipment->ownership_type }}">
+                                    {{ $ownershipBadge }} {{ $equipment->name }} ({{ $equipment->unit }} @ ${{ number_format($rate, 2) }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Quantity</label>
+                            <input type="number" step="0.01" min="0" name="quantity" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="1" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Unit Cost ($)</label>
+                            <input type="number" step="0.01" min="0" name="unit_cost" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500 bg-gray-50" value="0" required data-role="equipment-cost" readonly>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Unit Price ($)</label>
+                            <input type="number" step="0.01" min="0" name="unit_price" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500" value="0" data-role="unit-price">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Ownership</label>
+                            <input type="text" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500 bg-gray-50" value="" data-role="equipment-ownership" readonly>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Unit Label</label>
+                            <input type="text" name="unit" class="form-input w-full border-brand-300 focus:ring-brand-500 focus-border-brand-500 bg-gray-50" value="" data-role="equipment-unit" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">&nbsp;</label>
+                            <div class="text-xs text-gray-500 pt-2">Values from catalog</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <x-brand-button type="submit" disabled>Add Equipment</x-brand-button>
                         <span class="text-xs text-gray-500" data-role="preview-total">Line total: $0.00</span>
                     </div>
                     @error('name')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror

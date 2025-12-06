@@ -192,8 +192,8 @@ class EstimateItemController extends Controller
     {
         $hasCatalog = (bool) ($request->input('catalog_type') && $request->input('catalog_id'));
         return $request->validate([
-            'item_type' => ['required', Rule::in(['material', 'labor', 'fee', 'discount'])],
-            'catalog_type' => ['nullable', Rule::in(['material', 'labor'])],
+            'item_type' => ['required', Rule::in(['material', 'labor', 'equipment', 'fee', 'discount'])],
+            'catalog_type' => ['nullable', Rule::in(['material', 'labor', 'equipment'])],
             'catalog_id' => ['nullable', 'integer'],
             'name' => [Rule::requiredIf(!$hasCatalog), 'nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

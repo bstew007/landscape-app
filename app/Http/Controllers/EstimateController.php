@@ -113,6 +113,7 @@ class EstimateController extends Controller
 
         $materials = Material::where('is_active', true)->orderBy('name')->get();
         $laborCatalog = LaborItem::where('is_active', true)->orderBy('name')->get();
+        $equipmentCatalog = \App\Models\EquipmentItem::where('is_active', true)->orderBy('name')->get();
 
         // Budget default margin for UI defaults
         $budget = app(\App\Services\BudgetService::class)->active();
@@ -196,6 +197,7 @@ class EstimateController extends Controller
             'budget' => $budget,
             'materials' => $materials,
             'laborCatalog' => $laborCatalog,
+            'equipmentCatalog' => $equipmentCatalog,
             'financialSummary' => $financialSummary,
             'typeBreakdown' => $typeBreakdown,
             'defaultMarginRate' => $defaultMarginRate,

@@ -507,7 +507,7 @@ class EstimateShowController {
     }
 
     wireCatalogForms() {
-        const forms = ['#materialCatalogForm', '#laborCatalogForm', '#customItemForm']
+        const forms = ['#materialCatalogForm', '#laborCatalogForm', '#equipmentCatalogForm', '#customItemForm']
             .map((selector) => document.querySelector(selector))
             .filter(Boolean);
         forms.forEach((form) => {
@@ -534,22 +534,89 @@ class EstimateShowController {
                 el.addEventListener('input', () => this.handleFormChange(form, el));
                 el.addEventListener('change', () => this.handleFormChange(form, el));
             });
-            form.addEventListener('submit', (event) => {
+            
+            // Handle AJAX form submission for catalog forms
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
                 const submit = form.querySelector('button[type="submit"]');
                 if (submit) {
                     submit.disabled = true;
                     submit.classList.add('opacity-50');
                 }
-                if (!form.dataset.allowAsync && !form.dataset.skipNative) {
-                    return;
+                
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': this.csrf,
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+                    
+                    const json = await response.json().catch(() => ({}));
+                    
+                    if (!response.ok) {
+                        throw new Error(json.message || 'Unable to add item. Please try again.');
+                    }
+                    
+                    // Insert the new row HTML into the appropriate area
+                    if (json.row_html && json.item) {
+                        const areaId = json.item.area_id || '';
+                        const container = document.querySelector(`[data-area-items="${areaId}"]`);
+                        if (container) {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = json.row_html;
+                            const newRow = tempDiv.firstElementChild;
+                            container.appendChild(newRow);
+                            
+                            // Highlight the new row briefly
+                            newRow.classList.add('bg-green-50');
+                            setTimeout(() => {
+                                newRow.classList.remove('bg-green-50');
+                                newRow.classList.add('transition-colors', 'duration-500');
+                            }, 100);
+                            setTimeout(() => {
+                                newRow.classList.remove('transition-colors', 'duration-500');
+                            }, 600);
+                            
+                            // Scroll to the new item smoothly
+                            newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }
+                    
+                    // Update totals if provided
+                    if (json.totals) {
+                        this.updateSummary(json.totals);
+                    }
+                    
+                    // Reset the form
+                    form.reset();
+                    const selects = form.querySelectorAll('select');
+                    selects.forEach(select => select.value = '');
+                    this.updateFormState(form);
+                    
+                    // Show success toast
+                    this.toast('Item added successfully', 'success');
+                    
+                } catch (error) {
+                    console.error('Error adding item:', error);
+                    this.toast(error.message || 'Unable to add item. Please try again.', 'error');
+                } finally {
+                    if (submit) {
+                        submit.disabled = false;
+                        submit.classList.remove('opacity-50');
+                    }
                 }
-                event.preventDefault();
             });
+            
             this.updateFormState(form);
         });
 
         this.wireCatalogForm('#materialCatalogForm', '[data-role="material-select"]', '[data-role="material-unit"]', '[data-role="material-cost"]', '[data-role="material-tax"]');
         this.wireLaborCatalogForm('#laborCatalogForm', '[data-role="labor-select"]', '[data-role="labor-unit"]', '[data-role="labor-cost"]', '[data-role="profit-percent"]', '[data-role="unit-price"]');
+        this.wireEquipmentCatalogForm('#equipmentCatalogForm', '[data-role="equipment-select"]', '[data-role="equipment-unit"]', '[data-role="equipment-cost"]', '[data-role="equipment-ownership"]', '[data-role="unit-price"]');
     }
 
     wireLaborCatalogForm(formSelector, selectSelector, unitSelector, breakevenSelector, profitSelector, priceSelector) {
@@ -573,6 +640,51 @@ class EstimateShowController {
                 if (breakevenInput) breakevenInput.value = option.dataset.breakeven || '0';
                 if (profitInput) profitInput.value = option.dataset.profit || '0';
                 if (priceInput) priceInput.value = option.dataset.price || '0';
+                
+                this.updateFormState(form);
+            });
+        }
+
+        const filterInput = form.querySelector('[data-role="filter"]');
+        if (filterInput && select) {
+            filterInput.addEventListener('input', () => {
+                const query = filterInput.value.toLowerCase().trim();
+                Array.from(select.options).forEach((opt, idx) => {
+                    if (idx === 0) return;
+                    const match = (opt.textContent || '').toLowerCase().includes(query);
+                    opt.hidden = !!query && !match;
+                });
+            });
+        }
+    }
+
+    wireEquipmentCatalogForm(formSelector, selectSelector, unitSelector, costSelector, ownershipSelector, priceSelector) {
+        const form = document.querySelector(formSelector);
+        if (!form) return;
+        const select = form.querySelector(selectSelector);
+        const unitInput = unitSelector ? form.querySelector(unitSelector) : null;
+        const costInput = costSelector ? form.querySelector(costSelector) : null;
+        const ownershipInput = ownershipSelector ? form.querySelector(ownershipSelector) : null;
+        const priceInput = priceSelector ? form.querySelector(priceSelector) : null;
+
+        if (select) {
+            select.addEventListener('change', () => {
+                const option = select.options[select.selectedIndex];
+                if (!option || !option.value) return;
+                
+                console.log('Equipment option selected:', option.dataset);
+                
+                // Copy values directly from the database
+                if (unitInput) unitInput.value = option.dataset.unit || '';
+                if (costInput) costInput.value = option.dataset.cost || '0';
+                if (priceInput) {
+                    priceInput.value = option.dataset.price || '0';
+                    priceInput.dataset.manualOverride = '1';
+                }
+                if (ownershipInput) {
+                    const ownership = option.dataset.ownership || '';
+                    ownershipInput.value = ownership === 'company' ? '🏢 Company' : '🔑 Rental';
+                }
                 
                 this.updateFormState(form);
             });

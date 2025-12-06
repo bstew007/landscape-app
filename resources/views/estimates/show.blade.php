@@ -343,7 +343,7 @@
                 <div id="calcTplList" class="space-y-2"></div>
             </div>
             <!-- Items Pane (Labor, Equipment, Materials, Subs, Other) -->
-            <div id="calcItemsPane" class="p-4 overflow-y-auto space-y-4" x-show="itemsTab!=='templates'" x-data="{ laborSearch: '', materialSearch: '' }">
+            <div id="calcItemsPane" class="p-4 overflow-y-auto space-y-4" x-show="itemsTab!=='templates'" x-data="{ laborSearch: '', materialSearch: '', equipmentSearch: '' }">
                 <!-- Labor List -->
                 <div x-show="itemsTab==='labor'" class="space-y-2">
                     <div class="flex items-center justify-between mb-2">
@@ -466,14 +466,69 @@
                         @endif
                     </div>
                 </div>
-                <!-- Placeholders -->
-                <div x-show="itemsTab==='equipment'" class="text-center py-8">
-                    <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-                    </svg>
-                    <p class="text-sm font-medium text-gray-600">Equipment catalog coming soon</p>
-                    <p class="text-xs text-gray-500 mt-1">Track rental equipment and machinery costs</p>
+                <!-- Equipment List -->
+                <div x-show="itemsTab==='equipment'" class="space-y-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold">Equipment Catalog</h4>
+                        <x-brand-button type="button" size="sm" onclick="window.location.href='{{ route('equipment.create') }}'">New</x-brand-button>
+                    </div>
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input type="text" 
+                               x-model="equipmentSearch" 
+                               placeholder="Search equipment..."
+                               class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                        <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <div class="max-h-60 overflow-y-auto border rounded bg-white divide-y">
+                        @foreach ($equipmentCatalog as $equipment)
+                            @php
+                                $rate = $equipment->unit === 'hr' ? $equipment->hourly_rate : $equipment->daily_rate;
+                                $cost = $equipment->unit === 'hr' ? $equipment->hourly_cost : $equipment->daily_cost;
+                                $ownershipBadge = $equipment->ownership_type === 'company' ? '🏢' : '🔑';
+                                $ownershipLabel = $equipment->ownership_type === 'company' ? 'Company' : 'Rental';
+                            @endphp
+                            <div class="px-3 py-2 text-sm flex items-center justify-between gap-4"
+                                 x-show="equipmentSearch === '' || '{{ strtolower($equipment->name) }} {{ strtolower($equipment->category ?? '') }} {{ strtolower($equipment->model ?? '') }}'.includes(equipmentSearch.toLowerCase())">
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900">{{ $ownershipBadge }} {{ $equipment->name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $ownershipLabel }} · {{ $equipment->unit }}</div>
+                                </div>
+                                <div class="flex flex-col items-end text-right gap-1 min-w-[140px]">
+                                    <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs w-full">
+                                        <div class="text-gray-500">Cost:</div>
+                                        <div class="font-medium text-gray-700">${{ number_format($cost, 2) }}</div>
+                                        
+                                        <div class="text-gray-500">Rate:</div>
+                                        <div class="font-semibold text-brand-700">${{ number_format($rate, 2) }}</div>
+                                    </div>
+                                    <button type="button"
+                                            class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white hover:bg-brand-700 transition mt-1"
+                                            data-action="drawer-add"
+                                            data-item-type="equipment"
+                                            data-catalog-id="{{ $equipment->id }}"
+                                            data-catalog-name="{{ $equipment->name }}"
+                                            data-catalog-unit="{{ $equipment->unit }}"
+                                            data-catalog-cost="{{ number_format($cost, 2, '.', '') }}">
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                        @if($equipmentCatalog->isEmpty())
+                            <div class="px-3 py-8 text-center text-gray-500">
+                                <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                                </svg>
+                                <p class="text-sm font-medium text-gray-600">No equipment in catalog</p>
+                                <p class="text-xs text-gray-500 mt-1">Click "New" above to add your first equipment</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
+                <!-- Placeholders -->
                 <div x-show="itemsTab==='subs'" class="text-center py-8">
                     <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -699,7 +754,7 @@
         @include('estimates.partials.work-area-modal', ['estimate' => $estimate, 'costCodes' => $costCodes ?? []])
     </section>
 
-    @include('estimates.partials.add-items-panel', ['estimate' => $estimate, 'materials' => $materials, 'laborCatalog' => $laborCatalog, 'defaultMarginPercent' => $defaultMarginPercent ?? 20, 'defaultMarginRate' => $defaultMarginRate ?? 0.2])
+    @include('estimates.partials.add-items-panel', ['estimate' => $estimate, 'materials' => $materials, 'laborCatalog' => $laborCatalog, 'equipmentCatalog' => $equipmentCatalog, 'defaultMarginPercent' => $defaultMarginPercent ?? 20, 'defaultMarginRate' => $defaultMarginRate ?? 0.2])
 
 <!-- New Labor Modal -->
 <x-modal name="new-labor" maxWidth="xl">

@@ -245,6 +245,27 @@ class EstimateItemService
             ];
         }
 
+        if ($catalogType === 'equipment') {
+            $equipment = \App\Models\EquipmentItem::find($catalogId);
+            if (!$equipment) return [];
+            
+            // NO CALCULATIONS - just use the exact values from the database
+            // Use hourly or daily cost/rate based on unit type
+            $cost = $equipment->unit === 'hr' ? $equipment->hourly_cost : $equipment->daily_cost;
+            $rate = $equipment->unit === 'hr' ? $equipment->hourly_rate : $equipment->daily_rate;
+            
+            return [
+                'name' => $equipment->name,
+                'unit' => $equipment->unit,
+                'unit_cost' => (float) ($cost ?? 0),
+                'unit_price' => (float) ($rate ?? 0),
+                'margin_rate' => 0.0,
+                'tax_rate' => 0.0,
+                'description' => $equipment->description,
+                'catalog_type' => 'equipment',
+            ];
+        }
+
         return [];
     }
 

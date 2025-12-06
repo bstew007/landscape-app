@@ -28,16 +28,22 @@ use App\Http\Controllers\LaborController;
 use App\Http\Controllers\EstimateItemController;
 use App\Http\Controllers\Admin\CompanyBudgetController;
 use App\Http\Controllers\Api\MaterialController as ApiMaterialController;
+use App\Http\Controllers\Api\EquipmentController as ApiEquipmentController;
+use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\CalculatorImportController;
 
 
 Route::get('/', fn () => redirect()->route('client-hub'));
 
-// API Routes for Material Catalog
+// API Routes for Material & Equipment Catalog
 Route::prefix('api')->middleware('auth')->group(function () {
     Route::get('/materials/active', [ApiMaterialController::class, 'active'])->name('api.materials.active');
     Route::get('/materials/search', [ApiMaterialController::class, 'search'])->name('api.materials.search');
     Route::get('/materials/{material}', [ApiMaterialController::class, 'show'])->name('api.materials.show');
+    
+    Route::get('/equipment/active', [ApiEquipmentController::class, 'active'])->name('api.equipment.active');
+    Route::get('/equipment/search', [ApiEquipmentController::class, 'search'])->name('api.equipment.search');
+    Route::get('/equipment/{equipment}', [ApiEquipmentController::class, 'show'])->name('api.equipment.show');
     
     // Mobile Timesheet API
     Route::get('/mobile/my-jobs', [\App\Http\Controllers\Api\TimesheetApiController::class, 'myJobs'])->name('api.mobile.my-jobs');
@@ -100,6 +106,13 @@ Route::middleware('auth')->group(function () {
         Route::post('labor/import', [LaborController::class, 'import'])->name('labor.import');
         Route::get('labor/export', [LaborController::class, 'export'])->name('labor.export');
         Route::resource('labor', LaborController::class)->except(['show']);
+        
+        Route::get('equipment/import', [EquipmentController::class, 'importForm'])->name('equipment.importForm');
+        Route::post('equipment/import', [EquipmentController::class, 'import'])->name('equipment.import');
+        Route::get('equipment/export', [EquipmentController::class, 'export'])->name('equipment.export');
+        Route::post('equipment/bulk', [EquipmentController::class, 'bulk'])->name('equipment.bulk');
+        Route::resource('equipment', EquipmentController::class)->except(['show']);
+        
         // Bulk update for production rates
         Route::patch('production-rates/bulk', [ProductionRateController::class, 'bulkUpdate'])->name('production-rates.bulkUpdate');
         Route::resource('production-rates', ProductionRateController::class)->except(['show']);
@@ -115,6 +128,8 @@ Route::middleware('auth')->group(function () {
             $type = 'labor';
         } elseif (strpos($type, 'material') !== false) {
             $type = 'material';
+        } elseif (strpos($type, 'equipment') !== false) {
+            $type = 'equipment';
         }
         
         if ($type === 'labor') {
@@ -176,6 +191,47 @@ Route::middleware('auth')->group(function () {
                 'overhead_rate' => $overheadRate,
                 'name' => $item->name,
                 'unit' => $item->unit,
+            ]);
+        } elseif ($type === 'equipment') {
+            // Look for the equipment item, including inactive ones
+            $item = \App\Models\EquipmentItem::find($id);
+            
+            // Debug logging
+            \Log::info('Catalog API lookup', [
+                'type' => 'equipment',
+                'id' => $id,
+                'found' => $item ? 'yes' : 'no',
+                'is_active' => $item ? $item->is_active : null,
+                'name' => $item ? $item->name : null,
+            ]);
+            
+            if (!$item) {
+                return response()->json([
+                    'error' => 'Equipment not found',
+                    'message' => "Equipment catalog item with ID {$id} does not exist in the database. It may have been deleted.",
+                    'debug' => [
+                        'requested_id' => $id,
+                        'type' => 'equipment',
+                        'table' => 'equipment_catalog',
+                    ]
+                ], 404);
+            }
+            
+            // Warn if inactive but still return data
+            if (!$item->is_active) {
+                \Log::warning('Catalog item is inactive', ['type' => 'equipment', 'id' => $id, 'name' => $item->name]);
+            }
+            
+            // Use hourly or daily cost/rate based on unit type
+            $unitCost = $item->unit === 'hr' ? (float) $item->hourly_cost : (float) $item->daily_cost;
+            $unitPrice = $item->unit === 'hr' ? (float) $item->hourly_rate : (float) $item->daily_rate;
+            
+            return response()->json([
+                'unit_cost' => round($unitCost, 2),
+                'unit_price' => round($unitPrice, 2),
+                'name' => $item->name,
+                'unit' => $item->unit,
+                'ownership_type' => $item->ownership_type,
             ]);
         } elseif ($type === 'material') {
             // Look for the material, including inactive ones

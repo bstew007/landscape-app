@@ -266,7 +266,7 @@
                         <th class="px-2.5 py-1.5"></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody data-area-items="{{ $area->id }}">
                     @forelse ($areaItems as $item)
                         @php 
                             // ============================================

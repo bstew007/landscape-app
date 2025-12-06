@@ -136,6 +136,14 @@ class EstimateItem extends Model
     }
 
     /**
+     * Get the equipment catalog item.
+     */
+    public function equipmentItem()
+    {
+        return $this->belongsTo(\App\Models\EquipmentItem::class, 'catalog_id');
+    }
+
+    /**
      * Get the catalog item based on catalog_type.
      * This is an accessor, not a relationship.
      */
@@ -145,6 +153,8 @@ class EstimateItem extends Model
             return $this->material;
         } elseif ($this->catalog_type === 'labor') {
             return $this->laborItem;
+        } elseif ($this->catalog_type === 'equipment') {
+            return $this->equipmentItem;
         }
         
         return null;

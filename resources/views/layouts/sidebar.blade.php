@@ -147,6 +147,7 @@
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
                         <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials Catalog</a>
                         <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor Catalog</a>
+                        <a href="{{ route('equipment.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Equipment Catalog</a>
                         <a href="{{ route('admin.material-categories.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Material Categories</a>
                     </div>
                 </details>
@@ -329,6 +330,7 @@
                     <div class="ml-4 mt-1 space-y-1 sidebar-panel">
                         <a href="{{ route('materials.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Materials Catalog</a>
                         <a href="{{ route('labor.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Labor Catalog</a>
+                        <a href="{{ route('equipment.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Equipment Catalog</a>
                         <a href="{{ route('admin.material-categories.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Material Categories</a>
                     </div>
                 </details>
