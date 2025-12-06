@@ -8,13 +8,19 @@ use Illuminate\Support\Str;
 
 class ContactTagController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->get('search');
+        
         $tags = ContactTag::withCount('contacts')
+            ->when($search, function($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+            })
             ->orderBy('name')
-            ->get();
+            ->paginate(20);
 
-        return view('admin.contact-tags.index', compact('tags'));
+        return view('admin.contact-tags.index', compact('tags', 'search'));
     }
 
     public function create()
