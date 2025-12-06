@@ -94,9 +94,15 @@
 
                 <div>
                     <label for="category" class="block text-sm font-semibold text-brand-900 mb-2">Category</label>
-                    <input type="text" id="category" name="category" value="{{ old('category') }}"
+                    <input type="text" id="category" name="category" value="{{ old('category') }}" list="category-list"
                            class="w-full rounded-lg border-brand-200 focus:border-brand-500 focus:ring focus:ring-brand-500/20"
-                           placeholder="e.g., Skid Steer, Excavator, Trailer">
+                           placeholder="Select or type new category">
+                    <datalist id="category-list">
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat }}">{{ $cat }}</option>
+                        @endforeach
+                    </datalist>
+                    <p class="text-xs text-brand-500 mt-1">Select existing or type a new category</p>
                 </div>
 
                 <div>
@@ -136,9 +142,15 @@
                     
                     <div>
                         <label for="vendor_name" class="block text-sm font-semibold text-brand-900 mb-2">Rental Vendor</label>
-                        <input type="text" id="vendor_name" name="vendor_name" value="{{ old('vendor_name') }}"
+                        <input type="text" id="vendor_name" name="vendor_name" value="{{ old('vendor_name') }}" list="vendor-list"
                                class="w-full rounded-lg border-brand-200 focus:border-brand-500 focus:ring focus:ring-brand-500/20"
-                               placeholder="e.g., United Rentals, Sunbelt">
+                               placeholder="Select or type vendor name">
+                        <datalist id="vendor-list">
+                            @foreach($vendors as $vendor)
+                                <option value="{{ $vendor }}">{{ $vendor }}</option>
+                            @endforeach
+                        </datalist>
+                        <p class="text-xs text-brand-500 mt-1">Select existing or type a new vendor</p>
                     </div>
                 </div>
             </div>

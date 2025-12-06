@@ -147,7 +147,20 @@ class EquipmentController extends Controller
         ->orderBy('name')
         ->get();
 
-        return view('equipment.create', compact('assets'));
+        // Get distinct categories and vendors for dropdowns
+        $categories = EquipmentItem::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        $vendors = EquipmentItem::whereNotNull('vendor_name')
+            ->where('vendor_name', '!=', '')
+            ->distinct()
+            ->orderBy('vendor_name')
+            ->pluck('vendor_name');
+
+        return view('equipment.create', compact('assets', 'categories', 'vendors'));
     }
 
     public function store(Request $request)
@@ -172,7 +185,20 @@ class EquipmentController extends Controller
         ->orderBy('name')
         ->get();
 
-        return view('equipment.edit', compact('equipment', 'assets'));
+        // Get distinct categories and vendors for dropdowns
+        $categories = EquipmentItem::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        $vendors = EquipmentItem::whereNotNull('vendor_name')
+            ->where('vendor_name', '!=', '')
+            ->distinct()
+            ->orderBy('vendor_name')
+            ->pluck('vendor_name');
+
+        return view('equipment.edit', compact('equipment', 'assets', 'categories', 'vendors'));
     }
 
     public function update(Request $request, EquipmentItem $equipment)
