@@ -142,15 +142,22 @@
                     
                     <div>
                         <label for="vendor_name" class="block text-sm font-semibold text-brand-900 mb-2">Rental Vendor</label>
-                        <input type="text" id="vendor_name" name="vendor_name" value="{{ old('vendor_name') }}" list="vendor-list"
-                               class="w-full rounded-lg border-brand-200 focus:border-brand-500 focus:ring focus:ring-brand-500/20"
-                               placeholder="Select or type vendor name">
-                        <datalist id="vendor-list">
+                        <select id="vendor_name" name="vendor_name" 
+                               class="w-full rounded-lg border-brand-200 focus:border-brand-500 focus:ring focus:ring-brand-500/20">
+                            <option value="">-- Select Vendor --</option>
                             @foreach($vendors as $vendor)
-                                <option value="{{ $vendor }}">{{ $vendor }}</option>
+                                <option value="{{ $vendor->company_name ?: $vendor->name }}" {{ old('vendor_name') == ($vendor->company_name ?: $vendor->name) ? 'selected' : '' }}>
+                                    {{ $vendor->company_name ?: $vendor->name }}
+                                    @if($vendor->company_name && ($vendor->first_name || $vendor->last_name))
+                                        ({{ trim($vendor->first_name . ' ' . $vendor->last_name) }})
+                                    @endif
+                                </option>
                             @endforeach
-                        </datalist>
-                        <p class="text-xs text-brand-500 mt-1">Select existing or type a new vendor</p>
+                        </select>
+                        <p class="text-xs text-brand-500 mt-1">
+                            Select a rental vendor contact. 
+                            <a href="{{ route('contacts.create') }}?type=vendor" target="_blank" class="text-brand-700 hover:underline">Add new vendor</a>
+                        </p>
                     </div>
                 </div>
             </div>

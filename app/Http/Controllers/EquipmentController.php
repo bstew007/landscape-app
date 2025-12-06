@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\Contact;
 use App\Models\EquipmentItem;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -154,11 +155,17 @@ class EquipmentController extends Controller
             ->orderBy('category')
             ->pluck('category');
 
-        $vendors = EquipmentItem::whereNotNull('vendor_name')
-            ->where('vendor_name', '!=', '')
-            ->distinct()
-            ->orderBy('vendor_name')
-            ->pluck('vendor_name');
+        // Get rental vendors from contacts with 'vendor' AND 'rental' tags
+        $vendors = Contact::where('contact_type', 'vendor')
+            ->whereHas('tags', function ($query) {
+                $query->where('slug', 'vendor');
+            })
+            ->whereHas('tags', function ($query) {
+                $query->where('slug', 'rental');
+            })
+            ->orderBy('company_name')
+            ->orderBy('last_name')
+            ->get();
 
         return view('equipment.create', compact('assets', 'categories', 'vendors'));
     }
@@ -192,11 +199,17 @@ class EquipmentController extends Controller
             ->orderBy('category')
             ->pluck('category');
 
-        $vendors = EquipmentItem::whereNotNull('vendor_name')
-            ->where('vendor_name', '!=', '')
-            ->distinct()
-            ->orderBy('vendor_name')
-            ->pluck('vendor_name');
+        // Get rental vendors from contacts with 'vendor' AND 'rental' tags
+        $vendors = Contact::where('contact_type', 'vendor')
+            ->whereHas('tags', function ($query) {
+                $query->where('slug', 'vendor');
+            })
+            ->whereHas('tags', function ($query) {
+                $query->where('slug', 'rental');
+            })
+            ->orderBy('company_name')
+            ->orderBy('last_name')
+            ->get();
 
         return view('equipment.edit', compact('equipment', 'assets', 'categories', 'vendors'));
     }

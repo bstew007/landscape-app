@@ -114,6 +114,27 @@ class Contact extends Model
         return $this->hasMany(Material::class, 'supplier_id');
     }
 
+    public function tags()
+    {
+        return $this->belongsToMany(ContactTag::class, 'contact_tag_pivot', 'contact_id', 'tag_id')
+            ->withTimestamps();
+    }
+
+    public function hasTag(string $tagSlug): bool
+    {
+        return $this->tags()->where('slug', $tagSlug)->exists();
+    }
+
+    public function hasAllTags(array $tagSlugs): bool
+    {
+        return $this->tags()->whereIn('slug', $tagSlugs)->count() === count($tagSlugs);
+    }
+
+    public function hasAnyTag(array $tagSlugs): bool
+    {
+        return $this->tags()->whereIn('slug', $tagSlugs)->exists();
+    }
+
     public function getNameAttribute(): string
     {
         $contact = trim("{$this->first_name} {$this->last_name}");
