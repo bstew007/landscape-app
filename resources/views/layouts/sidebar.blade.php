@@ -226,6 +226,7 @@
                             <a href="{{ route('calculator.templates.gallery') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Calculator Templates</a>
                             <a href="{{ route('admin.divisions.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Divisions</a>
                             <a href="{{ route('admin.cost-codes.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Cost Codes</a>
+                            <a href="{{ route('admin.contact-tags.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Contact Tags</a>
                             <a href="{{ route('admin.expense-accounts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Expense Accounts</a>
                         </div>
                     </details>
@@ -401,6 +402,7 @@
                         <a href="{{ route('calculator.templates.gallery') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Calculator Templates</a>
                         <a href="{{ route('admin.divisions.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Divisions</a>
                         <a href="{{ route('admin.cost-codes.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Cost Codes</a>
+                        <a href="{{ route('admin.contact-tags.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Contact Tags</a>
                         <a href="{{ route('admin.expense-accounts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Expense Accounts</a>
                     </div>
                 </details>

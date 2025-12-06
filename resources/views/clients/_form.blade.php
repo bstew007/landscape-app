@@ -35,6 +35,31 @@
         </select>
     </div>
 
+    @if(isset($allTags) && $allTags->count() > 0)
+    <div>
+        <label class="block text-lg font-medium text-gray-700 mb-2">Tags</label>
+        <div class="flex flex-wrap gap-3">
+            @foreach($allTags as $tag)
+                @php
+                    $isChecked = old('tags') 
+                        ? in_array($tag->id, old('tags', [])) 
+                        : (isset($client) && $client->tags->contains($tag->id));
+                @endphp
+                <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition {{ $isChecked ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-gray-300' }}">
+                    <input type="checkbox" name="tags[]" value="{{ $tag->id }}" 
+                           {{ $isChecked ? 'checked' : '' }}
+                           class="form-checkbox rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border"
+                          style="background-color: {{ $tag->color }}20; border-color: {{ $tag->color }}; color: {{ $tag->color }};">
+                        {{ $tag->name }}
+                    </span>
+                </label>
+            @endforeach
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Select tags to categorize this contact (e.g., Vendor, Rental, Preferred)</p>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
             <label for="email" class="block text-lg font-medium text-gray-700">Primary Email</label>

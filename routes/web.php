@@ -556,10 +556,11 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
         Route::resource('budgets', CompanyBudgetController::class)->except(['destroy', 'show']);
         // Users management
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['show']);
-        // Settings & Configurations: Divisions, Cost Codes, and Material Categories
+        // Settings & Configurations: Divisions, Cost Codes, Material Categories, and Contact Tags
         Route::resource('divisions', \App\Http\Controllers\Admin\DivisionController::class)->except(['show']);
         Route::resource('cost-codes', \App\Http\Controllers\Admin\CostCodeController::class)->except(['show']);
         Route::resource('material-categories', \App\Http\Controllers\Admin\MaterialCategoryController::class)->except(['show']);
+        Route::resource('contact-tags', \App\Http\Controllers\ContactTagController::class)->except(['show']);
         Route::resource('expense-accounts', \App\Http\Controllers\Admin\ExpenseAccountMappingController::class)->except(['show']);
         Route::post('expense-accounts/sync-all', [\App\Http\Controllers\Admin\ExpenseAccountMappingController::class, 'syncAll'])->name('expense-accounts.sync-all');
         Route::get('qbo/items/search', [\App\Http\Controllers\Admin\QboItemLookupController::class, 'search'])->name('qbo.items.search');

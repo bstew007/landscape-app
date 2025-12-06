@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Models\ContactTag;
 use Illuminate\Http\Request;
 
 class ContactController extends Controller
@@ -33,7 +34,8 @@ class ContactController extends Controller
 
     public function create()
     {
-        return view('clients.create', ['types' => Contact::types()]);
+        $allTags = ContactTag::orderBy('name')->get();
+        return view('clients.create', ['types' => Contact::types(), 'allTags' => $allTags]);
     }
 
     public function store(Request $request)
@@ -71,6 +73,11 @@ class ContactController extends Controller
         }
 
         $contact = Contact::create($validated);
+
+        // Sync tags if provided
+        if (isset($validated['tags'])) {
+            $contact->tags()->sync($validated['tags']);
+        }
 
         return redirect(url('contacts/'.$contact->getKey()))->with('success', 'Contact added successfully.');
     }
@@ -133,7 +140,8 @@ class ContactController extends Controller
 
     public function edit(Contact $contact)
     {
-        return view('clients.edit', ['client' => $contact, 'types' => Contact::types()]);
+        $allTags = ContactTag::orderBy('name')->get();
+        return view('clients.edit', ['client' => $contact, 'types' => Contact::types(), 'allTags' => $allTags]);
     }
 
     public function update(Request $request, Contact $contact)
@@ -152,6 +160,8 @@ class ContactController extends Controller
             'city'       => 'nullable|string|max:120',
             'state'      => 'nullable|string|max:80',
             'postal_code'=> 'nullable|string|max:20',
+            'tags'       => 'nullable|array',
+            'tags.*'     => 'exists:contact_tags,id',
         ]);
 
         // Require at least one name identifier
@@ -171,6 +181,11 @@ class ContactController extends Controller
         }
 
         $contact->update($validated);
+
+        // Sync tags if provided
+        if (isset($validated['tags'])) {
+            $contact->tags()->sync($validated['tags']);
+        }
 
         return redirect(url('contacts/'.$contact->getKey()))->with('success', 'Contact updated successfully.');
     }

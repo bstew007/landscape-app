@@ -107,6 +107,19 @@
             <p class="text-xs uppercase text-gray-500">Company</p>
             <p class="font-semibold text-gray-900">{{ $contact->company_name ?? '—' }}</p>
         </div>
+        @if($contact->tags->count() > 0)
+        <div class="sm:col-span-2 lg:col-span-3">
+            <p class="text-xs uppercase text-gray-500 mb-2">Tags</p>
+            <div class="flex flex-wrap gap-2">
+                @foreach($contact->tags as $tag)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border"
+                          style="background-color: {{ $tag->color }}20; border-color: {{ $tag->color }}; color: {{ $tag->color }};">
+                        {{ $tag->name }}
+                    </span>
+                @endforeach
+            </div>
+        </div>
+        @endif
         <div>
             <p class="text-xs uppercase text-gray-500">Email</p>
             <p class="font-semibold text-gray-900">{{ $contact->email ?? '—' }}</p>
