@@ -38,8 +38,17 @@ class AssetExpenseController extends Controller
 
     public function store(Request $request, Asset $asset)
     {
+        // Get valid category values from active expense account mappings
+        $validCategories = \App\Models\ExpenseAccountMapping::where('is_active', true)
+            ->pluck('category')
+            ->toArray();
+
         $validated = $request->validate([
-            'category' => 'required|in:fuel,repairs,general',
+            'category' => ['required', 'string', function ($attribute, $value, $fail) use ($validCategories) {
+                if (!in_array($value, $validCategories)) {
+                    $fail('The selected category is invalid or inactive.');
+                }
+            }],
             'subcategory' => 'nullable|string|max:255',
             'asset_issue_id' => 'nullable|exists:asset_issues,id',
             'vendor' => 'nullable|string|max:255',
@@ -121,8 +130,17 @@ class AssetExpenseController extends Controller
             abort(403);
         }
 
+        // Get valid category values from active expense account mappings
+        $validCategories = \App\Models\ExpenseAccountMapping::where('is_active', true)
+            ->pluck('category')
+            ->toArray();
+
         $validated = $request->validate([
-            'category' => 'required|in:fuel,repairs,general',
+            'category' => ['required', 'string', function ($attribute, $value, $fail) use ($validCategories) {
+                if (!in_array($value, $validCategories)) {
+                    $fail('The selected category is invalid or inactive.');
+                }
+            }],
             'subcategory' => 'nullable|string|max:255',
             'asset_issue_id' => 'nullable|exists:asset_issues,id',
             'vendor' => 'nullable|string|max:255',

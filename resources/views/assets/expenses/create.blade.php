@@ -44,10 +44,18 @@
                         class="w-full px-4 py-2.5 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                         onchange="toggleIssueField()">
                         <option value="">Select category...</option>
-                        <option value="fuel" {{ old('category') == 'fuel' ? 'selected' : '' }}>Fuel</option>
-                        <option value="repairs" {{ old('category') == 'repairs' ? 'selected' : '' }}>Repairs</option>
-                        <option value="general" {{ old('category') == 'general' ? 'selected' : '' }}>General (Insurance, Registration)</option>
+                        @foreach($mappings as $mapping)
+                            <option value="{{ $mapping->category }}" 
+                                data-qbo-account-id="{{ $mapping->qbo_account_id }}"
+                                data-qbo-account-name="{{ $mapping->qbo_account_name }}"
+                                {{ old('category') == $mapping->category ? 'selected' : '' }}>
+                                {{ $mapping->category_label }}
+                            </option>
+                        @endforeach
                     </select>
+                    @if($mappings->isEmpty())
+                        <p class="text-xs text-amber-600 mt-1">⚠️ No expense categories configured. <a href="{{ route('admin.expense-accounts.index') }}" class="underline">Add categories here</a>.</p>
+                    @endif
                 </div>
 
                 {{-- Subcategory --}}
