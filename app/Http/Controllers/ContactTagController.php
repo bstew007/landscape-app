@@ -45,37 +45,37 @@ class ContactTagController extends Controller
             ->with('success', 'Tag created successfully.');
     }
 
-    public function edit(ContactTag $tag)
+    public function edit(ContactTag $contactTag)
     {
-        return view('admin.contact-tags.edit', compact('tag'));
+        return view('admin.contact-tags.edit', ['tag' => $contactTag]);
     }
 
-    public function update(Request $request, ContactTag $tag)
+    public function update(Request $request, ContactTag $contactTag)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:contact_tags,name,' . $tag->id,
+            'name' => 'required|string|max:255|unique:contact_tags,name,' . $contactTag->id,
             'color' => 'required|string|max:50',
             'description' => 'nullable|string|max:500',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
 
-        $tag->update($validated);
+        $contactTag->update($validated);
 
         return redirect()
             ->route('admin.contact-tags.index')
             ->with('success', 'Tag updated successfully.');
     }
 
-    public function destroy(ContactTag $tag)
+    public function destroy(ContactTag $contactTag)
     {
-        $contactCount = $tag->contacts()->count();
+        $contactCount = $contactTag->contacts()->count();
         
         if ($contactCount > 0) {
             return back()->with('error', "Cannot delete tag. It is currently used by {$contactCount} contact(s).");
         }
 
-        $tag->delete();
+        $contactTag->delete();
 
         return redirect()
             ->route('admin.contact-tags.index')
