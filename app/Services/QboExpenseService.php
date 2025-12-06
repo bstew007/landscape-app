@@ -203,6 +203,18 @@ class QboExpenseService
                     'qbo_synced_at' => now(),
                 ]);
                 
+                // Log attachment count before upload
+                Log::info('About to upload attachments', [
+                    'expense_id' => $expense->id,
+                    'qbo_expense_id' => $qboId,
+                    'attachment_count' => $expense->attachments->count(),
+                    'attachments' => $expense->attachments->map(fn($a) => [
+                        'id' => $a->id,
+                        'file_name' => $a->file_name,
+                        'file_path' => $a->file_path,
+                    ]),
+                ]);
+                
                 // Upload attachments to QBO
                 $this->uploadAttachments($expense, $qboId, $token);
                 
@@ -332,32 +344,55 @@ class QboExpenseService
      */
     protected function uploadAttachments(AssetExpense $expense, string $qboExpenseId, QboToken $token): void
     {
+        Log::info('uploadAttachments called', [
+            'expense_id' => $expense->id,
+            'qbo_expense_id' => $qboExpenseId,
+            'total_attachments' => $expense->attachments->count(),
+        ]);
+        
+        if ($expense->attachments->isEmpty()) {
+            Log::info('No attachments to upload for expense', [
+                'expense_id' => $expense->id,
+                'qbo_expense_id' => $qboExpenseId,
+            ]);
+            return;
+        }
+        
         foreach ($expense->attachments as $attachment) {
+            Log::info('Processing attachment', [
+                'expense_id' => $expense->id,
+                'attachment_id' => $attachment->id,
+                'file_name' => $attachment->file_name,
+                'file_path' => $attachment->file_path,
+            ]);
+            
             try {
                 // Get file from storage
                 $filePath = Storage::disk('public')->path($attachment->file_path);
+                
+                Log::info('Checking file path', [
+                    'attachment_id' => $attachment->id,
+                    'file_path' => $filePath,
+                    'exists' => file_exists($filePath),
+                    'storage_disk' => 'public',
+                    'attachment_file_path' => $attachment->file_path,
+                ]);
                 
                 if (!file_exists($filePath)) {
                     Log::warning('Attachment file not found for QBO upload', [
                         'expense_id' => $expense->id,
                         'attachment_id' => $attachment->id,
                         'file_path' => $filePath,
+                        'attachment_file_path' => $attachment->file_path,
                     ]);
                     continue;
                 }
 
-                // Read file content
-                $fileContent = file_get_contents($filePath);
                 $fileName = $attachment->file_name;
+                $mimeType = $attachment->file_type ?? mime_content_type($filePath) ?? 'application/octet-stream';
 
-                // Upload to QBO
-                $boundary = '-------------' . uniqid();
-                $url = $this->baseUrl($token->realm_id) . '/upload';
-
-                $body = "--{$boundary}\r\n";
-                $body .= "Content-Disposition: form-data; name=\"file_metadata_01\"\r\n";
-                $body .= "Content-Type: application/json\r\n\r\n";
-                $body .= json_encode([
+                // Prepare metadata for the attachment
+                $metadata = [
                     'AttachableRef' => [
                         [
                             'EntityRef' => [
@@ -367,30 +402,62 @@ class QboExpenseService
                         ],
                     ],
                     'FileName' => $fileName,
-                    'Note' => $attachment->file_type,
-                ]) . "\r\n";
-                
-                $body .= "--{$boundary}\r\n";
-                $body .= "Content-Disposition: form-data; name=\"file_content_01\"; filename=\"{$fileName}\"\r\n";
-                $body .= "Content-Type: {$attachment->file_type}\r\n\r\n";
-                $body .= $fileContent . "\r\n";
-                $body .= "--{$boundary}--\r\n";
+                    'Note' => "Receipt for {$expense->asset->name}",
+                ];
 
+                // Upload to QBO using proper multipart format
+                $url = $this->baseUrl($token->realm_id) . '/upload';
+                
+                // Use Guzzle's multipart format directly
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $token->access_token,
                     'Accept' => 'application/json',
-                    'Content-Type' => "multipart/form-data; boundary={$boundary}",
                 ])
-                ->withBody($body)
+                ->asMultipart()
+                ->attach('file_content_01', file_get_contents($filePath), $fileName, ['Content-Type' => $mimeType])
+                ->attach('file_metadata_01', json_encode($metadata), 'metadata.json', ['Content-Type' => 'application/json'])
                 ->post($url);
 
-                if (config('qbo.debug')) {
+                // Handle 401 token expiration
+                if ($response->status() === 401) {
+                    $this->refreshTokenIfNeeded();
+                    $response = Http::withHeaders([
+                        'Authorization' => 'Bearer ' . $token->access_token,
+                        'Accept' => 'application/json',
+                        'Content-Type' => "multipart/form-data; boundary={$boundary}",
+                    ])
+                    ->withBody($body)
+                    ->post($url);
+                }
+
+                if (config('qbo.debug') || !$response->successful()) {
                     Log::info('QBO Attachment Upload', [
                         'expense_id' => $expense->id,
                         'attachment_id' => $attachment->id,
                         'qbo_expense_id' => $qboExpenseId,
+                        'file_name' => $fileName,
+                        'mime_type' => $mimeType,
+                        'file_size' => strlen($fileContent),
                         'status' => $response->status(),
                         'response' => $response->body(),
+                        'metadata' => $metadata,
+                    ]);
+                }
+
+                if (!$response->successful()) {
+                    Log::error('QBO Attachment Upload Failed', [
+                        'expense_id' => $expense->id,
+                        'attachment_id' => $attachment->id,
+                        'qbo_expense_id' => $qboExpenseId,
+                        'status' => $response->status(),
+                        'error' => $response->body(),
+                    ]);
+                } else {
+                    Log::info('QBO Attachment Uploaded Successfully', [
+                        'expense_id' => $expense->id,
+                        'attachment_id' => $attachment->id,
+                        'qbo_expense_id' => $qboExpenseId,
+                        'file_name' => $fileName,
                     ]);
                 }
 
@@ -399,6 +466,7 @@ class QboExpenseService
                     'expense_id' => $expense->id,
                     'attachment_id' => $attachment->id,
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }
