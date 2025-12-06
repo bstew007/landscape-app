@@ -91,11 +91,11 @@
         <div class="flex items-center gap-3">
           @if(($start ?? 1) > 1)
             @php($prevStart = max(1, ($start ?? 1) - ($max ?? 25)))
-            <a class="hover:underline" href="{{ route('contacts.qbo.vendor.search', array_filter(['q'=>request('q'), 'start'=>$prevStart, 'max'=>$max ?? 25])) }}">← Prev</a>
+            <a class="hover:underline" href="{{ route('contacts.qbo.vendor.search', array_filter(['q'=>request('q'), 'start'=>$prevStart, 'max'=>$max ?? 25, 'fetch_all'=>1])) }}">← Prev</a>
           @endif
           @if(count($vendors) >= ($max ?? 25))
             @php($nextStart = ($start ?? 1) + ($max ?? 25))
-            <a class="hover:underline" href="{{ route('contacts.qbo.vendor.search', array_filter(['q'=>request('q'), 'start'=>$nextStart, 'max'=>$max ?? 25])) }}">Next →</a>
+            <a class="hover:underline" href="{{ route('contacts.qbo.vendor.search', array_filter(['q'=>request('q'), 'start'=>$nextStart, 'max'=>$max ?? 25, 'fetch_all'=>1])) }}">Next →</a>
           @endif
         </div>
       </div>
