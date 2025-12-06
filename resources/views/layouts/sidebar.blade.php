@@ -254,13 +254,6 @@
         </div>
 
         <nav class="mt-4 px-4 space-y-6 text-sm pb-8">
-            <div>
-                <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Admin</h3>
-                <a href="{{ route('production-rates.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">⚙️ Production Rates</a>
-                <a href="{{ route('admin.budgets.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60">💼 Budget</a>
-                <a href="{{ route('materials.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60">🧱 Materials Catalog</a>
-                <a href="{{ route('admin.company-settings.edit') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60">🏢 Company Settings</a>
-            </div>
             <div class="space-y-2">
                 <details class="group sidebar-accordion">
                     <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
@@ -374,11 +367,41 @@
                         <a href="{{ route('asset-reports.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Reports</a>
                     </div>
                 </details>
-            </div>
-            <div>
-                <h3 class="text-xs text-brand-300 uppercase tracking-wide mb-1">Client Hub</h3>
-                <a href="{{ route('client-hub') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M12 3L3 10v11h7v-7h4v7h7V10l-9-7z"/></svg><span>Dashboard</span></span></a>
-                <a href="{{ route('calendar.index') }}" class="block px-2 py-1 mt-1 rounded text-brand-50/90 hover:bg-brand-800/60"><span class="inline-flex items-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Schedule</span></span></a>
+
+                <a href="{{ route('production-rates.index') }}" class="block px-2 py-2 rounded text-brand-50/90 hover:bg-brand-800/60">
+                    <span class="inline-flex items-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span>Production Rates</span>
+                    </span>
+                </a>
+
+                <a href="{{ route('admin.budgets.index') }}" class="block px-2 py-2 rounded text-brand-50/90 hover:bg-brand-800/60">
+                    <span class="inline-flex items-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>
+                        <span>Budget</span>
+                    </span>
+                </a>
+
+                <details class="group sidebar-accordion">
+                    <summary class="list-none px-2 py-2 text-sm text-brand-50/90 hover:bg-brand-800/60 cursor-pointer rounded flex items-center justify-between">
+                        <span class="inline-flex items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                            <span>Settings</span>
+                        </span>
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 sidebar-panel">
+                        @can('manage-users')
+                        <a href="{{ route('admin.users.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Users</a>
+                        @endcan
+                        <a href="{{ route('admin.expense-approvals.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Expense Approvals</a>
+                        <a href="{{ route('admin.company-settings.edit') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Company Settings</a>
+                        <a href="{{ route('calculator.templates.gallery') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Calculator Templates</a>
+                        <a href="{{ route('admin.divisions.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Divisions</a>
+                        <a href="{{ route('admin.cost-codes.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Cost Codes</a>
+                        <a href="{{ route('admin.expense-accounts.index') }}" class="block px-2 py-1 rounded text-brand-50/90 hover:bg-brand-800/60">Expense Accounts</a>
+                    </div>
+                </details>
             </div>
         </nav>
 
