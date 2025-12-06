@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Storage;
 
 class AssetExpenseController extends Controller
 {
+    public function selectAsset()
+    {
+        $assets = Asset::orderBy('name')->get();
+        return view('assets.expenses.select-asset', compact('assets'));
+    }
+
     public function create(Asset $asset)
     {
         $issues = $asset->issues()->whereIn('status', ['Reported', 'In Progress'])->get();

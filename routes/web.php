@@ -592,6 +592,7 @@ Route::get('/calculators/pruning/pdf/{calculation}', [PruningCalculatorControlle
     Route::delete('assets/{asset}/usage-logs/{usageLog}', [AssetController::class, 'destroyUsageLog'])->name('assets.usage-logs.destroy');
 
     // Asset Expenses
+    Route::get('assets-expenses/select-asset', [App\Http\Controllers\AssetExpenseController::class, 'selectAsset'])->name('assets.expenses.select-asset');
     Route::get('assets/{asset}/expenses/create', [App\Http\Controllers\AssetExpenseController::class, 'create'])->name('assets.expenses.create');
     Route::post('assets/{asset}/expenses', [App\Http\Controllers\AssetExpenseController::class, 'store'])->name('assets.expenses.store');
     Route::get('assets/{asset}/expenses/{expense}/edit', [App\Http\Controllers\AssetExpenseController::class, 'edit'])->name('assets.expenses.edit');
