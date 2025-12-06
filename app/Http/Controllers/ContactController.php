@@ -39,8 +39,8 @@ class ContactController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
+            'first_name' => 'nullable|string|max:255',
+            'last_name'  => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'contact_type' => ['required', 'in:'.implode(',', Contact::types())],
             'email'      => 'nullable|email',
@@ -53,6 +53,11 @@ class ContactController extends Controller
             'state'      => 'nullable|string|max:80',
             'postal_code'=> 'nullable|string|max:20',
         ]);
+
+        // Require at least one name identifier
+        if (empty($validated['first_name']) && empty($validated['last_name']) && empty($validated['company_name'])) {
+            return back()->withErrors(['first_name' => 'At least one of First Name, Last Name, or Company Name is required.'])->withInput();
+        }
 
         // Normalize phone mask to (XXX) XXX-XXXX
         foreach (['phone','mobile','phone2'] as $p) {
@@ -134,8 +139,8 @@ class ContactController extends Controller
     public function update(Request $request, Contact $contact)
     {
         $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
+            'first_name' => 'nullable|string|max:255',
+            'last_name'  => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'contact_type' => ['required', 'in:'.implode(',', Contact::types())],
             'email'      => 'nullable|email',
@@ -148,6 +153,11 @@ class ContactController extends Controller
             'state'      => 'nullable|string|max:80',
             'postal_code'=> 'nullable|string|max:20',
         ]);
+
+        // Require at least one name identifier
+        if (empty($validated['first_name']) && empty($validated['last_name']) && empty($validated['company_name'])) {
+            return back()->withErrors(['first_name' => 'At least one of First Name, Last Name, or Company Name is required.'])->withInput();
+        }
 
         // Normalize phone mask to (XXX) XXX-XXXX
         foreach (['phone','mobile','phone2'] as $p) {

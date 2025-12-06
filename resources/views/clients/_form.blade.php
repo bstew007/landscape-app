@@ -8,21 +8,22 @@
         <label for="first_name" class="block text-lg font-medium text-gray-700">First Name</label>
         <input type="text" name="first_name" id="first_name" autocomplete="given-name"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-               value="{{ old('first_name', $client->first_name ?? '') }}" required>
+               value="{{ old('first_name', $client->first_name ?? '') }}">
     </div>
 
     <div>
         <label for="last_name" class="block text-lg font-medium text-gray-700">Last Name</label>
         <input type="text" name="last_name" id="last_name" autocomplete="family-name"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
-               value="{{ old('last_name', $client->last_name ?? '') }}" required>
+               value="{{ old('last_name', $client->last_name ?? '') }}">
     </div>
 
     <div>
-        <label for="company_name" class="block text-lg font-medium text-gray-700">Company Name (optional)</label>
+        <label for="company_name" class="block text-lg font-medium text-gray-700">Company Name</label>
         <input type="text" name="company_name" id="company_name" autocomplete="organization"
                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xl"
                value="{{ old('company_name', $client->company_name ?? '') }}">
+        <p class="mt-1 text-sm text-gray-500">At least one of: First Name, Last Name, or Company Name is required</p>
     </div>
 
     <div>
